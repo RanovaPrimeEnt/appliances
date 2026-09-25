@@ -53,13 +53,25 @@ function installUi(d,products){
     var st=d.createElement("style");
     st.id="rpeSolarCatalogueStyle";
     st.textContent=
-      '.category-cards.rpeFourCategories{grid-template-columns:repeat(4,minmax(0,1fr))!important}'+
+      '.category-cards.rpeFourCategories{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:22px!important}'+
+      '.category-cards.rpeFourCategories .category-card{overflow:hidden!important;border-radius:24px!important;transition:transform .25s ease,box-shadow .25s ease!important;background:#fbfaf7!important}'+
+      '.category-cards.rpeFourCategories .category-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(8,47,39,.10)!important}'+
       '.category-cards.rpeFourCategories .category-card:last-child{grid-column:auto!important}'+
-      '.category-cards.rpeFourCategories .category-image{height:190px!important}'+
-      '.category-cards.rpeFourCategories .category-image img{width:100%;height:100%;object-fit:contain!important;background:#f5f8f6}'+
-      '@media(max-width:980px){.category-cards.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important}}'+
-      '@media(max-width:620px){.category-cards.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.category-cards.rpeFourCategories .category-image{height:140px!important}}'+
-      '@media(max-width:380px){.category-cards.rpeFourCategories{grid-template-columns:1fr!important}.category-cards.rpeFourCategories .category-image{height:210px!important}}';
+      '.category-cards.rpeFourCategories .category-image{height:230px!important;width:100%!important;overflow:hidden!important;background:#edf2ef!important;border-radius:0!important;display:block!important}'+
+      '.category-cards.rpeFourCategories .category-image img{display:block!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;background:#edf2ef!important;image-rendering:auto!important;transition:transform .35s ease!important}'+
+      '.category-cards.rpeFourCategories .category-card:hover .category-image img{transform:scale(1.05)}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(1) .category-image img{transform:scale(1.28);object-position:center 48%!important}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(1):hover .category-image img{transform:scale(1.34)}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(2) .category-image img{transform:scale(1.10);object-position:center 46%!important}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(2):hover .category-image img{transform:scale(1.15)}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(3) .category-image img{transform:scale(1.12);object-position:center 48%!important}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(3):hover .category-image img{transform:scale(1.17)}'+
+      '#rpeSolarCategoryCard .category-image img{object-fit:cover!important;object-position:center 18%!important;transform:scale(1.22)}'+
+      '#rpeSolarCategoryCard:hover .category-image img{transform:scale(1.28)}'+
+      '@media(max-width:1100px){.category-cards.rpeFourCategories{gap:16px!important}.category-cards.rpeFourCategories .category-image{height:205px!important}}'+
+      '@media(max-width:980px){.category-cards.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important}.category-cards.rpeFourCategories .category-image{height:240px!important}}'+
+      '@media(max-width:620px){.category-cards.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.category-cards.rpeFourCategories .category-image{height:165px!important}.category-cards.rpeFourCategories .category-card:nth-child(1) .category-image img{transform:scale(1.24)}#rpeSolarCategoryCard .category-image img{transform:scale(1.17);object-position:center 16%!important}}'+
+      '@media(max-width:420px){.category-cards.rpeFourCategories{grid-template-columns:1fr!important}.category-cards.rpeFourCategories .category-image{height:230px!important}#rpeSolarCategoryCard .category-image img{transform:scale(1.20)}}';
     d.head.appendChild(st);
   }
 
