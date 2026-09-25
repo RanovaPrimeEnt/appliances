@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /appliances/
+Sitemap: https://ranovaprimeent.github.io/appliances/sitemap.xml
