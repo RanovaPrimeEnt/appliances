@@ -107,7 +107,7 @@ function enhanceSite(){
 
   // Email the current selection as an alternative to WhatsApp.
   var bar=d.getElementById("selectionBar"),send=d.getElementById("sendBtn");
-  if(bar&&send&&!d.getElementById("rpeEmailSelection")){var eb2=d.createElement("button");eb2.id="rpeEmailSelection";eb2.className="rpe-email-btn";eb2.textContent="Email list";send.parentNode.insertBefore(eb2,send);eb2.addEventListener("click",function(){decorate();var picks=ps.filter(function(p){return selectedMirror.has(p.id)});if(!picks.length){alert("Select at least one product first.");return}var lines=picks.map(function(p,i){return (i+1)+". "+p.name+" (ID "+p.id+")"}).join("\n");composeGmail("Product Order - Ranova Prime Enterprise","Hello Ranova Prime Enterprise,\n\nI'm interested in the following products:\n\n"+lines+"\n\nPlease send me the prices, availability, delivery information and applicable warranty details.\n\nThank you.")});var clear=d.getElementById("clearSelection");if(clear)clear.addEventListener("click",function(){selectedMirror.clear()})}
+  if(bar&&send&&!d.getElementById("rpeEmailSelection")){var eb2=d.createElement("button");eb2.id="rpeEmailSelection";eb2.className="rpe-email-btn";eb2.textContent="Email list";send.parentNode.insertBefore(eb2,send);eb2.addEventListener("click",function(){decorate();var nativeIds=[];try{nativeIds=w.eval("Array.from(selected)")}catch(e){}var picks=ps.filter(function(p){return nativeIds.length?nativeIds.indexOf(p.id)!==-1:selectedMirror.has(p.id)});if(!picks.length){alert("Select at least one product first.");return}var lines=picks.map(function(p,i){return (i+1)+". "+p.name+" (ID "+p.id+")"}).join("\n");composeGmail("Product Order - Ranova Prime Enterprise","Hello Ranova Prime Enterprise,\n\nI'm interested in the following products:\n\n"+lines+"\n\nPlease send me the prices, availability, delivery information and applicable warranty details.\n\nThank you.")});var clear=d.getElementById("clearSelection");if(clear)clear.addEventListener("click",function(){selectedMirror.clear()})}
 
   // Rebuild footer with navigation, direct contacts and policy links.
   var footer=d.querySelector("footer"),oldLogo=footer&&footer.querySelector("img");
@@ -176,7 +176,7 @@ function enhancePremiumExperience(){
   if(grid&&!d.getElementById("rpeEmptyFav")){emptyFav.id="rpeEmptyFav";grid.appendChild(emptyFav)}
   if(resultsRow&&!d.getElementById("rpeFavFilter")){
     var fb=d.createElement("button");fb.id="rpeFavFilter";fb.className="rpe-fav-filter";fb.type="button";fb.textContent="♡ Favourites (0)";
-    fb.addEventListener("click",function(){favMode=!favMode;fb.classList.toggle("active",favMode);applyFavFilter();if(favMode)grid.scrollIntoView({behavior:"smooth",block:"start"})});
+    fb.addEventListener("click",function(){favMode=!favMode;fb.classList.toggle("active",favMode);if(favMode){var si=d.getElementById("search");if(si){si.value="";si.dispatchEvent(new Event("input",{bubbles:true}))}try{w.setActiveCategory("All")}catch(e){}setTimeout(function(){decoratePremium();applyFavFilter()},0);grid.scrollIntoView({behavior:"smooth",block:"start"})}else applyFavFilter()});
     resultsRow.appendChild(fb);
   }
   function updateFavCount(){var b=d.getElementById("rpeFavFilter");if(b)b.textContent=(favMode?"♥":"♡")+" Favourites ("+favs.size+")";var mb=d.getElementById("rpeMobileFavCount");if(mb)mb.textContent=favs.size}
@@ -217,9 +217,9 @@ function enhancePremiumExperience(){
   var backdrop=d.createElement("div");backdrop.id="rpeDrawerBackdrop";backdrop.className="rpe-drawer-backdrop";backdrop.innerHTML='<aside class="rpe-drawer" role="dialog" aria-modal="true" aria-labelledby="rpeDrawerTitle"><div class="rpe-drawer-head"><div><small style="color:#789087">YOUR ORDER LIST</small><h3 id="rpeDrawerTitle">Review selection</h3></div><button id="rpeDrawerClose" class="rpe-close" aria-label="Close selection">×</button></div><div id="rpeDrawerList" class="rpe-drawer-list"></div><div class="rpe-drawer-actions"><button id="rpeCopyOrder">Copy list</button><button id="rpeEmailOrder">Email list</button><button id="rpeClearOrder">Clear all</button><a id="rpeWhatsAppOrder" class="primary" href="#" target="_blank" rel="noopener">Send order on WhatsApp</a></div></aside>';
   d.body.appendChild(backdrop);
   var fab=d.createElement("button");fab.id="rpeSelectionFab";fab.className="rpe-selection-fab";fab.type="button";fab.innerHTML=icon("bag")+'<span>Selection</span><span id="rpeSelectionCount" class="count">0</span>';d.body.appendChild(fab);
-  function openDrawer(){renderDrawer();backdrop.classList.add("open");d.body.style.overflow="hidden"}
+  function openDrawer(){renderDrawer();backdrop.classList.add("open");d.body.style.overflow="hidden";setTimeout(function(){var b=d.getElementById("rpeDrawerClose");if(b)b.focus()},0)}
   function closeDrawer(){backdrop.classList.remove("open");d.body.style.overflow=""}
-  fab.addEventListener("click",openDrawer);d.getElementById("rpeDrawerClose").addEventListener("click",closeDrawer);backdrop.addEventListener("click",function(e){if(e.target===backdrop)closeDrawer()});
+  fab.addEventListener("click",openDrawer);d.getElementById("rpeDrawerClose").addEventListener("click",closeDrawer);backdrop.addEventListener("click",function(e){if(e.target===backdrop)closeDrawer()});d.addEventListener("keydown",function(e){if(e.key==="Escape"&&backdrop.classList.contains("open"))closeDrawer()});
   function renderDrawer(){
     var list=d.getElementById("rpeDrawerList"),ids=currentSelectedIds();list.innerHTML="";
     if(!ids.length){list.innerHTML='<div class="rpe-drawer-empty"><b>Your selection is empty.</b><br><span>Add products from the catalogue to build an order list.</span></div>'}
@@ -230,9 +230,9 @@ function enhancePremiumExperience(){
       list.appendChild(item)
     });updateOrderLinks();
   }
-  function updateOrderLinks(){var ids=currentSelectedIds(),msg=messageFor(ids),wa=d.getElementById("rpeWhatsAppOrder");if(wa)wa.href="https://wa.me/233542846895?text="+encodeURIComponent(msg)}
+  function updateOrderLinks(){var ids=currentSelectedIds(),msg=messageFor(ids),wa=d.getElementById("rpeWhatsAppOrder");if(wa){wa.href=ids.length?"https://wa.me/233542846895?text="+encodeURIComponent(msg):"#";wa.setAttribute("aria-disabled",ids.length?"false":"true");wa.style.opacity=ids.length?"1":".45";wa.style.pointerEvents=ids.length?"auto":"none"}}
   function updateSelectionUI(){var ids=currentSelectedIds(),n=ids.length,count=d.getElementById("rpeSelectionCount");if(count)count.textContent=n;var mc=d.getElementById("rpeMobileSelCount");if(mc)mc.textContent=n;updateOrderLinks()}
-  d.getElementById("rpeCopyOrder").onclick=function(){var msg=messageFor(currentSelectedIds());if(navigator.clipboard)navigator.clipboard.writeText(msg).then(function(){showToast("Order list copied")});else prompt("Copy your order list:",msg)};
+  d.getElementById("rpeCopyOrder").onclick=function(){var ids=currentSelectedIds();if(!ids.length){showToast("Select a product first");return}var msg=messageFor(ids);if(navigator.clipboard)navigator.clipboard.writeText(msg).then(function(){showToast("Order list copied")});else prompt("Copy your order list:",msg)};
   d.getElementById("rpeEmailOrder").onclick=function(){var ids=currentSelectedIds();if(!ids.length){showToast("Select a product first");return}composeGmail("Product Order - Ranova Prime Enterprise",messageFor(ids))};
   d.getElementById("rpeClearOrder").onclick=function(){var ids=currentSelectedIds();ids.forEach(function(id){try{w.toggleProduct(Number(id))}catch(e){}});setTimeout(function(){renderDrawer();updateSelectionUI()},0)};
   d.addEventListener("click",function(e){if(e.target.closest&&e.target.closest(".select-btn"))setTimeout(updateSelectionUI,0)});
