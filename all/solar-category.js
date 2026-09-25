@@ -40,8 +40,65 @@ function cleanDescription(p){
   if(working)bits.push("Working time: "+working+".");
   return bits.join(" ");
 }
+
+function ensureSolarCategory(d){
+  if(!d)return false;
+
+  var cards=d.querySelector(".category-cards");
+  if(!cards)return false;
+  cards.classList.add("rpeFourCategories");
+
+  var card=d.getElementById("rpeSolarCategoryCard");
+  if(!card){
+    card=d.createElement("button");
+    card.type="button";
+    card.id="rpeSolarCategoryCard";
+    card.className="category-card";
+    card.innerHTML=
+      '<div class="category-image" style="background:linear-gradient(145deg,#edf6f1,#e2eee8);display:flex;align-items:center;justify-content:center">'+
+      '<div style="text-align:center;color:#0e5b43;padding:18px"><div style="font-size:44px;line-height:1">☀</div><b style="display:block;margin-top:8px;font-size:13px">Solar Street Lights</b></div></div>'+
+      '<div><small>OUTDOOR SOLAR</small><h3>Solar Street Lights</h3><span>2 series · 6 models</span></div>';
+    cards.appendChild(card);
+  }
+  card.onclick=function(){
+    try{
+      if(frame.contentWindow.setActiveCategory)frame.contentWindow.setActiveCategory("Solar Street Lights");
+    }catch(e){}
+    var target=d.getElementById("products");
+    if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
+    integrateSolarProducts();
+  };
+
+  var filters=d.querySelector(".filters");
+  if(filters&&!d.getElementById("rpeSolarFilter")){
+    var filter=d.createElement("button");
+    filter.id="rpeSolarFilter";
+    filter.type="button";
+    filter.className="filter";
+    filter.dataset.cat="Solar Street Lights";
+    filter.textContent="Solar Lights";
+    filter.onclick=function(){
+      integrateSolarProducts().then(function(){
+        try{
+          if(frame.contentWindow.setActiveCategory)frame.contentWindow.setActiveCategory("Solar Street Lights");
+        }catch(e){}
+      });
+    };
+    filters.appendChild(filter);
+  }
+
+  [].slice.call(d.querySelectorAll(".stats div")).forEach(function(box){
+    var label=box.querySelector("span"),strong=box.querySelector("strong");
+    if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent="4";
+    if(label&&strong&&/Catalogue items/i.test(label.textContent)&&/^\s*36\+?\s*$/.test(strong.textContent))strong.textContent="42+";
+  });
+
+  return true;
+}
+
 function installUi(d,products){
   if(!d)return;
+  ensureSolarCategory(d);
 
   // Remove the former oversized standalone solar section. Solar now lives in the main catalogue.
   var old=d.getElementById("rpe-solar-street-lights");
@@ -321,6 +378,7 @@ async function integrateSolarProducts(){
     try{w=frame.contentWindow}catch(e){return false}
     if(!d||!w)return false;
 
+    ensureSolarCategory(d);
     var solar=await fetchSolar();
     if(!solar.length)return false;
 
@@ -366,14 +424,21 @@ async function integrateSolarProducts(){
 
 window.__rpeSolarIntegrate=integrateSolarProducts;
 
-// Fallback for very fast iframe loads or mobile cache/timing differences.
+// Keep the fourth category present even if the solar API is slow or temporarily unavailable.
+var rpeSolarBootCount=0;
+function bootSolarCategory(){
+  rpeSolarBootCount++;
+  var d=idoc();
+  if(d)ensureSolarCategory(d);
+  integrateSolarProducts();
+  if(rpeSolarBootCount<20&&(!d||!d.getElementById("rpeSolarCategoryCard"))){
+    setTimeout(bootSolarCategory,250);
+  }
+}
 frame.addEventListener("load",function(){
-  setTimeout(function(){integrateSolarProducts()},0);
+  rpeSolarBootCount=0;
+  setTimeout(bootSolarCategory,0);
 });
-setTimeout(function(){
-  try{
-    if(frame.contentDocument&&frame.contentDocument.readyState==="complete")integrateSolarProducts();
-  }catch(e){}
-},150);
+setTimeout(bootSolarCategory,100);
 
 })();
