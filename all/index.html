@@ -72,15 +72,15 @@ function enhanceSite(){
   var nav=d.getElementById("navLinks");
   if(nav&&!d.getElementById("rpePoliciesNav")){var pa=d.createElement("a");pa.id="rpePoliciesNav";pa.href="shipping-returns.html";pa.target="_top";pa.textContent="Policies";nav.appendChild(pa)}
 
-  // Keep the Founder section lower on the page: after About and before Contact.
-  var founderSection=d.getElementById("founder"),aboutSection=d.getElementById("about"),contactSection=d.getElementById("contact");
-  if(founderSection&&aboutSection&&aboutSection.parentNode){
-    aboutSection.parentNode.insertBefore(founderSection,contactSection||aboutSection.nextSibling);
+  // Keep the Founder section as the final content section, immediately before the footer.
+  var founderSection=d.getElementById("founder"),siteFooter=d.querySelector("footer");
+  if(founderSection&&siteFooter&&siteFooter.parentNode){
+    siteFooter.parentNode.insertBefore(founderSection,siteFooter);
   }
-  // Match the navigation order to the new page order.
+  // Keep Founder last in the top navigation as well.
   if(nav){
-    var founderNav=nav.querySelector('a[href="#founder"]'),aboutNav=nav.querySelector('a[href="#about"]');
-    if(founderNav&&aboutNav)nav.insertBefore(founderNav,aboutNav.nextSibling);
+    var founderNav=nav.querySelector('a[href="#founder"]');
+    if(founderNav)nav.appendChild(founderNav);
   }
 
   // About/business identity facts using only confirmed information.
