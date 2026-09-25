@@ -72,6 +72,17 @@ function enhanceSite(){
   var nav=d.getElementById("navLinks");
   if(nav&&!d.getElementById("rpePoliciesNav")){var pa=d.createElement("a");pa.id="rpePoliciesNav";pa.href="shipping-returns.html";pa.target="_top";pa.textContent="Policies";nav.appendChild(pa)}
 
+  // Keep the Founder section lower on the page: after About and before Contact.
+  var founderSection=d.getElementById("founder"),aboutSection=d.getElementById("about"),contactSection=d.getElementById("contact");
+  if(founderSection&&aboutSection&&aboutSection.parentNode){
+    aboutSection.parentNode.insertBefore(founderSection,contactSection||aboutSection.nextSibling);
+  }
+  // Match the navigation order to the new page order.
+  if(nav){
+    var founderNav=nav.querySelector('a[href="#founder"]'),aboutNav=nav.querySelector('a[href="#about"]');
+    if(founderNav&&aboutNav)nav.insertBefore(founderNav,aboutNav.nextSibling);
+  }
+
   // About/business identity facts using only confirmed information.
   var about=d.querySelector("#about .about-grid>div:last-child");
   if(about&&!d.getElementById("rpeFacts")){var facts=d.createElement("div");facts.id="rpeFacts";facts.className="rpe-facts";facts.innerHTML='<span><small>Business</small><b>Ranova Prime Enterprise</b></span><span><small>Founder</small><b>Mr. Ransford Acheampong</b></span><span><small>Order channels</small><b>WhatsApp, phone & Gmail</b></span>';about.insertBefore(facts,about.querySelector(".text-link"));var aboutLink=d.createElement("a");aboutLink.className="text-link";aboutLink.href="about.html";aboutLink.target="_top";aboutLink.textContent="Read about RPE →";about.appendChild(aboutLink)}
