@@ -156,9 +156,8 @@ function enhancePremiumExperience(){
   function toggleFav(id){id=String(id);if(favs.has(id)){favs.delete(id);showToast("Removed from favourites")}else{favs.add(id);showToast("Saved to favourites")}saveFavs();decoratePremium();applyFavFilter()}
   function addRecent(id){id=String(id);recent=[id].concat(recent.filter(function(x){return String(x)!==id})).slice(0,8);write(RECENTKEY,recent);renderRecent()}
   function currentSelectedIds(){
-    return [].slice.call(grid.querySelectorAll(".product")).map(function(card){
-      var b=card.querySelector(".select-btn"),id=card.dataset.productId;return b&&b.classList.contains("selected")?String(id):null
-    }).filter(Boolean)
+    try{return w.eval("Array.from(selected)").map(function(id){return String(id)})}
+    catch(e){return [].slice.call(grid.querySelectorAll(".product")).map(function(card){var b=card.querySelector(".select-btn"),id=card.dataset.productId;return b&&b.classList.contains("selected")?String(id):null}).filter(Boolean)}
   }
   function messageFor(ids){
     var lines=ids.map(function(id,i){var p=getP(id),q=Math.max(1,parseInt(qty[id]||1,10)||1);return (i+1)+". "+(p?p.name:"Product")+" — Qty "+q+" (ID "+id+")"}).join("\n");
@@ -227,7 +226,7 @@ function enhancePremiumExperience(){
     ids.forEach(function(id){var p=getP(id);if(!p)return;var q=Math.max(1,parseInt(qty[id]||1,10)||1),item=d.createElement("div");item.className="rpe-cart-item";item.innerHTML='<img src="'+p.image+'" alt=""><div><b>'+p.name+'</b><small>ID '+p.id+' • '+p.category+'</small><div class="rpe-qty"><button type="button" data-act="minus" aria-label="Decrease quantity">−</button><input type="number" min="1" max="99" value="'+q+'" aria-label="Quantity for '+p.name.replace(/"/g,"&quot;")+'"><button type="button" data-act="plus" aria-label="Increase quantity">+</button></div></div><button class="rpe-remove" type="button">Remove</button>';
       var input=item.querySelector("input");function setQ(v){v=Math.max(1,Math.min(99,parseInt(v||1,10)||1));input.value=v;qty[id]=v;write(QTYKEY,qty);updateOrderLinks()}
       item.querySelector('[data-act="minus"]').onclick=function(){setQ(Number(input.value)-1)};item.querySelector('[data-act="plus"]').onclick=function(){setQ(Number(input.value)+1)};input.onchange=function(){setQ(input.value)};
-      item.querySelector(".rpe-remove").onclick=function(){var card=grid.querySelector('.product[data-product-id="'+CSS.escape(id)+'"]'),btn=card&&card.querySelector(".select-btn");if(btn&&btn.classList.contains("selected"))btn.click();setTimeout(function(){renderDrawer();updateSelectionUI()},0)};
+      item.querySelector(".rpe-remove").onclick=function(){try{w.toggleProduct(Number(id))}catch(e){var card=grid.querySelector('.product[data-product-id="'+CSS.escape(id)+'"]'),btn=card&&card.querySelector(".select-btn");if(btn&&btn.classList.contains("selected"))btn.click()}setTimeout(function(){renderDrawer();updateSelectionUI()},0)};
       list.appendChild(item)
     });updateOrderLinks();
   }
@@ -235,7 +234,7 @@ function enhancePremiumExperience(){
   function updateSelectionUI(){var ids=currentSelectedIds(),n=ids.length,count=d.getElementById("rpeSelectionCount");if(count)count.textContent=n;var mc=d.getElementById("rpeMobileSelCount");if(mc)mc.textContent=n;updateOrderLinks()}
   d.getElementById("rpeCopyOrder").onclick=function(){var msg=messageFor(currentSelectedIds());if(navigator.clipboard)navigator.clipboard.writeText(msg).then(function(){showToast("Order list copied")});else prompt("Copy your order list:",msg)};
   d.getElementById("rpeEmailOrder").onclick=function(){var ids=currentSelectedIds();if(!ids.length){showToast("Select a product first");return}composeGmail("Product Order - Ranova Prime Enterprise",messageFor(ids))};
-  d.getElementById("rpeClearOrder").onclick=function(){[].slice.call(grid.querySelectorAll(".select-btn.selected")).forEach(function(b){b.click()});setTimeout(function(){renderDrawer();updateSelectionUI()},0)};
+  d.getElementById("rpeClearOrder").onclick=function(){var ids=currentSelectedIds();ids.forEach(function(id){try{w.toggleProduct(Number(id))}catch(e){}});setTimeout(function(){renderDrawer();updateSelectionUI()},0)};
   d.addEventListener("click",function(e){if(e.target.closest&&e.target.closest(".select-btn"))setTimeout(updateSelectionUI,0)});
 
   // Related products + share controls in modal.
@@ -268,9 +267,9 @@ function composeGmail(subject,body){
   var timer=setTimeout(function(){window.location.href=web},1400),cancel=function(){clearTimeout(timer);document.removeEventListener("visibilitychange",vis)},vis=function(){if(document.hidden)cancel()};document.addEventListener("visibilitychange",vis);window.addEventListener("pagehide",cancel,{once:true});window.location.href=app;
 }
 
-frame.addEventListener("load",function(){inject();enhanceSite();enhancePremiumExperience();var warm=function(){startIndex().catch(function(){})};if("requestIdleCallback" in window)requestIdleCallback(warm,{timeout:1800});else setTimeout(warm,1200)});
+frame.addEventListener("load",function(){inject();enhanceSite();enhancePremiumExperience();});
 function stopCam(){if(stream){stream.getTracks().forEach(function(t){t.stop()});stream=null}video.srcObject=null}
-async function openCam(){cam.classList.add("show");history.classList.remove("show");ready.textContent=productIndex.length?"Visual search ready":"Preparing visual search…";try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw Error("Camera API unavailable");stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});video.srcObject=stream;await video.play()}catch(e){ready.textContent="Camera unavailable — tap the middle button to take a photo"}}
+async function openCam(){cam.classList.add("show");history.classList.remove("show");ready.textContent=productIndex.length?"Visual search ready":"Preparing visual search…";if(!productIndex.length)startIndex().catch(function(){ready.textContent="Visual search will load when you capture a photo"});try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw Error("Camera API unavailable");stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});video.srcObject=stream;await video.play()}catch(e){ready.textContent="Camera unavailable — tap the middle button to take a photo"}}
 function closeCam(){stopCam();cam.classList.remove("show");history.classList.remove("show")}
 function getHistory(){try{return JSON.parse(localStorage.getItem(HISTORY)||"[]")}catch(e){return[]}}
 function saveHistory(thumb,ids,label){var a=getHistory().filter(function(x){return !(x.kind==="visual"&&x.label===label)});a.unshift({kind:"visual",thumb:thumb,ids:ids,label:label});try{localStorage.setItem(HISTORY,JSON.stringify(a.slice(0,10)))}catch(e){}}
