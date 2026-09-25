@@ -66,14 +66,16 @@ function installStyles(d){
   '.rpeSolarHeroBtns{display:flex;gap:10px;flex-wrap:wrap}.rpeSolarBtn{min-height:44px;border:0;border-radius:999px;padding:11px 17px;font-weight:850;font-size:13px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer}.rpeSolarBtn.primary{background:#d4a33f;color:#092e26}.rpeSolarBtn.secondary{background:#ffffff14;color:#fff;border:1px solid #ffffff35}'+
   '.rpeSolarHeroMedia{background:#edf6ff;min-height:355px;display:grid;place-items:center;padding:16px}.rpeSolarHeroMedia img{width:100%;height:100%;max-height:430px;object-fit:contain;border-radius:20px}'+
   '.rpeSolarHead{display:flex;justify-content:space-between;align-items:end;gap:20px;margin:36px 0 16px}.rpeSolarHead h3{margin:0;font:700 30px/1.1 Georgia,serif}.rpeSolarHead p{margin:6px 0 0;color:#687b74;font-size:13px}.rpeSolarCount{font-size:12px;color:#61736d;background:#edf3f0;padding:8px 11px;border-radius:999px;font-weight:800;white-space:nowrap}'+
-  '.rpeSolarGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.rpeSolarCard{background:#fff;border:1px solid #e0e8e4;border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(12,54,43,.05);display:flex;flex-direction:column}.rpeSolarImage{height:235px;background:#f3f7f5;display:grid;place-items:center;overflow:hidden}.rpeSolarImage img{width:100%;height:100%;object-fit:contain}'+
+  '.rpeFourCategories{grid-template-columns:repeat(4,minmax(0,1fr))!important}.rpeFourCategories .category-card:last-child{grid-column:auto!important}.rpeFourCategories .category-image{height:220px!important}.rpeFourCategories .category-image img{width:100%;height:100%;object-fit:cover!important;object-position:center 24%;image-rendering:auto}'+
+  '.rpeSolarGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.rpeSolarCard{background:#fff;border:1px solid #e0e8e4;border-radius:22px;overflow:hidden;box-shadow:0 10px 30px rgba(12,54,43,.07);display:flex;flex-direction:column}.rpeSolarImage{height:320px;background:#f6f8f7;display:grid;place-items:center;overflow:hidden;position:relative;cursor:zoom-in}.rpeSolarImage img{width:100%;height:100%;object-fit:contain;image-rendering:auto;transform:translateZ(0)}.rpeSolarImage:after{content:"Tap for HD view";position:absolute;right:10px;bottom:10px;background:#0d3329e6;color:#fff;border-radius:999px;padding:7px 10px;font-size:10px;font-weight:850;box-shadow:0 4px 14px #0002}'+
   '.rpeSolarBody{padding:16px;display:flex;flex-direction:column;flex:1}.rpeSolarSku{font-size:10px;color:#70827b;font-weight:800;letter-spacing:.05em}.rpeSolarCard h4{font-size:17px;margin:5px 0 8px;line-height:1.3}.rpeSolarDesc{font-size:12px;color:#667972;line-height:1.5;margin:0 0 12px}.rpeSolarSpecs{display:grid;gap:0;margin-bottom:15px}.rpeSolarSpec{display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:6px 0;border-bottom:1px solid #edf1ef}.rpeSolarSpec span{color:#72837d}.rpeSolarSpec b{text-align:right}'+
   '.rpeSolarPrice{font-size:13px;font-weight:900;color:#0e5b43;margin-top:auto;margin-bottom:10px}.rpeSolarActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rpeSolarActions button,.rpeSolarActions a{border:0;border-radius:11px;min-height:42px;font-size:11px;font-weight:850;text-decoration:none;display:grid;place-items:center;cursor:pointer}.rpeSolarDetails{background:#eff4f2;color:#173d32}.rpeSolarCart{background:#0e5b43;color:#fff}'+
   '.rpeSolarNote{margin-top:14px;padding:12px 14px;border-radius:14px;background:#f7f4ec;color:#66766f;font-size:11px;line-height:1.55}.rpeSolarModal{position:fixed;inset:0;z-index:999999;background:#071f19a8;display:none;align-items:center;justify-content:center;padding:18px}.rpeSolarModal.show{display:flex}.rpeSolarModalBox{width:min(900px,100%);max-height:min(88vh,860px);overflow:auto;background:#fff;border-radius:24px;box-shadow:0 30px 80px #0005}'+
   '.rpeSolarModalTop{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #e5ece8;position:sticky;top:0;background:#fff;z-index:2}.rpeSolarClose{width:44px;height:44px;border-radius:50%;border:1px solid #e0e8e4;background:#fff;font-size:24px}.rpeSolarModalContent{display:grid;grid-template-columns:.9fr 1.1fr;gap:22px;padding:22px}.rpeSolarModalContent img{width:100%;max-height:520px;object-fit:contain;background:#f4f7f6;border-radius:18px}.rpeSolarModalContent h3{font:700 28px/1.12 Georgia,serif;margin:4px 0 8px}.rpeSolarModalContent p{font-size:13px;color:#61736d;line-height:1.6}'+
   '.rpeSolarSpecTable{border:1px solid #e3ebe7;border-radius:14px;overflow:hidden}.rpeSolarSpecRow{display:grid;grid-template-columns:42% 58%;font-size:12px;border-bottom:1px solid #e8efeb}.rpeSolarSpecRow:last-child{border-bottom:0}.rpeSolarSpecRow span,.rpeSolarSpecRow b{padding:9px 10px}.rpeSolarSpecRow span{background:#f4f7f5;color:#60736b}.rpeSolarSpecRow b{font-weight:700}'+
-  '@media(max-width:800px){.rpeSolarHero{grid-template-columns:1fr}.rpeSolarHeroCopy{padding:28px 22px}.rpeSolarHeroMedia{min-height:250px;order:-1}.rpeSolarGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.rpeSolarModalContent{grid-template-columns:1fr}.rpeSolarImage{height:200px}}'+
-  '@media(max-width:480px){#rpe-solar-street-lights{padding:0 10px;margin:28px auto 50px}.rpeSolarGrid{grid-template-columns:1fr 1fr;gap:9px}.rpeSolarImage{height:165px}.rpeSolarBody{padding:11px}.rpeSolarCard h4{font-size:14px}.rpeSolarDesc{display:none}.rpeSolarActions{grid-template-columns:1fr}.rpeSolarHero h2{font-size:34px}.rpeSolarHeroMedia{min-height:220px}.rpeSolarHead h3{font-size:24px}.rpeSolarSpec{font-size:10px}.rpeSolarCount{display:none}}';
+  '@media(max-width:980px){.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important}.rpeSolarHero{grid-template-columns:1fr}.rpeSolarHeroCopy{padding:28px 22px}.rpeSolarHeroMedia{min-height:280px;order:-1}.rpeSolarGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.rpeSolarModalContent{grid-template-columns:1fr}.rpeSolarImage{height:290px}}'+
+  '@media(max-width:620px){.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.rpeFourCategories .category-image{height:150px!important}#rpe-solar-street-lights{padding:0 10px;margin:28px auto 50px}.rpeSolarGrid{grid-template-columns:1fr;gap:12px}.rpeSolarImage{height:auto;aspect-ratio:3/4}.rpeSolarBody{padding:14px}.rpeSolarCard h4{font-size:16px}.rpeSolarHero h2{font-size:34px}.rpeSolarHeroMedia{min-height:245px}.rpeSolarHead h3{font-size:24px}.rpeSolarCount{display:none}}'+
+  '@media(max-width:380px){.rpeFourCategories{grid-template-columns:1fr!important}.rpeFourCategories .category-image{height:210px!important}}';
   d.head.appendChild(style);
 }
 
@@ -139,6 +141,7 @@ async function enhanceSolarStreetLights(){
     else d.body.appendChild(section);
 
     var categoryCards=d.querySelector(".category-cards");
+    if(categoryCards)categoryCards.classList.add("rpeFourCategories");
     if(categoryCards&&!d.getElementById("rpeSolarCategoryCard")){
       var categoryCard=d.createElement("button");
       categoryCard.type="button";
@@ -176,14 +179,28 @@ async function enhanceSolarStreetLights(){
     modal.innerHTML='<div class="rpeSolarModalBox" role="dialog" aria-modal="true" aria-label="Solar street light details"><div class="rpeSolarModalTop"><b>Product details</b><button class="rpeSolarClose" type="button" aria-label="Close">×</button></div><div class="rpeSolarModalContent"></div></div>';
     d.body.appendChild(modal);
 
+    var hd=d.createElement("div");
+    hd.className="rpeSolarHd";
+    hd.innerHTML='<button class="rpeSolarHdClose" type="button" aria-label="Close HD image">×</button><img alt="Solar Street Light HD view">';
+    d.body.appendChild(hd);
+    function openHd(p){
+      var src=imageOf(p); if(!src)return;
+      var im=hd.querySelector("img");im.src=src;im.alt=p.name+" HD product view";
+      hd.classList.add("show");hd.querySelector(".rpeSolarHdClose").focus();
+    }
+    hd.querySelector(".rpeSolarHdClose").onclick=function(){hd.classList.remove("show")};
+    hd.onclick=function(e){if(e.target===hd)hd.classList.remove("show")};
+
     grid.querySelectorAll(".rpeSolarCard").forEach(function(card,i){
       var btn=card.querySelector(".rpeSolarDetails");
       btn.onclick=function(){openDetails(d,modal,ps[i])};
+      var image=card.querySelector(".rpeSolarImage");
+      if(image)image.onclick=function(){openHd(ps[i])};
     });
     section.querySelector("#rpeSolarBrowse").onclick=function(){grid.scrollIntoView({behavior:"smooth",block:"start"})};
     modal.querySelector(".rpeSolarClose").onclick=function(){modal.classList.remove("show")};
     modal.onclick=function(e){if(e.target===modal)modal.classList.remove("show")};
-    d.addEventListener("keydown",function(e){if(e.key==="Escape")modal.classList.remove("show")});
+    d.addEventListener("keydown",function(e){if(e.key==="Escape"){modal.classList.remove("show");hd.classList.remove("show")}});
   }catch(e){
     console.warn("Solar Street Lights section could not load",e);
   }
