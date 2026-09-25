@@ -122,9 +122,24 @@ async function enhanceSolarStreetLights(){
       '<div class="rpeSolarGrid" id="rpeSolarGrid"></div>'+
       '<div class="rpeSolarNote">Prices and current availability are confirmed by RPE before purchase. The supplied 240 LED product sheet states a 50,000mAh battery capacity; RPE should confirm that specification before an order is finalised.</div>';
 
+    var about=d.getElementById("about");
     var footer=d.querySelector("footer");
-    if(footer&&footer.parentNode)footer.parentNode.insertBefore(section,footer);
+    if(about&&about.parentNode)about.parentNode.insertBefore(section,about);
+    else if(footer&&footer.parentNode)footer.parentNode.insertBefore(section,footer);
     else d.body.appendChild(section);
+
+    var categoryCards=d.querySelector(".category-cards");
+    if(categoryCards&&!d.getElementById("rpeSolarCategoryCard")){
+      var categoryCard=d.createElement("button");
+      categoryCard.type="button";
+      categoryCard.id="rpeSolarCategoryCard";
+      categoryCard.className="category-card";
+      categoryCard.innerHTML=
+        '<div class="category-image">'+(heroPic?'<img src="'+heroPic+'" loading="lazy" decoding="async" alt="Solar Street Lights">':'')+'</div>'+
+        '<div><small>OUTDOOR SOLAR</small><h3>Solar Street Lights</h3><span>'+ps.length+' unique models</span></div>';
+      categoryCard.onclick=function(){section.scrollIntoView({behavior:"smooth",block:"start"})};
+      categoryCards.appendChild(categoryCard);
+    }
 
     var grid=section.querySelector("#rpeSolarGrid");
     ps.forEach(function(p){
