@@ -51,6 +51,11 @@ async function getSolarProducts(){
     seen[p.sku]=true;
     unique.push(p);
   });
+  unique.sort(function(a,b){
+    var as=Number(spec(a,"series_order",99)),bs=Number(spec(b,"series_order",99));
+    if(as!==bs)return as-bs;
+    return Number(spec(a,"power_order",999999))-Number(spec(b,"power_order",999999));
+  });
   return {category:cat,products:unique};
 }
 
@@ -66,6 +71,7 @@ function installStyles(d){
   '.rpeSolarHeroBtns{display:flex;gap:10px;flex-wrap:wrap}.rpeSolarBtn{min-height:44px;border:0;border-radius:999px;padding:11px 17px;font-weight:850;font-size:13px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer}.rpeSolarBtn.primary{background:#d4a33f;color:#092e26}.rpeSolarBtn.secondary{background:#ffffff14;color:#fff;border:1px solid #ffffff35}'+
   '.rpeSolarHeroMedia{background:#edf6ff;min-height:355px;display:grid;place-items:center;padding:16px}.rpeSolarHeroMedia img{width:100%;height:100%;max-height:430px;object-fit:contain;border-radius:20px}'+
   '.rpeSolarHead{display:flex;justify-content:space-between;align-items:end;gap:20px;margin:36px 0 16px}.rpeSolarHead h3{margin:0;font:700 30px/1.1 Georgia,serif}.rpeSolarHead p{margin:6px 0 0;color:#687b74;font-size:13px}.rpeSolarCount{font-size:12px;color:#61736d;background:#edf3f0;padding:8px 11px;border-radius:999px;font-weight:800;white-space:nowrap}'+
+  '.rpeSolarSeries{margin:28px 0 38px}.rpeSolarSeriesHead{display:flex;justify-content:space-between;align-items:end;gap:16px;padding:0 2px 12px;border-bottom:1px solid #dfe8e4;margin-bottom:16px}.rpeSolarSeriesHead h4{margin:0;font:700 25px/1.15 Georgia,serif;color:#113e32}.rpeSolarSeriesHead p{margin:5px 0 0;color:#667972;font-size:12px;line-height:1.5;max-width:720px}.rpeSolarSeriesBadge{font-size:11px;font-weight:850;background:#f0f5f2;color:#0e5b43;border-radius:999px;padding:7px 10px;white-space:nowrap}'+
   '.rpeFourCategories{grid-template-columns:repeat(4,minmax(0,1fr))!important}.rpeFourCategories .category-card:last-child{grid-column:auto!important}.rpeFourCategories .category-image{height:220px!important}.rpeFourCategories .category-image img{width:100%;height:100%;object-fit:cover!important;object-position:center 24%;image-rendering:auto}'+
   '.rpeSolarGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.rpeSolarCard{background:#fff;border:1px solid #e0e8e4;border-radius:22px;overflow:hidden;box-shadow:0 10px 30px rgba(12,54,43,.07);display:flex;flex-direction:column}.rpeSolarImage{height:320px;background:#f6f8f7;display:grid;place-items:center;overflow:hidden;position:relative;cursor:zoom-in}.rpeSolarImage img{width:100%;height:100%;object-fit:contain;image-rendering:auto;transform:translateZ(0)}.rpeSolarImage:after{content:"Tap for HD view";position:absolute;right:10px;bottom:10px;background:#0d3329e6;color:#fff;border-radius:999px;padding:7px 10px;font-size:10px;font-weight:850;box-shadow:0 4px 14px #0002}'+
   '.rpeSolarBody{padding:16px;display:flex;flex-direction:column;flex:1}.rpeSolarSku{font-size:10px;color:#70827b;font-weight:800;letter-spacing:.05em}.rpeSolarCard h4{font-size:17px;margin:5px 0 8px;line-height:1.3}.rpeSolarDesc{font-size:12px;color:#667972;line-height:1.5;margin:0 0 12px}.rpeSolarSpecs{display:grid;gap:0;margin-bottom:15px}.rpeSolarSpec{display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:6px 0;border-bottom:1px solid #edf1ef}.rpeSolarSpec span{color:#72837d}.rpeSolarSpec b{text-align:right}'+
@@ -74,7 +80,7 @@ function installStyles(d){
   '.rpeSolarModalTop{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #e5ece8;position:sticky;top:0;background:#fff;z-index:2}.rpeSolarClose{width:44px;height:44px;border-radius:50%;border:1px solid #e0e8e4;background:#fff;font-size:24px}.rpeSolarModalContent{display:grid;grid-template-columns:.9fr 1.1fr;gap:22px;padding:22px}.rpeSolarModalContent img{width:100%;max-height:520px;object-fit:contain;background:#f4f7f6;border-radius:18px}.rpeSolarModalContent h3{font:700 28px/1.12 Georgia,serif;margin:4px 0 8px}.rpeSolarModalContent p{font-size:13px;color:#61736d;line-height:1.6}'+
   '.rpeSolarSpecTable{border:1px solid #e3ebe7;border-radius:14px;overflow:hidden}.rpeSolarSpecRow{display:grid;grid-template-columns:42% 58%;font-size:12px;border-bottom:1px solid #e8efeb}.rpeSolarSpecRow:last-child{border-bottom:0}.rpeSolarSpecRow span,.rpeSolarSpecRow b{padding:9px 10px}.rpeSolarSpecRow span{background:#f4f7f5;color:#60736b}.rpeSolarSpecRow b{font-weight:700}'+
   '@media(max-width:980px){.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important}.rpeSolarHero{grid-template-columns:1fr}.rpeSolarHeroCopy{padding:28px 22px}.rpeSolarHeroMedia{min-height:280px;order:-1}.rpeSolarGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.rpeSolarModalContent{grid-template-columns:1fr}.rpeSolarImage{height:290px}}'+
-  '@media(max-width:620px){.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.rpeFourCategories .category-image{height:150px!important}#rpe-solar-street-lights{padding:0 10px;margin:28px auto 50px}.rpeSolarGrid{grid-template-columns:1fr;gap:12px}.rpeSolarImage{height:auto;aspect-ratio:3/4}.rpeSolarBody{padding:14px}.rpeSolarCard h4{font-size:16px}.rpeSolarHero h2{font-size:34px}.rpeSolarHeroMedia{min-height:245px}.rpeSolarHead h3{font-size:24px}.rpeSolarCount{display:none}}'+
+  '@media(max-width:620px){.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.rpeFourCategories .category-image{height:150px!important}#rpe-solar-street-lights{padding:0 10px;margin:28px auto 50px}.rpeSolarGrid{grid-template-columns:1fr;gap:12px}.rpeSolarImage{height:auto;aspect-ratio:3/4}.rpeSolarBody{padding:14px}.rpeSolarCard h4{font-size:16px}.rpeSolarHero h2{font-size:34px}.rpeSolarHeroMedia{min-height:245px}.rpeSolarHead h3{font-size:24px}.rpeSolarCount{display:none}.rpeSolarSeriesHead{align-items:flex-start}.rpeSolarSeriesHead h4{font-size:21px}.rpeSolarSeriesBadge{font-size:10px}}'+
   '@media(max-width:380px){.rpeFourCategories{grid-template-columns:1fr!important}.rpeFourCategories .category-image{height:210px!important}}';
   d.head.appendChild(style);
 }
@@ -82,6 +88,7 @@ function installStyles(d){
 function openDetails(d,modal,p){
   var specs=p.specifications||{},rows="";
   Object.keys(specs).forEach(function(k){
+    if(k==="series"||k==="series_order"||k==="power_order")return;
     rows+='<div class="rpeSolarSpecRow"><span>'+esc(pretty(k))+'</span><b>'+esc(value(specs[k]))+'</b></div>';
   });
   if(p.dimensions){
@@ -130,8 +137,8 @@ async function enhanceSolarStreetLights(){
         '<a class="rpeSolarBtn secondary" href="https://wa.me/233542846895?text='+encodeURIComponent("Hello Ranova Prime Enterprise, I am interested in your Solar Street Lights.")+'" target="_blank" rel="noopener">Ask RPE</a></div></div>'+
         '<div class="rpeSolarHeroMedia">'+(heroPic?'<img src="'+heroPic+'" alt="Solar Street Lights category">':'')+'</div>'+
       '</div>'+
-      '<div class="rpeSolarHead"><div><h3>Choose your solar street light</h3><p>Repeated images are merged; only products with genuinely different specifications appear separately.</p></div><span class="rpeSolarCount">'+ps.length+' unique products</span></div>'+
-      '<div class="rpeSolarGrid" id="rpeSolarGrid"></div>'+
+      '<div class="rpeSolarHead"><div><h3>Choose your solar street light</h3><p>Two product families are shown separately. Each family runs from the lower-capacity option to the higher-capacity option.</p></div><span class="rpeSolarCount">'+ps.length+' unique products</span></div>'+
+      '<div id="rpeSolarGroups"></div>'+
       '<div class="rpeSolarNote">Prices and current availability are confirmed by RPE before purchase. The supplied 240 LED product sheet states a 50,000mAh battery capacity; RPE should confirm that specification before an order is finalised.</div>';
 
     var about=d.getElementById("about");
@@ -149,29 +156,54 @@ async function enhanceSolarStreetLights(){
       categoryCard.className="category-card";
       categoryCard.innerHTML=
         '<div class="category-image">'+(heroPic?'<img src="'+heroPic+'" loading="lazy" decoding="async" alt="Solar Street Lights">':'')+'</div>'+
-        '<div><small>OUTDOOR SOLAR</small><h3>Solar Street Lights</h3><span>'+ps.length+' unique models</span></div>';
+        '<div><small>OUTDOOR SOLAR</small><h3>Solar Street Lights</h3><span>2 series · '+ps.length+' models</span></div>';
       categoryCard.onclick=function(){section.scrollIntoView({behavior:"smooth",block:"start"})};
       categoryCards.appendChild(categoryCard);
     }
 
-    var grid=section.querySelector("#rpeSolarGrid");
-    ps.forEach(function(p){
-      var led=spec(p,"led_beads"),battery=spec(p,"battery_capacity"),working=spec(p,"working_time"),pic=imageOf(p);
-      var card=d.createElement("article");
-      card.className="rpeSolarCard";
-      card.innerHTML=
-        '<div class="rpeSolarImage">'+(pic?'<img src="'+pic+'" loading="lazy" decoding="async" alt="'+esc(p.name)+'">':'<span>Solar Street Light</span>')+'</div>'+
-        '<div class="rpeSolarBody"><span class="rpeSolarSku">'+esc(p.sku)+'</span><h4>'+esc(p.name)+'</h4>'+
-        '<p class="rpeSolarDesc">'+esc(p.short_description||"")+'</p>'+
-        '<div class="rpeSolarSpecs">'+
-          (led?'<div class="rpeSolarSpec"><span>LED</span><b>'+esc(led)+'</b></div>':'')+
-          (battery?'<div class="rpeSolarSpec"><span>Battery</span><b>'+esc(battery)+'</b></div>':'')+
-          (working?'<div class="rpeSolarSpec"><span>Working time</span><b>'+esc(working)+'</b></div>':'')+
-        '</div>'+
-        '<div class="rpeSolarPrice">'+(p.price==null?'Ask for price':'GHS '+Number(p.price).toFixed(2))+' · Confirm availability</div>'+
-        '<div class="rpeSolarActions"><button class="rpeSolarDetails" type="button">View details</button>'+
-        '<a class="rpeSolarCart" href="../rpe-v2/?add='+encodeURIComponent(p.sku)+'" target="_top">Add to cart</a></div></div>';
-      grid.appendChild(card);
+    var groupsRoot=section.querySelector("#rpeSolarGroups");
+    var series=[
+      {
+        name:"Modular Series",
+        description:"Segmented-head solar street lights, arranged from 96 LED to 240 LED so customers can move from the lower lighting configuration to the higher one.",
+        items:ps.filter(function(p){return spec(p,"series")==="Modular Series"})
+      },
+      {
+        name:"Full Panel Series",
+        description:"High-density 504 LED panel models, arranged by battery capacity from 5000mAh to 8000mAh.",
+        items:ps.filter(function(p){return spec(p,"series")==="Full Panel Series"})
+      }
+    ];
+    series.forEach(function(group){
+      if(!group.items.length)return;
+      var wrap=d.createElement("section");
+      wrap.className="rpeSolarSeries";
+      wrap.innerHTML=
+        '<div class="rpeSolarSeriesHead"><div><h4>'+esc(group.name)+'</h4><p>'+esc(group.description)+'</p></div>'+
+        '<span class="rpeSolarSeriesBadge">'+group.items.length+' model'+(group.items.length===1?'':'s')+'</span></div>'+
+        '<div class="rpeSolarGrid"></div>';
+      var grid=wrap.querySelector(".rpeSolarGrid");
+      group.items.forEach(function(p){
+        var led=spec(p,"led_beads"),battery=spec(p,"battery_capacity"),working=spec(p,"working_time"),pic=imageOf(p);
+        var card=d.createElement("article");
+        card.className="rpeSolarCard";
+        card.innerHTML=
+          '<div class="rpeSolarImage">'+(pic?'<img src="'+pic+'" loading="lazy" decoding="async" alt="'+esc(p.name)+'">':'<span>Solar Street Light</span>')+'</div>'+
+          '<div class="rpeSolarBody"><span class="rpeSolarSku">'+esc(p.sku)+'</span><h4>'+esc(p.name)+'</h4>'+
+          '<p class="rpeSolarDesc">'+esc(p.short_description||"")+'</p>'+
+          '<div class="rpeSolarSpecs">'+
+            (led?'<div class="rpeSolarSpec"><span>LED</span><b>'+esc(led)+'</b></div>':'')+
+            (battery?'<div class="rpeSolarSpec"><span>Battery</span><b>'+esc(battery)+'</b></div>':'')+
+            (working?'<div class="rpeSolarSpec"><span>Working time</span><b>'+esc(working)+'</b></div>':'')+
+          '</div>'+
+          '<div class="rpeSolarPrice">'+(p.price==null?'Ask for price':'GHS '+Number(p.price).toFixed(2))+' · Confirm availability</div>'+
+          '<div class="rpeSolarActions"><button class="rpeSolarDetails" type="button">View details</button>'+
+          '<a class="rpeSolarCart" href="../rpe-v2/?add='+encodeURIComponent(p.sku)+'" target="_top">Add to cart</a></div></div>';
+        card.querySelector(".rpeSolarDetails").onclick=function(){openDetails(d,modal,p)};
+        card.querySelector(".rpeSolarImage").onclick=function(){openHd(p)};
+        grid.appendChild(card);
+      });
+      groupsRoot.appendChild(wrap);
     });
 
     var modal=d.createElement("div");
@@ -191,13 +223,7 @@ async function enhanceSolarStreetLights(){
     hd.querySelector(".rpeSolarHdClose").onclick=function(){hd.classList.remove("show")};
     hd.onclick=function(e){if(e.target===hd)hd.classList.remove("show")};
 
-    grid.querySelectorAll(".rpeSolarCard").forEach(function(card,i){
-      var btn=card.querySelector(".rpeSolarDetails");
-      btn.onclick=function(){openDetails(d,modal,ps[i])};
-      var image=card.querySelector(".rpeSolarImage");
-      if(image)image.onclick=function(){openHd(ps[i])};
-    });
-    section.querySelector("#rpeSolarBrowse").onclick=function(){grid.scrollIntoView({behavior:"smooth",block:"start"})};
+    section.querySelector("#rpeSolarBrowse").onclick=function(){groupsRoot.scrollIntoView({behavior:"smooth",block:"start"})};
     modal.querySelector(".rpeSolarClose").onclick=function(){modal.classList.remove("show")};
     modal.onclick=function(e){if(e.target===modal)modal.classList.remove("show")};
     d.addEventListener("keydown",function(e){if(e.key==="Escape"){modal.classList.remove("show");hd.classList.remove("show")}});
