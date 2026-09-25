@@ -101,7 +101,17 @@ function openDetails(d,modal,p){
 
 async function enhanceSolarStreetLights(){
   var d=idoc();
-  if(!d||d.getElementById("rpe-solar-street-lights"))return;
+  if(!d)return;
+  var nav=d.getElementById("navLinks");
+  if(nav&&!d.getElementById("rpeMyAccountNav")){
+    var account=d.createElement("a");
+    account.id="rpeMyAccountNav";
+    account.href="../rpe-v2/";
+    account.target="_top";
+    account.textContent="My RPE";
+    nav.appendChild(account);
+  }
+  if(d.getElementById("rpe-solar-street-lights"))return;
   try{
     var data=await getSolarProducts(),ps=data.products||[];
     if(!data.category||!ps.length)return;
