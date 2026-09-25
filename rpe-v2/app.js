@@ -70,23 +70,45 @@ $("cartDrawer").addEventListener("click",e=>{if(e.target===$("cartDrawer"))close
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
 
 function authUI(){
-  $("authTitle").textContent=signUpMode?"Create your RPE account":"Welcome back";
-  $("authText").textContent=signUpMode?"One simple account keeps your saved items, cart and orders together.":"Sign in to see your saved products, cart and live order updates.";
-  $("nameFields").classList.toggle("hide",!signUpMode);
-  $("authSubmit").textContent=signUpMode?"Create account":"Sign in";
-  $("authSwitch").textContent=signUpMode?"I already have an account":"Create an account";
+  $("authTitle").textContent=signUpMode?"Create your My RPE account":"Welcome back";
+  $("authText").textContent=signUpMode?"Create one simple account for saved products, your cart, delivery addresses and live order updates.":"Sign in to see your saved products, cart and live order updates.";
+  $("signupFields").classList.toggle("hide",!signUpMode);
+  $("confirmWrap").classList.toggle("hide",!signUpMode);
+  $("authFinePrint").classList.toggle("hide",!signUpMode);
+  $("authSubmit").textContent=signUpMode?"Create my account":"Sign in";
+  $("signInTab").classList.toggle("active",!signUpMode);
+  $("createTab").classList.toggle("active",signUpMode);
   $("password").autocomplete=signUpMode?"new-password":"current-password";
 }
-$("authSwitch").onclick=()=>{signUpMode=!signUpMode;$("authMsg").textContent="";authUI()};
+$("signInTab").onclick=()=>{signUpMode=false;$("authMsg").textContent="";authUI()};
+$("createTab").onclick=()=>{signUpMode=true;$("authMsg").textContent="";authUI()};
+$("togglePassword").onclick=()=>{
+  const p=$("password"),show=p.type==="password";p.type=show?"text":"password";
+  $("togglePassword").textContent=show?"Hide":"Show";
+  $("togglePassword").setAttribute("aria-label",show?"Hide password":"Show password");
+};
 $("authSubmit").onclick=async()=>{
   const email=$("email").value.trim(),password=$("password").value;
   $("authMsg").textContent="Working…";
   try{
     let error;
     if(signUpMode){
-      const first=$("firstName").value.trim(),last=$("lastName").value.trim();
-      ({error}=await sb.auth.signUp({email,password,options:{data:{first_name:first,last_name:last}}}));
-      if(!error)$("authMsg").textContent="Account created. Check your email if confirmation is required, then sign in.";
+      const first=$("firstName").value.trim(),last=$("lastName").value.trim(),phone=$("phone").value.trim(),confirm=$("confirmPassword").value;
+      if(!first){$("authMsg").textContent="Please enter your first name.";return}
+      if(!email){$("authMsg").textContent="Please enter your email address.";return}
+      if(password.length<8){$("authMsg").textContent="Use at least 8 characters for your password.";return}
+      if(password!==confirm){$("authMsg").textContent="The two passwords do not match.";return}
+      ({error}=await sb.auth.signUp({
+        email,password,
+        options:{
+          emailRedirectTo:"https://ranovaprimeent.github.io/appliances/rpe-v2/",
+          data:{first_name:first,last_name:last,phone:phone}
+        }
+      }));
+      if(!error){
+        $("authMsg").textContent="Your account has been created. If RPE asks you to confirm your email, open the message in your inbox and tap the confirmation link.";
+        $("password").value="";$("confirmPassword").value="";
+      }
     }else{
       ({error}=await sb.auth.signInWithPassword({email,password}));
     }
