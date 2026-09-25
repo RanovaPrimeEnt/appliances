@@ -44,6 +44,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,
 <div id="results" class="results"><div class="sheet"><div class="rhead"><div><h3 id="resultTitle">Closest catalogue matches</h3><p id="resultText">Tap a product to open it in the catalogue.</p></div><button id="closeResults" aria-label="Close visual search results">×</button></div><div id="cards" class="cards"></div></div></div>
 <input id="gallery" type="file" accept="image/*" hidden>
 <input id="cameraFile" type="file" accept="image/*" capture="environment" hidden>
+<script src="./solar-category.js?v=20260925-7"></script>
 <script>
 (function(){
 "use strict";
@@ -116,9 +117,9 @@ function enhanceSite(){
 
   // Richer product details while staying honest about unavailable catalogue data.
   var mc=d.querySelector("#productModal .modal-copy"),actions=d.querySelector("#productModal .modal-actions");
-  if(mc&&actions&&!d.getElementById("rpeModalDetails")){var dl=d.createElement("div");dl.id="rpeModalDetails";dl.className="rpe-modal-details";dl.innerHTML='<div><b>Product ID</b><span id="rpeModalId">—</span></div><div><b>Model</b><span id="rpeModalModel">Not listed</span></div><div><b>Availability</b><span>Confirm with RPE</span></div><div><b>Dimensions / Specs</b><span>Contact RPE for full specifications</span></div><div><b>Warranty</b><span>Confirm applicable warranty before purchase</span></div>';mc.insertBefore(dl,actions);var note=d.createElement("p");note.className="rpe-modal-note";note.textContent="Product colour or packaging may vary. Final price, stock and important specifications are confirmed directly with RPE before purchase.";mc.insertBefore(note,actions);var eb=d.createElement("button");eb.id="rpeModalEmail";eb.className="btn rpe-email-btn";eb.textContent="Email order";actions.appendChild(eb);eb.addEventListener("click",function(){var title=d.getElementById("modalTitle").textContent.trim();composeGmail("Product enquiry - "+title,"Hello Ranova Prime Enterprise,\n\nI'm interested in "+title+". Please send me the price, availability, specifications, delivery information and any applicable warranty details.\n\nThank you.")})}
+  if(mc&&actions&&!d.getElementById("rpeModalDetails")){var dl=d.createElement("div");dl.id="rpeModalDetails";dl.className="rpe-modal-details";dl.innerHTML='<div><b>Product ID</b><span id="rpeModalId">—</span></div><div><b>Model</b><span id="rpeModalModel">Not listed</span></div><div><b>Availability</b><span>Confirm with RPE</span></div><div><b>Dimensions / Specs</b><span id="rpeModalSpecs">Contact RPE for full specifications</span></div><div><b>Warranty</b><span>Confirm applicable warranty before purchase</span></div>';mc.insertBefore(dl,actions);var note=d.createElement("p");note.className="rpe-modal-note";note.textContent="Product colour or packaging may vary. Final price, stock and important specifications are confirmed directly with RPE before purchase.";mc.insertBefore(note,actions);var eb=d.createElement("button");eb.id="rpeModalEmail";eb.className="btn rpe-email-btn";eb.textContent="Email order";actions.appendChild(eb);eb.addEventListener("click",function(){var title=d.getElementById("modalTitle").textContent.trim();composeGmail("Product enquiry - "+title,"Hello Ranova Prime Enterprise,\n\nI'm interested in "+title+". Please send me the price, availability, specifications, delivery information and any applicable warranty details.\n\nThank you.")})}
   var originalOpen=w.openProduct;
-  if(typeof originalOpen==="function"&&!w.__rpeOpenWrapped){w.__rpeOpenWrapped=true;w.openProduct=function(id){originalOpen(id);var p=ps.find(function(x){return x.id===id});if(p){var a=d.getElementById("rpeModalId"),b=d.getElementById("rpeModalModel");if(a)a.textContent=String(p.id);if(b)b.textContent=modelFor(p)||"Not listed in current catalogue"}}}
+  if(typeof originalOpen==="function"&&!w.__rpeOpenWrapped){w.__rpeOpenWrapped=true;w.openProduct=function(id){originalOpen(id);var p=ps.find(function(x){return x.id===id});if(p){var a=d.getElementById("rpeModalId"),b=d.getElementById("rpeModalModel");if(a)a.textContent=p.rpeSku||String(p.id);if(b)b.textContent=modelFor(p)||"Not listed in current catalogue";var c=d.getElementById("rpeModalSpecs");if(c){var sp=p.rpeSpecifications||{},parts=[];if(sp.led_beads)parts.push("LED: "+sp.led_beads);if(sp.battery_capacity)parts.push("Battery: "+sp.battery_capacity);if(sp.solar_panel)parts.push("Panel: "+sp.solar_panel);if(sp.working_time)parts.push("Working: "+sp.working_time);if(p.rpeDimensions)parts.push("Size: "+p.rpeDimensions);c.textContent=parts.length?parts.join(" • "):"Contact RPE for full specifications"}}}}
 
   // Email the current selection as an alternative to WhatsApp.
   var bar=d.getElementById("selectionBar"),send=d.getElementById("sendBtn");
@@ -282,7 +283,7 @@ function composeGmail(subject,body){
   var timer=setTimeout(function(){window.location.href=web},1400),cancel=function(){clearTimeout(timer);document.removeEventListener("visibilitychange",vis)},vis=function(){if(document.hidden)cancel()};document.addEventListener("visibilitychange",vis);window.addEventListener("pagehide",cancel,{once:true});window.location.href=app;
 }
 
-frame.addEventListener("load",function(){inject();enhanceSite();enhancePremiumExperience();});
+frame.addEventListener("load",async function(){try{if(window.__rpeSolarIntegrate)await window.__rpeSolarIntegrate()}catch(e){}inject();enhanceSite();enhancePremiumExperience();});
 function stopCam(){if(stream){stream.getTracks().forEach(function(t){t.stop()});stream=null}video.srcObject=null}
 async function openCam(){cam.classList.add("show");history.classList.remove("show");ready.textContent=productIndex.length?"Visual search ready":"Preparing visual search…";if(!productIndex.length)startIndex().catch(function(){ready.textContent="Visual search will load when you capture a photo"});try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw Error("Camera API unavailable");stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});video.srcObject=stream;await video.play()}catch(e){ready.textContent="Camera unavailable — tap the middle button to take a photo"}}
 function closeCam(){stopCam();cam.classList.remove("show");history.classList.remove("show")}
@@ -300,7 +301,5 @@ document.getElementById("capture").onclick=function(){if(video.videoWidth&&video
 })();
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){})})}
 </script>
-<script src="./solar-category.js?v=20260925-6"></script>
-<script>setTimeout(function(){if(window.__rpeSolarRefresh)window.__rpeSolarRefresh()},300);</script>
 <noscript><div style="padding:30px;font-family:system-ui"><h1>Ranova Prime Enterprise</h1><p>Browse kitchen appliances, household plasticware and furniture products. Contact RPE to confirm price and availability.</p><p><a href="tel:+233542846895">054 284 6895</a> • <a href="tel:+233204144809">020 414 4809</a> • ranovaprimeenterprise360@gmail.com</p></div></noscript></body>
 </html>
