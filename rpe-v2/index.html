@@ -18,7 +18,14 @@
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.product{border:1px solid var(--line);border-radius:17px;overflow:hidden;background:#fff}.product img{width:100%;height:155px;object-fit:contain;background:#f5f7f6}.product-copy{padding:11px}.product h3{margin:0;font-size:12px;line-height:1.35}.product small{display:block;color:var(--muted);font-size:9px;margin-top:4px}.product-actions{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:9px}.product-actions button{border:0;border-radius:10px;padding:8px;font-size:9px;font-weight:800}.add{background:var(--green2);color:#fff}.fav{width:34px;background:#f2f5f3;color:var(--ink)}
 .list{display:grid;gap:10px}.list-row{border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px}.list-row b{font-size:12px}.list-row small{display:block;color:var(--muted);font-size:9px;margin-top:3px}.status-chip{padding:6px 9px;border-radius:99px;background:#f1f5f3;font-size:9px;font-weight:900;color:var(--green2);white-space:nowrap}
 .search{display:flex;gap:8px;margin-bottom:14px}.search input{flex:1;min-width:0;border:1px solid var(--line);border-radius:13px;padding:12px 13px}.search button{border:0;border-radius:13px;background:var(--green2);color:#fff;padding:0 16px;font-weight:800}
-.auth{width:min(430px,calc(100% - 30px));margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:24px;padding:25px}.auth h1{font-family:Georgia,serif;color:var(--green);margin:0 0 7px}.auth p{color:var(--muted);font-size:12px}.auth label{display:block;font-size:10px;font-weight:800;margin:14px 0 5px}.auth input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px}.auth .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.auth .actions{display:grid;gap:8px;margin-top:16px}.auth-msg{font-size:10px;color:var(--muted);min-height:16px;margin-top:8px}.auth-switch{text-align:center;margin-top:12px}.auth-switch button{border:0;background:transparent;color:var(--green2);font-weight:800}
+.auth{width:min(430px,calc(100% - 30px));margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:24px;padding:25px}.auth h1{font-family:Georgia,serif;color:var(--green);margin:0 0 7px}.auth p{color:var(--muted);font-size:12px}.auth label{display:block;font-size:10px;font-weight:800;margin:14px 0 5px}.auth input{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px}.auth .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f2f5f3;border-radius:12px;padding:4px;margin:20px 0}
+.auth-tab{border:0;border-radius:9px;background:transparent;color:var(--muted);padding:10px 12px;font-weight:800;font-size:12px}
+.auth-tab.active{background:#fff;color:var(--green);box-shadow:0 4px 12px rgba(13,51,41,.08)}
+.password-wrap{display:grid;grid-template-columns:1fr auto;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.password-wrap input{border:0!important;border-radius:0!important}
+.password-wrap button{border:0;border-left:1px solid var(--line);background:#f7f9f8;color:var(--green2);font-weight:800;padding:0 12px}
+.auth-fine{font-size:11px;color:var(--muted);line-height:1.55;margin:12px 0 0}.auth .actions{display:grid;gap:8px;margin-top:16px}.auth-msg{font-size:10px;color:var(--muted);min-height:16px;margin-top:8px}.auth-switch{text-align:center;margin-top:12px}.auth-switch button{border:0;background:transparent;color:var(--green2);font-weight:800}
 .cart-drawer{position:fixed;inset:0;z-index:100;background:rgba(7,32,25,.45);display:none}.cart-drawer.open{display:block}.drawer{position:absolute;right:0;top:0;bottom:0;width:min(440px,100%);background:#fff;display:flex;flex-direction:column}.drawer-head{padding:20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.drawer-head h3{margin:0}.drawer-list{flex:1;overflow:auto;padding:12px 18px}.cart-item{display:grid;grid-template-columns:58px 1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.cart-item img{width:58px;height:58px;object-fit:contain;background:#f5f7f6;border-radius:10px}.cart-item b{font-size:10px}.qty{display:flex;align-items:center;gap:4px;margin-top:6px}.qty button{width:25px;height:25px;border:1px solid var(--line);background:#fff;border-radius:7px}.qty span{min-width:23px;text-align:center;font-size:10px}.remove{border:0;background:transparent;color:var(--danger);font-size:9px}.drawer-foot{padding:15px 18px calc(15px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:grid;gap:8px}.drawer-foot .btn{width:100%}
 .bottom{position:fixed;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));z-index:60;background:var(--green);border-radius:18px;display:grid;grid-template-columns:repeat(5,1fr);padding:7px;box-shadow:0 15px 38px rgba(7,42,32,.22)}.bottom button{border:0;background:transparent;color:#dce8e4;padding:5px 2px;display:flex;align-items:center;flex-direction:column;gap:3px;font-size:8px;position:relative}.bottom svg{width:19px;height:19px}.bottom button.active{color:var(--gold)}
 .toast{position:fixed;left:50%;bottom:88px;transform:translate(-50%,15px);background:#173d32;color:#fff;border-radius:999px;padding:10px 14px;font-size:10px;font-weight:800;opacity:0;transition:.2s;z-index:150;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
@@ -33,17 +40,25 @@
 
 <section id="auth" class="auth hide">
   <div class="brand"><span class="mark">RPE</span><span><b>Ranova Prime Enterprise</b><small>My RPE</small></span></div>
+  <div class="auth-tabs" role="tablist" aria-label="Account options">
+    <button id="signInTab" class="auth-tab active" type="button">Sign in</button>
+    <button id="createTab" class="auth-tab" type="button">Create account</button>
+  </div>
   <h1 id="authTitle">Welcome back</h1>
   <p id="authText">Sign in to see your saved products, cart and live order updates.</p>
-  <div id="nameFields" class="row hide">
-    <div><label>First name</label><input id="firstName" autocomplete="given-name"></div>
-    <div><label>Last name</label><input id="lastName" autocomplete="family-name"></div>
+  <div id="signupFields" class="hide">
+    <div class="row">
+      <div><label>First name</label><input id="firstName" autocomplete="given-name"></div>
+      <div><label>Last name</label><input id="lastName" autocomplete="family-name"></div>
+    </div>
+    <label>Phone number</label><input id="phone" type="tel" autocomplete="tel" placeholder="e.g. 054 123 4567">
   </div>
-  <label>Email</label><input id="email" type="email" autocomplete="email">
-  <label>Password</label><input id="password" type="password" autocomplete="current-password">
+  <label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+  <label>Password</label><div class="password-wrap"><input id="password" type="password" autocomplete="current-password" minlength="8"><button id="togglePassword" type="button" aria-label="Show password">Show</button></div>
+  <div id="confirmWrap" class="hide"><label>Confirm password</label><input id="confirmPassword" type="password" autocomplete="new-password" minlength="8"></div>
   <div class="actions"><button id="authSubmit" class="btn primary">Sign in</button></div>
-  <div id="authMsg" class="auth-msg"></div>
-  <div class="auth-switch"><button id="authSwitch">Create an account</button></div>
+  <div id="authMsg" class="auth-msg" role="status"></div>
+  <p id="authFinePrint" class="auth-fine hide">By creating an account, you can save products, keep your cart, store delivery addresses and follow your RPE orders from one place.</p>
 </section>
 
 <div id="app" class="shell hide">
