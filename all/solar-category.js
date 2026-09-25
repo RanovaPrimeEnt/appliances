@@ -35,6 +35,31 @@ function spec(p,key,fallback){
   return p&&p.specifications&&p.specifications[key]||fallback||"";
 }
 
+function ensureSolarCategoryCard(d){
+  if(!d)return null;
+  installStyles(d);
+  var categoryCards=d.querySelector(".category-cards");
+  if(!categoryCards)return null;
+  categoryCards.classList.add("rpeFourCategories");
+  var card=d.getElementById("rpeSolarCategoryCard");
+  if(!card){
+    card=d.createElement("button");
+    card.type="button";
+    card.id="rpeSolarCategoryCard";
+    card.className="category-card";
+    card.innerHTML=
+      '<div class="category-image" style="background:linear-gradient(145deg,#eaf4ef,#dbece5);display:grid;place-items:center">'+
+      '<div style="text-align:center;padding:18px;color:#0d5b43"><div style="font-size:42px;line-height:1">☀</div><b style="display:block;margin-top:8px;font-size:13px">Solar Street Lights</b></div></div>'+
+      '<div><small>OUTDOOR SOLAR</small><h3>Solar Street Lights</h3><span>2 series · 6 models</span></div>';
+    card.onclick=function(){
+      var target=d.getElementById("rpe-solar-street-lights");
+      if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
+    };
+    categoryCards.appendChild(card);
+  }
+  return card;
+}
+
 async function getSolarProducts(){
   var h={apikey:KEY};
   var cr=await fetch(API+"/categories?select=id,name,slug,description&slug=eq.solar-street-lights&active=eq.true&limit=1",{headers:h});
@@ -111,6 +136,7 @@ function openDetails(d,modal,p){
 async function enhanceSolarStreetLights(){
   var d=idoc();
   if(!d)return;
+  var categoryCard=ensureSolarCategoryCard(d);
   var nav=d.getElementById("navLinks");
   if(nav&&!d.getElementById("rpeMyAccountNav")){
     var account=d.createElement("a");
@@ -147,18 +173,12 @@ async function enhanceSolarStreetLights(){
     else if(footer&&footer.parentNode)footer.parentNode.insertBefore(section,footer);
     else d.body.appendChild(section);
 
-    var categoryCards=d.querySelector(".category-cards");
-    if(categoryCards)categoryCards.classList.add("rpeFourCategories");
-    if(categoryCards&&!d.getElementById("rpeSolarCategoryCard")){
-      var categoryCard=d.createElement("button");
-      categoryCard.type="button";
-      categoryCard.id="rpeSolarCategoryCard";
-      categoryCard.className="category-card";
+    categoryCard=ensureSolarCategoryCard(d);
+    if(categoryCard){
       categoryCard.innerHTML=
-        '<div class="category-image">'+(heroPic?'<img src="'+heroPic+'" loading="lazy" decoding="async" alt="Solar Street Lights">':'')+'</div>'+
+        '<div class="category-image">'+(heroPic?'<img src="'+heroPic+'" loading="eager" decoding="async" alt="Solar Street Lights">':'')+'</div>'+
         '<div><small>OUTDOOR SOLAR</small><h3>Solar Street Lights</h3><span>2 series · '+ps.length+' models</span></div>';
       categoryCard.onclick=function(){section.scrollIntoView({behavior:"smooth",block:"start"})};
-      categoryCards.appendChild(categoryCard);
     }
 
     var groupsRoot=section.querySelector("#rpeSolarGroups");
@@ -229,11 +249,35 @@ async function enhanceSolarStreetLights(){
     d.addEventListener("keydown",function(e){if(e.key==="Escape"){modal.classList.remove("show");hd.classList.remove("show")}});
   }catch(e){
     console.warn("Solar Street Lights section could not load",e);
+    if(d&&!d.getElementById("rpe-solar-street-lights")){
+      var fallback=d.createElement("section");
+      fallback.id="rpe-solar-street-lights";
+      fallback.innerHTML=
+        '<div class="rpeSolarHero"><div class="rpeSolarHeroCopy"><span class="rpeSolarKicker">RPE outdoor lighting</span>'+
+        '<h2>Solar Street Lights</h2><p>The solar-light catalogue is loading. Please keep this page open for a moment or refresh if your connection is slow.</p>'+
+        '<div class="rpeSolarHeroBtns"><a class="rpeSolarBtn primary" href="https://wa.me/233542846895?text='+encodeURIComponent("Hello Ranova Prime Enterprise, I am interested in your Solar Street Lights.")+'" target="_blank" rel="noopener">Ask RPE</a></div></div>'+
+        '<div class="rpeSolarHeroMedia" style="color:#0e5b43;font-weight:900;font-size:18px">Solar Street Lights</div></div>';
+      var about=d.getElementById("about"),footer=d.querySelector("footer");
+      if(about&&about.parentNode)about.parentNode.insertBefore(fallback,about);
+      else if(footer&&footer.parentNode)footer.parentNode.insertBefore(fallback,footer);
+      else d.body.appendChild(fallback);
+      setTimeout(function(){fallback.remove();enhanceSolarStreetLights()},1800);
+    }
   }
 }
 
-frame.addEventListener("load",enhanceSolarStreetLights);
-try{
-  if(frame.contentDocument&&frame.contentDocument.readyState==="complete")enhanceSolarStreetLights();
-}catch(e){}
+var solarBootAttempts=0;
+function bootSolar(){
+  solarBootAttempts++;
+  var d=idoc();
+  if(d){
+    ensureSolarCategoryCard(d);
+    enhanceSolarStreetLights();
+    if(d.getElementById("rpe-solar-street-lights")&&d.getElementById("rpeSolarCategoryCard"))return;
+  }
+  if(solarBootAttempts<24)setTimeout(bootSolar,250);
+}
+frame.addEventListener("load",function(){solarBootAttempts=0;bootSolar()});
+setTimeout(bootSolar,0);
+window.__rpeSolarRefresh=bootSolar;
 })();
