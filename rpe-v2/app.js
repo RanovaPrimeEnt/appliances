@@ -103,7 +103,7 @@ $("authSubmit").onclick=async()=>{
       ({error}=await sb.auth.signUp({
         email,password,
         options:{
-          emailRedirectTo:"https://ranovaprimeent.github.io/appliances/rpe-v2/",
+          emailRedirectTo:location.origin+location.pathname+location.search,
           data:{first_name:first,last_name:last,phone:phone}
         }
       }));
