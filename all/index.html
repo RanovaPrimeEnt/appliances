@@ -6,10 +6,12 @@
 <title>Ranova Prime Enterprise | Product Catalogue & Direct Ordering</title>
 <meta name="description" content="Browse Ranova Prime Enterprise kitchen, household and furniture products. Search the catalogue and enquire directly by WhatsApp, phone or Gmail.">
 <meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#0d3329">
 <link rel="canonical" href="https://ranovaprimeent.github.io/appliances/all/">
 <meta property="og:title" content="Ranova Prime Enterprise">
 <meta property="og:description" content="Quality products. Reliable service. Browse the RPE catalogue and contact us directly to order.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://ranovaprimeent.github.io/appliances/all/">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Ranova Prime Enterprise","url":"https://ranovaprimeent.github.io/appliances/all/","email":"ranovaprimeenterprise360@gmail.com","telephone":["+233542846895","+233204144809"],"founder":{"@type":"Person","name":"Mr. Ransford Acheampong"}}</script>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#fff}#site{width:100%;height:100%;border:0;display:block}
@@ -30,7 +32,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,
  <div class="controls">
   <button id="historyBtn" class="action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg><span>History</span></button>
   <button id="capture" class="capture" aria-label="Take photo and scan"></button>
-  <button id="galleryBtn" class="action"><span class="thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span>Gallery</span></button>
+  <button id="galleryBtn" class="action"><span class="thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 2-2 5 4"/></svg></span><span>Gallery</span></button>
  </div>
  <div id="history" class="history"><div class="historyHead"><strong>Recent searches</strong><button id="closeHistory" aria-label="Close recent searches">×</button></div><div id="historyList" class="historyList"></div></div>
 </div>
@@ -114,13 +116,159 @@ function enhanceSite(){
   // Dynamic product ItemList schema on the public page.
   try{var ld=document.createElement("script");ld.type="application/ld+json";ld.textContent=JSON.stringify({"@context":"https://schema.org","@type":"ItemList","name":"Ranova Prime Enterprise Product Catalogue","itemListElement":ps.map(function(p,i){return{"@type":"ListItem","position":i+1,"item":{"@type":"Product","name":p.name,"description":p.description,"category":p.category,"sku":String(p.id)}}})});document.head.appendChild(ld)}catch(e){}
 }
+
+function enhancePremiumExperience(){
+  var d=doc();
+  if(!d||d.getElementById("rpe-premium-style"))return;
+  var w=frame.contentWindow,ps=w.PRODUCTS||[],grid=d.getElementById("grid");
+  if(!ps.length||!grid)return;
+
+  var FAVKEY="rpe_favourites_v1",RECENTKEY="rpe_recent_v1",QTYKEY="rpe_quantities_v1";
+  function read(key,fallback){try{var v=JSON.parse(localStorage.getItem(key)||"null");return v==null?fallback:v}catch(e){return fallback}}
+  function write(key,v){try{localStorage.setItem(key,JSON.stringify(v))}catch(e){}}
+  var favs=new Set(read(FAVKEY,[])),recent=read(RECENTKEY,[]),qty=read(QTYKEY,{});
+
+  var style=d.createElement("style");style.id="rpe-premium-style";style.textContent=
+  '.rpe-shop-strip{padding:18px 0;background:#0d3329;color:#fff}.rpe-shop-strip .container{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.rpe-benefit{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-right:1px solid rgba(255,255,255,.12)}.rpe-benefit:last-child{border-right:0}.rpe-benefit svg{width:22px;height:22px;color:#e4bb65;flex:none}.rpe-benefit b{display:block;font-size:12px}.rpe-benefit small{display:block;color:#adc1ba;font-size:10px;line-height:1.4;margin-top:2px}.product{position:relative}.rpe-card-tools{position:absolute;top:10px;right:10px;z-index:6;display:flex;gap:6px}.rpe-round-tool{width:34px;height:34px;border:1px solid #dde7e2;border-radius:50%;background:rgba(255,255,255,.96);color:#173d32;display:grid;place-items:center;box-shadow:0 6px 16px rgba(10,45,35,.08);cursor:pointer}.rpe-round-tool svg{width:16px;height:16px}.rpe-round-tool[aria-pressed="true"]{background:#0e5b43;color:#fff;border-color:#0e5b43}.rpe-round-tool:hover{transform:translateY(-1px)}.rpe-fav-filter{border:1px solid #dfe7e3;background:#fff;color:#173d32;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:800;cursor:pointer}.rpe-fav-filter.active{background:#0e5b43;color:#fff;border-color:#0e5b43}.rpe-hide-fav{display:none!important}.rpe-shelf{padding:78px 0}.rpe-shelf.alt{background:#f7f8f7}.rpe-shelf-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:22px}.rpe-shelf-head h2{margin:5px 0 0}.rpe-shelf-head p{max-width:500px;color:#6c7e77;font-size:12px}.rpe-shelf-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.rpe-mini-card{border:1px solid #dfe7e3;border-radius:18px;background:#fff;overflow:hidden;cursor:pointer;text-align:left;padding:0;color:#173d32}.rpe-mini-card img{width:100%;height:170px;object-fit:contain;background:#f4f6f5;display:block}.rpe-mini-card div{padding:12px}.rpe-mini-card b{display:block;font-size:12px;line-height:1.35}.rpe-mini-card small{display:block;margin-top:5px;color:#74867f;font-size:10px}.rpe-faq{padding:84px 0;background:#fff}.rpe-faq-list{display:grid;gap:10px;max-width:900px;margin:28px auto 0}.rpe-faq details{border:1px solid #dfe7e3;border-radius:16px;background:#fff;padding:0 18px}.rpe-faq summary{cursor:pointer;list-style:none;padding:18px 0;font-weight:800;color:#173d32;display:flex;justify-content:space-between;gap:12px}.rpe-faq summary::-webkit-details-marker{display:none}.rpe-faq summary:after{content:"+";font-size:20px;color:#b88a34}.rpe-faq details[open] summary:after{content:"−"}.rpe-faq details p{margin:0 0 18px;color:#687771;font-size:13px}.rpe-selection-fab{position:fixed;right:18px;bottom:20px;z-index:8500;border:0;border-radius:999px;background:#0d3329;color:#fff;padding:12px 15px;box-shadow:0 12px 32px rgba(9,44,34,.25);font-weight:850;display:flex;align-items:center;gap:8px;cursor:pointer}.rpe-selection-fab .count{min-width:23px;height:23px;border-radius:999px;background:#e0b45d;color:#0d3329;display:grid;place-items:center;font-size:11px}.rpe-drawer-backdrop{position:fixed;inset:0;background:rgba(5,25,19,.48);z-index:9800;display:none}.rpe-drawer-backdrop.open{display:block}.rpe-drawer{position:absolute;right:0;top:0;bottom:0;width:min(440px,100%);background:#fff;display:flex;flex-direction:column;box-shadow:-20px 0 50px rgba(0,0,0,.12)}.rpe-drawer-head{padding:20px;border-bottom:1px solid #e4ebe8;display:flex;justify-content:space-between;align-items:center}.rpe-drawer-head h3{margin:0;color:#173d32}.rpe-close{width:38px;height:38px;border:0;border-radius:50%;background:#f0f4f2;font-size:21px;cursor:pointer}.rpe-drawer-list{padding:14px 18px;overflow:auto;flex:1}.rpe-cart-item{display:grid;grid-template-columns:68px 1fr auto;gap:11px;align-items:center;padding:12px 0;border-bottom:1px solid #e6ece9}.rpe-cart-item img{width:68px;height:68px;object-fit:contain;border-radius:10px;background:#f5f7f6}.rpe-cart-item b{display:block;font-size:11px;line-height:1.35}.rpe-cart-item small{color:#7b8c86;font-size:9px}.rpe-qty{display:flex;align-items:center;gap:4px;margin-top:7px}.rpe-qty button{width:26px;height:26px;border:1px solid #dfe7e3;background:#fff;border-radius:7px}.rpe-qty input{width:38px;height:26px;border:1px solid #dfe7e3;border-radius:7px;text-align:center;font-size:11px}.rpe-remove{border:0;background:transparent;color:#9a4c43;font-size:11px;cursor:pointer}.rpe-drawer-empty{padding:50px 15px;text-align:center;color:#74867f}.rpe-drawer-actions{padding:16px 18px calc(16px + env(safe-area-inset-bottom));border-top:1px solid #e4ebe8;display:grid;grid-template-columns:1fr 1fr;gap:8px}.rpe-drawer-actions button,.rpe-drawer-actions a{min-height:42px;border-radius:12px;border:1px solid #dfe7e3;background:#fff;color:#173d32;font-weight:800;font-size:11px;display:grid;place-items:center;text-decoration:none;cursor:pointer}.rpe-drawer-actions .primary{grid-column:1/-1;background:#0e5b43;color:#fff;border-color:#0e5b43}.rpe-toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:#102f27;color:#fff;padding:10px 14px;border-radius:999px;font-size:11px;font-weight:750;opacity:0;pointer-events:none;z-index:99999;transition:.2s}.rpe-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.rpe-related{margin:18px 0}.rpe-related h4{margin:0 0 10px;color:#173d32}.rpe-related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.rpe-related-card{border:1px solid #e1e9e5;border-radius:12px;background:#fff;padding:7px;cursor:pointer;text-align:left}.rpe-related-card img{width:100%;height:72px;object-fit:contain;background:#f5f7f6;border-radius:8px}.rpe-related-card b{display:block;font-size:9px;line-height:1.25;margin-top:6px}.rpe-modal-share{display:flex;gap:7px;margin-top:8px}.rpe-modal-share button{border:1px solid #dfe7e3;background:#fff;border-radius:10px;padding:8px 10px;font-size:10px;font-weight:800;color:#173d32;cursor:pointer}.rpe-mobile-nav{display:none}.rpe-empty-favs{display:none;grid-column:1/-1;padding:40px;text-align:center;border:1px dashed #d9e4df;border-radius:18px;color:#71847d}.rpe-empty-favs.show{display:block}.rpe-product-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;background:#f1f5f3;color:#5f746c;font-size:9px;font-weight:800;margin-top:7px}.rpe-product-badge:before{content:"";width:6px;height:6px;border-radius:50%;background:#c99a3b}@media(max-width:900px){.rpe-shop-strip .container{grid-template-columns:repeat(2,1fr)}.rpe-shelf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){body{padding-bottom:70px!important}.rpe-shop-strip .container{grid-template-columns:1fr 1fr;gap:0}.rpe-benefit{border-right:0;border-bottom:1px solid rgba(255,255,255,.09);padding:10px 7px}.rpe-benefit svg{width:18px;height:18px}.rpe-benefit small{display:none}.rpe-shelf{padding:54px 0}.rpe-shelf-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rpe-mini-card img{height:130px}.rpe-selection-fab{display:none}.rpe-mobile-nav{position:fixed;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));z-index:9400;display:grid;grid-template-columns:repeat(5,1fr);background:#0d3329;color:#fff;border-radius:18px;padding:7px;box-shadow:0 14px 34px rgba(4,30,22,.28)}.rpe-mobile-nav button{border:0;background:transparent;color:#d9e5e1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:8px;padding:5px 2px;position:relative}.rpe-mobile-nav svg{width:19px;height:19px}.rpe-mobile-nav .badge{position:absolute;top:-1px;right:14%;min-width:16px;height:16px;border-radius:999px;background:#e0b45d;color:#0d3329;display:grid;place-items:center;font-size:8px;font-weight:900}.rpe-related-grid{grid-template-columns:repeat(3,1fr)}.rpe-related-card img{height:55px}.rpe-faq{padding:58px 0}.rpe-drawer{width:100%}}';
+  d.head.appendChild(style);
+
+  function icon(kind){
+    var map={
+      heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.7a5.5 5.5 0 0 0-7.8 0L12 5.8l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.5 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
+      share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></svg>',
+      home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg>',
+      search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
+      camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 7h3l1.5-2h5L16 7h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.2"/></svg>',
+      bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>'
+    };return map[kind]||"";
+  }
+  var toast=d.createElement("div");toast.className="rpe-toast";toast.setAttribute("role","status");d.body.appendChild(toast);var toastTimer;
+  function showToast(msg){toast.textContent=msg;toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.classList.remove("show")},1800)}
+  function getP(id){return ps.find(function(p){return String(p.id)===String(id)})}
+  function productUrl(p){return location.origin+location.pathname+"?product="+encodeURIComponent(p.id)}
+  function shareProduct(p){
+    var url=productUrl(p),data={title:p.name+" | Ranova Prime Enterprise",text:"Have a look at "+p.name+" from Ranova Prime Enterprise.",url:url};
+    if(navigator.share){navigator.share(data).catch(function(){})}
+    else if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){showToast("Product link copied")})}
+    else{prompt("Copy this product link:",url)}
+  }
+  function saveFavs(){write(FAVKEY,Array.from(favs));updateFavCount()}
+  function toggleFav(id){id=String(id);if(favs.has(id)){favs.delete(id);showToast("Removed from favourites")}else{favs.add(id);showToast("Saved to favourites")}saveFavs();decoratePremium();applyFavFilter()}
+  function addRecent(id){id=String(id);recent=[id].concat(recent.filter(function(x){return String(x)!==id})).slice(0,8);write(RECENTKEY,recent);renderRecent()}
+  function currentSelectedIds(){
+    return [].slice.call(grid.querySelectorAll(".product")).map(function(card){
+      var b=card.querySelector(".select-btn"),id=card.dataset.productId;return b&&b.classList.contains("selected")?String(id):null
+    }).filter(Boolean)
+  }
+  function messageFor(ids){
+    var lines=ids.map(function(id,i){var p=getP(id),q=Math.max(1,parseInt(qty[id]||1,10)||1);return (i+1)+". "+(p?p.name:"Product")+" — Qty "+q+" (ID "+id+")"}).join("\n");
+    return "Hello Ranova Prime Enterprise,\n\nI'm interested in the following products:\n\n"+lines+"\n\nPlease confirm the current prices, availability, delivery information and applicable warranty details.\n\nThank you.";
+  }
+
+  // Value strip directly before the product catalogue.
+  var productsSection=d.getElementById("products");
+  if(productsSection&&!d.getElementById("rpeShopStrip")){
+    var strip=d.createElement("section");strip.id="rpeShopStrip";strip.className="rpe-shop-strip";
+    strip.innerHTML='<div class="container"><div class="rpe-benefit">'+icon("search")+'<div><b>Fast catalogue search</b><small>Find products by name, category or model.</small></div></div><div class="rpe-benefit">'+icon("camera")+'<div><b>Search with a photo</b><small>Use your camera or gallery to find a close catalogue match.</small></div></div><div class="rpe-benefit">'+icon("bag")+'<div><b>Build one order list</b><small>Select several products and send them together.</small></div></div><div class="rpe-benefit">'+icon("heart")+'<div><b>Save favourites</b><small>Keep products you want to revisit on this device.</small></div></div></div>';
+    productsSection.parentNode.insertBefore(strip,productsSection);
+  }
+
+  var resultsRow=d.querySelector(".results-row"),favMode=false,emptyFav=d.createElement("div");emptyFav.className="rpe-empty-favs";emptyFav.textContent="You have not saved any favourite products yet.";
+  if(grid&&!d.getElementById("rpeEmptyFav")){emptyFav.id="rpeEmptyFav";grid.appendChild(emptyFav)}
+  if(resultsRow&&!d.getElementById("rpeFavFilter")){
+    var fb=d.createElement("button");fb.id="rpeFavFilter";fb.className="rpe-fav-filter";fb.type="button";fb.textContent="♡ Favourites (0)";
+    fb.addEventListener("click",function(){favMode=!favMode;fb.classList.toggle("active",favMode);applyFavFilter();if(favMode)grid.scrollIntoView({behavior:"smooth",block:"start"})});
+    resultsRow.appendChild(fb);
+  }
+  function updateFavCount(){var b=d.getElementById("rpeFavFilter");if(b)b.textContent=(favMode?"♥":"♡")+" Favourites ("+favs.size+")";var mb=d.getElementById("rpeMobileFavCount");if(mb)mb.textContent=favs.size}
+  function applyFavFilter(){
+    var visible=0;[].slice.call(grid.querySelectorAll(".product")).forEach(function(card){var hide=favMode&&!favs.has(String(card.dataset.productId));card.classList.toggle("rpe-hide-fav",hide);if(!hide)visible++});
+    var e=d.getElementById("rpeEmptyFav");if(e)e.classList.toggle("show",favMode&&visible===0);
+  }
+
+  function decoratePremium(){
+    [].slice.call(grid.querySelectorAll(".product")).forEach(function(card){
+      var h=card.querySelector("h3");if(!h)return;var p=ps.find(function(x){return x.name===h.textContent.trim()});if(!p)return;var id=String(p.id);card.dataset.productId=id;
+      var img=card.querySelector("img");if(img){img.loading="lazy";img.decoding="async";img.alt=p.name}
+      if(!card.querySelector(".rpe-card-tools")){
+        var tools=d.createElement("div");tools.className="rpe-card-tools";
+        var heart=d.createElement("button");heart.type="button";heart.className="rpe-round-tool rpe-heart";heart.innerHTML=icon("heart");heart.setAttribute("aria-label","Save "+p.name+" to favourites");heart.addEventListener("click",function(e){e.stopPropagation();toggleFav(id)});
+        var share=d.createElement("button");share.type="button";share.className="rpe-round-tool";share.innerHTML=icon("share");share.setAttribute("aria-label","Share "+p.name);share.addEventListener("click",function(e){e.stopPropagation();shareProduct(p)});
+        tools.appendChild(heart);tools.appendChild(share);card.appendChild(tools);
+      }
+      var hb=card.querySelector(".rpe-heart");if(hb)hb.setAttribute("aria-pressed",favs.has(id)?"true":"false");
+      if(!card.querySelector(".rpe-product-badge")){var status=d.createElement("span");status.className="rpe-product-badge";status.textContent="Price & stock confirmed on enquiry";var meta=card.querySelector(".product-meta");if(meta)meta.parentNode.insertBefore(status,meta)}
+    });updateFavCount();applyFavFilter();updateSelectionUI();
+  }
+  decoratePremium();
+  var premObs=new MutationObserver(function(){requestAnimationFrame(decoratePremium)});premObs.observe(grid,{childList:true,subtree:true});
+
+  // Recently viewed shelf.
+  var aboutSection=d.getElementById("about");
+  var recentSec=d.createElement("section");recentSec.id="rpeRecent";recentSec.className="rpe-shelf alt";recentSec.innerHTML='<div class="container"><div class="rpe-shelf-head"><div><span class="eyebrow">PICK UP WHERE YOU LEFT OFF</span><h2>Recently viewed</h2></div><p>Products you opened recently on this device.</p></div><div id="rpeRecentGrid" class="rpe-shelf-grid"></div></div>';
+  if(aboutSection)aboutSection.parentNode.insertBefore(recentSec,aboutSection);else grid.parentNode.parentNode.appendChild(recentSec);
+  function renderRecent(){var rg=d.getElementById("rpeRecentGrid");if(!rg)return;var list=recent.map(getP).filter(Boolean).slice(0,4);recentSec.style.display=list.length?"block":"none";rg.innerHTML="";list.forEach(function(p){var b=d.createElement("button");b.className="rpe-mini-card";b.type="button";b.innerHTML='<img src="'+p.image+'" loading="lazy" decoding="async" alt="'+p.name.replace(/"/g,"&quot;")+'"><div><b>'+p.name+'</b><small>'+p.category+' • ID '+p.id+'</small></div>';b.addEventListener("click",function(){w.openProduct(p.id)});rg.appendChild(b)})}
+  renderRecent();
+
+  // FAQ.
+  var policy=d.getElementById("rpePolicySection"),faq=d.createElement("section");faq.id="rpeFaq";faq.className="rpe-faq";faq.innerHTML='<div class="container"><div class="section-head compact"><div><span class="eyebrow">NEED HELP?</span><h2>Frequently asked questions</h2></div><p>Clear answers about how the current RPE catalogue and ordering process works.</p></div><div class="rpe-faq-list"><details><summary>How do I order a product?</summary><p>Select one or more products, review your selection, then send the list to RPE through WhatsApp or Gmail. You can also call directly. RPE confirms the current price and availability before the order is finalized.</p></details><details><summary>Why do some products say “Ask for price”?</summary><p>The catalogue does not invent or display unconfirmed prices. RPE will provide the current price when you enquire.</p></details><details><summary>How does camera search work?</summary><p>Camera and gallery search compare visual features in your photo with the product images in the RPE catalogue. It is intended to suggest close matches, so you should still check the product name and details before ordering.</p></details><details><summary>Can I order several products at once?</summary><p>Yes. Add products to your selection, open the Selection review, set quantities, and send the complete list in one message.</p></details><details><summary>How are delivery fees and delivery time calculated?</summary><p>Delivery arrangements are confirmed directly with RPE because charges and timing can depend on the order and destination. The website does not currently calculate a delivery fee automatically.</p></details><details><summary>Does the website take card payments?</summary><p>No. The current site is a catalogue and enquiry service and does not store card details or process online card payments.</p></details><details><summary>What about warranty and returns?</summary><p>Applicable warranty information and important product specifications should be confirmed with RPE before purchase. Return and refund guidance is available on the Shipping & Returns page.</p></details></div></div>';
+  if(policy)policy.parentNode.insertBefore(faq,policy);else if(aboutSection)aboutSection.parentNode.insertBefore(faq,aboutSection);
+
+  // Selection review drawer with quantities.
+  var backdrop=d.createElement("div");backdrop.id="rpeDrawerBackdrop";backdrop.className="rpe-drawer-backdrop";backdrop.innerHTML='<aside class="rpe-drawer" role="dialog" aria-modal="true" aria-labelledby="rpeDrawerTitle"><div class="rpe-drawer-head"><div><small style="color:#789087">YOUR ORDER LIST</small><h3 id="rpeDrawerTitle">Review selection</h3></div><button id="rpeDrawerClose" class="rpe-close" aria-label="Close selection">×</button></div><div id="rpeDrawerList" class="rpe-drawer-list"></div><div class="rpe-drawer-actions"><button id="rpeCopyOrder">Copy list</button><button id="rpeEmailOrder">Email list</button><button id="rpeClearOrder">Clear all</button><a id="rpeWhatsAppOrder" class="primary" href="#" target="_blank" rel="noopener">Send order on WhatsApp</a></div></aside>';
+  d.body.appendChild(backdrop);
+  var fab=d.createElement("button");fab.id="rpeSelectionFab";fab.className="rpe-selection-fab";fab.type="button";fab.innerHTML=icon("bag")+'<span>Selection</span><span id="rpeSelectionCount" class="count">0</span>';d.body.appendChild(fab);
+  function openDrawer(){renderDrawer();backdrop.classList.add("open");d.body.style.overflow="hidden"}
+  function closeDrawer(){backdrop.classList.remove("open");d.body.style.overflow=""}
+  fab.addEventListener("click",openDrawer);d.getElementById("rpeDrawerClose").addEventListener("click",closeDrawer);backdrop.addEventListener("click",function(e){if(e.target===backdrop)closeDrawer()});
+  function renderDrawer(){
+    var list=d.getElementById("rpeDrawerList"),ids=currentSelectedIds();list.innerHTML="";
+    if(!ids.length){list.innerHTML='<div class="rpe-drawer-empty"><b>Your selection is empty.</b><br><span>Add products from the catalogue to build an order list.</span></div>'}
+    ids.forEach(function(id){var p=getP(id);if(!p)return;var q=Math.max(1,parseInt(qty[id]||1,10)||1),item=d.createElement("div");item.className="rpe-cart-item";item.innerHTML='<img src="'+p.image+'" alt=""><div><b>'+p.name+'</b><small>ID '+p.id+' • '+p.category+'</small><div class="rpe-qty"><button type="button" data-act="minus" aria-label="Decrease quantity">−</button><input type="number" min="1" max="99" value="'+q+'" aria-label="Quantity for '+p.name.replace(/"/g,"&quot;")+'"><button type="button" data-act="plus" aria-label="Increase quantity">+</button></div></div><button class="rpe-remove" type="button">Remove</button>';
+      var input=item.querySelector("input");function setQ(v){v=Math.max(1,Math.min(99,parseInt(v||1,10)||1));input.value=v;qty[id]=v;write(QTYKEY,qty);updateOrderLinks()}
+      item.querySelector('[data-act="minus"]').onclick=function(){setQ(Number(input.value)-1)};item.querySelector('[data-act="plus"]').onclick=function(){setQ(Number(input.value)+1)};input.onchange=function(){setQ(input.value)};
+      item.querySelector(".rpe-remove").onclick=function(){var card=grid.querySelector('.product[data-product-id="'+CSS.escape(id)+'"]'),btn=card&&card.querySelector(".select-btn");if(btn&&btn.classList.contains("selected"))btn.click();setTimeout(function(){renderDrawer();updateSelectionUI()},0)};
+      list.appendChild(item)
+    });updateOrderLinks();
+  }
+  function updateOrderLinks(){var ids=currentSelectedIds(),msg=messageFor(ids),wa=d.getElementById("rpeWhatsAppOrder");if(wa)wa.href="https://wa.me/233542846895?text="+encodeURIComponent(msg)}
+  function updateSelectionUI(){var ids=currentSelectedIds(),n=ids.length,count=d.getElementById("rpeSelectionCount");if(count)count.textContent=n;var mc=d.getElementById("rpeMobileSelCount");if(mc)mc.textContent=n;updateOrderLinks()}
+  d.getElementById("rpeCopyOrder").onclick=function(){var msg=messageFor(currentSelectedIds());if(navigator.clipboard)navigator.clipboard.writeText(msg).then(function(){showToast("Order list copied")});else prompt("Copy your order list:",msg)};
+  d.getElementById("rpeEmailOrder").onclick=function(){var ids=currentSelectedIds();if(!ids.length){showToast("Select a product first");return}composeGmail("Product Order - Ranova Prime Enterprise",messageFor(ids))};
+  d.getElementById("rpeClearOrder").onclick=function(){[].slice.call(grid.querySelectorAll(".select-btn.selected")).forEach(function(b){b.click()});setTimeout(function(){renderDrawer();updateSelectionUI()},0)};
+  d.addEventListener("click",function(e){if(e.target.closest&&e.target.closest(".select-btn"))setTimeout(updateSelectionUI,0)});
+
+  // Related products + share controls in modal.
+  var mc=d.querySelector("#productModal .modal-copy"),actions=d.querySelector("#productModal .modal-actions"),related=d.createElement("div");
+  if(mc&&!d.getElementById("rpeRelated")){related.id="rpeRelated";related.className="rpe-related";related.innerHTML='<h4>You may also like</h4><div id="rpeRelatedGrid" class="rpe-related-grid"></div>';mc.insertBefore(related,actions);var shareRow=d.createElement("div");shareRow.className="rpe-modal-share";shareRow.innerHTML='<button id="rpeShareCurrent" type="button">Share product</button><button id="rpeFavCurrent" type="button">Save to favourites</button>';mc.insertBefore(shareRow,actions)}
+  var currentModalId=null;
+  function renderRelated(p){var rg=d.getElementById("rpeRelatedGrid");if(!rg)return;var rel=ps.filter(function(x){return String(x.id)!==String(p.id)&&x.category===p.category}).slice(0,3);rg.innerHTML="";rel.forEach(function(x){var b=d.createElement("button");b.type="button";b.className="rpe-related-card";b.innerHTML='<img src="'+x.image+'" loading="lazy" alt="'+x.name.replace(/"/g,"&quot;")+'"><b>'+x.name+'</b>';b.onclick=function(){w.openProduct(x.id)};rg.appendChild(b)});related.style.display=rel.length?"block":"none"}
+  var prevOpen=w.openProduct;
+  if(typeof prevOpen==="function"&&!w.__rpePremiumOpenWrapped){w.__rpePremiumOpenWrapped=true;w.openProduct=function(id){prevOpen(id);currentModalId=String(id);var p=getP(id);if(p){addRecent(id);renderRelated(p);var fb=d.getElementById("rpeFavCurrent");if(fb)fb.textContent=favs.has(String(id))?"Remove from favourites":"Save to favourites";try{history.replaceState(null,"",location.pathname+"?product="+encodeURIComponent(id))}catch(e){}}}}
+  var sh=d.getElementById("rpeShareCurrent");if(sh)sh.onclick=function(){var p=getP(currentModalId);if(p)shareProduct(p)};
+  var fc=d.getElementById("rpeFavCurrent");if(fc)fc.onclick=function(){if(currentModalId){toggleFav(currentModalId);this.textContent=favs.has(String(currentModalId))?"Remove from favourites":"Save to favourites"}};
+
+  // Mobile bottom navigation.
+  var mobile=d.createElement("nav");mobile.className="rpe-mobile-nav";mobile.setAttribute("aria-label","Mobile shop navigation");mobile.innerHTML='<button id="rpeMHome" type="button">'+icon("home")+'<span>Home</span></button><button id="rpeMProducts" type="button">'+icon("search")+'<span>Products</span></button><button id="rpeMCamera" type="button">'+icon("camera")+'<span>Camera</span></button><button id="rpeMFavs" type="button">'+icon("heart")+'<span>Saved</span><i id="rpeMobileFavCount" class="badge">0</i></button><button id="rpeMSelection" type="button">'+icon("bag")+'<span>Selection</span><i id="rpeMobileSelCount" class="badge">0</i></button>';d.body.appendChild(mobile);
+  d.getElementById("rpeMHome").onclick=function(){d.documentElement.scrollTo({top:0,behavior:"smooth"})};
+  d.getElementById("rpeMProducts").onclick=function(){productsSection.scrollIntoView({behavior:"smooth"})};
+  d.getElementById("rpeMCamera").onclick=openCam;
+  d.getElementById("rpeMFavs").onclick=function(){if(!favMode){var b=d.getElementById("rpeFavFilter");if(b)b.click()}grid.scrollIntoView({behavior:"smooth",block:"start"})};
+  d.getElementById("rpeMSelection").onclick=openDrawer;
+
+  // Open a shared deep link after the catalogue is ready.
+  updateFavCount();updateSelectionUI();
+  var deep=new URLSearchParams(location.search).get("product");
+  if(deep&&getP(deep)){setTimeout(function(){w.openProduct(deep)},250)}
+}
+
 function composeGmail(subject,body){
   var to="ranovaprimeenterprise360@gmail.com",qs="to="+encodeURIComponent(to)+"&subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body),app="googlegmail:///co?"+qs,web="https://mail.google.com/mail/?view=cm&fs=1&"+qs;
   if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){window.open(web,"_blank","noopener");return}
   var timer=setTimeout(function(){window.location.href=web},1400),cancel=function(){clearTimeout(timer);document.removeEventListener("visibilitychange",vis)},vis=function(){if(document.hidden)cancel()};document.addEventListener("visibilitychange",vis);window.addEventListener("pagehide",cancel,{once:true});window.location.href=app;
 }
 
-frame.addEventListener("load",function(){inject();enhanceSite();var warm=function(){startIndex().catch(function(){})};if("requestIdleCallback" in window)requestIdleCallback(warm,{timeout:1800});else setTimeout(warm,1200)});
+frame.addEventListener("load",function(){inject();enhanceSite();enhancePremiumExperience();var warm=function(){startIndex().catch(function(){})};if("requestIdleCallback" in window)requestIdleCallback(warm,{timeout:1800});else setTimeout(warm,1200)});
 function stopCam(){if(stream){stream.getTracks().forEach(function(t){t.stop()});stream=null}video.srcObject=null}
 async function openCam(){cam.classList.add("show");history.classList.remove("show");ready.textContent=productIndex.length?"Visual search ready":"Preparing visual search…";try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw Error("Camera API unavailable");stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});video.srcObject=stream;await video.play()}catch(e){ready.textContent="Camera unavailable — tap the middle button to take a photo"}}
 function closeCam(){stopCam();cam.classList.remove("show");history.classList.remove("show")}
