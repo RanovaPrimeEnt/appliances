@@ -220,6 +220,30 @@ function installUi(d,products){
   }
 }`;
     d.head.appendChild(st);
+
+    var responsiveFix=d.createElement("style");
+    responsiveFix.id="rpeCategoryResponsiveFix";
+    responsiveFix.textContent=
+      '.category-cards.rpeFourCategories{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px!important;align-items:stretch}'+
+      '.category-cards.rpeFourCategories .category-card{min-width:0!important;overflow:hidden!important;border-radius:22px!important;background:#fbfaf7!important;display:flex!important;flex-direction:column!important;transition:transform .22s ease,box-shadow .22s ease!important}'+
+      '.category-cards.rpeFourCategories .category-card:hover{transform:translateY(-4px);box-shadow:0 14px 32px rgba(8,47,39,.10)!important}'+
+      '.category-cards.rpeFourCategories .category-card:last-child{grid-column:auto!important}'+
+      '.category-cards.rpeFourCategories .category-image{width:100%!important;height:230px!important;overflow:hidden!important;background:#f3f5f4!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:0!important;flex:0 0 auto!important}'+
+      '.category-cards.rpeFourCategories .category-image img{display:block!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;image-rendering:auto!important;transition:transform .28s ease!important}'+
+      '.category-cards.rpeFourCategories .category-card>div:last-child{padding:18px 20px 20px!important;display:block!important;flex:1 1 auto!important}'+
+      '.category-cards.rpeFourCategories .category-card h3{font-size:clamp(20px,1.7vw,25px)!important;line-height:1.15!important;margin:7px 0 8px!important}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(1) .category-image img{object-fit:contain!important;object-position:center center!important;transform:scale(.94)!important;background:#f3f5f4!important}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(2) .category-image img{object-fit:cover!important;object-position:center 48%!important;transform:scale(1.02)!important}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(3) .category-image img{object-fit:contain!important;object-position:center center!important;transform:scale(.96)!important;background:#f3f5f4!important}'+
+      '#rpeSolarCategoryCard .category-image img{object-fit:contain!important;object-position:center center!important;transform:scale(.92)!important;background:#f3f5f4!important}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(1):hover .category-image img{transform:scale(.97)!important}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(2):hover .category-image img{transform:scale(1.05)!important}'+
+      '.category-cards.rpeFourCategories .category-card:nth-child(3):hover .category-image img{transform:scale(.99)!important}'+
+      '#rpeSolarCategoryCard:hover .category-image img{transform:scale(.95)!important}'+
+      '@media(max-width:1180px){.category-cards.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}.category-cards.rpeFourCategories .category-image{height:220px!important}.category-cards.rpeFourCategories .category-card h3{font-size:24px!important}}'+
+      '@media(max-width:700px){.category-cards.rpeFourCategories{grid-template-columns:1fr!important;gap:16px!important;margin-top:22px!important}.category-cards.rpeFourCategories .category-card:last-child{grid-column:auto!important}.category-cards.rpeFourCategories .category-image{height:210px!important}.category-cards.rpeFourCategories .category-card>div:last-child{padding:17px 18px 19px!important}.category-cards.rpeFourCategories .category-card h3{font-size:22px!important}.category-cards.rpeFourCategories .category-card small{font-size:10px!important;letter-spacing:1.25px!important}.category-cards.rpeFourCategories .category-card span{font-size:12px!important}.category-cards.rpeFourCategories .category-card:hover,.category-cards.rpeFourCategories .category-card:active{transform:none!important;box-shadow:none!important}.category-cards.rpeFourCategories .category-card:nth-child(1) .category-image img,.category-cards.rpeFourCategories .category-card:nth-child(3) .category-image img,#rpeSolarCategoryCard .category-image img{object-fit:contain!important;object-position:center center!important;transform:scale(.95)!important}.category-cards.rpeFourCategories .category-card:nth-child(2) .category-image img{object-fit:cover!important;object-position:center 48%!important;transform:scale(1.01)!important}}'+
+      '@media(max-width:420px){.category-cards.rpeFourCategories{gap:14px!important}.category-cards.rpeFourCategories .category-image{height:195px!important}.category-cards.rpeFourCategories .category-card{border-radius:18px!important}.category-cards.rpeFourCategories .category-card>div:last-child{padding:15px 16px 17px!important}.category-cards.rpeFourCategories .category-card h3{font-size:20px!important}}';
+    d.head.appendChild(responsiveFix);
   }
 
   var hero=products.find(function(p){return p.sku==="RPE-SOLAR-504-8K"})||products[products.length-1];
