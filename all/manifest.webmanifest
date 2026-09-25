@@ -1,0 +1,18 @@
+{
+  "name": "Ranova Prime Enterprise",
+  "short_name": "RPE",
+  "description": "Browse Ranova Prime Enterprise products and send enquiries directly by WhatsApp, Gmail or phone.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f4ec",
+  "theme_color": "#0d3329",
+  "icons": [
+    {
+      "src": "rpe-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
