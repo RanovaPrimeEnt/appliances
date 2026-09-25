@@ -1,6 +1,6 @@
-const CACHE="rpe-shell-v3";
+const CACHE="rpe-shell-v4";
 const SHELL=["./","./site.html","./about.html","./contact.html","./shipping-returns.html","./privacy.html","./terms.html","./rpe-mark.svg","./manifest.webmanifest",
-  "./solar-category.js?v=20260925-6"];
+  "./solar-category.js?v=20260925-7"];
 self.addEventListener("install",event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>Promise.all(SHELL.map(url=>cache.add(url).catch(()=>null)))));
