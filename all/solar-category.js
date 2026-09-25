@@ -52,26 +52,173 @@ function installUi(d,products){
   if(!d.getElementById("rpeSolarCatalogueStyle")){
     var st=d.createElement("style");
     st.id="rpeSolarCatalogueStyle";
-    st.textContent=
-      '.category-cards.rpeFourCategories{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:22px!important}'+
-      '.category-cards.rpeFourCategories .category-card{overflow:hidden!important;border-radius:24px!important;transition:transform .25s ease,box-shadow .25s ease!important;background:#fbfaf7!important}'+
-      '.category-cards.rpeFourCategories .category-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(8,47,39,.10)!important}'+
-      '.category-cards.rpeFourCategories .category-card:last-child{grid-column:auto!important}'+
-      '.category-cards.rpeFourCategories .category-image{height:230px!important;width:100%!important;overflow:hidden!important;background:#edf2ef!important;border-radius:0!important;display:block!important}'+
-      '.category-cards.rpeFourCategories .category-image img{display:block!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;background:#edf2ef!important;image-rendering:auto!important;transition:transform .35s ease!important}'+
-      '.category-cards.rpeFourCategories .category-card:hover .category-image img{transform:scale(1.05)}'+
-      '.category-cards.rpeFourCategories .category-card:nth-child(1) .category-image img{transform:scale(1.28);object-position:center 48%!important}'+
-      '.category-cards.rpeFourCategories .category-card:nth-child(1):hover .category-image img{transform:scale(1.34)}'+
-      '.category-cards.rpeFourCategories .category-card:nth-child(2) .category-image img{transform:scale(1.10);object-position:center 46%!important}'+
-      '.category-cards.rpeFourCategories .category-card:nth-child(2):hover .category-image img{transform:scale(1.15)}'+
-      '.category-cards.rpeFourCategories .category-card:nth-child(3) .category-image img{transform:scale(1.12);object-position:center 48%!important}'+
-      '.category-cards.rpeFourCategories .category-card:nth-child(3):hover .category-image img{transform:scale(1.17)}'+
-      '#rpeSolarCategoryCard .category-image img{object-fit:cover!important;object-position:center 18%!important;transform:scale(1.22)}'+
-      '#rpeSolarCategoryCard:hover .category-image img{transform:scale(1.28)}'+
-      '@media(max-width:1100px){.category-cards.rpeFourCategories{gap:16px!important}.category-cards.rpeFourCategories .category-image{height:205px!important}}'+
-      '@media(max-width:980px){.category-cards.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important}.category-cards.rpeFourCategories .category-image{height:240px!important}}'+
-      '@media(max-width:620px){.category-cards.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.category-cards.rpeFourCategories .category-image{height:165px!important}.category-cards.rpeFourCategories .category-card:nth-child(1) .category-image img{transform:scale(1.24)}#rpeSolarCategoryCard .category-image img{transform:scale(1.17);object-position:center 16%!important}}'+
-      '@media(max-width:420px){.category-cards.rpeFourCategories{grid-template-columns:1fr!important}.category-cards.rpeFourCategories .category-image{height:230px!important}#rpeSolarCategoryCard .category-image img{transform:scale(1.20)}}';
+    st.textContent=`.category-cards.rpeFourCategories{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:18px!important;
+  align-items:stretch;
+}
+.category-cards.rpeFourCategories .category-card{
+  min-width:0!important;
+  overflow:hidden!important;
+  border-radius:22px!important;
+  background:#fbfaf7!important;
+  display:flex!important;
+  flex-direction:column!important;
+  transition:transform .22s ease,box-shadow .22s ease!important;
+}
+.category-cards.rpeFourCategories .category-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 14px 32px rgba(8,47,39,.10)!important;
+}
+.category-cards.rpeFourCategories .category-card:last-child{
+  grid-column:auto!important;
+}
+.category-cards.rpeFourCategories .category-image{
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:16/10!important;
+  overflow:hidden!important;
+  background:#f1f5f3!important;
+  border-radius:0!important;
+  display:block!important;
+  flex:0 0 auto!important;
+}
+.category-cards.rpeFourCategories .category-image img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  object-fit:cover!important;
+  background:#f1f5f3!important;
+  image-rendering:auto!important;
+  transition:transform .28s ease!important;
+}
+.category-cards.rpeFourCategories .category-card>div:last-child{
+  padding:18px 20px 20px!important;
+  display:block!important;
+  flex:1 1 auto!important;
+}
+.category-cards.rpeFourCategories .category-card h3{
+  font-size:clamp(20px,1.7vw,25px)!important;
+  line-height:1.15!important;
+  margin:7px 0 8px!important;
+}
+.category-cards.rpeFourCategories .category-card span{
+  line-height:1.4!important;
+}
+.category-cards.rpeFourCategories .category-card:nth-child(1) .category-image img{
+  transform:scale(1.12);
+  object-position:center 50%!important;
+}
+.category-cards.rpeFourCategories .category-card:nth-child(2) .category-image img{
+  transform:scale(1.04);
+  object-position:center 48%!important;
+}
+.category-cards.rpeFourCategories .category-card:nth-child(3) .category-image img{
+  transform:scale(1.05);
+  object-position:center 48%!important;
+}
+#rpeSolarCategoryCard .category-image img{
+  transform:scale(1.08);
+  object-position:center 15%!important;
+}
+.category-cards.rpeFourCategories .category-card:hover .category-image img{
+  transform:scale(1.09);
+}
+.category-cards.rpeFourCategories .category-card:nth-child(1):hover .category-image img{
+  transform:scale(1.16);
+}
+#rpeSolarCategoryCard:hover .category-image img{
+  transform:scale(1.12);
+}
+@media(max-width:1180px){
+  .category-cards.rpeFourCategories{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:16px!important;
+  }
+  .category-cards.rpeFourCategories .category-image{
+    aspect-ratio:16/9!important;
+  }
+  .category-cards.rpeFourCategories .category-card h3{
+    font-size:24px!important;
+  }
+}
+@media(max-width:700px){
+  .category-cards.rpeFourCategories{
+    grid-template-columns:1fr!important;
+    gap:16px!important;
+    margin-top:22px!important;
+  }
+  .category-cards.rpeFourCategories .category-card:last-child{
+    grid-column:auto!important;
+  }
+  .category-cards.rpeFourCategories .category-image{
+    aspect-ratio:16/9!important;
+    min-height:190px!important;
+    max-height:240px!important;
+  }
+  .category-cards.rpeFourCategories .category-card>div:last-child{
+    padding:17px 18px 19px!important;
+  }
+  .category-cards.rpeFourCategories .category-card h3{
+    font-size:22px!important;
+  }
+  .category-cards.rpeFourCategories .category-card small{
+    font-size:10px!important;
+    letter-spacing:1.25px!important;
+  }
+  .category-cards.rpeFourCategories .category-card span{
+    font-size:12px!important;
+  }
+  .category-cards.rpeFourCategories .category-card:nth-child(1) .category-image img{
+    transform:scale(1.08);
+    object-position:center 50%!important;
+  }
+  .category-cards.rpeFourCategories .category-card:nth-child(2) .category-image img{
+    transform:scale(1.02);
+    object-position:center 49%!important;
+  }
+  .category-cards.rpeFourCategories .category-card:nth-child(3) .category-image img{
+    transform:scale(1.03);
+    object-position:center 48%!important;
+  }
+  #rpeSolarCategoryCard .category-image img{
+    transform:scale(1.05);
+    object-position:center 14%!important;
+  }
+  .category-cards.rpeFourCategories .category-card:hover,
+  .category-cards.rpeFourCategories .category-card:active{
+    transform:none!important;
+  }
+  .category-cards.rpeFourCategories .category-card:hover .category-image img{
+    transform:scale(1.03);
+  }
+  .category-cards.rpeFourCategories .category-card:nth-child(1):hover .category-image img{
+    transform:scale(1.08);
+  }
+  #rpeSolarCategoryCard:hover .category-image img{
+    transform:scale(1.05);
+  }
+}
+@media(max-width:420px){
+  .category-cards.rpeFourCategories{
+    gap:14px!important;
+  }
+  .category-cards.rpeFourCategories .category-image{
+    aspect-ratio:16/10!important;
+    min-height:180px!important;
+    max-height:215px!important;
+  }
+  .category-cards.rpeFourCategories .category-card{
+    border-radius:18px!important;
+  }
+  .category-cards.rpeFourCategories .category-card>div:last-child{
+    padding:15px 16px 17px!important;
+  }
+  .category-cards.rpeFourCategories .category-card h3{
+    font-size:20px!important;
+  }
+}`;
     d.head.appendChild(st);
   }
 
