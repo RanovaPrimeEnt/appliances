@@ -26,6 +26,7 @@ let addresses = [];
 let returns = [];
 let orderFilter = null;
 let signUpMode = false;
+let incomingCartHandled = false;
 let realtimeChannels = [];
 
 const $ = (id) => document.getElementById(id);
@@ -42,6 +43,7 @@ function statusLabel(s){return ({
   dispatched:"Dispatched",out_for_delivery:"On the way",delivered:"Delivered",cancelled:"Cancelled",
   return_requested:"Return requested",returned:"Returned",refund_pending:"Refund pending",refunded:"Refunded"
 })[s] || String(s||"").replaceAll("_"," ")}
+function prettyKey(s){return String(s||"").replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}
 function setBadge(id,n){const el=$(id);if(!el)return;el.textContent=n;el.classList.toggle("hide",!n)}
 function contactRpe(){window.open("https://wa.me/233542846895?text="+encodeURIComponent("Hello Ranova Prime Enterprise, I need some help with my order or shopping."),"_blank","noopener")}
 
@@ -132,6 +134,7 @@ async function applySession(session){
   try{
     await loadAll();
     setup.classList.add("hide");appBox.classList.remove("hide");subscribeRealtime();
+    await handleIncomingCartLink();
   }catch(e){
     console.error(e);
     setup.innerHTML='<div style="text-align:center;padding:24px"><b style="display:block;color:#173d32">We could not load My RPE.</b><span>Please refresh or try again shortly.</span></div>';
@@ -144,7 +147,7 @@ async function loadAll(){
     prof,prod,fav,rec,cart,ord,noti,addr,ret
   ]=await Promise.all([
     sb.from("profiles").select("*").eq("user_id",uid).maybeSingle(),
-    sb.from("products").select("id,legacy_id,sku,name,slug,brand,short_description,description,price,currency,stock_status,category_id,product_images(image_url,is_primary,sort_order),categories(name)").eq("active",true).order("created_at",{ascending:false}),
+    sb.from("products").select("id,legacy_id,sku,name,slug,brand,short_description,description,price,currency,stock_status,category_id,dimensions,specifications,product_images(image_url,is_primary,sort_order),categories(name)").eq("active",true).order("created_at",{ascending:false}),
     sb.from("favorites").select("product_id").eq("user_id",uid),
     sb.from("recently_viewed").select("product_id,viewed_at").eq("user_id",uid).order("viewed_at",{ascending:false}).limit(20),
     sb.from("carts").select("id").eq("user_id",uid).maybeSingle(),
@@ -226,11 +229,14 @@ async function openProduct(id){
   const p=products.find(x=>x.id===id);if(!p)return;
   await sb.from("recently_viewed").upsert({user_id:user.id,product_id:id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"});
   recentIds=[id,...recentIds.filter(x=>x!==id)].slice(0,20);renderRecent();
+  const specRows=Object.entries(p.specifications||{}).map(([k,v])=>`<div class="list-row"><div><b>${esc(prettyKey(k))}</b><small>${esc(typeof v==="boolean"?(v?"Yes":"No"):v)}</small></div></div>`).join("");
+  const dimensions=p.dimensions?`<div class="list-row"><div><b>Dimensions</b><small>${esc(p.dimensions)}</small></div></div>`:"";
   const overlay=document.createElement("div");overlay.className="cart-drawer open";overlay.innerHTML=`<aside class="drawer"><div class="drawer-head"><h3>Product details</h3><button class="icon-btn" data-close-product>×</button></div><div class="drawer-list">
     ${imageFor(p)?'<img src="'+esc(imageFor(p))+'" style="width:100%;height:250px;object-fit:contain;background:#f5f7f6;border-radius:18px" alt="'+esc(p.name)+'">':""}
     <h2 style="font-family:Georgia,serif">${esc(p.name)}</h2><p style="font-size:12px;color:var(--muted)">${esc(p.description||p.short_description||"Contact RPE for full product information.")}</p>
     <div class="list-row"><div><b>Price</b><small>${esc(money(p.price,p.currency))}</small></div><span class="status-chip">${esc(p.stock_status==="confirm_on_enquiry"?"Confirm availability":statusLabel(p.stock_status))}</span></div>
     <div class="list-row"><div><b>Product ID</b><small>${esc(p.sku||p.legacy_id||p.id)}</small></div></div>
+    ${dimensions}${specRows}
   </div><div class="drawer-foot"><button class="btn primary" data-modal-add="${p.id}">Add to cart</button><button class="btn soft" data-modal-fav="${p.id}">${favorites.has(p.id)?"Remove from saved":"Save product"}</button></div></aside>`;
   document.body.appendChild(overlay);
   const close=()=>overlay.remove();overlay.addEventListener("click",async e=>{
@@ -238,6 +244,18 @@ async function openProduct(id){
     if(e.target.closest("[data-modal-add]")){await addToCart(p.id);close()}
     if(e.target.closest("[data-modal-fav]")){await toggleFavorite(p.id);close()}
   });
+}
+
+async function handleIncomingCartLink(){
+  if(incomingCartHandled)return;
+  const sku=new URLSearchParams(location.search).get("add");
+  if(!sku)return;
+  const p=products.find(x=>x.sku===sku);
+  if(!p)return showToast("That product is not available right now");
+  incomingCartHandled=true;
+  history.replaceState(null,"",location.pathname);
+  await addToCart(p.id);
+  openCart();
 }
 
 async function addToCart(productId){
