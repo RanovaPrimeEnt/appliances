@@ -12,19 +12,19 @@ var LANGS={
   tw:{label:"Twi",short:"TW"}
 };
 var LOCAL_VERIFIED={
-  "product id":{en:"Product ID",zh:"产品编号",es:"ID del producto",tw:"Aguade nɔma"},
+  "product id":{en:"Product ID",zh:"产品编号",es:"ID del producto",tw:"Product ID"},
   "price":{en:"Price",zh:"价格",es:"Precio",tw:"Boɔ"},
-  "model":{en:"Model",zh:"型号",es:"Modelo",tw:"Mɔdel"},
+  "model":{en:"Model",zh:"型号",es:"Modelo",tw:"Model"},
   "battery":{en:"Battery",zh:"电池",es:"Batería",tw:"Battery"},
-  "battery capacity":{en:"Battery capacity",zh:"电池容量",es:"Capacidad de la batería",tw:"Battery ahoɔden dodow"},
+  "battery capacity":{en:"Battery capacity",zh:"电池容量",es:"Capacidad de la batería",tw:"Battery capacity"},
   "power":{en:"Power",zh:"功率",es:"Potencia",tw:"Ahoɔden"},
-  "beam range":{en:"Beam range",zh:"射程",es:"Alcance del haz",tw:"Hann no kwan tenten"},
-  "runtime":{en:"Runtime",zh:"续航",es:"Duración",tw:"Bere a ɛyɛ adwuma"},
-  "working time":{en:"Working time",zh:"工作时间",es:"Tiempo de funcionamiento",tw:"Adwuma bere"},
+  "beam range":{en:"Beam range",zh:"射程",es:"Alcance del haz",tw:"Baabi a kanea no tumi du"},
+  "runtime":{en:"Runtime",zh:"续航",es:"Duración",tw:"Bere a ɛtumi yɛ adwuma"},
+  "working time":{en:"Working time",zh:"工作时间",es:"Tiempo de funcionamiento",tw:"Bere a ɛtumi yɛ adwuma"},
   "dimensions":{en:"Dimensions",zh:"尺寸",es:"Dimensiones",tw:"Ne kɛse"},
-  "rechargeable headlamp":{en:"Rechargeable headlamp",zh:"充电式头灯",es:"Linterna frontal recargable",tw:"Ti so kanea a wotumi san hyɛ no ahoɔden"},
-  "rechargeable searchlight":{en:"Rechargeable searchlight",zh:"充电式探照灯",es:"Reflector recargable",tw:"Nhwehwɛmu kanea a wotumi san hyɛ no ahoɔden"},
-  "rechargeable lights":{en:"Rechargeable Lights",zh:"充电灯",es:"Luces recargables",tw:"Kanea a wotumi san hyɛ no ahoɔden"},
+  "rechargeable headlamp":{en:"Rechargeable headlamp",zh:"充电式头灯",es:"Linterna frontal recargable",tw:"Rechargeable ti so kanea"},
+  "rechargeable searchlight":{en:"Rechargeable searchlight",zh:"充电式探照灯",es:"Reflector recargable",tw:"Rechargeable searchlight"},
+  "rechargeable lights":{en:"Rechargeable Lights",zh:"充电灯",es:"Luces recargables",tw:"Rechargeable kanea"},
   "solar street lights":{en:"Solar Street Lights",zh:"太阳能路灯",es:"Farolas solares",tw:"Owia ahoɔden kwan so nkanea"},
   "lighting & fans":{en:"Lighting & Fans",zh:"照明与风扇",es:"Iluminación y ventiladores",tw:"Kanea ne mframa afiri"}
 };
