@@ -17,7 +17,7 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
 .form{display:grid;gap:12px}.field{display:grid;gap:6px}.field label{font-size:11px;font-weight:900}.field input,.field select{height:44px;border:1px solid #d7e3de;border-radius:12px;padding:0 12px;font:inherit;outline:none}.field input:focus,.field select:focus{border-color:#239277;box-shadow:0 0 0 3px #dff3eb}
 .primary{height:46px;border:0;border-radius:999px;background:var(--orange);color:#fff;font-weight:950;cursor:pointer}.primary[disabled]{opacity:.55;cursor:wait}.msg{display:none;padding:11px;border-radius:11px;background:#fff1ec;color:#8a431f;font-size:11px;font-weight:750}
 .workspace{display:none;padding:22px 0 60px}.grid{display:grid;grid-template-columns:.7fr 1.3fr;gap:20px}.side{display:grid;gap:10px;align-content:start}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px}.card h2,.card h3{margin:0 0 8px}.card p{margin:0;color:var(--muted);font-size:11px;line-height:1.55}
-.status-pill{display:inline-flex;margin-top:10px;padding:7px 10px;border-radius:999px;background:#fff2ed;color:#9d4b25;font-size:10px;font-weight:900}
+.status-pill{display:inline-flex;margin-top:10px;padding:7px 10px;border-radius:999px;background:#fff2ed;color:#9d4b25;font-size:10px;font-weight:900}.status-pill.approved{background:#e8f7ef;color:#0b6a45}
 .steps{display:grid;gap:8px;margin-top:14px}.step{display:grid;grid-template-columns:30px 1fr auto;gap:9px;align-items:center;padding:10px;border:1px solid #e4ebe8;border-radius:12px}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#eef3f0;font-weight:950;color:#61766e}.step.complete .num{background:#e8f7ef;color:#0b6a45}.step.current{border-color:#f5cbb7;background:#fff9f6}.step.current .num{background:#fff0e8;color:#df5d26}.step.locked{opacity:.58}.step b{font-size:11px}.step small{display:block;margin-top:2px;color:#819089;font-size:8px}.step em{font-style:normal;font-size:8px;font-weight:900;text-transform:uppercase;color:#718078}
 .verify-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.verify-card{border:1px solid #e4ebe8;border-radius:14px;padding:14px}.verify-card b{font-size:11px}.verify-card p{margin:4px 0 10px}.upload{display:grid;gap:7px}.upload input[type=file]{font-size:10px}.upload button{height:36px;border:0;border-radius:999px;background:var(--green2);color:#fff;font-weight:900;font-size:10px;cursor:pointer}.upload button[disabled]{opacity:.5}.files{display:grid;gap:7px;margin-top:14px}.file{display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px;border-radius:10px;background:#f7f9f8}.file b{font-size:10px}.file span{font-size:8px;color:#7b8984}.file strong{font-size:8px;text-transform:uppercase;color:#9a542e}
 .locked-box{padding:16px;border:1px dashed #ccd8d3;border-radius:14px;background:#fafbfa;color:#718078;font-size:11px;line-height:1.55}
@@ -26,7 +26,7 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
 </style>
 </head>
 <body>
-<div class="top"><div class="wrap"><div class="brand">RANOVA SELLER CENTER</div><div class="nav"><a href="./seller-status.html">Application status</a><a href="./">Marketplace</a><button id="signOut" style="display:none">Sign out</button></div></div></div>
+<div class="top"><div class="wrap"><div class="brand">RANOVA SELLER CENTER</div><div class="nav"><a href="./seller-status.html">Application status</a><a id="dashboardLink" href="./seller-dashboard.html" style="display:none">Seller dashboard</a><a href="./">Marketplace</a><button id="signOut" style="display:none">Sign out</button></div></div></div>
 <section class="hero"><div class="wrap"><div class="kicker">SELLER ACCOUNT</div><h1>Verify your business and build your store.</h1><p>Your Seller Center keeps verification, documents and future store-management tools in one protected workspace.</p></div></section>
 
 <main class="wrap">
@@ -206,12 +206,27 @@ async function loadWorkspace(){
     currentApplication=out.application;
     document.getElementById("businessName").textContent=currentApplication.business_name||"Seller";
     document.getElementById("applicationMeta").textContent=(currentApplication.application_ref||"")+" · "+(currentApplication.supplier_type||"Seller")+" · "+(currentApplication.business_location||"");
-    document.getElementById("statusPill").textContent=pretty(currentApplication.verification_status||currentApplication.status||"in_progress");
+    var approvalStatus=String(currentApplication.verification_status||currentApplication.status||"in_progress").toLowerCase();
+    var approved=approvalStatus==="approved";
+    var pill=document.getElementById("statusPill");
+    pill.textContent=pretty(approvalStatus);
+    pill.classList.toggle("approved",approved);
     setStage("sBusiness",currentApplication.business_info_status);
     setStage("sDocs",currentApplication.business_documents_status);
     setStage("sIdentity",currentApplication.identity_status);
     setStage("sFulfilment",currentApplication.fulfilment_status);
-    setStage("sStore",currentApplication.store_setup_status);
+    setStage("sStore",approved&&String(currentApplication.store_setup_status||"").toLowerCase()==="locked"?"in_progress":currentApplication.store_setup_status);
+    var dashboardLink=document.getElementById("dashboardLink"),storeBox=document.getElementById("storeSetupBox");
+    if(approved){
+      dashboardLink.style.display="inline-flex";
+      storeBox.innerHTML='<b>Your seller account is approved.</b><br>Store Builder is ready. Create your storefront, upload your logo/banner, add products, set MOQ/pricing/stock and prepare listings for RANOVA review.<div style="margin-top:12px"><a href="./seller-dashboard.html" style="display:inline-flex;min-height:40px;align-items:center;padding:0 14px;border-radius:999px;background:#116a52;color:#fff;text-decoration:none;font-size:10px;font-weight:900">Open Seller Dashboard →</a></div>';
+      storeBox.style.borderStyle="solid";
+      storeBox.style.borderColor="#b8ddcd";
+      storeBox.style.background="#f0faf5";
+    }else{
+      dashboardLink.style.display="none";
+      storeBox.innerHTML='<b>Locked until seller verification is approved.</b><br>After approval, this area unlocks the Store Builder where you add your logo, banner, business profile, products, wholesale prices, stock and delivery settings.';
+    }
     renderFiles(out.files||[]);
   }catch(err){
     showMsg(authMsg,err.message||"Could not load Seller Center.");authPanel.style.display="block";workspace.style.display="none";
