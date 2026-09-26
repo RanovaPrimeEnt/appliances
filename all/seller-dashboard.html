@@ -26,7 +26,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 .locked{padding:22px;border:1px dashed #cbd9d3;border-radius:16px;background:#fafcfb;text-align:center;color:#6e7f79;font-size:11px;line-height:1.55}.locked b{display:block;color:var(--ink);font-size:13px;margin-bottom:5px}
 .product-list,.order-list{display:grid;gap:9px;margin-top:13px}.product-row,.order-row{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid #e4ebe8;border-radius:13px}.product-row img{width:60px;height:60px;border-radius:10px;object-fit:contain;background:#f5f8f6}.product-row b,.order-row b{font-size:11px}.product-row small,.order-row small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.4}.row-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.row-actions button{min-height:33px;padding:0 9px;border:1px solid #d8e3df;background:#fff;border-radius:999px;font-size:8px;font-weight:900}.chip{display:inline-flex;margin-top:5px;padding:5px 7px;border-radius:999px;background:#eef6f3;color:#27594b;font-size:8px;font-weight:900}.chip.pending_review{background:#fff5e8;color:#915d18}.chip.active{background:#e8f7ef;color:#0c6d47}.chip.rejected{background:#fff0ee;color:#a0473e}.chip.paused{background:#f0f0f0;color:#666}
 .product-editor{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:15px}.product-editor.open{display:block}.image-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hint{font-size:8px;color:#788983;line-height:1.5}.empty{padding:22px;text-align:center;color:#7b8a84;font-size:10px;background:#fafcfb;border:1px dashed #d4ded9;border-radius:13px}
-.order-row{grid-template-columns:minmax(0,1.3fr) .8fr .8fr}.status{font-size:8px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eef6f3;color:#28604f;justify-self:start}
+.order-row{grid-template-columns:minmax(0,1.3fr) .8fr .8fr}.status{font-size:8px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eef6f3;color:#28604f;justify-self:start}.order-items-mini{margin-top:6px;display:grid;gap:3px}.order-items-mini span{font-size:8px;color:var(--muted)}.order-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.order-actions button{min-height:32px;border:1px solid #d8e3df;border-radius:999px;background:#fff;padding:0 9px;font-size:8px;font-weight:900}.order-actions .primary{background:var(--green2);color:#fff;border-color:var(--green2)}.order-actions .danger{color:#9a453d;background:#fff1ef;border-color:#efc9c4}
 @media(max-width:900px){.shell{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto}.side button{width:auto;white-space:nowrap}.metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
 </style>
@@ -115,7 +115,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
       </div>
 
       <div id="panel-orders" class="panel">
-        <div class="card"><h2>Orders</h2><p>Marketplace orders routed to your store will appear here. Payment and dispatch actions will be expanded in the next seller-order workflow.</p><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div></div>
+        <div class="card"><h2>Orders</h2><p>Confirm the final amount first, then move each order through preparation and delivery. Payment status is controlled separately by RANOVA and cannot be marked paid by the seller.</p><div id="orderMsg" class="msg"></div><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div></div>
       </div>
     </section>
   </div>
@@ -248,10 +248,50 @@ el("saveProduct").onclick=async function(){
   finally{b.disabled=false;b.textContent=old}
 };
 
+function nextOrderActions(o){
+  var map={
+    new:[["confirmed","Confirm order"],["cancelled","Cancel"]],
+    confirmed:[["preparing","Start preparing"],["cancelled","Cancel"]],
+    preparing:[["ready_for_dispatch","Mark ready"],["cancelled","Cancel"]],
+    ready_for_dispatch:[["dispatched","Mark dispatched"],["cancelled","Cancel"]],
+    dispatched:[["delivered","Mark delivered"]],
+    return_requested:[["returned","Mark returned"]]
+  };
+  return map[o.order_status]||[];
+}
+async function quoteOrder(o,button){
+  var subtotal=prompt("Product subtotal (GHS)",o.subtotal==null?"":o.subtotal);
+  if(subtotal===null)return;
+  var delivery=prompt("Delivery fee (GHS). Enter 0 if none.",o.delivery_fee==null?"0":o.delivery_fee);
+  if(delivery===null)return;
+  var note=prompt("Seller note (optional)",o.seller_note||"");
+  button.disabled=true;
+  try{
+    await api({action:"update_order_quote",id:o.id,subtotal:subtotal,delivery_fee:delivery,seller_note:note||""});
+    msg(el("orderMsg"),"Order amount updated.",true);await refresh();setPanel("orders");
+  }catch(err){msg(el("orderMsg"),err.message)}
+  finally{button.disabled=false}
+}
+async function changeOrderStatus(o,status,button){
+  if(status==="cancelled"&&!confirm("Cancel this order?"))return;
+  button.disabled=true;
+  try{
+    await api({action:"update_order_status",id:o.id,status:status});
+    msg(el("orderMsg"),"Order moved to "+pretty(status)+".",true);await refresh();setPanel("orders");
+  }catch(err){msg(el("orderMsg"),err.message)}
+  finally{button.disabled=false}
+}
 function renderOrders(){
   var host=el("orderList"),orders=state.orders||[];
   if(!orders.length){host.innerHTML='<div class="empty">No marketplace orders have been routed to this store yet.</div>';return}
-  host.innerHTML=orders.map(function(o){return '<div class="order-row"><div><b>'+esc(o.order_ref)+'</b><small>'+esc(o.buyer_name||"Customer")+' · '+esc(o.delivery_location||"Delivery location pending")+'</small></div><div><span class="status">'+esc(pretty(o.order_status))+'</span><small>'+esc(o.item_count)+' item(s)</small></div><div><b>'+esc(money(o.total))+'</b><small>'+esc(pretty(o.payment_status))+'</small></div></div>'}).join("");
+  host.innerHTML=orders.map(function(o){
+    var items=Array.isArray(o.items)?o.items:[];
+    var itemHtml=items.slice(0,5).map(function(i){return '<span>• '+esc(i.product_name||"Product")+' × '+esc(i.quantity||1)+'</span>'}).join("");
+    var actions=nextOrderActions(o).map(function(a){return '<button data-order-status="'+a[0]+'" data-order-id="'+o.id+'" class="'+(a[0]==="cancelled"?"danger":"primary")+'">'+a[1]+'</button>'}).join("");
+    return '<div class="order-row" data-order-card="'+o.id+'"><div><b>'+esc(o.platform_order_ref||o.order_ref)+'</b><small>'+esc(o.buyer_name||"Customer")+' · '+esc(o.buyer_phone||"")+' · '+esc(o.delivery_location||"Delivery location pending")+'</small><div class="order-items-mini">'+itemHtml+'</div><div class="order-actions"><button data-quote-order="'+o.id+'">Set / update amount</button>'+actions+'</div></div><div><span class="status">'+esc(pretty(o.order_status))+'</span><small>'+esc(o.item_count)+' product(s)</small><small>'+esc(o.payment_method||"Payment method pending")+'</small></div><div><b>'+esc(money(o.total))+'</b><small>Payment: '+esc(pretty(o.payment_status))+'</small>'+(o.seller_note?'<small>'+esc(o.seller_note)+'</small>':'')+'</div></div>'
+  }).join("");
+  host.querySelectorAll("[data-quote-order]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.quoteOrder});if(o)quoteOrder(o,b)}});
+  host.querySelectorAll("[data-order-status]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.orderId});if(o)changeOrderStatus(o,b.dataset.orderStatus,b)}});
 }
 
 el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./seller-center.html"};
