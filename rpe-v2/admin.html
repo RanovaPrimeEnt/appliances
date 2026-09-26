@@ -56,6 +56,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
     <button data-panel="seller-products" data-market-role="product">Seller products</button>
     <button data-panel="seller-stores" data-market-role="seller">Seller stores</button>
     <button data-panel="marketplace-trust" data-market-role="seller">Marketplace trust</button>
+    <button data-panel="marketplace-discovery" data-market-role="seller">Discovery & sponsored</button>
     <button data-panel="seller-orders" data-market-role="orders">Marketplace orders</button>
     <button data-panel="deliveries" data-market-role="orders">Deliveries</button>
     <button data-panel="cases" data-market-role="orders">Cases</button>
@@ -149,6 +150,31 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
         <div class="card-head"><div><h2>Seller appeals</h2><small style="color:var(--rpe-muted)">Review the original action, seller explanation and evidence before deciding. Overturning an appeal restores good standing but does not silently republish a suspended store.</small></div></div>
         <div id="adminAppealsList" class="body market-list"></div>
       </div>
+    </section>
+
+    <section id="marketplace-discovery" class="panel">
+      <div class="hero"><small>MARKETPLACE DISCOVERY</small><h1>Search stays organic. Sponsorship stays visible.</h1><p>Paid placement never changes the organic score. Any sponsored product must run in its own clearly labeled lane.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Active sponsored placements</small><strong id="dSponsoredActive">0</strong></div>
+        <div class="metric"><small>Organic ranking</small><strong style="font-size:15px">Not for sale</strong></div>
+        <div class="metric"><small>Sponsored label</small><strong style="font-size:15px">Required</strong></div>
+        <div class="metric"><small>Search privacy</small><strong style="font-size:15px">Hashed session</strong></div>
+      </div>
+      <div class="card"><div class="card-head"><div><h2>Create sponsored placement</h2><small style="color:var(--rpe-muted)">Only approved active seller products can be promoted. The product remains separate from organic search ranking.</small></div></div>
+        <div class="body">
+          <div class="form-grid">
+            <div class="field"><label>Seller product</label><select id="spProduct"><option value="">Choose active seller product</option></select></div>
+            <div class="field"><label>Optional category target</label><input id="spCategory" placeholder="Leave blank for all categories"></div>
+            <div class="field"><label>Optional buyer country code</label><input id="spCountry" maxlength="2" placeholder="GH"></div>
+            <div class="field"><label>Priority (0–10)</label><input id="spPriority" type="number" min="0" max="10" value="0"></div>
+            <div class="field"><label>Starts</label><input id="spStart" type="datetime-local"></div>
+            <div class="field"><label>Ends</label><input id="spEnd" type="datetime-local"></div>
+            <div class="field full"><label>Disclosure</label><input id="spDisclosure" value="Paid placement. Organic ranking is calculated separately."></div>
+          </div>
+          <button id="saveSponsored" class="primary" style="margin-top:12px;border:0;border-radius:10px;background:var(--rpe-green-700);color:#fff;padding:10px 14px;font-weight:900">Activate sponsored placement</button>
+        </div>
+      </div>
+      <div class="card"><div class="card-head"><h2>Sponsored placement history</h2></div><div id="sponsoredPlacementsList" class="body market-list"></div></div>
     </section>
 
     <section id="seller-orders" class="panel">
@@ -273,5 +299,5 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./admin.js?v=20260926-10"></script>
+<script src="./admin.js?v=20260926-11"></script>
 </body></html>
