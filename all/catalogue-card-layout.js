@@ -75,6 +75,21 @@ function installStyle(d){
     #grid .rpe-order-now{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:40px!important;margin-top:3px!important;border:0!important;border-radius:999px!important;background:#ff5a2d!important;color:#fff!important;font-size:12px!important;font-weight:950!important;letter-spacing:.01em!important;cursor:pointer!important;box-shadow:0 7px 16px rgba(255,90,45,.18)!important;transition:transform .12s ease,opacity .12s ease!important}
     #grid .rpe-order-now:active{transform:scale(.985)!important}
     #grid .rpe-order-now[disabled]{opacity:.45!important;cursor:not-allowed!important;box-shadow:none!important}
+    #grid .rpe-payment-section{display:grid!important;gap:7px!important;margin-top:8px!important;padding-top:8px!important;border-top:1px solid #edf1ef!important}
+    #grid .rpe-payment-title{font-size:10px!important;font-weight:900!important;color:#50645c!important}
+    #grid .rpe-payment-methods{display:grid!important;gap:6px!important}
+    #grid .rpe-payment-option{display:grid!important;grid-template-columns:24px 1fr!important;gap:8px!important;align-items:center!important;padding:8px!important;border:1px solid #e1e8e4!important;border-radius:10px!important;background:#fff!important;cursor:pointer!important}
+    #grid .rpe-payment-option.active{border-color:#ff8a55!important;background:#fff7f2!important;box-shadow:0 4px 12px rgba(255,90,45,.08)!important}
+    #grid .rpe-payment-radio{width:18px!important;height:18px!important;border:2px solid #cdd8d3!important;border-radius:50%!important;display:grid!important;place-items:center!important}
+    #grid .rpe-payment-option.active .rpe-payment-radio{border-color:#ff5a2d!important}
+    #grid .rpe-payment-option.active .rpe-payment-radio:after{content:""!important;width:8px!important;height:8px!important;border-radius:50%!important;background:#ff5a2d!important}
+    #grid .rpe-payment-name{display:block!important;font-size:10px!important;font-weight:900!important;color:#263f37!important}
+    #grid .rpe-payment-desc{display:block!important;margin-top:1px!important;font-size:8px!important;color:#8a9892!important;font-weight:650!important}
+    #grid .rpe-grand-total{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin-top:8px!important;padding-top:8px!important;border-top:1px solid #edf1ef!important}
+    #grid .rpe-grand-total-label{font-size:10px!important;color:#576a62!important;font-weight:850!important}
+    #grid .rpe-grand-total-value{font-size:16px!important;color:#f05a21!important;font-weight:950!important}
+    #grid .rpe-checkout-note{font-size:8px!important;line-height:1.35!important;color:#8a9892!important}
+    #grid .rpe-order-now.request-price{background:#0e5b43!important}
     @media(max-width:620px){
       #grid .rpe-qty-wrap{display:flex!important;gap:4px!important;padding:6px 0 0!important}
       #grid .rpe-qty-copy{display:none!important}
@@ -150,7 +165,17 @@ function decorateCard(card,p,w){
       '<div class="rpe-order-row"><span class="rpe-order-label">Deliver to</span><select class="rpe-location-select" aria-label="Delivery location">'+options+'</select></div>'+
       '<div class="rpe-order-row"><span class="rpe-order-label">Product total</span><span class="rpe-order-value rpe-product-total">'+money(unitPrice*savedQty)+'</span></div>'+
       '<div class="rpe-order-row"><span class="rpe-order-label">Delivery fee</span><span class="rpe-order-value rpe-delivery-fee">To be confirmed</span></div>'+
-      '<button class="rpe-order-now" type="button"'+(savedQty<1?' disabled':'')+'>Order Now</button>'+
+      '<div class="rpe-grand-total"><span class="rpe-grand-total-label">Total payment</span><span class="rpe-grand-total-value">'+money(unitPrice*savedQty)+'</span></div>'+
+      '<div class="rpe-payment-section">'+
+        '<div class="rpe-payment-title">Payment Method</div>'+
+        '<div class="rpe-payment-methods">'+
+          '<button type="button" class="rpe-payment-option" data-method="Mobile Money"><span class="rpe-payment-radio"></span><span><span class="rpe-payment-name">Mobile Money</span><span class="rpe-payment-desc">MTN MoMo, Telecel Cash or AT Money</span></span></button>'+
+          '<button type="button" class="rpe-payment-option" data-method="Card"><span class="rpe-payment-radio"></span><span><span class="rpe-payment-name">Visa / Mastercard</span><span class="rpe-payment-desc">Secure card payment</span></span></button>'+
+          '<button type="button" class="rpe-payment-option" data-method="Bank Transfer"><span class="rpe-payment-radio"></span><span><span class="rpe-payment-name">Bank Transfer</span><span class="rpe-payment-desc">Recommended for large or bulk orders</span></span></button>'+
+        '</div>'+
+        '<div class="rpe-checkout-note">Secure payment will be activated after a verified payment gateway is connected. No card or Mobile Money PIN is collected on this page.</div>'+
+      '</div>'+
+      '<button class="rpe-order-now'+(unitPrice>0?'':' request-price')+'" type="button" disabled>'+(unitPrice>0?'Proceed to Payment':'Request Final Price')+'</button>'+
     '</div>';
 
   var qtyInput=holder.querySelector(".rpe-qty-input");
@@ -160,6 +185,9 @@ function decorateCard(card,p,w){
   var totalEl=holder.querySelector(".rpe-product-total");
   var locationSelect=holder.querySelector(".rpe-location-select");
   var orderBtn=holder.querySelector(".rpe-order-now");
+  var grandTotalEl=holder.querySelector(".rpe-grand-total-value");
+  var paymentOptions=[].slice.call(holder.querySelectorAll(".rpe-payment-option"));
+  var selectedPayment="";
 
   function stopQtyEvent(e){e.stopPropagation()}
   function refreshOrderSummary(v){
@@ -167,7 +195,8 @@ function decorateCard(card,p,w){
     if(qtyInput)qtyInput.value=String(v);
     if(selectedCount)selectedCount.textContent=String(v);
     if(totalEl)totalEl.textContent=money(unitPrice*v);
-    if(orderBtn)orderBtn.disabled=v<1;
+    if(grandTotalEl)grandTotalEl.textContent=money(unitPrice*v);
+    if(orderBtn)orderBtn.disabled=(v<1||!selectedPayment);
     card.dataset.quantity=String(v);
     try{w.localStorage.setItem(qtyKey,String(v))}catch(e){}
     return v;
@@ -202,14 +231,33 @@ function decorateCard(card,p,w){
     });
   }
 
+  paymentOptions.forEach(function(option){
+    option.addEventListener("click",function(e){
+      stopQtyEvent(e);
+      selectedPayment=this.getAttribute("data-method")||"";
+      paymentOptions.forEach(function(x){x.classList.toggle("active",x===option)});
+      var qty=Math.max(0,parseInt(qtyInput&&qtyInput.value,10)||0);
+      if(orderBtn)orderBtn.disabled=(qty<1||!selectedPayment);
+    });
+    option.addEventListener("pointerdown",stopQtyEvent);
+  });
+
   if(orderBtn){
     orderBtn.addEventListener("click",function(e){
       stopQtyEvent(e);
       var qty=Math.max(0,parseInt(qtyInput&&qtyInput.value,10)||0);
-      if(qty<1)return;
+      if(qty<1||!selectedPayment)return;
       var destination=locationSelect?locationSelect.value:"Accra, Ghana";
-      var msg="Hello Ranova Prime Enterprise, I want to order "+qty+" × "+(p.name||"Product")+(id?" ("+id+")":"")+
-        ". Delivery location: "+destination+". Please confirm the current product price, delivery fee and availability.";
+      var msg;
+      if(unitPrice>0){
+        msg="Hello Ranova Prime Enterprise, I am ready to proceed with payment for "+qty+" × "+(p.name||"Product")+(id?" ("+id+")":"")+
+          ". Product total: "+money(unitPrice*qty)+". Delivery location: "+destination+
+          ". Preferred payment method: "+selectedPayment+". Please confirm the delivery fee and send the secure payment step.";
+      }else{
+        msg="Hello Ranova Prime Enterprise, I want "+qty+" × "+(p.name||"Product")+(id?" ("+id+")":"")+
+          ". Delivery location: "+destination+". Preferred payment method: "+selectedPayment+
+          ". Please confirm the current unit price, bulk price if available, delivery fee and availability so I can proceed to payment.";
+      }
       var url="https://wa.me/233542846895?text="+encodeURIComponent(msg);
       try{w.top.location.href=url}catch(err){w.location.href=url}
     });
