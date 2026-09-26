@@ -45,6 +45,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
       <button class="navbtn" data-panel="products">Products</button>
       <button class="navbtn" data-panel="orders">Orders</button>
       <button class="navbtn" data-panel="payouts">Payouts</button>
+      <button id="supportNav" class="navbtn" data-panel="support">Support</button>
     </aside>
 
     <section class="main">
@@ -140,6 +141,13 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
         </div>
 
         <div class="card"><h2>Payout history</h2><p>Each payout is linked to a seller order and shows the commission calculation used for that order.</p><div id="payoutList" class="order-list"><div class="empty">No payouts yet.</div></div></div>
+
+      <div id="panel-support" class="panel">
+        <div class="card"><h2>Support & disputes</h2><p>Refund and dispute cases are tied to the original RANOVA order. Payouts may be held while a case is reviewed so neither buyer nor seller is disadvantaged before a decision is made.</p><div id="supportMsg" class="msg"></div></div>
+        <div class="card"><h2>Notifications</h2><div id="sellerNotifications" class="order-list"><div class="empty">No support notifications yet.</div></div></div>
+        <div class="card"><h2>Refund requests</h2><div id="sellerRefunds" class="order-list"><div class="empty">No refund requests linked to your orders.</div></div></div>
+        <div class="card"><h2>Disputes</h2><div id="sellerDisputes" class="order-list"><div class="empty">No disputes linked to your orders.</div></div></div>
+      </div>
       </div>
     </section>
   </div>
@@ -221,13 +229,13 @@ async function refresh(){
     el("dashboard").classList.add("hide");return;
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
-  renderOverview();fillStore();renderProducts();renderOrders();renderFinance();
+  renderOverview();fillStore();renderProducts();renderOrders();renderFinance();renderSupport();
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
   el("welcomeName").textContent=store.store_name||app.business_name||"Seller Dashboard";
   el("welcomeText").textContent=store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your seller account is approved. Finish the Store Builder and prepare products for review.";
-  el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mOrders").textContent=c.open_orders||0;
+  el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mOrders").textContent=c.open_orders||0;el("supportNav").textContent=(c.open_support_cases||0)>0?"Support ("+(c.open_support_cases||0)+")":"Support";
   if(store.slug&&store.store_status==="active"){el("previewStore").href="./seller-store.html?store="+encodeURIComponent(store.slug);el("previewStore").style.display="inline-flex"}else el("previewStore").style.display="none";
 }
 function fillStore(){
@@ -413,6 +421,36 @@ el("savePayoutProfile").onclick=async function(){
   }catch(err){msg(el("payoutMsg"),err.message||"Could not save payout details.")}
   finally{b.disabled=false;b.textContent=old}
 };
+
+
+function renderSupport(){
+  var notes=state.notifications||[],refunds=state.refunds||[],disputes=state.disputes||[];
+  var nHost=el("sellerNotifications");
+  nHost.innerHTML=notes.length?notes.map(function(n){
+    return '<div class="order-row"><div><b>'+esc(n.title)+'</b><small>'+esc(n.message)+'</small></div><div><span class="status">'+esc(pretty(n.notification_type))+'</span></div><div><small>'+new Date(n.created_at).toLocaleString()+'</small></div></div>';
+  }).join(""):'<div class="empty">No support notifications yet.</div>';
+
+  var rHost=el("sellerRefunds");
+  rHost.innerHTML=refunds.length?refunds.map(function(r){
+    return '<div class="order-row"><div><b>'+esc(r.refund_ref)+'</b><small>'+esc(pretty(r.reason_category))+' · '+esc(r.reason_detail)+'</small></div><div><span class="status">'+esc(pretty(r.status))+'</span><small>'+new Date(r.requested_at).toLocaleString()+'</small></div><div><b>'+esc(money(r.approved_amount==null?r.requested_amount:r.approved_amount))+'</b>'+(r.admin_note?'<small>RANOVA: '+esc(r.admin_note)+'</small>':'')+(r.refund_reference?'<small>Refund ref: '+esc(r.refund_reference)+'</small>':'')+'</div></div>';
+  }).join(""):'<div class="empty">No refund requests linked to your orders.</div>';
+
+  var dHost=el("sellerDisputes");
+  dHost.innerHTML=disputes.length?disputes.map(function(d){
+    var msgs=Array.isArray(d.messages)?d.messages:[];
+    var thread=msgs.map(function(m){return '<div style="margin-top:6px;padding:8px;border-radius:9px;background:#f7f9f8"><b style="font-size:8px">'+esc(pretty(m.sender_type))+'</b><small style="display:block;margin-top:2px">'+esc(m.message)+'</small><small>'+new Date(m.created_at).toLocaleString()+'</small></div>'}).join("");
+    var reply=!["resolved","closed"].includes(d.status)?'<button data-dispute-reply="'+esc(d.dispute_ref)+'">Reply</button>':'';
+    return '<div class="order-row"><div><b>'+esc(d.dispute_ref)+' · '+esc(d.subject)+'</b><small>'+esc(pretty(d.category))+' · '+esc(d.description)+'</small>'+thread+'<div class="order-actions">'+reply+'</div></div><div><span class="status">'+esc(pretty(d.status))+'</span><small>Opened '+new Date(d.opened_at).toLocaleString()+'</small></div><div>'+(d.resolution?'<b>'+esc(pretty(d.resolution))+'</b>':'<b>Under RANOVA review</b>')+(d.resolution_note?'<small>'+esc(d.resolution_note)+'</small>':'')+'</div></div>';
+  }).join(""):'<div class="empty">No disputes linked to your orders.</div>';
+
+  dHost.querySelectorAll("[data-dispute-reply]").forEach(function(b){b.onclick=async function(){
+    var message=prompt("Write your reply to this dispute.","")||"";if(!message.trim())return;
+    b.disabled=true;
+    try{await api({action:"seller_dispute_message",dispute_ref:b.dataset.disputeReply,message:message});msg(el("supportMsg"),"Reply added to the dispute record.",true);await refresh();setPanel("support")}
+    catch(err){msg(el("supportMsg"),err.message||"Could not send dispute reply.")}
+    finally{b.disabled=false}
+  }});
+}
 
 el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./seller-center.html"};
 async function boot(){
