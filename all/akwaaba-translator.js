@@ -53,7 +53,7 @@ root.innerHTML=
     '<div class="akwaaba-langs" id="akwaabaLangs"></div>'+
     '<div class="akwaaba-state" id="akwaabaState"><div class="akwaaba-output">Drag the magnifier over any text on the page, then release it.</div></div>'+
     '<div class="akwaaba-actions"><button class="primary" id="akwaabaTranslateHere" type="button">Translate here</button><button id="akwaabaCopy" type="button">Copy</button></div>'+
-    '<div class="akwaaba-note">Akwaaba does not replace or alter the website text. Only the text you point at is translated in this floating window.</div>'+
+    '<div class="akwaaba-note">Akwaaba does not alter the website. Verified catalogue terms are preferred, and uncertain translations are withheld rather than guessed.</div>'+
   '</section>';
 
 document.body.appendChild(root);
@@ -282,7 +282,8 @@ async function translateText(text,force){
   state.innerHTML='<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Akwaaba is translating to '+escapeHtml(LANGS[selected].label)+'…</span></div>';
   openPanel();
   if(cache.has(key)&&!force){
-    renderResult(text,cache.get(key));return;
+    var cached=cache.get(key);
+    renderResult(text,cached.text,cached.quality,cached.confidence);return;
   }
   try{
     var res=await fetch(ENDPOINT,{
@@ -291,18 +292,31 @@ async function translateText(text,force){
       body:JSON.stringify({q:text,target:selected})
     });
     var data=await res.json().catch(function(){return{}});
-    if(!res.ok||!data.translated)throw new Error(data.error||"Translation unavailable");
-    cache.set(key,data.translated);
+    if(!res.ok||!data.translated){
+      lastTranslation="";
+      var msg=data&&data.needs_review
+        ?"Akwaaba is not confident enough to show a translation for this text. This result has been withheld rather than risk giving a misleading translation."
+        :(data.error||"Akwaaba could not verify this translation.");
+      state.innerHTML='<div class="akwaaba-quality blocked">⚠ Not verified</div><div class="akwaaba-error">'+escapeHtml(msg)+'</div>';
+      openPanel();
+      return;
+    }
+    cache.set(key,{text:data.translated,quality:data.quality||"automatic-checked",confidence:data.confidence});
     lastTranslation=data.translated;
-    renderResult(text,data.translated);
+    renderResult(text,data.translated,data.quality||"automatic-checked",data.confidence);
   }catch(e){
-    state.innerHTML='<div class="akwaaba-error">Akwaaba could not translate this right now. Please try again in a moment.</div>';
+    lastTranslation="";
+    state.innerHTML='<div class="akwaaba-quality blocked">⚠ Not verified</div><div class="akwaaba-error">Akwaaba could not verify this translation, so no translation is being shown.</div>';
     openPanel();
   }
 }
-function renderResult(original,translated){
+function renderResult(original,translated,quality,confidence){
   lastTranslation=translated;
+  var q=quality==="verified"
+    ?'<div class="akwaaba-quality verified">✓ Verified catalogue term</div>'
+    :'<div class="akwaaba-quality checked">✓ Automatic translation checked'+(typeof confidence==="number"?" · "+Math.round(confidence*100)+"%":"")+'</div>';
   state.innerHTML=
+    q+
     '<div class="akwaaba-label">Original</div><div class="akwaaba-original">'+escapeHtml(original)+'</div>'+
     '<div class="akwaaba-label">'+escapeHtml(LANGS[selected].label)+'</div><div class="akwaaba-output">'+escapeHtml(translated)+'</div>';
   openPanel();
