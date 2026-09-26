@@ -10,8 +10,58 @@
     catch(e){return false}
     if(!d||!Array.isArray(products)||!d.getElementById('grid'))return false;
 
+    function supplierRows(p){
+      try{return (window.RPE_LIGHTING_ENGLISH||{})[String(p.cataloguePage)]||[]}catch(e){return[]}
+    }
+    function rowValue(p,label){
+      var row=supplierRows(p).find(function(r){return r[0]===label});
+      return row?String(row[1]||""):"";
+    }
+    function firstNumber(v){
+      var m=String(v||"").replace(/,/g,"").match(/\d+(?:\.\d+)?/);
+      return m?Number(m[0]):null;
+    }
+    function lastNumber(v){
+      var matches=String(v||"").replace(/,/g,"").match(/\d+(?:\.\d+)?/g);
+      return matches&&matches.length?Number(matches[matches.length-1]):null;
+    }
+    function rechargeSpec(p){
+      var power=firstNumber(rowValue(p,"Supplier power label"));
+      var battery=firstNumber(rowValue(p,"Supplier battery label"));
+      var beam=lastNumber(rowValue(p,"Supplier beam-range claim"));
+      var runtime=lastNumber(rowValue(p,"Supplier runtime claim"));
+      var diameter=firstNumber(rowValue(p,"Front diameter"));
+      var brightness=firstNumber(rowValue(p,"Brightness"));
+      return {
+        power:power==null?Infinity:power,
+        battery:battery==null?Infinity:battery,
+        beam:beam==null?Infinity:beam,
+        runtime:runtime==null?Infinity:runtime,
+        diameter:diameter==null?Infinity:diameter,
+        brightness:brightness==null?Infinity:brightness
+      };
+    }
+    function compareRechargeable(a,b){
+      var A=rechargeSpec(a),B=rechargeSpec(b);
+      // Primary order: supplier power claim, then battery capacity, beam range and runtime.
+      // Products whose supplier sheet does not state power/battery are kept after fully specified models.
+      return A.power-B.power ||
+        A.battery-B.battery ||
+        A.beam-B.beam ||
+        A.runtime-B.runtime ||
+        A.brightness-B.brightness ||
+        A.diameter-B.diameter ||
+        String(a.name||"").localeCompare(String(b.name||""),undefined,{numeric:true,sensitivity:"base"});
+    }
+    var orderedAdditions=additions.slice().sort(function(a,b){
+      var ar=a.category==="Rechargeable Lights",br=b.category==="Rechargeable Lights";
+      if(ar&&br)return compareRechargeable(a,b);
+      if(ar!==br)return ar?1:-1;
+      return (a.cataloguePage||0)-(b.cataloguePage||0);
+    });
+
     var known=new Set(products.map(function(p){return p.id}));
-    additions.forEach(function(p){if(!known.has(p.id)){products.push(p);known.add(p.id)}});
+    orderedAdditions.forEach(function(p){if(!known.has(p.id)){products.push(p);known.add(p.id)}});
 
     if(!d.getElementById('rpeLightingStyle')){
       var style=d.createElement('style');style.id='rpeLightingStyle';
