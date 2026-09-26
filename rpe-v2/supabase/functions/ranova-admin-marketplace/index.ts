@@ -32,6 +32,7 @@ async function getAdmin(req:Request){
 }
 function canSellerReview(role:string){return role==="owner"||role==="manager"}
 function canProductReview(role:string){return role==="owner"||role==="manager"||role==="catalogue"}
+function canOrderReview(role:string){return role==="owner"||role==="manager"||role==="orders"}
 async function log(adminUserId:string,action:string,entityType:string,entityId:string|null,metadata:any={}){
   await admin.from("admin_activity").insert({
     admin_user_id:adminUserId,action,entity_type:entityType,entity_id:entityId,metadata
@@ -47,7 +48,7 @@ function accepted(v:any){
   return ["approved","complete","verified"].includes(String(v||"").toLowerCase());
 }
 async function dashboard(role:string){
-  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],counts:{}};
+  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],seller_orders:[],counts:{}};
   if(canSellerReview(role)){
     const [{data:apps},{data:files},{data:accounts}]=await Promise.all([
       admin.from("ranova_seller_applications")
@@ -61,6 +62,13 @@ async function dashboard(role:string){
     const accountMap=new Map((accounts||[]).map((x:any)=>[x.application_ref,x]));
     out.applications=(apps||[]).map((a:any)=>({...a,linked_user_id:accountMap.get(a.application_ref)?.user_id||null}));
     out.files=files||[];
+  }
+
+  if(canOrderReview(role)){
+    const {data:sellerOrders}=await admin.from("ranova_seller_orders")
+      .select("id,order_ref,platform_order_ref,parent_order_id,seller_id,store_id,buyer_name,buyer_phone,buyer_email,delivery_location,payment_method,items,item_count,subtotal,delivery_fee,total,currency,payment_status,order_status,buyer_note,seller_note,created_at,updated_at")
+      .order("created_at",{ascending:false}).limit(500);
+    out.seller_orders=sellerOrders||[];
   }
 
   if(canSellerReview(role)||canProductReview(role)){
@@ -85,7 +93,9 @@ async function dashboard(role:string){
     documents_pending:out.files.filter((f:any)=>["submitted","under_review"].includes(String(f.review_status||"").toLowerCase())).length,
     products_pending:out.products.filter((p:any)=>p.product_status==="pending_review").length,
     active_seller_products:out.products.filter((p:any)=>p.product_status==="active").length,
-    active_stores:out.stores.filter((s:any)=>s.store_status==="active").length
+    active_stores:out.stores.filter((s:any)=>s.store_status==="active").length,
+    seller_orders:out.seller_orders.length,
+    seller_orders_open:out.seller_orders.filter((o:any)=>!["delivered","cancelled","returned"].includes(o.order_status)).length
   };
   return out;
 }
