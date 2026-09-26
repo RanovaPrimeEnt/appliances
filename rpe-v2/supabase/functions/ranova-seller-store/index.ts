@@ -384,6 +384,7 @@ Deno.serve(async(req:Request)=>{
       const rows=await serviceGet("ranova_seller_orders",{select:"*",id:"eq."+orderId,seller_id:"eq."+user.id,limit:"1"});
       const order=rows[0];
       if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      if(String(order.payment_status)==="paid")return response(h,409,{ok:false,error:"Delivery price and fulfilment plan are locked after RANOVA confirms customer payment. Courier/tracking details can still be updated."});
       if(["delivered","cancelled","returned"].includes(order.order_status))return response(h,409,{ok:false,error:"Delivery plan can no longer be changed for this order."});
 
       const zoneId=clean(b.zone_id,80)||null;
@@ -445,6 +446,9 @@ Deno.serve(async(req:Request)=>{
       const deliveries=await serviceGet("ranova_order_deliveries",{select:"*",seller_order_id:"eq."+order.id,store_id:"eq."+store.id,limit:"1"});
       const delivery=deliveries[0];
       if(!delivery)return response(h,400,{ok:false,error:"Save the delivery plan first."});
+      if(["delivered_pending_confirmation","delivered_confirmed","returned","cancelled"].includes(delivery.delivery_status)){
+        return response(h,409,{ok:false,error:"Courier details are locked once delivery is awaiting/final confirmation or the delivery is closed."});
+      }
       const courier_name=clean(b.courier_name,160),courier_phone=clean(b.courier_phone,60),courier_reference=clean(b.courier_reference,180),tracking_url=clean(b.tracking_url,1000);
       if(tracking_url&&!/^https:\/\//i.test(tracking_url))return response(h,400,{ok:false,error:"Tracking link must use HTTPS."});
       const now=new Date().toISOString();
@@ -531,6 +535,8 @@ Deno.serve(async(req:Request)=>{
         cancelled:[]
       };
       if(!(allowed[delivery.delivery_status]||[]).includes(next))return response(h,400,{ok:false,error:"That delivery-status change is not allowed from "+String(delivery.delivery_status).replace(/_/g," ")+". "});
+      if(["failed_attempt","returned","cancelled"].includes(next)&&!note)return response(h,400,{ok:false,error:"Add a reason for this delivery status."});
+      if(next==="cancelled"&&String(order.payment_status)==="paid")return response(h,409,{ok:false,error:"A paid order cannot be cancelled unilaterally. Use the refund/dispute process so the buyer and RANOVA have a record."});
       if(["picked_up","in_transit","out_for_delivery","delivered_pending_confirmation"].includes(next)&&String(order.payment_status)!=="paid"){
         return response(h,409,{ok:false,error:"RANOVA must confirm customer payment before this order can be dispatched."});
       }
@@ -687,6 +693,7 @@ Deno.serve(async(req:Request)=>{
       const rows=await serviceGet("ranova_seller_orders",{select:"*",id:"eq."+id,seller_id:"eq."+user.id,limit:"1"});
       const order=rows[0];
       if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      if(String(order.payment_status)==="paid")return response(h,409,{ok:false,error:"The order amount is locked because RANOVA has already confirmed customer payment."});
       if(["dispatched","delivered","cancelled","returned"].includes(order.order_status)){
         return response(h,400,{ok:false,error:"This order can no longer be repriced."});
       }
