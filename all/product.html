@@ -26,7 +26,7 @@
     <div id="category" class="eyebrow"></div><h1 id="name"></h1><p id="short" class="desc"></p>
     <div id="chips" class="chips"></div><div id="price" class="price"></div>
     <div class="qtyrow"><div class="field"><label>Quantity</label><input id="qty" type="number" min="1" value="1"></div><div id="tierHint" class="notice" style="margin:0">Quantity pricing will appear here when available.</div></div>
-    <div class="cta"><a id="buyNow" class="buy" href="#">Add to order</a><button id="saveBtn" class="save" type="button">♡ Save product</button></div>
+    <div class="cta"><a id="buyNow" class="buy" href="#">Add to order</a><button id="saveBtn" class="save" type="button">♡ Save product</button></div><div class="cta" style="grid-template-columns:1fr"><button id="shareBtn" class="save" type="button">Share product</button></div>
     <div id="buyerProtect" class="notice">RANOVA payment and delivery protections remain in force. Final payment and delivery confirmation happen through the protected order flow.</div>
   </div>
 </section>
@@ -90,6 +90,7 @@ function deliveryHtml(zones){return zones.length?zones.map(function(z){var price
 async function load(country){try{render(await api(country))}catch(e){el("loading").textContent=e.message||"This product is unavailable."}}
 el("qty").oninput=function(){if(!current)return;var p=current.product,q=Math.max(Number(p.moq||1),Number(this.value||p.moq||1));el("price").innerHTML=money(priceForQty(p,q))+'<small>per '+esc(p.unit_label||"unit")+'</small>';el("buyNow").href="./seller-store.html?store="+encodeURIComponent(current.store.slug)+"&product="+encodeURIComponent(p.id)+"&qty="+encodeURIComponent(q);var tiers=p.pricing_tiers||[];var next=tiers.filter(function(t){return Number(t.min_qty)>q}).sort(function(a,b){return Number(a.min_qty)-Number(b.min_qty)})[0];el("tierHint").textContent=next?"Buy "+next.min_qty+"+ for "+money(next.unit_price)+" per "+(p.unit_label||"unit")+".":"Current quantity uses the best published tier available."};
 el("saveBtn").onclick=function(){if(!current)return;try{var x=JSON.parse(localStorage.getItem("ranova_saved_products")||"[]");if(!x.includes(current.product.id))x.push(current.product.id);localStorage.setItem("ranova_saved_products",JSON.stringify(x));this.textContent="♥ Saved"}catch(e){}};
+el("shareBtn").onclick=async function(){if(!current)return;var data={title:current.product.name,text:"View "+current.product.name+" on RANOVA Marketplace",url:location.href};try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(location.href);this.textContent="Link copied"}}catch(e){}};
 el("country").onchange=function(){load(this.value)};
 (async function(){if(!productId){el("loading").textContent="Product link is incomplete.";return}try{var r=await fetch("https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-country-service",{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({action:"countries"})});var o=await r.json();(o.countries||[]).forEach(function(c){var op=document.createElement("option");op.value=c.code;op.textContent=c.name;el("country").appendChild(op)})}catch(e){}load("")})();
 })();
