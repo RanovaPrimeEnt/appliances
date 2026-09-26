@@ -22,6 +22,7 @@ Deno.serve(async(req:Request)=>{
     .select("*")
     .eq("email_requested",true)
     .in("email_status",["queued","failed"])
+    .lt("email_attempt_count",5)
     .not("recipient_email","is",null)
     .order("created_at",{ascending:true})
     .limit(50);
@@ -44,13 +45,13 @@ Deno.serve(async(req:Request)=>{
       const body=await r.text();
       if(!r.ok)throw new Error("Email provider returned HTTP "+r.status+": "+body.slice(0,300));
       await admin.from("ranova_marketplace_notifications").update({
-        email_status:"sent",email_attempted_at:new Date().toISOString(),email_sent_at:new Date().toISOString(),email_error:null
+        email_status:"sent",email_attempt_count:Number(n.email_attempt_count||0)+1,email_attempted_at:new Date().toISOString(),email_sent_at:new Date().toISOString(),email_error:null
       }).eq("id",n.id);
       sent++;
     }catch(e){
       const msg=e instanceof Error?e.message:String(e);
       await admin.from("ranova_marketplace_notifications").update({
-        email_status:"failed",email_attempted_at:new Date().toISOString(),email_error:msg.slice(0,1000)
+        email_status:"failed",email_attempt_count:Number(n.email_attempt_count||0)+1,email_attempted_at:new Date().toISOString(),email_error:msg.slice(0,1000)
       }).eq("id",n.id);
       failed++;
     }
