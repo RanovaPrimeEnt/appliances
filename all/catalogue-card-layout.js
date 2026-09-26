@@ -100,6 +100,20 @@ function installStyle(d){
     .rpe-checkout-product{padding:10px!important;border-radius:12px!important;background:#f7f9f8!important;margin-bottom:12px!important}
     .rpe-checkout-product b{display:block!important;font-size:12px!important;color:#173d32!important}
     .rpe-checkout-product span{display:block!important;margin-top:3px!important;font-size:10px!important;color:#718078!important}
+.rpe-checkout-items{display:grid!important;gap:7px!important;margin-bottom:12px!important}
+    .rpe-checkout-item{display:grid!important;grid-template-columns:1fr auto!important;gap:8px!important;align-items:center!important;padding:9px 10px!important;border:1px solid #e5ebe8!important;border-radius:11px!important;background:#fafbfa!important}
+    .rpe-checkout-item b{display:block!important;font-size:11px!important;color:#243d34!important;line-height:1.3!important}
+    .rpe-checkout-item small{display:block!important;margin-top:2px!important;font-size:9px!important;color:#87938e!important}
+    .rpe-checkout-item-qty{font-size:11px!important;font-weight:900!important;color:#f05a21!important;white-space:nowrap!important}
+    .rpe-checkout-payment{display:grid!important;gap:7px!important;margin:12px 0!important}
+    .rpe-checkout-payment-title{font-size:11px!important;font-weight:950!important;color:#3c5149!important}
+    .rpe-checkout-pay-option{display:grid!important;grid-template-columns:22px 1fr!important;gap:9px!important;align-items:center!important;padding:10px!important;border:1px solid #dfe7e3!important;border-radius:12px!important;background:#fff!important;cursor:pointer!important;text-align:left!important}
+    .rpe-checkout-pay-option.active{border-color:#ff7c49!important;background:#fff7f2!important}
+    .rpe-checkout-pay-radio{width:17px!important;height:17px!important;border:2px solid #c8d4cf!important;border-radius:50%!important;display:grid!important;place-items:center!important}
+    .rpe-checkout-pay-option.active .rpe-checkout-pay-radio{border-color:#ff5a2d!important}
+    .rpe-checkout-pay-option.active .rpe-checkout-pay-radio:after{content:""!important;width:7px!important;height:7px!important;border-radius:50%!important;background:#ff5a2d!important}
+    .rpe-checkout-pay-option b{display:block!important;font-size:11px!important;color:#243d34!important}
+    .rpe-checkout-pay-option small{display:block!important;margin-top:2px!important;font-size:9px!important;color:#84918c!important}
     .rpe-checkout-field{display:grid!important;gap:5px!important;margin-top:10px!important}
     .rpe-checkout-field label{font-size:10px!important;font-weight:900!important;color:#53665e!important}
     .rpe-checkout-field input{width:100%!important;height:42px!important;border:1px solid #dce5e1!important;border-radius:11px!important;padding:0 11px!important;box-sizing:border-box!important;font-size:13px!important;outline:none!important}
@@ -159,36 +173,75 @@ function ensureCheckoutModal(d,w){
   modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("open")});
   return modal;
 }
+function collectSelectedItems(d){
+  var items=[];
+  [].slice.call(d.querySelectorAll("#grid .product")).forEach(function(card){
+    var q=Math.max(0,parseInt(card.dataset.quantity||"0",10)||0);
+    if(q<1)return;
+    var unit=parseFloat(card.dataset.rpeUnitPrice||"0")||0;
+    items.push({
+      product_id:card.dataset.rpeProductId||"",
+      product_name:card.dataset.rpeProductName||"Product",
+      quantity:q,
+      unit_price:unit,
+      line_total:unit>0?unit*q:0
+    });
+  });
+  return items;
+}
+function combinedTotal(items){
+  if(!items.length||!items.every(function(x){return Number(x.unit_price)>0}))return null;
+  return items.reduce(function(sum,x){return sum+(Number(x.unit_price)||0)*(Number(x.quantity)||0)},0);
+}
 function openCheckout(d,w,data){
   var modal=ensureCheckoutModal(d,w);
   var body=modal.querySelector(".rpe-checkout-body");
   if(!body)return;
+  var items=Array.isArray(data.items)?data.items:[];
+  var totalQty=items.reduce(function(sum,x){return sum+(Number(x.quantity)||0)},0);
+  var combined=combinedTotal(items);
+  var selectedPayment="";
+  var itemHtml=items.map(function(item){
+    return '<div class="rpe-checkout-item"><span><b>'+esc(item.product_name)+'</b><small>'+esc(item.product_id||"")+(item.unit_price>0?' · '+money(item.unit_price)+' each':' · Price to be confirmed')+'</small></span><span class="rpe-checkout-item-qty">× '+item.quantity+'</span></div>';
+  }).join("");
+
   body.innerHTML=
-    '<div class="rpe-checkout-product"><b>'+esc(data.product_name)+'</b><span>'+esc(data.product_id||"")+'</span></div>'+
-    '<div class="rpe-checkout-field"><label>Your name</label><input class="rpe-customer-name" type="text" autocomplete="name" placeholder="Full name"></div>'+
-    '<div class="rpe-checkout-field"><label>Phone number</label><input class="rpe-customer-phone" type="tel" autocomplete="tel" placeholder="e.g. 024 000 0000"></div>'+
+    '<div class="rpe-checkout-items">'+itemHtml+'</div>'+
     '<div class="rpe-checkout-summary">'+
-      '<div class="rpe-checkout-summary-row"><span>Quantity</span><strong>'+data.quantity+'</strong></div>'+
+      '<div class="rpe-checkout-summary-row"><span>Products</span><strong>'+items.length+'</strong></div>'+
+      '<div class="rpe-checkout-summary-row"><span>Total quantity</span><strong>'+totalQty+' item(s)</strong></div>'+
       '<div class="rpe-checkout-summary-row"><span>Deliver to</span><strong>'+esc(data.delivery_location)+'</strong></div>'+
-      '<div class="rpe-checkout-summary-row"><span>Payment method</span><strong>'+esc(data.payment_method)+'</strong></div>'+
-      '<div class="rpe-checkout-summary-row"><span>Product total</span><strong>'+money(data.product_total||0)+'</strong></div>'+
+      '<div class="rpe-checkout-summary-row"><span>Product total</span><strong>'+(combined===null?'To be confirmed':money(combined))+'</strong></div>'+
       '<div class="rpe-checkout-summary-row"><span>Delivery fee</span><strong>To be confirmed</strong></div>'+
     '</div>'+
-    '<button class="rpe-checkout-submit" type="button">Place Order</button>'+
-    '<div class="rpe-checkout-status">Your payment account details are not shown publicly. RANOVA will confirm the order before payment instructions are released.</div>';
+    '<div class="rpe-checkout-payment">'+
+      '<div class="rpe-checkout-payment-title">Choose payment method</div>'+
+      '<button type="button" class="rpe-checkout-pay-option" data-method="Mobile Money"><span class="rpe-checkout-pay-radio"></span><span><b>Mobile Money</b><small>MTN MoMo, Telecel Cash or AT Money</small></span></button>'+
+      '<button type="button" class="rpe-checkout-pay-option" data-method="Bank Transfer"><span class="rpe-checkout-pay-radio"></span><span><b>Bank Transfer</b><small>Suitable for larger or bulk orders</small></span></button>'+
+    '</div>'+
+    '<div class="rpe-checkout-field"><label>Your name</label><input class="rpe-customer-name" type="text" autocomplete="name" placeholder="Full name"></div>'+
+    '<div class="rpe-checkout-field"><label>Phone number</label><input class="rpe-customer-phone" type="tel" autocomplete="tel" placeholder="e.g. 024 000 0000"></div>'+
+    '<button class="rpe-checkout-submit" type="button" disabled>Place Order</button>'+
+    '<div class="rpe-checkout-status">Choose a payment method, then place the combined order. Payment account details remain private until confirmation.</div>';
 
   var submit=body.querySelector(".rpe-checkout-submit");
+  var status=body.querySelector(".rpe-checkout-status");
+  var payOptions=[].slice.call(body.querySelectorAll(".rpe-checkout-pay-option"));
+  payOptions.forEach(function(option){
+    option.onclick=function(){
+      selectedPayment=this.getAttribute("data-method")||"";
+      payOptions.forEach(function(x){x.classList.toggle("active",x===option)});
+      if(submit)submit.disabled=!selectedPayment;
+    };
+  });
+
   if(submit)submit.onclick=async function(){
     var name=cleanInput(body.querySelector(".rpe-customer-name"));
     var phone=cleanInput(body.querySelector(".rpe-customer-phone"));
-    var status=body.querySelector(".rpe-checkout-status");
-    if(!name||!phone){
-      if(status)status.textContent="Please enter your name and phone number.";
-      return;
-    }
-    submit.disabled=true;
-    submit.textContent="Placing Order…";
-    if(status)status.textContent="Saving your order securely…";
+    if(!selectedPayment){if(status)status.textContent="Please choose Mobile Money or Bank Transfer.";return}
+    if(!name||!phone){if(status)status.textContent="Please enter your name and phone number.";return}
+    submit.disabled=true;submit.textContent="Placing Order…";
+    if(status)status.textContent="Saving your combined order securely…";
     try{
       var res=await fetch(ORDER_ENDPOINT,{
         method:"POST",
@@ -196,12 +249,9 @@ function openCheckout(d,w,data){
         body:JSON.stringify({
           customer_name:name,
           customer_phone:phone,
-          product_id:data.product_id,
-          product_name:data.product_name,
-          quantity:data.quantity,
           delivery_location:data.delivery_location,
-          payment_method:data.payment_method,
-          unit_price:data.unit_price
+          payment_method:selectedPayment,
+          items:items
         })
       });
       var out=await res.json().catch(function(){return{}});
@@ -210,18 +260,33 @@ function openCheckout(d,w,data){
         '<div class="rpe-order-success">'+
           '<div class="rpe-order-success-mark">✓</div>'+
           '<h3 style="margin:0;color:#173d32">Order placed</h3>'+
-          '<p style="margin:0;color:#718078;font-size:11px;line-height:1.5">Your order has been recorded successfully inside RANOVA.</p>'+
+          '<p style="margin:0;color:#718078;font-size:11px;line-height:1.5">'+items.length+' product(s) have been combined into one RANOVA order.</p>'+
           '<div class="rpe-order-ref">'+esc(out.order_ref||"Order received")+'</div>'+
-          '<div class="rpe-checkout-summary-row"><span>Status</span><strong>Awaiting confirmation</strong></div>'+
-          '<div class="rpe-checkout-summary-row"><span>Payment method</span><strong>'+esc(data.payment_method)+'</strong></div>'+
-          '<p style="margin:0;color:#718078;font-size:10px;line-height:1.5">Payment details are kept private and will be provided after the order is confirmed.</p>'+
+          '<div class="rpe-checkout-summary-row"><span>Total quantity</span><strong>'+totalQty+' item(s)</strong></div>'+
+          '<div class="rpe-checkout-summary-row"><span>Payment method</span><strong>'+esc(selectedPayment)+'</strong></div>'+
+          '<div class="rpe-checkout-summary-row"><span>Payment status</span><strong>Not started</strong></div>'+
+          '<div class="rpe-checkout-summary-row"><span>Order status</span><strong>Awaiting confirmation</strong></div>'+
+          '<p style="margin:0;color:#718078;font-size:10px;line-height:1.5">Your payment choice is saved with this combined order. Secure payment instructions remain private until confirmation.</p>'+
           '<button class="rpe-checkout-submit rpe-checkout-done" type="button">Done</button>'+
         '</div>';
+      items.forEach(function(item){
+        [].slice.call(d.querySelectorAll("#grid .product")).forEach(function(card){
+          if(card.dataset.rpeProductId===String(item.product_id||"")){
+            card.dataset.quantity="0";
+            var input=card.querySelector(".rpe-qty-input");
+            var count=card.querySelector(".rpe-selected-count");
+            var total=card.querySelector(".rpe-product-total");
+            var grand=card.querySelector(".rpe-grand-total-value");
+            var btn=card.querySelector(".rpe-order-now");
+            if(input)input.value="0";if(count)count.textContent="0";if(total)total.textContent=money(0);if(grand)grand.textContent=money(0);if(btn)btn.disabled=true;
+            try{w.localStorage.setItem("rpeQty:"+(item.product_id||item.product_name||"product"),"0")}catch(e){}
+          }
+        });
+      });
       var done=body.querySelector(".rpe-checkout-done");
       if(done)done.onclick=function(){modal.classList.remove("open")};
     }catch(err){
-      submit.disabled=false;
-      submit.textContent="Place Order";
+      submit.disabled=false;submit.textContent="Place Order";
       if(status)status.textContent=err&&err.message?err.message:"Could not place the order. Please try again.";
     }
   };
@@ -274,16 +339,7 @@ function decorateCard(card,p,w){
       '<div class="rpe-order-row"><span class="rpe-order-label">Product total</span><span class="rpe-order-value rpe-product-total">'+money(unitPrice*savedQty)+'</span></div>'+
       '<div class="rpe-order-row"><span class="rpe-order-label">Delivery fee</span><span class="rpe-order-value rpe-delivery-fee">To be confirmed</span></div>'+
       '<div class="rpe-grand-total"><span class="rpe-grand-total-label">Total payment</span><span class="rpe-grand-total-value">'+money(unitPrice*savedQty)+'</span></div>'+
-      '<div class="rpe-payment-section">'+
-        '<div class="rpe-payment-title">Payment Method</div>'+
-        '<div class="rpe-payment-methods">'+
-          '<button type="button" class="rpe-payment-option" data-method="Mobile Money"><span class="rpe-payment-radio"></span><span><span class="rpe-payment-name">Mobile Money</span><span class="rpe-payment-desc">MTN MoMo, Telecel Cash or AT Money</span></span></button>'+
-
-          '<button type="button" class="rpe-payment-option" data-method="Bank Transfer"><span class="rpe-payment-radio"></span><span><span class="rpe-payment-name">Bank Transfer</span><span class="rpe-payment-desc">Recommended for large or bulk orders</span></span></button>'+
-        '</div>'+
-        '<div class="rpe-checkout-note">Payment account details are not displayed publicly. Your order is recorded first, then secure payment instructions are provided after confirmation.</div>'+
-      '</div>'+
-      '<button class="rpe-order-now'+(unitPrice>0?'':' request-price')+'" type="button" disabled>'+(unitPrice>0?'Proceed to Payment':'Request Final Price')+'</button>'+
+      '<button class="rpe-order-now" type="button"'+(savedQty<1?' disabled':'')+'>Order Now</button>'+
     '</div>';
 
   var qtyInput=holder.querySelector(".rpe-qty-input");
@@ -294,8 +350,6 @@ function decorateCard(card,p,w){
   var locationSelect=holder.querySelector(".rpe-location-select");
   var orderBtn=holder.querySelector(".rpe-order-now");
   var grandTotalEl=holder.querySelector(".rpe-grand-total-value");
-  var paymentOptions=[].slice.call(holder.querySelectorAll(".rpe-payment-option"));
-  var selectedPayment="";
 
   function stopQtyEvent(e){e.stopPropagation()}
   function refreshOrderSummary(v){
@@ -304,7 +358,7 @@ function decorateCard(card,p,w){
     if(selectedCount)selectedCount.textContent=String(v);
     if(totalEl)totalEl.textContent=money(unitPrice*v);
     if(grandTotalEl)grandTotalEl.textContent=money(unitPrice*v);
-    if(orderBtn)orderBtn.disabled=(v<1||!selectedPayment);
+    if(orderBtn)orderBtn.disabled=(v<1);
     card.dataset.quantity=String(v);
     try{w.localStorage.setItem(qtyKey,String(v))}catch(e){}
     return v;
@@ -339,32 +393,19 @@ function decorateCard(card,p,w){
     });
   }
 
-  paymentOptions.forEach(function(option){
-    option.addEventListener("click",function(e){
-      stopQtyEvent(e);
-      selectedPayment=this.getAttribute("data-method")||"";
-      paymentOptions.forEach(function(x){x.classList.toggle("active",x===option)});
-      var qty=Math.max(0,parseInt(qtyInput&&qtyInput.value,10)||0);
-      if(orderBtn)orderBtn.disabled=(qty<1||!selectedPayment);
-    });
-    option.addEventListener("pointerdown",stopQtyEvent);
-  });
+  card.dataset.rpeProductId=String(id||"");
+  card.dataset.rpeProductName=String(p.name||"Product");
+  card.dataset.rpeUnitPrice=String(unitPrice||0);
 
   if(orderBtn){
     orderBtn.addEventListener("click",function(e){
       stopQtyEvent(e);
       var qty=Math.max(0,parseInt(qtyInput&&qtyInput.value,10)||0);
-      if(qty<1||!selectedPayment)return;
+      if(qty<1)return;
+      var items=collectSelectedItems(holder.ownerDocument);
+      if(!items.length)return;
       var destination=locationSelect?locationSelect.value:"Accra, Ghana";
-      openCheckout(holder.ownerDocument,w,{
-        product_id:id,
-        product_name:p.name||"Product",
-        quantity:qty,
-        delivery_location:destination,
-        payment_method:selectedPayment,
-        unit_price:unitPrice,
-        product_total:unitPrice*qty
-      });
+      openCheckout(holder.ownerDocument,w,{items:items,delivery_location:destination});
     });
   }
 
