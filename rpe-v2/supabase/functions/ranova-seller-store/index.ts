@@ -73,6 +73,39 @@ async function patchApplication(ref:string,body:any){
     body:JSON.stringify({...body,updated_at:new Date().toISOString()})
   });
 }
+async function syncParentOrder(parentId:string|null){
+  if(!parentId)return;
+  const parents=await serviceGet("ranova_customer_orders",{select:"id,order_source",id:"eq."+parentId,limit:"1"});
+  const parent=parents[0];
+  if(!parent)return;
+  const children=await serviceGet("ranova_seller_orders",{
+    select:"subtotal,delivery_fee,total,order_status",
+    parent_order_id:"eq."+parentId,
+    order:"created_at.asc"
+  });
+  if(!children.length)return;
+
+  const states=children.map((x:any)=>x.order_status);
+  let status="awaiting_confirmation";
+  if(states.every((x:string)=>x==="delivered"))status="delivered";
+  else if(states.every((x:string)=>x==="cancelled"))status="cancelled";
+  else if(states.some((x:string)=>x==="dispatched"))status="dispatched";
+  else if(states.some((x:string)=>x==="ready_for_dispatch"))status="ready_for_dispatch";
+  else if(states.some((x:string)=>x==="preparing"))status="preparing";
+  else if(states.every((x:string)=>["confirmed","delivered"].includes(x)))status="awaiting_payment";
+
+  const patch:any={status};
+  if(parent.order_source==="seller_store"){
+    if(children.every((x:any)=>x.subtotal!==null))patch.product_total=Number(children.reduce((s:number,x:any)=>s+Number(x.subtotal||0),0).toFixed(2));
+    if(children.every((x:any)=>x.delivery_fee!==null))patch.delivery_fee=Number(children.reduce((s:number,x:any)=>s+Number(x.delivery_fee||0),0).toFixed(2));
+    if(children.every((x:any)=>x.total!==null))patch.total_payment=Number(children.reduce((s:number,x:any)=>s+Number(x.total||0),0).toFixed(2));
+  }
+  await fetch(SUPABASE_URL+"/rest/v1/ranova_customer_orders?id=eq."+encodeURIComponent(parentId),{
+    method:"PATCH",
+    headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json"},
+    body:JSON.stringify(patch)
+  });
+}
 async function loadDashboard(userId:string,seller:any){
   const stores=await serviceGet("ranova_seller_stores",{select:"*",seller_id:"eq."+userId,limit:"1"});
   const store=stores[0]||null;
@@ -303,6 +336,7 @@ Deno.serve(async(req:Request)=>{
       });
       const out=await r.json().catch(()=>[]);
       if(!r.ok||!out.length)throw new Error("Could not update the order amount.");
+      await syncParentOrder(order.parent_order_id||null);
       return response(h,200,{ok:true,order:out[0]});
     }
 
@@ -338,6 +372,7 @@ Deno.serve(async(req:Request)=>{
       });
       const out=await r.json().catch(()=>[]);
       if(!r.ok||!out.length)throw new Error("Could not update order status.");
+      await syncParentOrder(order.parent_order_id||null);
       return response(h,200,{ok:true,order:out[0]});
     }
 
