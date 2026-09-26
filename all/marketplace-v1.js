@@ -7,7 +7,7 @@ function idoc(){try{return frame.contentDocument||frame.contentWindow.document}c
 function escapeHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function addStyles(d){
   if(d.getElementById("rpeMarketplaceFoundationCss"))return;
-  var l=d.createElement("link");l.id="rpeMarketplaceFoundationCss";l.rel="stylesheet";l.href="./marketplace-v1.css?v=20260926-1";d.head.appendChild(l);
+  var l=d.createElement("link");l.id="rpeMarketplaceFoundationCss";l.rel="stylesheet";l.href="./marketplace-v1.css?v=20260926-2";d.head.appendChild(l);
 }
 function openRFQ(name){
   var url="./rfq.html";
