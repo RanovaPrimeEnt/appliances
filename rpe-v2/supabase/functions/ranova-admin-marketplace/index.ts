@@ -133,11 +133,13 @@ Deno.serve(async(req:Request)=>{
       const field=stageMap[file.document_type];
       if(field){
         const stageStatus=status==="rejected"?"needs_information":status;
-        await admin.from("ranova_seller_applications").update({
+        const appPatch:any={
           [field]:stageStatus,
           verification_status:stageStatus==="needs_information"?"needs_information":"in_progress",
           updated_at:now
-        }).eq("application_ref",file.application_ref);
+        };
+        if(note)appPatch.verification_notes=note;
+        await admin.from("ranova_seller_applications").update(appPatch).eq("application_ref",file.application_ref);
       }
       await log(actor.user.id,"seller_document_reviewed","seller_verification_file",id,{status,note,application_ref:file.application_ref,document_type:file.document_type});
       return response(h,200,{ok:true});
@@ -179,11 +181,14 @@ Deno.serve(async(req:Request)=>{
       if(decision==="needs_information")status="under_review";
       if(decision==="approved"&&String(storeSetup||"").toLowerCase()==="locked")storeSetup="in_progress";
       if(["rejected","suspended"].includes(decision))storeSetup="locked";
+      const sellerNote=decision==="approved"
+        ? (note||"Seller verification approved. Store Builder is now available.")
+        : (note||app.verification_notes||null);
       const {error}=await admin.from("ranova_seller_applications").update({
         status,
         verification_status:decision,
         store_setup_status:storeSetup,
-        verification_notes:note||app.verification_notes||null,
+        verification_notes:sellerNote,
         reviewed_at:now,
         reviewed_by:actor.user.id,
         updated_at:now
