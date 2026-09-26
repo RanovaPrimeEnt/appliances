@@ -1,10 +1,9 @@
-const CACHE="rpe-shell-v17";
+const CACHE="rpe-shell-v18";
 const SHELL=["./","./site.html","./about.html","./contact.html","./shipping-returns.html","./privacy.html","./terms.html","./rpe-mark.svg","./manifest.webmanifest",
   "./solar-category.js?v=20260926-4",
-  "./catalogue-lighting.js?v=20260926-3",
+  "./catalogue-lighting.js?v=20260926-4",
   "./lighting-english.js?v=20260926-1",
-  "./lighting-integration.js?v=20260926-6",
-  "./lighting-overlays.js?v=20260926-4",
+  "./lighting-integration.js?v=20260926-7",
   "./friendly-upgrades.js?v=20260926-7"];
 self.addEventListener("install",event=>{
   self.skipWaiting();
