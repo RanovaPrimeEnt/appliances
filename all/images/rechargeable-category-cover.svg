@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+<title id="title">Rechargeable Lights</title>
+<desc id="desc">Rechargeable searchlights and headlamps category cover featuring the F288 rechargeable searchlight.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#f8fbff"/>
+    <stop offset=".46" stop-color="#fff8ec"/>
+    <stop offset="1" stop-color="#eaf5ef"/>
+  </linearGradient>
+  <radialGradient id="glow" cx=".78" cy=".55" r=".5">
+    <stop offset="0" stop-color="#ffd99a" stop-opacity=".62"/>
+    <stop offset="1" stop-color="#ffd99a" stop-opacity="0"/>
+  </radialGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+    <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#173d32" flood-opacity=".18"/>
+  </filter>
+  <clipPath id="productCrop"><rect x="650" y="65" width="500" height="555" rx="34"/></clipPath>
+</defs>
+<rect width="1200" height="675" fill="url(#bg)"/>
+<circle cx="940" cy="365" r="340" fill="url(#glow)"/>
+<path d="M0 555 C180 475 330 540 500 500 C690 455 810 510 1200 420 L1200 675 L0 675Z" fill="#dfece6" opacity=".55"/>
+<path d="M0 600 C230 530 390 585 560 545 C760 500 960 560 1200 505 L1200 675 L0 675Z" fill="#cddfd7" opacity=".52"/>
+<g transform="translate(72 132)">
+  <text x="0" y="0" font-family="system-ui,-apple-system,Segoe UI,Arial,sans-serif" font-size="76" font-weight="800" fill="#102f29">Rechargeable</text>
+  <text x="0" y="94" font-family="system-ui,-apple-system,Segoe UI,Arial,sans-serif" font-size="98" font-weight="900" fill="#d97706">Lights</text>
+  <rect x="2" y="123" width="78" height="7" rx="3.5" fill="#d97706"/>
+  <text x="0" y="178" font-family="system-ui,-apple-system,Segoe UI,Arial,sans-serif" font-size="29" font-weight="600" fill="#53675f">Portable searchlights &amp; headlamps</text>
+  <text x="0" y="231" font-family="system-ui,-apple-system,Segoe UI,Arial,sans-serif" font-size="20" font-weight="500" fill="#728078">Reliable lighting for home, work and outdoor use</text>
+</g>
+<g filter="url(#shadow)">
+  <rect x="650" y="65" width="500" height="555" rx="34" fill="#fff" opacity=".9"/>
+  <g clip-path="url(#productCrop)">
+    <image href="./lighting/source-41.jpg" x="590" y="15" width="635" height="610" preserveAspectRatio="xMidYMid slice"/>
+    <rect x="650" y="65" width="500" height="555" fill="none" stroke="#ffffff" stroke-width="12" opacity=".86"/>
+  </g>
+</g>
+<rect x="885" y="586" width="220" height="42" rx="21" fill="#102f29" opacity=".94"/>
+<text x="995" y="613" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Arial,sans-serif" font-size="17" font-weight="800" fill="#fff">RECHARGEABLE LIGHTING</text>
+</svg>
