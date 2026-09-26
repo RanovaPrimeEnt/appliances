@@ -16,7 +16,7 @@
       '.rpe-photo-stage>img{display:block!important;width:100%!important;height:auto!important;max-height:none!important;padding:0!important;transform:none!important;object-fit:contain!important}' +
       '.product-img .rpe-photo-stage{width:min(100%,calc(var(--rpe-ratio) * 240px));max-height:100%}' +
       '@media(max-width:620px){.product-img .rpe-photo-stage{width:min(100%,calc(var(--rpe-ratio) * 285px))}}' +
-      '.modal-image .rpe-photo-stage{width:100%;align-self:start}' +
+      '.modal-image:has(.rpe-photo-stage){background:#fff!important;min-height:0!important;align-self:start!important}.modal-image .rpe-photo-stage{width:100%;align-self:start}' +
       '.rpe-photo-english{position:absolute;inset:0;pointer-events:none;overflow:hidden;font:600 2.25cqw/1.18 Arial,sans-serif;color:#222}' +
       '.rpe-photo-english .rpe-mask{position:absolute;box-sizing:border-box;overflow:hidden;padding:.6cqw 1.2cqw;background:#fff;white-space:pre-line;line-height:1.19}' +
       '.rpe-photo-english .rpe-head{color:#fff;background:linear-gradient(105deg,#d91717 0 45%,#090909 45%);font-size:3.1cqw;font-weight:800;padding:1.7cqw 2.2cqw}' +
@@ -25,7 +25,7 @@
       '.rpe-photo-english .rpe-foot{color:#b23a3a;text-align:right;font-size:1.55cqw}' +
       '.rpe-photo-english .rpe-blue{background:#3384c8;color:#fff;text-align:center;font-size:2.3cqw}' +
       '.rpe-photo-english .rpe-teal{background:#2bd3d0;font-size:2.7cqw;line-height:1.55}' +
-      '.rpe-photo-english .rpe-scenic{background:#f4f1e9eF;text-align:center;font-size:3cqw;line-height:1.25}' +
+      '.rpe-photo-english .rpe-scenic{background:#f4f1e9;text-align:center;font-size:3cqw;line-height:1.25}' +
       '.rpe-photo-english .rpe-badge{border-radius:50%;text-align:center;color:#fff;font-size:2.5cqw;padding:2cqw .2cqw}' +
       '.rpe-photo-english .rpe-orange{background:#c5551d}.rpe-photo-english .rpe-cyan{background:#168cbb}' +
       '.rpe-photo-english .rpe-mini{background:#b51b1b;color:#fff;border-radius:50%;text-align:center;padding:.5cqw 0;font-size:1.4cqw}' +
@@ -53,7 +53,7 @@
           'Room: '+findRow(rows,'Suggested room area')+'  ·  Fan: six speeds\n'+
           'Light: three colours  ·  '+findRow(rows,'Controls'));
       }else if(n===8||n===9){
-        add(cover,'rpe-teal',9,49,83,34,
+        add(cover,'rpe-teal',8,49,92,34,
           'Model: FD009\nSize: '+findRow(rows,'Approximate size')+'\n'+
           'Power label: '+findRow(rows,'Supplier power label')+'  ·  Area: '+findRow(rows,'Suggested room area')+'\n'+
           'Offline voice control · dimming · six fan speeds');
@@ -61,9 +61,10 @@
         var compact=n>=12&&n<=19;
         add(cover,'rpe-head',0,1,100,11,'Model: '+model+'      '+(compact?findRow(rows,'Brightness'):'Rechargeable searchlight'));
         if(compact){
-          add(cover,'rpe-spec',1,13,45,29,
-            'High-brightness LED\nBattery display · Type-C charging\nSOS flash · '+findRow(rows,'Supplier runtime claim'));
-          add(cover,'rpe-tag',0,42,25,7,'Rechargeable');
+          add(cover,'rpe-spec',1,13,36,21,
+            'High-brightness LED\nBattery display · Type-C\nSOS flash');
+          add(cover,'rpe-spec',1,34,29,8,'Runtime: '+findRow(rows,'Supplier runtime claim'));
+          add(cover,'rpe-tag',0,42,17,7,'Li-ion');
           add(cover,'rpe-spec',77,29,23,15,'Type-C cable pictured\nWhite light option');
         }else{
           add(cover,'rpe-spec',1,13,n===21?35:40,24,
@@ -71,7 +72,7 @@
             'Power label: '+findRow(rows,'Supplier power label')+'\n'+
             'Beam: '+findRow(rows,'Supplier beam-range claim')+'\n'+
             'Runtime: '+findRow(rows,'Supplier runtime claim'));
-          if(n!==37)add(cover,'rpe-tag',1,37,24,12,'LED light\nModes vary');
+          if(n!==37)add(cover,'rpe-tag',1,37,n===22?40:24,12,'LED light\nModes vary');
           if(n===37){
             add(cover,'rpe-spec',0,38,42,5,'Check pictured accessories');
             add(cover,'rpe-spec',2,62,38,5,'Box · headband pictured');
