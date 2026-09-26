@@ -52,6 +52,29 @@ Deno.serve(async(req:Request)=>{
     }
     const storeMap=new Map(stores.map((s:any)=>[s.id,s]));
 
+    let payment_instructions:any=null;
+    const paymentDue=order.status==="awaiting_payment"&&!["paid","confirmed","refunded"].includes(String(order.payment_status||"").toLowerCase());
+    if(paymentDue&&order.payment_method){
+      const {data:accounts}=await admin.from("ranova_marketplace_payment_accounts")
+        .select("payment_method,provider_name,account_name,account_reference,instructions,updated_at")
+        .eq("payment_method",order.payment_method)
+        .eq("active",true)
+        .order("updated_at",{ascending:false})
+        .limit(1);
+      const account=accounts?.[0];
+      if(account){
+        payment_instructions={
+          payment_method:account.payment_method,
+          provider_name:account.provider_name,
+          account_name:account.account_name,
+          account_reference:account.account_reference,
+          instructions:account.instructions,
+          amount:order.total_payment,
+          currency:"GHS"
+        };
+      }
+    }
+
     return response(h,200,{
       ok:true,
       order:{
@@ -73,6 +96,7 @@ Deno.serve(async(req:Request)=>{
         seller_order_count:order.seller_order_count,
         created_at:order.created_at
       },
+      payment_instructions,
       seller_orders:(children||[]).map((x:any)=>{
         const s:any=storeMap.get(x.store_id)||{};
         return {
