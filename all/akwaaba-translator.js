@@ -147,16 +147,33 @@ function frameElementAt(clientX,clientY){
   }catch(e){return null}
 }
 function imageElementAt(clientX,clientY){
-  var el=frameElementAt(clientX,clientY);
-  if(!el)return null;
-  if((el.tagName||"").toLowerCase()==="img")return el;
-  if(el.querySelector){
-    var img=el.querySelector("img");
-    if(img){
-      var fr=frame.getBoundingClientRect(),r=img.getBoundingClientRect();
-      var x=clientX-fr.left,y=clientY-fr.top;
-      if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)return img;
+  var fr=frame.getBoundingClientRect(),d;
+  if(clientX<fr.left||clientX>fr.right||clientY<fr.top||clientY>fr.bottom)return null;
+  try{d=frame.contentDocument||frame.contentWindow.document}catch(e){return null}
+  if(!d)return null;
+  var x=clientX-fr.left,y=clientY-fr.top;
+  var stack=[];
+  try{stack=d.elementsFromPoint?d.elementsFromPoint(x,y):[d.elementFromPoint(x,y)]}catch(e){}
+  for(var s=0;s<stack.length;s++){
+    var el=stack[s];
+    if(!el)continue;
+    if((el.tagName||"").toLowerCase()==="img")return el;
+    var parent=el;
+    for(var k=0;parent&&k<5;k++,parent=parent.parentElement){
+      if((parent.tagName||"").toLowerCase()==="img")return parent;
+      if(parent.querySelector){
+        var imgs=parent.querySelectorAll("img");
+        for(var j=0;j<imgs.length;j++){
+          var rr=imgs[j].getBoundingClientRect();
+          if(x>=rr.left&&x<=rr.right&&y>=rr.top&&y<=rr.bottom)return imgs[j];
+        }
+      }
     }
+  }
+  var all=d.querySelectorAll("#grid .product-img img,#productModal img,.category-image img");
+  for(var i=0;i<all.length;i++){
+    var r=all[i].getBoundingClientRect();
+    if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)return all[i];
   }
   return null;
 }
@@ -294,12 +311,14 @@ async function translateAt(x,y){
   var img=imageElementAt(x,y);
   if(img){
     try{
+      state.innerHTML='<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Image detected. Akwaaba is reading the printed words…</span></div>';
+      openPanel();
       var imageText=await readImageTextAt(x,y);
       if(imageText){await translateText(imageText,false);return}
-      showInstruction("I could not read clear words in that part of the image. Move Akwaaba closer to the printed text and try again.");
+      showInstruction("No clear printed words were detected there. Place the center of Akwaaba directly over the text printed on the product image.");
       return;
     }catch(e){
-      state.innerHTML='<div class="akwaaba-error">I could not read that image clearly. Move the magnifier directly over the printed words and try again.</div>';
+      state.innerHTML='<div class="akwaaba-error">Akwaaba found the image but could not read the printed words clearly. Move the center of the magnifier directly onto the text and try again.</div>';
       openPanel();
       return;
     }
