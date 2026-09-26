@@ -147,7 +147,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       <div id="countryRulesCard" class="card">
         <div class="card-head"><div><h2>Store & country finance rules</h2><small style="color:var(--rpe-muted)">Rules are matched by specific store, seller country, buyer country and payment method. More specific rules override general ones.</small></div><span id="googleCountryStatus" class="chip">Country service</span></div>
         <div class="body">
-          <div class="notice" style="margin-top:0">Google Maps is used only to identify/validate countries when a Google Maps API key is connected. Commission is a RANOVA policy; payment-processing rates should use an official payment-provider source, not Google Search.</div>
+          <div class="notice" style="margin-top:0">Google Maps is used only to identify/validate countries when a Google Maps API key is connected. Commission is a RANOVA policy; payment-processing rates should use an official payment-provider source, not Google Search. Auto-update sources must be official HTTPS JSON/API feeds that return supported rate fields.</div>
           <div class="form-grid" style="margin-top:12px">
             <input id="countryRuleId" type="hidden">
             <div class="field"><label>Seller store</label><select id="ruleStore"><option value="">Any store</option></select></div>
