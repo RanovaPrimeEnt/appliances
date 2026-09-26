@@ -87,7 +87,7 @@ var ORDER_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-place-order";
 var COUNTRY_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-country-service";
 var FINANCE_QUOTE_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-finance-quote";
 var TRUST_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-marketplace-trust";
-var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[],cart={},countryMap={},marketplaceTrust={performance:{},enforcement:{enforcement_status:"good_standing"}},buyerSession=null,buyerProfile=null,buyerAddresses=[];
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[],cart={},countryMap={},marketplaceTrust={performance:{},enforcement:{enforcement_status:"good_standing"}},buyerSession=null,buyerProfile=null,buyerAddresses=[],buyerStoreSaved=false;
 
 function el(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
@@ -204,8 +204,9 @@ async function hydrateBuyerAccount(){
       if(!el("deliveryLocation").value)el("deliveryLocation").value=a.address_text||"";
       if(!el("buyerCountry").value&&a.country_code)el("buyerCountry").value=a.country_code;
     }
-    var saved=!!results[3].data,btn=document.getElementById("saveSellerBtn");
-    if(btn){btn.textContent=saved?"♥ Seller saved":"♡ Save seller";btn.dataset.saved=saved?"1":"0"}
+    buyerStoreSaved=!!results[3].data;
+    var btn=document.getElementById("saveSellerBtn");
+    if(btn){btn.textContent=buyerStoreSaved?"♥ Seller saved":"♡ Save seller";btn.dataset.saved=buyerStoreSaved?"1":"0"}
   }catch(e){}
 }
 function sanitizeCart(){
@@ -317,6 +318,7 @@ async function boot(){
   links.push('<a href="./account.html">Buyer account</a>');
   el("contact").innerHTML=links.join("");
   var saveSellerBtn=document.getElementById("saveSellerBtn");
+  if(saveSellerBtn){saveSellerBtn.dataset.saved=buyerStoreSaved?"1":"0";saveSellerBtn.textContent=buyerStoreSaved?"♥ Seller saved":"♡ Save seller"}
   if(saveSellerBtn)saveSellerBtn.onclick=async function(){
     if(!buyerSession){location.href="./account.html";return}
     var saved=this.dataset.saved==="1";
