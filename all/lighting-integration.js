@@ -71,9 +71,10 @@
         if(!note){note=d.createElement('p');note.id='rpeSourceNote';note.className='rpe-source-note';
           modalCopy.insertBefore(note,modalCopy.querySelector('.modal-price'));}
         note.hidden=!current;
-        if(current)note.textContent=current.series==='Ceiling Fan Lights'?
-          'Supplier illustration. Ask RPE for a current photo of the exact fan light before ordering.':
-          'Supplier image. Ask RPE for a current photo of the exact item before ordering.';
+        if(current)note.textContent=(current.series==='Ceiling Fan Lights'?
+          'Supplier illustration. Ask RPE for a current photo of the exact fan light. ':
+          'Supplier image. Ask RPE for a current photo of the exact item. ')+
+          'Figures printed on supplier images, including wattage and runtime, have not been independently verified.';
         var tabs=d.getElementById('rpeLightingImageTabs');
         if(!tabs){tabs=d.createElement('div');tabs.id='rpeLightingImageTabs';tabs.className='rpe-image-tabs';
           tabs.innerHTML='<button type="button" data-view="photo">Product image</button><button type="button" data-view="sheet">Details sheet</button>';
