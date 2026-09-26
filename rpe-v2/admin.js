@@ -23,7 +23,8 @@ const label=s=>({
 })[s]||pretty(s);
 const canSellerReview=()=>role==="owner"||role==="manager";
 const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],counts:{}});
+const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -58,6 +59,7 @@ async function checkSession(nextSession){
 function renderRoleNav(){
   document.querySelectorAll('[data-market-role="seller"]').forEach(x=>x.classList.toggle("hide",!canSellerReview()));
   document.querySelectorAll('[data-market-role="product"]').forEach(x=>x.classList.toggle("hide",!canProductReview()));
+  document.querySelectorAll('[data-market-role="orders"]').forEach(x=>x.classList.toggle("hide",!canOrderReview()));
 }
 
 async function loadAll(){
@@ -99,7 +101,7 @@ async function marketApi(payload){
 }
 async function loadMarketplace(){
   marketError=null;
-  if(!canSellerReview()&&!canProductReview()){market=marketEmpty();return}
+  if(!canSellerReview()&&!canProductReview()&&!canOrderReview()){market=marketEmpty();return}
   market=await marketApi({action:"dashboard"});
 }
 async function reloadMarketplace(){
@@ -166,6 +168,7 @@ function renderMarketplaceAll(){
   renderSellerApplications();
   renderSellerProducts();
   renderSellerStores();
+  renderSellerOrders();
   if(selectedApplicationRef)renderSellerDetail(selectedApplicationRef);
 }
 function renderMarketplaceSummary(){
@@ -178,6 +181,7 @@ function renderMarketplaceSummary(){
   $("mSellerPending").textContent=canSellerReview()?(c.seller_pending||0):"—";
   $("mDocsPending").textContent=canSellerReview()?(c.documents_pending||0):"—";
   $("mSellerProductsPending").textContent=canProductReview()?(c.products_pending||0):"—";
+  $("mSellerOrdersOpen").textContent=canOrderReview()?(c.seller_orders_open||0):"—";
 }
 function appStatus(a){return String(a.verification_status||a.status||"submitted").toLowerCase()}
 function filesFor(ref){return (market.files||[]).filter(f=>f.application_ref===ref)}
@@ -314,6 +318,19 @@ function renderSellerProductDetail(id){
   host.innerHTML='<div class="review-head"><div><h2>'+esc(p.name)+'</h2><p>'+esc(store?.store_name||"Seller store")+' • '+esc(p.category)+' • SKU '+esc(p.sku||"—")+'</p></div><span class="chip '+statusClass(st)+'">'+esc(label(st))+'</span></div><div class="review-body"><div class="review-meta"><div><span>Price</span><b>'+(p.price==null?"Ask for price":"GHS "+Number(p.price).toFixed(2))+'</b></div><div><span>MOQ / unit</span><b>'+esc(p.moq||1)+' '+esc(p.unit_label||"unit(s)")+'</b></div><div><span>Stock</span><b>'+esc(label(p.stock_status))+'</b><span>'+esc(p.stock_quantity==null?"Quantity not set":p.stock_quantity+" available")+'</span></div></div><div class="detail-copy"><b style="color:var(--rpe-ink)">Short description</b><br>'+esc(p.short_description||"—")+'<br><br><b style="color:var(--rpe-ink)">Full description</b><br>'+esc(p.description||"No full description supplied.")+'</div><div class="product-review-gallery">'+(imgs.length?imgs.map((u,i)=>'<a href="'+esc(u)+'" target="_blank" rel="noopener"><img src="'+esc(u)+'" alt="Product image '+(i+1)+'"></a>').join(""):'<div class="empty">No product images.</div>')+'</div>'+(p.moderation_note?'<div class="detail-copy" style="margin-top:10px"><b style="color:var(--rpe-ink)">Current moderation note</b><br>'+esc(p.moderation_note)+'</div>':"")+'<div class="decision-actions">'+actions.join("")+'</div></div>';
   wireProductDecisionButtons(host);
   host.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+
+function renderSellerOrders(){
+  const host=$("sellerOrdersList");if(!host)return;
+  if(!canOrderReview()){host.innerHTML='<div class="empty">Your admin role does not include marketplace-order visibility.</div>';return}
+  const stores=new Map((market.stores||[]).map(s=>[s.id,s]));
+  const list=market.seller_orders||[];
+  host.innerHTML=list.length?list.map(o=>{
+    const st=stores.get(o.store_id);
+    const total=o.total==null?"Pending quote":"GHS "+Number(o.total).toFixed(2);
+    return '<div class="market-row"><div><b>'+esc(o.platform_order_ref||o.order_ref)+'</b><small>'+esc(st?.store_name||"Seller store")+' • '+esc(o.buyer_name||"Customer")+' • '+new Date(o.created_at).toLocaleString()+'</small><small>'+esc(o.delivery_location||"Delivery location pending")+'</small></div><span class="chip '+statusClass(o.order_status)+'">'+esc(label(o.order_status))+'</span><div><small>Payment</small><b>'+esc(label(o.payment_status))+'</b><small>'+esc(o.payment_method||"Not selected")+'</small></div><div><small>Seller total</small><b>'+esc(total)+'</b><small>'+esc(o.item_count||0)+' product line(s)</small></div></div>';
+  }).join(""):'<div class="empty">No seller-routed marketplace orders yet.</div>';
 }
 
 function renderSellerStores(){
