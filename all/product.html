@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RANOVA Product Details</title>
+<meta name="theme-color" content="#0b5c4d">
+<style>
+:root{--g:#0b5c4d;--g2:#16705f;--ink:#17362e;--muted:#6c7d76;--line:#dfe8e4;--soft:#f5f8f7;--gold:#9b741d}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#f7f9f8;color:var(--ink)}a{text-decoration:none;color:inherit}button,input,select{font:inherit}
+.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}.topin{max-width:1200px;margin:auto;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{font-weight:950;color:var(--g)}.nav{display:flex;gap:10px}.nav a{font-size:11px;font-weight:800}
+.wrap{max-width:1200px;margin:auto;padding:22px 18px 60px}.crumbs{font-size:10px;color:var(--muted);margin-bottom:12px}.main{display:grid;grid-template-columns:1.08fr .92fr;gap:22px}.gallery,.buybox,.card{background:#fff;border:1px solid var(--line);border-radius:18px}.gallery{padding:14px}.mainimg{aspect-ratio:1.15/1;background:#f4f7f5;border-radius:14px;overflow:hidden;display:grid;place-items:center}.mainimg img{width:100%;height:100%;object-fit:contain}.thumbs{display:flex;gap:8px;overflow:auto;margin-top:10px}.thumbs button{width:70px;height:70px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:3px;flex:0 0 auto}.thumbs img{width:100%;height:100%;object-fit:contain}.buybox{padding:19px}.eyebrow{font-size:9px;font-weight:900;color:var(--g2);text-transform:uppercase}.buybox h1{font-size:clamp(25px,4vw,39px);line-height:1.05;margin:7px 0 8px}.desc{color:var(--muted);font-size:12px;line-height:1.6}.chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.chip{padding:6px 8px;border-radius:999px;background:#edf5f2;font-size:8px;font-weight:900}.price{font-size:29px;font-weight:950;margin:13px 0}.price small{display:block;font-size:9px;color:var(--muted);font-weight:700}.qtyrow{display:grid;grid-template-columns:110px 1fr;gap:9px;align-items:end;margin:14px 0}.field label{display:block;font-size:9px;font-weight:900;margin-bottom:5px}.field input,.field select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}.cta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}.cta a,.cta button{min-height:44px;border-radius:11px;border:0;font-weight:900;display:grid;place-items:center;cursor:pointer}.buy{background:var(--g);color:#fff}.save{background:#eef4f1;color:var(--g)}.notice{margin-top:10px;padding:10px;border-radius:11px;background:#fff7e6;color:#6d5317;font-size:9px;line-height:1.5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}.card{padding:17px}.card h2{margin:0 0 10px;font-size:16px}.specs{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden}.specs div{padding:9px;border-bottom:1px solid var(--line);font-size:10px}.specs div:nth-last-child(-n+2){border-bottom:0}.specs b{background:#f7faf8}.tiers table{width:100%;border-collapse:collapse;font-size:10px}.tiers th,.tiers td{padding:8px;border-bottom:1px solid var(--line);text-align:left}.trustgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.metric{padding:10px;background:#f5f8f7;border-radius:11px}.metric small{display:block;color:var(--muted);font-size:8px}.metric b{display:block;margin-top:3px;font-size:12px}.reviews{display:grid;gap:8px}.review{padding:11px;border:1px solid var(--line);border-radius:11px}.review small{display:block;color:var(--muted);font-size:8px}.review p{font-size:10px;line-height:1.5}.sellerreply{margin-top:7px;padding:7px;border-left:3px solid #c8ded6;background:#f7faf8;font-size:9px}.similar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sim{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.sim img{width:100%;aspect-ratio:1.2/1;object-fit:contain;background:#f4f7f5}.sim div{padding:10px}.sim b{font-size:11px}.sim small{display:block;color:var(--muted);margin-top:4px}.empty{padding:20px;text-align:center;color:var(--muted);font-size:10px;border:1px dashed var(--line);border-radius:11px}
+@media(max-width:800px){.main,.grid2{grid-template-columns:1fr}.trustgrid{grid-template-columns:1fr 1fr}.similar{grid-template-columns:repeat(2,1fr)}.cta{grid-template-columns:1fr}.topin{padding:12px}.nav{display:none}.wrap{padding:14px 10px 50px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="topin"><a class="brand" href="./">RANOVA</a><nav class="nav"><a href="./marketplace.html">Marketplace</a><a href="./order-status.html">Track order</a><a href="./sell.html">Sell on RANOVA</a></nav></div></header>
+<main class="wrap">
+<div class="crumbs"><a href="./marketplace.html">Marketplace</a> → <span id="crumb">Product</span></div>
+<div id="loading" class="empty">Loading product details…</div>
+<div id="page" style="display:none">
+<section class="main">
+  <div class="gallery"><div id="mainImage" class="mainimg"></div><div id="thumbs" class="thumbs"></div></div>
+  <div class="buybox">
+    <div id="category" class="eyebrow"></div><h1 id="name"></h1><p id="short" class="desc"></p>
+    <div id="chips" class="chips"></div><div id="price" class="price"></div>
+    <div class="qtyrow"><div class="field"><label>Quantity</label><input id="qty" type="number" min="1" value="1"></div><div id="tierHint" class="notice" style="margin:0">Quantity pricing will appear here when available.</div></div>
+    <div class="cta"><a id="buyNow" class="buy" href="#">Add to order</a><button id="saveBtn" class="save" type="button">♡ Save product</button></div>
+    <div id="buyerProtect" class="notice">RANOVA payment and delivery protections remain in force. Final payment and delivery confirmation happen through the protected order flow.</div>
+  </div>
+</section>
+
+<div class="grid2">
+  <section class="card"><h2>Product details</h2><p id="description" class="desc"></p><div id="specs" class="specs"></div></section>
+  <section class="card tiers"><h2>Wholesale pricing</h2><div id="tiers"></div></section>
+</div>
+
+<div class="grid2">
+  <section class="card"><h2>Seller trust</h2><div id="sellerTitle" style="font-weight:900;margin-bottom:10px"></div><div id="trustgrid" class="trustgrid"></div><div id="storeInfo" class="desc" style="margin-top:10px"></div><a id="storeLink" class="buy" style="display:inline-grid;margin-top:11px;padding:10px 13px;border-radius:10px" href="#">Open seller store</a></section>
+  <section class="card"><h2>Delivery options</h2><div class="field"><label>Destination country</label><select id="country"><option value="">Show all configured zones</option></select></div><div id="delivery" style="margin-top:10px"></div></section>
+</div>
+
+<section class="card" style="margin-top:18px"><h2>Verified seller/order reviews</h2><p id="reviewScope" class="desc"></p><div id="reviews" class="reviews"></div></section>
+<section class="card" style="margin-top:18px"><h2>Similar products</h2><div id="similar" class="similar"></div></section>
+</div>
+</main>
+<script>
+(function(){
+"use strict";
+var ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-product-detail",productId=new URLSearchParams(location.search).get("product")||"",current=null;
+function el(id){return document.getElementById(id)}
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
+function money(v){return v==null?"Ask seller for price":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function stars(n){n=Math.max(0,Math.min(5,Math.round(Number(n||0))));return "★".repeat(n)+"☆".repeat(5-n)}
+async function api(country){
+ var r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({product_id:productId,buyer_country_code:country||""})});
+ var out=await r.json().catch(function(){return{}});if(!r.ok||!out.ok)throw new Error(out.error||"Could not load product.");return out
+}
+function priceForQty(p,q){
+ var tiers=Array.isArray(p.pricing_tiers)?p.pricing_tiers.slice().sort(function(a,b){return Number(a.min_qty)-Number(b.min_qty)}):[],value=p.price;
+ tiers.forEach(function(t){if(q>=Number(t.min_qty))value=Number(t.unit_price)});return value
+}
+function render(out){
+ current=out;var p=out.product,s=out.store,t=out.trust||{},pf=out.performance||{},imgs=p.images||[];
+ document.title=p.name+" | RANOVA Marketplace";el("crumb").textContent=p.name;el("category").textContent=p.category||"Marketplace product";el("name").textContent=p.name;el("short").textContent=p.short_description||"";
+ el("description").textContent=p.description||"No additional description provided.";
+ function showImage(url){el("mainImage").innerHTML=url?'<img src="'+esc(url)+'" alt="'+esc(p.name)+'">':'<div class="empty">No image available</div>'}
+ showImage(imgs[0]||"");el("thumbs").innerHTML=imgs.map(function(x,i){return '<button data-img="'+i+'"><img src="'+esc(x)+'" alt=""></button>'}).join("");
+ el("thumbs").querySelectorAll("[data-img]").forEach(function(b){b.onclick=function(){showImage(imgs[Number(b.dataset.img)])}});
+ el("qty").min=p.moq||1;el("qty").value=p.moq||1;
+ el("chips").innerHTML='<span class="chip">MOQ '+esc(p.moq||1)+'</span><span class="chip">'+esc(String(p.stock_status||"confirm_on_enquiry").replace(/_/g," "))+'</span>'+(pf.trusted_badge?'<span class="chip">✓ Trusted seller</span>':'<span class="chip">'+esc(String(pf.performance_level||"probation").replace(/_/g," "))+'</span>')+(p.sku?'<span class="chip">SKU '+esc(p.sku)+'</span>':'');
+ el("price").innerHTML=money(priceForQty(p,Number(el("qty").value)))+'<small>per '+esc(p.unit_label||"unit")+'</small>';
+ var specs=p.specifications&&typeof p.specifications==="object"&&!Array.isArray(p.specifications)?p.specifications:{};
+ var keys=Object.keys(specs);el("specs").innerHTML=keys.length?keys.map(function(k){return '<div><b>'+esc(k)+'</b></div><div>'+esc(specs[k])+'</div>'}).join(""):'<div style="grid-column:1/-1">No structured specifications supplied yet.</div>';
+ var tiers=Array.isArray(p.pricing_tiers)?p.pricing_tiers:[];
+ el("tiers").innerHTML=tiers.length?'<table><thead><tr><th>Minimum quantity</th><th>Unit price</th></tr></thead><tbody>'+tiers.map(function(x){return '<tr><td>'+esc(x.min_qty)+'</td><td>'+esc(money(x.unit_price))+'</td></tr>'}).join("")+'</tbody></table>':'<div class="empty">No quantity pricing tiers published. The listed price or seller quote applies.</div>';
+ el("sellerTitle").textContent=s.store_name+(pf.trusted_badge?" ✓":"");
+ el("trustgrid").innerHTML=[["Seller level",String(pf.performance_level||"probation").replace(/_/g," ")],["Rating",t.overall_rating==null?"—":Number(t.overall_rating).toFixed(2)+"/5"],["Fulfilment",Number(pf.fulfillment_score==null?100:pf.fulfillment_score).toFixed(0)+"/100"],["Complaint rate",Number(pf.complaint_order_rate||0).toFixed(2)+"%"]].map(function(x){return '<div class="metric"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>'}).join("");
+ el("storeInfo").textContent=(s.tagline||s.description||"")+" "+(s.business_location?"Location: "+s.business_location+". ":"")+(s.fulfilment_summary||"");
+ el("storeLink").href="./seller-store.html?store="+encodeURIComponent(s.slug);
+ el("buyNow").href="./seller-store.html?store="+encodeURIComponent(s.slug)+"&product="+encodeURIComponent(p.id)+"&qty="+encodeURIComponent(el("qty").value);
+ el("reviewScope").textContent=out.review_scope_note||"";
+ var rev=out.reviews||[];el("reviews").innerHTML=rev.length?rev.map(function(r){return '<div class="review"><b>'+esc(r.buyer_display_name||"Verified buyer")+' · '+esc(stars(r.overall_rating))+'</b><small>Verified purchase'+(r.published_at?" · "+new Date(r.published_at).toLocaleDateString():"")+'</small>'+(r.review_title?'<p><b>'+esc(r.review_title)+'</b></p>':'')+(r.review_text?'<p>'+esc(r.review_text)+'</p>':'')+(r.seller_response?'<div class="sellerreply"><b>Seller response:</b> '+esc(r.seller_response)+'</div>':'')+'</div>'}).join(""):'<div class="empty">No published verified seller/order reviews yet.</div>';
+ var sim=out.similar||[];el("similar").innerHTML=sim.length?sim.map(function(x){return '<a class="sim" href="./product.html?product='+encodeURIComponent(x.product_id)+'">'+(x.primary_image_url?'<img src="'+esc(x.primary_image_url)+'" alt="'+esc(x.product_name)+'">':'')+'<div><b>'+esc(x.product_name)+'</b><small>'+esc(money(x.price))+' · '+esc(x.store_name)+'</small></div></a>'}).join(""):'<div class="empty" style="grid-column:1/-1">No similar marketplace products yet.</div>';
+ el("delivery").innerHTML=deliveryHtml(out.delivery_options||[]);
+ el("loading").style.display="none";el("page").style.display="block";
+}
+function deliveryHtml(zones){return zones.length?zones.map(function(z){var price=z.pricing_type==="free"?"Free":z.pricing_type==="fixed"?money(z.fixed_fee):"Quoted per order";var eta=(z.eta_min_days!=null||z.eta_max_days!=null)?(" · "+(z.eta_min_days??z.eta_max_days)+"–"+(z.eta_max_days??z.eta_min_days)+" days"):"";return '<div class="review"><b>'+esc(z.zone_name)+'</b><small>'+esc(z.country_code)+' · '+esc(String(z.fulfilment_method||"").replace(/_/g," "))+'</small><p>'+esc(z.area_description||"")+'</p><small>'+esc(price+eta)+'</small></div>'}).join(""):'<div class="empty">No delivery zone is published for this destination yet. The seller can still confirm a custom delivery quote during ordering.</div>'}
+async function load(country){try{render(await api(country))}catch(e){el("loading").textContent=e.message||"This product is unavailable."}}
+el("qty").oninput=function(){if(!current)return;var p=current.product,q=Math.max(Number(p.moq||1),Number(this.value||p.moq||1));el("price").innerHTML=money(priceForQty(p,q))+'<small>per '+esc(p.unit_label||"unit")+'</small>';el("buyNow").href="./seller-store.html?store="+encodeURIComponent(current.store.slug)+"&product="+encodeURIComponent(p.id)+"&qty="+encodeURIComponent(q);var tiers=p.pricing_tiers||[];var next=tiers.filter(function(t){return Number(t.min_qty)>q}).sort(function(a,b){return Number(a.min_qty)-Number(b.min_qty)})[0];el("tierHint").textContent=next?"Buy "+next.min_qty+"+ for "+money(next.unit_price)+" per "+(p.unit_label||"unit")+".":"Current quantity uses the best published tier available."};
+el("saveBtn").onclick=function(){if(!current)return;try{var x=JSON.parse(localStorage.getItem("ranova_saved_products")||"[]");if(!x.includes(current.product.id))x.push(current.product.id);localStorage.setItem("ranova_saved_products",JSON.stringify(x));this.textContent="♥ Saved"}catch(e){}};
+el("country").onchange=function(){load(this.value)};
+(async function(){if(!productId){el("loading").textContent="Product link is incomplete.";return}try{var r=await fetch("https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-country-service",{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({action:"countries"})});var o=await r.json();(o.countries||[]).forEach(function(c){var op=document.createElement("option");op.value=c.code;op.textContent=c.name;el("country").appendChild(op)})}catch(e){}load("")})();
+})();
+</script>
+</body></html>
