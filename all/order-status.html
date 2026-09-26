@@ -50,6 +50,11 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
     <div id="supportBox" class="support-box">
       <h3>Order support</h3><p>Refunds and disputes stay linked to this order. Opening a case can place unpaid seller funds on hold while RANOVA reviews the evidence.</p>
       <div id="supportMsg" class="support-msg"></div>
+      <div class="support-card" style="margin-top:12px">
+        <h4>Delivery tracking</h4>
+        <p style="margin:0;color:var(--muted);font-size:8px">A seller cannot finalize delivery alone. When a shipment is marked delivered, review the proof and confirm only after you actually receive the order. If something is wrong, do not confirm—open a delivery dispute below.</p>
+        <div id="buyerDeliveries" class="case-list"><div class="case"><small>No delivery record yet.</small></div></div>
+      </div>
       <div class="support-grid">
         <div class="support-card">
           <h4>Request a refund</h4>
@@ -145,6 +150,26 @@ function renderSupport(support){
     el("receiptProducts").textContent=money(receipt.product_total);el("receiptDelivery").textContent=money(receipt.delivery_fee);el("receiptFee").textContent=money(receipt.buyer_processing_fee||0);el("receiptTotal").textContent=money(receipt.total_paid);
     el("receiptMethod").textContent=receipt.payment_method||"—";el("receiptPaymentRef").textContent=receipt.payment_reference||"—";el("receiptCountry").textContent=receipt.buyer_country_name||"—";el("receiptOrderRef").textContent=receipt.order_ref||"—";
   }else box.style.display="none";
+
+  var deliveries=support.deliveries||[];
+  el("buyerDeliveries").innerHTML=deliveries.length?deliveries.map(function(d){
+    var events=Array.isArray(d.events)?d.events:[],proofs=Array.isArray(d.proofs)?d.proofs:[];
+    var timeline=events.map(function(e){return '<div class="case-message"><b>'+esc(pretty(e.status))+'</b> · '+esc(pretty(e.actor_type))+(e.note?' — '+esc(e.note):'')+'<small>'+new Date(e.occurred_at).toLocaleString()+'</small></div>'}).join("");
+    var proofLinks=proofs.map(function(p){return '<div class="case-message"><b>'+esc(pretty(p.proof_type))+'</b> · '+esc(pretty(p.review_status))+(p.recipient_name?' · Recipient: '+esc(p.recipient_name):'')+(p.proof_url?' <a href="'+esc(p.proof_url)+'" target="_blank" rel="noopener" style="font-weight:900;color:var(--green2)">View proof</a>':'')+'</div>'}).join("");
+    var courier=d.courier_name?'<small>Courier: '+esc(d.courier_name)+(d.courier_reference?' · Ref '+esc(d.courier_reference):'')+'</small>':'';
+    var tracking=d.tracking_url?'<small><a href="'+esc(d.tracking_url)+'" target="_blank" rel="noopener" style="color:var(--green2);font-weight:900">Open courier tracking</a></small>':'';
+    var eta=(d.eta_start_date||d.eta_end_date)?'<small>ETA: '+esc(d.eta_start_date||"")+(d.eta_end_date?' → '+esc(d.eta_end_date):'')+'</small>':'';
+    var confirm=d.delivery_status==="delivered_pending_confirmation"?'<button data-confirm-delivery="'+esc(d.seller_order_ref||"")+'" type="button">Confirm I received this order</button>':'';
+    return '<div class="case"><b>'+esc(d.seller_order_ref||"Delivery")+' · '+esc(pretty(d.delivery_status))+'</b><small>'+esc(pretty(d.fulfilment_method))+' · Delivery '+esc(money(d.quoted_delivery_fee))+'</small>'+courier+tracking+eta+proofLinks+timeline+confirm+'</div>';
+  }).join(""):'<div class="case"><small>No delivery record yet.</small></div>';
+  el("buyerDeliveries").querySelectorAll("[data-confirm-delivery]").forEach(function(b){b.onclick=async function(){
+    if(!confirm("Confirm only if you have actually received this seller order in acceptable condition. Continue?"))return;
+    b.disabled=true;
+    try{
+      var out=await supportApi("confirm_delivery",{seller_order_ref:b.dataset.confirmDelivery});
+      currentSupport=out.support||{};renderSupport(currentSupport);showSupportMsg("Delivery confirmed. This confirmation is now part of the permanent order timeline.",true);
+    }catch(e){showSupportMsg(e.message||"Could not confirm delivery.")}finally{b.disabled=false}
+  }});
 
   var refunds=support.refunds||[],activeRefund=refunds.find(function(r){return !["refunded","rejected","cancelled"].includes(r.status)});
   el("requestRefund").disabled=!!activeRefund||!currentOrder||!["paid","confirmed"].includes(String(currentOrder.payment_status||"").toLowerCase());
