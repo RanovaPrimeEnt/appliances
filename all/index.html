@@ -79,6 +79,7 @@ function enhanceSite(){
   // Add marketplace discovery and policies to the main navigation.
   var nav=d.getElementById("navLinks");
   if(nav&&!d.getElementById("rpeMarketplaceNav")){var ma=d.createElement("a");ma.id="rpeMarketplaceNav";ma.href="marketplace.html";ma.target="_top";ma.textContent="Marketplace";nav.appendChild(ma)}
+  if(nav&&!d.getElementById("rpeBuyerAccountNav")){var ba=d.createElement("a");ba.id="rpeBuyerAccountNav";ba.href="account.html";ba.target="_top";ba.textContent="Buyer Account";nav.appendChild(ba)}
   if(nav&&!d.getElementById("rpePoliciesNav")){var pa=d.createElement("a");pa.id="rpePoliciesNav";pa.href="shipping-returns.html";pa.target="_top";pa.textContent="Policies";nav.appendChild(pa)}
 
   // Keep the Founder section as the final content section, immediately before the footer.
