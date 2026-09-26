@@ -66,7 +66,7 @@ async function resolveItems(raw:any[]){
     const productMap=new Map((products||[]).map((p:any)=>[p.id,p]));
     const storeIds=[...new Set((products||[]).map((p:any)=>p.store_id))];
     const {data:stores,error:storeError}=await admin.from("ranova_seller_stores")
-      .select("id,seller_id,store_name,slug,store_status")
+      .select("id,seller_id,store_name,slug,store_status,country_code,country_name")
       .in("id",storeIds);
     if(storeError)throw storeError;
     const storeMap=new Map((stores||[]).map((s:any)=>[s.id,s]));
@@ -97,6 +97,8 @@ async function resolveItems(raw:any[]){
         store_id:p.store_id,
         store_name:store.store_name,
         store_slug:store.slug,
+        seller_country_code:store.country_code||null,
+        seller_country_name:store.country_name||null,
         moq:p.moq,
         unit_label:p.unit_label,
         stock_status:p.stock_status,
@@ -105,6 +107,34 @@ async function resolveItems(raw:any[]){
     }
   }
   return resolved;
+}
+
+async function resolveCountryRule(storeId:string,sellerCountry:string|null,buyerCountry:string|null,paymentMethod:string){
+  const now=new Date().toISOString();
+  const {data:rows,error}=await admin.from("ranova_marketplace_country_rules")
+    .select("*")
+    .eq("active",true)
+    .lte("effective_from",now)
+    .order("effective_from",{ascending:false});
+  if(error)throw error;
+  const eligible=(rows||[]).filter((r:any)=>{
+    if(r.store_id&&r.store_id!==storeId)return false;
+    if(r.seller_country_code&&r.seller_country_code!==sellerCountry)return false;
+    if(r.buyer_country_code&&r.buyer_country_code!==buyerCountry)return false;
+    if(r.payment_method&&r.payment_method!==paymentMethod)return false;
+    return true;
+  });
+  eligible.sort((a:any,b:any)=>{
+    const score=(x:any)=>(x.store_id?8:0)+(x.seller_country_code?4:0)+(x.buyer_country_code?2:0)+(x.payment_method?1:0);
+    const d=score(b)-score(a);
+    if(d)return d;
+    return new Date(b.effective_from).getTime()-new Date(a.effective_from).getTime();
+  });
+  const r:any=eligible[0]||null;
+  return r||{
+    id:null,commission_rate:0,required_payment_percent:100,payment_processing_rate:0,
+    payment_fixed_fee:0,payment_fee_payer:"platform",currency:"GHS",source_name:"RANOVA fallback"
+  };
 }
 
 Deno.serve(async(req:Request)=>{
@@ -120,13 +150,17 @@ Deno.serve(async(req:Request)=>{
     const customer_phone=clean(b.customer_phone,40);
     const customer_email=clean(b.customer_email,180);
     const delivery_location=clean(b.delivery_location,180);
+    const buyer_country_code=clean(b.buyer_country_code,2).toUpperCase();
+    const buyer_country_name=clean(b.buyer_country_name,120);
+    const buyer_google_place_id=clean(b.buyer_google_place_id,180);
     const payment_method=clean(b.payment_method,40);
     const buyer_note=clean(b.buyer_note,1000);
     const raw=normalizeRawItems(b.items);
 
-    if(!customer_name||!customer_phone||!delivery_location||raw.length<1){
-      return new Response(JSON.stringify({ok:false,error:"Please complete all required order details."}),{status:400,headers:h});
+    if(!customer_name||!customer_phone||!delivery_location||!buyer_country_code||raw.length<1){
+      return new Response(JSON.stringify({ok:false,error:"Please complete all required order details, including delivery country."}),{status:400,headers:h});
     }
+    if(!/^[A-Z]{2}$/.test(buyer_country_code))return new Response(JSON.stringify({ok:false,error:"Choose a valid delivery country."}),{status:400,headers:h});
     if(!["Mobile Money","Bank Transfer"].includes(payment_method)){
       return new Response(JSON.stringify({ok:false,error:"Choose Mobile Money or Bank Transfer."}),{status:400,headers:h});
     }
@@ -168,6 +202,9 @@ Deno.serve(async(req:Request)=>{
       product_name,
       quantity,
       delivery_location,
+      buyer_country_code,
+      buyer_country_name:buyer_country_name||buyer_country_code,
+      buyer_google_place_id:buyer_google_place_id||null,
       payment_method,
       unit_price:items.length===1?items[0].unit_price:null,
       product_total,
@@ -191,6 +228,9 @@ Deno.serve(async(req:Request)=>{
       const group=sellerItems.filter(x=>x.store_id===storeId);
       const allKnown=group.every(x=>typeof x.line_total==="number");
       const subtotal=allKnown?Number(group.reduce((s,x)=>s+x.line_total,0).toFixed(2)):null;
+      const sellerCountry=group[0].seller_country_code||null;
+      const sellerCountryName=group[0].seller_country_name||sellerCountry;
+      const rule=await resolveCountryRule(storeId,sellerCountry,buyer_country_code,payment_method);
       childOrders.push({
         order_ref:order_ref+"-S"+idx,
         parent_order_id:master.id,
@@ -202,6 +242,16 @@ Deno.serve(async(req:Request)=>{
         buyer_email:customer_email||null,
         delivery_location,
         payment_method,
+        seller_country_code:sellerCountry,
+        seller_country_name:sellerCountryName,
+        buyer_country_code,
+        buyer_country_name:buyer_country_name||buyer_country_code,
+        country_rule_id:rule.id||null,
+        commission_rate_snapshot:Number(rule.commission_rate||0),
+        required_payment_percent_snapshot:Number(rule.required_payment_percent==null?100:rule.required_payment_percent),
+        payment_processing_rate_snapshot:Number(rule.payment_processing_rate||0),
+        payment_fixed_fee_snapshot:Number(rule.payment_fixed_fee||0),
+        payment_fee_payer_snapshot:rule.payment_fee_payer||"platform",
         items:group.map(x=>({
           seller_product_id:x.seller_product_id,
           product_name:x.product_name,
@@ -231,6 +281,14 @@ Deno.serve(async(req:Request)=>{
         masterId=null;
         throw childError;
       }
+      const rules=childOrders.map((x:any)=>x.country_rule_id).filter(Boolean);
+      const processingRates=childOrders.map((x:any)=>Number(x.payment_processing_rate_snapshot||0));
+      const requiredPercents=childOrders.map((x:any)=>Number(x.required_payment_percent_snapshot==null?100:x.required_payment_percent_snapshot));
+      await admin.from("ranova_customer_orders").update({
+        country_rule_ids:rules,
+        payment_processing_rate:processingRates.length?Math.max(...processingRates):0,
+        required_payment_percent:requiredPercents.length?Math.max(...requiredPercents):100
+      }).eq("id",master.id);
     }
 
     return new Response(JSON.stringify({
