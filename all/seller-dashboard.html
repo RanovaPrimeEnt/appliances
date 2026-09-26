@@ -108,6 +108,8 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
               <div class="field"><label>Stock status</label><select id="productStockStatus"><option value="confirm_on_enquiry">Confirm on enquiry</option><option value="in_stock">In stock</option><option value="low_stock">Low stock</option><option value="out_of_stock">Out of stock</option><option value="preorder">Pre-order</option></select></div>
               <div class="field full"><label>Short selling sentence</label><input id="productShort" maxlength="300"></div>
               <div class="field full"><label>Full product description</label><textarea id="productDescription" maxlength="2500"></textarea></div>
+              <div class="field full"><label>Specifications</label><textarea id="productSpecs" maxlength="4000" placeholder="One per line, for example:&#10;Power: 200W&#10;Material: Aluminium&#10;Warranty: 2 years"></textarea></div>
+              <div class="field full"><label>Quantity pricing tiers</label><textarea id="productTiers" maxlength="2500" placeholder="Optional. One per line as minimum quantity: unit price&#10;10: 120&#10;50: 110&#10;100: 100"></textarea><div class="hint">The first matching quantity tier is used for buyer guidance. Final payment still follows the protected order flow.</div></div>
             </div>
             <div class="image-grid" style="margin-top:12px">
               <div class="asset"><b>Main product image</b><small>Required before product review. Use a clear, genuine product photo.</small><div id="productMainPreview" class="asset-preview">No main image</div><input id="productMainFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
@@ -391,12 +393,17 @@ function renderProducts(){
   }).join("")||'<div class="empty">No current products.</div>';
 }
 function resetProduct(){
-  ["productId","productName","productSku","productCategory","productUnit","productPrice","productStockQty","productShort","productDescription"].forEach(function(id){el(id).value=""});
+  ["productId","productName","productSku","productCategory","productUnit","productPrice","productStockQty","productShort","productDescription","productSpecs","productTiers"].forEach(function(id){el(id).value=""});
   el("productMoq").value="1";el("productStockStatus").value="confirm_on_enquiry";productMainUrl="";productGalleryUrls=[];preview(el("productMainPreview"),"",false);el("productEditorTitle").textContent="Add product";
 }
 function openEditor(p){
   resetProduct();el("productEditor").classList.add("open");
-  if(p){el("productEditorTitle").textContent="Edit product";el("productId").value=p.id;el("productName").value=p.name||"";el("productSku").value=p.sku||"";el("productCategory").value=p.category||"";el("productUnit").value=p.unit_label||"";el("productPrice").value=p.price==null?"":p.price;el("productMoq").value=p.moq||1;el("productStockQty").value=p.stock_quantity==null?"":p.stock_quantity;el("productStockStatus").value=p.stock_status||"confirm_on_enquiry";el("productShort").value=p.short_description||"";el("productDescription").value=p.description||"";productMainUrl=p.primary_image_url||"";productGalleryUrls=p.image_urls||[];preview(el("productMainPreview"),productMainUrl,false)}
+  if(p){el("productEditorTitle").textContent="Edit product";el("productId").value=p.id;el("productName").value=p.name||"";el("productSku").value=p.sku||"";el("productCategory").value=p.category||"";el("productUnit").value=p.unit_label||"";el("productPrice").value=p.price==null?"":p.price;el("productMoq").value=p.moq||1;el("productStockQty").value=p.stock_quantity==null?"":p.stock_quantity;el("productStockStatus").value=p.stock_status||"confirm_on_enquiry";el("productShort").value=p.short_description||"";el("productDescription").value=p.description||"";
+    var specs=p.specifications&&typeof p.specifications==="object"&&!Array.isArray(p.specifications)?p.specifications:{};
+    el("productSpecs").value=Object.keys(specs).map(function(k){return k+": "+specs[k]}).join("\n");
+    var tiers=Array.isArray(p.pricing_tiers)?p.pricing_tiers:[];
+    el("productTiers").value=tiers.map(function(t){return t.min_qty+": "+t.unit_price}).join("\n");
+    productMainUrl=p.primary_image_url||"";productGalleryUrls=p.image_urls||[];preview(el("productMainPreview"),productMainUrl,false)}
   el("productEditor").scrollIntoView({behavior:"smooth",block:"start"});
 }
 el("newProduct").onclick=function(){openEditor(null)};el("cancelProduct").onclick=function(){el("productEditor").classList.remove("open");resetProduct()};
@@ -416,7 +423,10 @@ el("saveProduct").onclick=async function(){
     var gallery=[].slice.call(el("productGalleryFiles").files||[]).slice(0,5);
     for(var i=0;i<gallery.length;i++)productGalleryUrls.push(await uploadAsset(gallery[i],"products"));
     productGalleryUrls=productGalleryUrls.slice(0,8);
-    await api({action:"save_product",id:el("productId").value,name:el("productName").value,sku:el("productSku").value,category:el("productCategory").value,unit_label:el("productUnit").value,price:el("productPrice").value,moq:el("productMoq").value,stock_quantity:el("productStockQty").value,stock_status:el("productStockStatus").value,short_description:el("productShort").value,description:el("productDescription").value,primary_image_url:productMainUrl,image_urls:productGalleryUrls});
+    var specifications={};
+    el("productSpecs").value.split(/\r?\n/).forEach(function(line){var i=line.indexOf(":");if(i>0){var k=line.slice(0,i).trim(),v=line.slice(i+1).trim();if(k&&v)specifications[k]=v}});
+    var pricing_tiers=el("productTiers").value.split(/\r?\n/).map(function(line){var p=line.split(":");return p.length>=2?{min_qty:Number(p[0].trim()),unit_price:Number(p.slice(1).join(":").trim())}:null}).filter(function(x){return x&&Number.isFinite(x.min_qty)&&x.min_qty>=1&&Number.isFinite(x.unit_price)&&x.unit_price>=0});
+    await api({action:"save_product",id:el("productId").value,name:el("productName").value,sku:el("productSku").value,category:el("productCategory").value,unit_label:el("productUnit").value,price:el("productPrice").value,moq:el("productMoq").value,stock_quantity:el("productStockQty").value,stock_status:el("productStockStatus").value,short_description:el("productShort").value,description:el("productDescription").value,specifications:specifications,pricing_tiers:pricing_tiers,primary_image_url:productMainUrl,image_urls:productGalleryUrls});
     msg(el("productMsg"),"Product saved. Submit it for review when the information and images are ready.",true);el("productEditor").classList.remove("open");resetProduct();await refresh();setPanel("products");
   }catch(e){msg(el("productMsg"),e.message)}
   finally{b.disabled=false;b.textContent=old}
