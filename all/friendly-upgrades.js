@@ -53,7 +53,7 @@ function installStyles(d){
   '@media(max-width:900px){.rpe-how-grid{grid-template-columns:1fr}.rpe-how-head{align-items:flex-start;flex-direction:column}.rpe-compare-bar{bottom:82px}}'+
   '@media(max-width:620px){.filters.rpe-sticky-filters{top:62px!important;padding:7px 2px!important}.rpe-how{padding:22px 0 10px}.rpe-how-card{padding:17px;border-radius:19px}.rpe-how-actions{display:grid;grid-template-columns:1fr 1fr}.rpe-how-actions .primary{grid-column:1/-1}.rpe-card-quick{grid-template-columns:1fr 1fr}.rpe-card-quick a,.rpe-card-quick button{min-height:42px}.rpe-backtop{right:14px;bottom:86px}.rpe-compare-backdrop{padding:0}.rpe-compare-panel{width:100%;max-height:94vh;border-radius:22px 22px 0 0;align-self:flex-end}.rpe-compare-product img{height:110px}}'+
   '.rpe-category-shell{position:relative;width:100%;margin:18px 0 8px;padding:0 48px}.category-cards.rpe-category-carousel{display:flex!important;grid-template-columns:none!important;gap:18px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x mandatory!important;scroll-behavior:smooth!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-x:contain!important;touch-action:pan-x!important;padding:10px 2px 18px!important;margin:0!important;scrollbar-width:none!important}.category-cards.rpe-category-carousel::-webkit-scrollbar{display:none!important}.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex:0 0 156px!important;width:156px!important;min-width:156px!important;max-width:156px!important;grid-column:auto!important;scroll-snap-align:start!important;overflow:visible!important;border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;transform:none!important}.category-cards.rpe-category-carousel .category-card:hover{transform:translateY(-3px)!important;box-shadow:none!important}.category-cards.rpe-category-carousel .category-image{width:132px!important;height:132px!important;aspect-ratio:1/1!important;min-height:132px!important;max-height:132px!important;border-radius:50%!important;background:#fff!important;border:1px solid #edf0ee!important;box-shadow:0 10px 26px rgba(12,54,43,.10)!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important;margin:0 auto 12px!important}.category-cards.rpe-category-carousel .category-image img{width:88%!important;height:88%!important;max-width:88%!important;object-fit:contain!important;object-position:center!important;transform:none!important;background:transparent!important;border-radius:0!important;transition:transform .22s ease!important}.category-cards.rpeFourCategories.rpe-category-carousel .category-card .category-image img{object-fit:contain!important;object-position:center!important;transform:none!important;background:transparent!important}.category-cards.rpe-category-carousel .category-card:hover .category-image img,.category-cards.rpeFourCategories.rpe-category-carousel .category-card:hover .category-image img{transform:scale(1.05)!important}.category-cards.rpe-category-carousel .category-card>div:last-child{padding:0!important;display:block!important;width:100%!important}.category-cards.rpe-category-carousel .category-card small,.category-cards.rpe-category-carousel .category-card span{display:none!important}.category-cards.rpe-category-carousel .category-card h3{margin:0!important;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif!important;font-size:14px!important;line-height:1.28!important;font-weight:750!important;color:#173d32!important;text-align:center!important}.rpe-category-arrow{position:absolute;top:54px;z-index:20;width:46px;height:46px;border-radius:50%;border:1px solid #dde6e1;background:#fff;color:#173d32;box-shadow:0 8px 24px rgba(9,45,35,.12);display:grid;place-items:center;font-size:25px;line-height:1;cursor:pointer;transition:.18s}.rpe-category-arrow:hover{background:#0e5b43;color:#fff;border-color:#0e5b43}.rpe-category-arrow:disabled{opacity:.28;cursor:default}.rpe-category-prev{left:0}.rpe-category-next{right:0}.rpe-category-subtitle{margin:5px 0 0!important;color:#73827d!important;font-size:13px!important;line-height:1.45!important}.rpe-category-section-title{margin-bottom:0!important}'+
-  '@media(max-width:700px){.rpe-category-shell{padding:0 34px;margin-top:12px}.category-cards.rpe-category-carousel{gap:12px!important;padding:8px 0 14px!important}.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex-basis:108px!important;width:108px!important;min-width:108px!important;max-width:108px!important}.category-cards.rpe-category-carousel .category-image{width:92px!important;height:92px!important;min-height:92px!important;max-height:92px!important;margin-bottom:9px!important}.category-cards.rpe-category-carousel .category-card h3{font-size:12px!important;line-height:1.22!important}.rpe-category-arrow{top:33px;width:38px;height:38px;font-size:22px}.rpe-category-prev{left:-2px}.rpe-category-next{right:-2px}.rpe-category-subtitle{font-size:12px!important}}'+
+  '@media(max-width:700px){.rpe-category-groups{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.rpe-category-groups::-webkit-scrollbar{display:none}.rpe-category-group-btn{flex:0 0 auto;min-height:36px;padding:7px 11px}.rpe-category-shell{padding:0 34px;margin-top:12px}.category-cards.rpe-category-carousel{gap:12px!important;padding:8px 0 14px!important}.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex-basis:108px!important;width:108px!important;min-width:108px!important;max-width:108px!important}.category-cards.rpe-category-carousel .category-image{width:92px!important;height:92px!important;min-height:92px!important;max-height:92px!important;margin-bottom:9px!important}.category-cards.rpe-category-carousel .category-card h3{font-size:12px!important;line-height:1.22!important}.rpe-category-arrow{top:33px;width:38px;height:38px;font-size:22px}.rpe-category-prev{left:-2px}.rpe-category-next{right:-2px}.rpe-category-subtitle{font-size:12px!important}}'+
   '@media(max-width:400px){.rpe-category-shell{padding:0 30px}.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex-basis:102px!important;width:102px!important;min-width:102px!important;max-width:102px!important}.category-cards.rpe-category-carousel .category-image{width:86px!important;height:86px!important;min-height:86px!important;max-height:86px!important}.category-cards.rpe-category-carousel .category-card h3{font-size:11px!important}.rpe-category-arrow{width:36px;height:36px;top:31px}}'+
   '@media(prefers-reduced-motion:reduce){html:focus-within{scroll-behavior:auto!important}.rpe-compare-bar,.rpe-backtop,.rpe-skip-link,.rpe-search-option,.rpe-category-arrow{transition:none!important}.category-cards.rpe-category-carousel{scroll-behavior:auto!important}}';
   d.head.appendChild(st);
@@ -114,21 +114,74 @@ function installCategoryCarousel(d){
 
   cards.classList.add("rpe-category-carousel");
 
-  // Keep the heading simple as the catalogue grows.
   var section=cards.closest("section")||cards.parentElement;
+  var heading=null,groupsBar=null;
   if(section){
-    var heading=section.querySelector("h2");
+    heading=section.querySelector("h2");
     if(heading){
       heading.textContent="Shop by Category";
       heading.classList.add("rpe-category-section-title");
       var next=heading.nextElementSibling;
-      if(next&&/^(P|DIV)$/i.test(next.tagName)&&!next.classList.contains("rpe-category-shell")){
-        if(next.textContent.trim()) {
-          next.textContent="Swipe or use the arrows to explore all product categories.";
+      if(next&&/^(P|DIV)$/i.test(next.tagName)&&!next.classList.contains("rpe-category-shell")&&!next.classList.contains("rpe-category-groups")){
+        if(next.textContent.trim()){
+          next.textContent="Browse related product groups, then swipe sideways to explore each category.";
           next.classList.add("rpe-category-subtitle");
         }
       }
     }
+    groupsBar=section.querySelector(".rpe-category-groups");
+    if(!groupsBar){
+      groupsBar=d.createElement("div");
+      groupsBar.className="rpe-category-groups";
+      groupsBar.setAttribute("aria-label","Product category groups");
+      var ref=heading?heading.nextElementSibling:cards;
+      if(ref&&ref.classList&&ref.classList.contains("rpe-category-subtitle"))ref.parentNode.insertBefore(groupsBar,ref.nextSibling);
+      else cards.parentNode.insertBefore(groupsBar,cards);
+    }
+  }
+
+  function cleanTitle(card){
+    var h=card.querySelector("h3");
+    return h?h.textContent.trim():"";
+  }
+  function groupFor(title){
+    var t=title.toLowerCase();
+    if(/solar|street light|searchlight|headlamp|head light|torch|portable light|rechargeable light/.test(t))return "outdoor";
+    if(/ceiling|fan light|bladeless|cooling|heating|indoor light|light fixture/.test(t))return "lighting";
+    if(/kitchen|cook|stove|pot|appliance/.test(t))return "home";
+    if(/household|storage|basket|bin|furniture|chair|table|stool|home essential/.test(t))return "home";
+    return "other";
+  }
+  function rankFor(title){
+    var t=title.toLowerCase();
+    if(/kitchen/.test(t))return 10;
+    if(/household|essential/.test(t))return 20;
+    if(/furniture/.test(t))return 30;
+    if(/ceiling.*fan|fan.*light|bladeless/.test(t))return 40;
+    if(/solar|street light/.test(t))return 50;
+    if(/searchlight/.test(t))return 60;
+    if(/headlamp|head light/.test(t))return 70;
+    return 90;
+  }
+  function labelFor(group){
+    return group==="home"?"Home & Living":group==="lighting"?"Lighting & Cooling":group==="outdoor"?"Outdoor & Portable Lighting":"Other";
+  }
+
+  var organizing=false;
+  function organize(){
+    if(organizing)return;
+    organizing=true;
+    var list=[].slice.call(cards.querySelectorAll(".category-card"));
+    list.forEach(function(card){
+      var title=cleanTitle(card);
+      card.dataset.rpeGroup=groupFor(title);
+      card.dataset.rpeRank=String(rankFor(title));
+    });
+    list.sort(function(a,b){
+      return Number(a.dataset.rpeRank||99)-Number(b.dataset.rpeRank||99)||cleanTitle(a).localeCompare(cleanTitle(b));
+    });
+    list.forEach(function(card){cards.appendChild(card)});
+    organizing=false;
   }
 
   var shell=cards.parentElement;
@@ -154,40 +207,82 @@ function installCategoryCarousel(d){
     shell.appendChild(nextBtn);
 
     function step(){
-      var first=cards.querySelector(".category-card");
+      var first=cards.querySelector(".category-card:not([hidden])");
       return first?Math.max(120,first.getBoundingClientRect().width+18):180;
     }
     function updateArrows(){
       var max=Math.max(0,cards.scrollWidth-cards.clientWidth-2);
       prev.disabled=cards.scrollLeft<=2;
-      nextBtn.disabled=cards.scrollLeft>=max;
+      nextBtn.disabled=cards.scrollLeft>=max||max<=2;
     }
     prev.onclick=function(){cards.scrollBy({left:-step()*2,behavior:"smooth"})};
     nextBtn.onclick=function(){cards.scrollBy({left:step()*2,behavior:"smooth"})};
     cards.addEventListener("scroll",function(){requestAnimationFrame(updateArrows)},{passive:true});
     window.addEventListener("resize",updateArrows,{passive:true});
-    setTimeout(updateArrows,50);
-    setTimeout(updateArrows,800);
-    var catObserver=new MutationObserver(function(){
-      [].slice.call(cards.querySelectorAll(".category-card img")).forEach(function(img){
-        img.loading="lazy";img.decoding="async";
-      });
-      requestAnimationFrame(updateArrows);
-    });
-    catObserver.observe(cards,{childList:true,subtree:false});
+    cards.__rpeUpdateArrows=updateArrows;
 
-    // Keyboard users can move through the row as well.
     cards.addEventListener("keydown",function(e){
       if(e.key==="ArrowRight"){cards.scrollBy({left:step(),behavior:"smooth"})}
       if(e.key==="ArrowLeft"){cards.scrollBy({left:-step(),behavior:"smooth"})}
     });
   }
 
-  // Reapply clean image fitting to any category cards added later.
+  function applyGroup(group){
+    [].slice.call(cards.querySelectorAll(".category-card")).forEach(function(card){
+      card.hidden=group!=="all"&&card.dataset.rpeGroup!==group;
+    });
+    cards.scrollLeft=0;
+    if(groupsBar){
+      [].slice.call(groupsBar.querySelectorAll(".rpe-category-group-btn")).forEach(function(btn){
+        btn.setAttribute("aria-pressed",btn.dataset.group===group?"true":"false");
+      });
+    }
+    if(cards.__rpeUpdateArrows)setTimeout(cards.__rpeUpdateArrows,20);
+  }
+
+  if(groupsBar&&!groupsBar.dataset.ready){
+    groupsBar.dataset.ready="1";
+    [
+      ["all","All Categories"],
+      ["home","Home & Living"],
+      ["lighting","Lighting & Cooling"],
+      ["outdoor","Outdoor & Portable"]
+    ].forEach(function(item){
+      var b=d.createElement("button");
+      b.type="button";
+      b.className="rpe-category-group-btn";
+      b.dataset.group=item[0];
+      b.textContent=item[1];
+      b.setAttribute("aria-pressed",item[0]==="all"?"true":"false");
+      b.onclick=function(){applyGroup(item[0])};
+      groupsBar.appendChild(b);
+    });
+  }
+
+  organize();
+  applyGroup("all");
+
   [].slice.call(cards.querySelectorAll(".category-card img")).forEach(function(img){
     img.loading="lazy";
     img.decoding="async";
   });
+
+  if(!cards.__rpeGroupObserver){
+    var catObserver=new MutationObserver(function(mutations){
+      var meaningful=mutations.some(function(m){return m.addedNodes&&m.addedNodes.length});
+      if(!meaningful||organizing)return;
+      setTimeout(function(){
+        organize();
+        [].slice.call(cards.querySelectorAll(".category-card img")).forEach(function(img){
+          img.loading="lazy";img.decoding="async";
+        });
+        var active=groupsBar&&groupsBar.querySelector('.rpe-category-group-btn[aria-pressed="true"]');
+        applyGroup(active?active.dataset.group:"all");
+      },0);
+    });
+    catObserver.observe(cards,{childList:true,subtree:false});
+    cards.__rpeGroupObserver=catObserver;
+  }
 
   return true;
 }
