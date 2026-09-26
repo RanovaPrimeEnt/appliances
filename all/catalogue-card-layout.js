@@ -180,27 +180,7 @@ function decorateCard(card,p,w){
     qtyPlus.addEventListener("click",function(e){stopQtyEvent(e);refreshOrderSummary((parseInt(qtyInput.value,10)||0)+1)});
   }
 
-  var repeatTimer=null,repeatInterval=null;
-  function stopRepeat(){
-    if(repeatTimer){clearTimeout(repeatTimer);repeatTimer=null}
-    if(repeatInterval){clearInterval(repeatInterval);repeatInterval=null}
-  }
-  function bindRepeat(btn,dir){
-    if(!btn)return;
-    btn.addEventListener("pointerdown",function(e){
-      stopQtyEvent(e);stopRepeat();
-      repeatTimer=setTimeout(function(){
-        repeatInterval=setInterval(function(){
-          refreshOrderSummary((parseInt(qtyInput.value,10)||0)+dir);
-        },90);
-      },420);
-    });
-    btn.addEventListener("pointerup",stopRepeat);
-    btn.addEventListener("pointercancel",stopRepeat);
-    btn.addEventListener("pointerleave",stopRepeat);
-  }
-  bindRepeat(qtyMinus,-1);
-  bindRepeat(qtyPlus,1);
+
 
   if(qtyInput){
     qtyInput.addEventListener("click",stopQtyEvent);
