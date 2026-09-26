@@ -19,7 +19,7 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
 .backdrop{position:fixed;inset:0;background:rgba(6,28,22,.52);z-index:100;display:none}.backdrop.open{display:block}.drawer{position:fixed;right:0;top:0;bottom:0;z-index:101;width:min(440px,100%);background:#fff;box-shadow:-20px 0 55px rgba(3,31,23,.2);transform:translateX(102%);transition:.22s ease;display:flex;flex-direction:column}.drawer.open{transform:none}.drawer-head{padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.drawer-head h2{margin:0;font-size:19px}.close{width:40px;height:40px;border:0;border-radius:50%;background:#eef5f2;color:var(--ink);font-size:22px}.drawer-body{padding:14px 18px;overflow:auto;flex:1}.cart-lines{display:grid;gap:9px}.cart-line{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:13px}.cart-line img{width:58px;height:58px;object-fit:contain;background:#f5f8f6;border-radius:10px}.cart-line b{display:block;font-size:10px}.cart-line small{display:block;color:var(--muted);font-size:8px;margin-top:3px}.qty{display:flex;align-items:center;gap:5px;margin-top:7px}.qty button{width:29px;height:29px;border:1px solid #d8e3de;border-radius:9px;background:#fff;font-weight:900}.qty input{width:55px;height:29px;border:1px solid #d8e3de;border-radius:8px;text-align:center;font-size:9px}.remove{border:0;background:transparent;color:#9a4a40;font-size:8px;font-weight:900}.summary{margin-top:12px;padding:12px;border-radius:13px;background:#f6faf8}.summary-row{display:flex;justify-content:space-between;gap:12px;font-size:9px;margin:5px 0}.summary-row.total{font-size:12px;font-weight:950}.drawer-foot{padding:14px 18px;border-top:1px solid var(--line)}.checkout-btn{width:100%;min-height:46px;border:0;border-radius:12px;background:var(--orange);color:#fff;font-size:10px;font-weight:950}.checkout-btn:disabled{opacity:.5}
 .modal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(5,27,21,.58)}.modal.open{display:flex}.modal-card{width:min(650px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 28px 80px rgba(0,0,0,.22)}.modal-head{padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.modal-head h2{margin:0;font-size:20px}.modal-body{padding:18px}.checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:9px;font-weight:900}.field input,.field select,.field textarea{width:100%;border:1px solid #d7e3de;border-radius:10px;padding:10px;outline:none}.field input,.field select{height:42px}.field textarea{min-height:78px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#309178;box-shadow:0 0 0 3px #e5f5ef}.pay-note{margin:12px 0 0;padding:11px;border-radius:11px;background:#fff8e8;color:#6e6045;font-size:9px;line-height:1.5}.checkout-actions{display:flex;gap:8px;margin-top:14px}.checkout-actions button{min-height:43px;border-radius:11px;padding:0 14px;font-size:9px;font-weight:950}.place{flex:1;border:0;background:var(--green2);color:#fff}.cancel{border:1px solid var(--line);background:#fff;color:var(--ink)}.checkout-msg{display:none;margin:0 0 12px;padding:11px;border-radius:11px;background:#fff0ed;color:#96483d;font-size:9px;line-height:1.5}.checkout-msg.good{background:#e9f7ef;color:#126342}.success{padding:24px;text-align:center}.success .tick{width:58px;height:58px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;background:#e6f7ee;color:#0d714a;font-size:28px}.success h3{margin:0 0 7px}.success p{margin:0;color:var(--muted);font-size:10px;line-height:1.6}.order-ref{margin:12px auto;padding:11px;border-radius:11px;background:#f2f7f5;font-weight:950;letter-spacing:.04em;max-width:330px}.success button{margin-top:14px;min-height:41px;border:0;border-radius:999px;background:var(--green2);color:#fff;padding:0 16px;font-size:9px;font-weight:900}
 @media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}.about-grid{grid-template-columns:1fr 1fr}.about-grid .info:first-child{grid-column:1/-1}.store-head{grid-template-columns:90px 1fr}.logo{width:90px;height:90px}.contact{grid-column:1/-1;justify-content:flex-start}}
-@media(max-width:620px){.top .wrap{height:auto;min-height:64px;padding:9px 0}.toplinks>a{display:none}.banner{height:165px}.store-head{margin-top:-40px;grid-template-columns:76px 1fr;gap:12px}.logo{width:76px;height:76px;border-radius:19px}.store-copy h1{font-size:27px}.contact a{flex:1;justify-content:center}.about-grid{grid-template-columns:1fr}.about-grid .info:first-child{grid-column:auto}.head{align-items:flex-start;flex-direction:column}.search{width:100%}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.img{height:145px}.copy{padding:10px}.copy h3{font-size:11px}.price{font-size:11px}.card-actions{grid-template-columns:1fr}.checkout-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.modal{padding:0}.modal-card{width:100%;max-height:94vh;border-radius:22px 22px 0 0;align-self:flex-end}.cart-fab{right:12px;bottom:12px}}
+@media(max-width:620px){.fairness-grid{grid-template-columns:1fr}.top .wrap{height:auto;min-height:64px;padding:9px 0}.toplinks>a{display:none}.banner{height:165px}.store-head{margin-top:-40px;grid-template-columns:76px 1fr;gap:12px}.logo{width:76px;height:76px;border-radius:19px}.store-copy h1{font-size:27px}.contact a{flex:1;justify-content:center}.about-grid{grid-template-columns:1fr}.about-grid .info:first-child{grid-column:auto}.head{align-items:flex-start;flex-direction:column}.search{width:100%}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.img{height:145px}.copy{padding:10px}.copy h3{font-size:11px}.price{font-size:11px}.card-actions{grid-template-columns:1fr}.checkout-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.modal{padding:0}.modal-card{width:100%;max-height:94vh;border-radius:22px 22px 0 0;align-self:flex-end}.cart-fab{right:12px;bottom:12px}}
 @media(prefers-reduced-motion:reduce){.drawer{transition:none}}
 </style>
 </head>
@@ -66,7 +66,7 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
         <div class="field"><label>Selected items</label><input id="checkoutCount" readonly></div>
         <div class="field full"><label>Order note (optional)</label><textarea id="buyerNote" placeholder="Colour, size, timing or other order details"></textarea></div>
       </div>
-      <div class="pay-note"><b>No payment account is shown at this stage.</b> Your delivery country and the seller’s store country are used to apply the current RANOVA marketplace finance rule. Payment instructions are shown only after the order is confirmed.</div>
+      <div id="fairnessPreview" class="fairness-preview"><h3>Fee transparency</h3><p id="fairnessMessage">Choose your country and payment method to see who pays any processing fee.</p><div class="fairness-grid"><div><span>Product subtotal</span><b id="fairSubtotal">Pending</b></div><div><span>Buyer processing fee</span><b id="fairBuyerFee">Pending</b></div><div><span>Estimated buyer total before delivery</span><b id="fairBuyerTotal">Pending</b></div></div><div id="fairSource" class="fairness-source"></div></div><div class="pay-note"><b>No payment account is shown at this stage.</b> Your delivery country and the seller’s store country are used to apply the current RANOVA marketplace finance rule. RANOVA seller commission is never silently added to the buyer’s product price. Payment instructions are shown only after the order is confirmed.</div>
       <div class="checkout-actions"><button id="cancelCheckout" class="cancel" type="button">Back</button><button id="placeOrder" class="place" type="button">Place order</button></div>
     </div>
     <div id="checkoutSuccess" class="success" style="display:none"><div class="tick">✓</div><h3>Order sent successfully</h3><p>Your order has been routed to the seller. Keep the reference below. Payment remains <b>not started</b> until the order is confirmed.</p><div id="successRef" class="order-ref"></div><a id="trackSuccess" href="./order-status.html" style="display:inline-flex;margin-top:2px;min-height:40px;align-items:center;padding:0 15px;border-radius:999px;background:#eef7f3;color:#116a52;text-decoration:none;font-size:9px;font-weight:900">Track this order</a><br><button id="doneCheckout" type="button">Done</button></div>
@@ -80,6 +80,7 @@ var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co";
 var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
 var ORDER_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-place-order";
 var COUNTRY_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-country-service";
+var FINANCE_QUOTE_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-finance-quote";
 var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[],cart={},countryMap={};
 
 function el(id){return document.getElementById(id)}
@@ -106,6 +107,29 @@ async function resolveBuyerCountry(){
   var out=await countryApi({action:"resolve_address_country",address:el("deliveryLocation").value.trim(),country_code:code});
   return out.country||{code:code,name:countryMap[code]||code,place_id:null,source:"selected_country"};
 }
+async function loadFeePreview(){
+  var box=el("fairnessPreview");
+  var country=el("buyerCountry").value,payment=el("paymentMethod").value;
+  if(!store||!country||!payment){box.style.display="none";return}
+  box.style.display="block";
+  el("fairnessMessage").textContent="Checking the current rule…";
+  try{
+    var subtotal=knownTotal();
+    var r=await fetch(FINANCE_QUOTE_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({store_id:store.id,buyer_country_code:country,payment_method:payment,subtotal:subtotal})});
+    var out=await r.json().catch(function(){return{}});
+    if(!r.ok||!out.ok)throw new Error(out.error||"Could not calculate fee preview.");
+    el("fairnessMessage").textContent=out.transparency&&out.transparency.message?out.transparency.message:"No hidden marketplace fees.";
+    el("fairSubtotal").textContent=out.buyer&&out.buyer.subtotal_estimate!=null?money(out.buyer.subtotal_estimate):"Final seller quote";
+    el("fairBuyerFee").textContent=out.buyer&&out.buyer.provider_fee_estimate!=null?money(out.buyer.provider_fee_estimate):"Calculated after quote";
+    el("fairBuyerTotal").textContent=out.buyer&&out.buyer.total_before_delivery_estimate!=null?money(out.buyer.total_before_delivery_estimate):"Calculated after quote";
+    var src=out.rule||{};
+    el("fairSource").textContent="Rule v"+(src.version||1)+" • "+(src.source_name||"RANOVA policy")+(src.effective_from?" • effective "+new Date(src.effective_from).toLocaleDateString():"")+" • Delivery is quoted separately.";
+  }catch(e){
+    el("fairnessMessage").textContent=e.message||"Fee preview unavailable. No payment should be made until the final amount is shown.";
+    el("fairSubtotal").textContent="—";el("fairBuyerFee").textContent="—";el("fairBuyerTotal").textContent="—";el("fairSource").textContent="";
+  }
+}
+
 function cartItems(){return Object.keys(cart).map(function(id){var p=products.find(function(x){return x.id===id});return p?{product:p,quantity:cart[id]}:null}).filter(Boolean)}
 function totalQty(){return cartItems().reduce(function(s,x){return s+x.quantity},0)}
 function knownTotal(){var items=cartItems();if(!items.length||items.some(function(x){return x.product.price==null}))return null;return items.reduce(function(s,x){return s+(Number(x.product.price)*x.quantity)},0)}
@@ -160,7 +184,7 @@ function renderCart(){
 }
 function openCart(){el("drawerStoreName").textContent=store?store.store_name:"seller";el("cartBackdrop").classList.add("open");el("cartDrawer").classList.add("open");document.body.classList.add("no-scroll")}
 function closeCart(){el("cartBackdrop").classList.remove("open");el("cartDrawer").classList.remove("open");if(!el("checkoutModal").classList.contains("open"))document.body.classList.remove("no-scroll")}
-function openCheckout(){if(!cartItems().length)return;closeCart();el("checkoutMsg").style.display="none";el("checkoutBody").style.display="block";el("checkoutSuccess").style.display="none";el("checkoutModal").classList.add("open");document.body.classList.add("no-scroll")}
+function openCheckout(){if(!cartItems().length)return;closeCart();el("checkoutMsg").style.display="none";el("checkoutBody").style.display="block";el("checkoutSuccess").style.display="none";el("checkoutModal").classList.add("open");document.body.classList.add("no-scroll");loadFeePreview()}
 function closeCheckout(){el("checkoutModal").classList.remove("open");document.body.classList.remove("no-scroll")}
 function showCheckoutMsg(text,good){var m=el("checkoutMsg");m.textContent=text;m.classList.toggle("good",!!good);m.style.display="block"}
 async function placeOrder(){
@@ -211,7 +235,7 @@ async function boot(){
   el("contact").innerHTML=links.join("");
   el("loading").style.display="none";el("page").style.display="block";render();renderCart();
 }
-el("search").addEventListener("input",render);
+el("search").addEventListener("input",render);el("buyerCountry").addEventListener("change",loadFeePreview);el("paymentMethod").addEventListener("change",loadFeePreview);
 el("topCart").onclick=el("cartFab").onclick=openCart;el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
 el("closeCheckout").onclick=el("cancelCheckout").onclick=closeCheckout;el("placeOrder").onclick=placeOrder;el("doneCheckout").onclick=closeCheckout;
 el("checkoutModal").addEventListener("click",function(e){if(e.target===this)closeCheckout()});
