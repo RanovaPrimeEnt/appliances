@@ -1,4 +1,4 @@
-const CACHE="rpe-shell-v21";
+const CACHE="rpe-shell-v22";
 const SHELL=["./","./site.html","./about.html","./contact.html","./shipping-returns.html","./privacy.html","./terms.html","./rpe-mark.svg","./manifest.webmanifest",
   "./rpe-theme.css?v=20260926-1",
   "./solar-category.js?v=20260926-4",
