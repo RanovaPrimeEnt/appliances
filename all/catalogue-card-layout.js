@@ -31,8 +31,8 @@ function installStyle(d){
   var s=d.createElement("style");
   s.id="rpeEssentialCardStyle";
   s.textContent=`
-    #grid .product{overflow:hidden!important;cursor:pointer!important;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease!important}
-    #grid .product:hover{transform:translateY(-3px)!important;box-shadow:0 10px 24px rgba(13,62,49,.10)!important;border-color:#cfded7!important}#grid .product:active{transform:scale(.99)!important}#grid .product-info{padding:12px 12px 14px!important}
+    #grid .product{overflow:hidden!important}
+    #grid .product-info{padding:12px 12px 14px!important}
     #grid .product-info>*{display:none!important}
     #grid .product-info>.rpe-essential-card{display:grid!important;gap:5px!important}
     #grid .rpe-essential-name{display:block!important;margin:0!important;font-size:14px!important;line-height:1.28!important;font-weight:800!important;color:#163c32!important;min-width:0!important;overflow-wrap:anywhere!important}
@@ -52,7 +52,7 @@ function installStyle(d){
     #productModal .modal-info li,
     #productModal .modal-info small,
     #productModal .modal-info span{font-size:max(12px,1em)!important}
-    @media(max-width:620px){
+    @media(max-width:620px){#grid .product{cursor:pointer!important;transition:transform .16s ease,box-shadow .16s ease!important}#grid .product:active{transform:scale(.985)!important;box-shadow:0 7px 18px rgba(13,62,49,.10)!important}
       #grid.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
       #grid .product-img{height:145px!important}
       #grid .product-info{padding:10px 9px 12px!important}
@@ -93,16 +93,24 @@ function decorateCard(card,p,w){
     img.removeAttribute("title");
   }
 
-  card.setAttribute("role","button");
-  card.setAttribute("tabindex","0");
-  card.setAttribute("aria-label","Open "+(p.name||"product")+" details");
+  if(w.matchMedia&&w.matchMedia("(max-width:620px)").matches){
+    card.setAttribute("role","button");
+    card.setAttribute("tabindex","0");
+    card.setAttribute("aria-label","Open "+(p.name||"product")+" details");
+  }else{
+    card.removeAttribute("role");
+    card.removeAttribute("tabindex");
+    card.removeAttribute("aria-label");
+  }
   if(!card.__rpeEssentialCardClick){
     card.__rpeEssentialCardClick=true;
     card.addEventListener("click",function(e){
+      if(!(w.matchMedia&&w.matchMedia("(max-width:620px)").matches))return;
       if(e.target&&e.target.closest&&e.target.closest("a,button,input,select,textarea"))return;
       try{if(typeof w.openProduct==="function")w.openProduct(p.id)}catch(err){}
     });
     card.addEventListener("keydown",function(e){
+      if(!(w.matchMedia&&w.matchMedia("(max-width:620px)").matches))return;
       if(e.key==="Enter"||e.key===" "){
         e.preventDefault();
         try{if(typeof w.openProduct==="function")w.openProduct(p.id)}catch(err){}
