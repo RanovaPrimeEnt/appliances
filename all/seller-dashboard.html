@@ -124,7 +124,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           <h2>Seller payouts</h2><p>Save where RANOVA should send your marketplace payouts. These details are private and are not shown on your public store.</p>
           <div id="payoutMsg" class="msg"></div>
           <div class="metrics" style="margin-top:14px">
-            <div class="metric"><small>Current commission</small><strong id="sellerCommission">0%</strong></div>
+            <div class="metric"><small>Commission policy</small><strong id="sellerCommission">By country</strong></div>
             <div class="metric"><small>Eligible / processing</small><strong id="sellerPayoutOpen">GHS 0.00</strong></div>
             <div class="metric"><small>Paid out</small><strong id="sellerPayoutPaid">GHS 0.00</strong></div>
             <div class="metric"><small>Payout hold</small><strong id="sellerHoldDays">0 days</strong></div>
@@ -347,8 +347,7 @@ function renderOrders(){
 
 function renderFinance(){
   var profile=state.finance_profile||{},settings=state.finance_settings||{},payouts=state.payouts||[];
-  var effective=profile.commission_rate_override==null?Number(settings.default_commission_rate||0):Number(profile.commission_rate_override||0);
-  el("sellerCommission").textContent=effective.toFixed(2)+"%";
+  el("sellerCommission").textContent=profile.commission_rate_override==null?"By country":Number(profile.commission_rate_override||0).toFixed(2)+"% override";
   el("sellerHoldDays").textContent=Number(settings.payout_hold_days||0)+" day"+(Number(settings.payout_hold_days||0)===1?"":"s");
   var open=payouts.filter(function(p){return["eligible","processing"].includes(p.payout_status)}).reduce(function(sum,p){return sum+Number(p.payout_amount||0)},0);
   var paid=payouts.filter(function(p){return p.payout_status==="paid"}).reduce(function(sum,p){return sum+Number(p.payout_amount||0)},0);
