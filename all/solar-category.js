@@ -90,13 +90,13 @@ function ensureSolarCategory(d){
   [].slice.call(d.querySelectorAll(".stats div")).forEach(function(box){
     var label=box.querySelector("span"),strong=box.querySelector("strong");
     if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent="4";
-    if(label&&strong&&/Catalogue items/i.test(label.textContent)&&/^\s*36\+?\s*$/.test(strong.textContent))strong.textContent="42+";
+    if(label&&strong&&/Catalogue items/i.test(label.textContent)&&/^\s*36\+?\s*$/.test(strong.textContent))strong.textContent="42";
   });
 
   return true;
 }
 
-function installUi(d,products){
+function installUi(d,products,totalCount){
   if(!d)return;
   ensureSolarCategory(d);
 
@@ -346,7 +346,7 @@ function installUi(d,products){
   [].slice.call(d.querySelectorAll(".stats div")).forEach(function(box){
     var label=box.querySelector("span"),strong=box.querySelector("strong");
     if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent="4";
-    if(label&&strong&&/Catalogue items/i.test(label.textContent)&&/^\s*36\+?\s*$/.test(strong.textContent))strong.textContent="42+";
+    if(label&&strong&&/Catalogue items/i.test(label.textContent))strong.textContent=String(totalCount||42);
   });
 }
 
@@ -410,7 +410,11 @@ async function integrateSolarProducts(){
       }
     });
 
-    installUi(d,solar);
+    var expectedSolarSkus=["RPE-SOLAR-096","RPE-SOLAR-144","RPE-SOLAR-192","RPE-SOLAR-240","RPE-SOLAR-504-5K","RPE-SOLAR-504-8K"];
+    var mergedSkus={};catalogue.forEach(function(x){if(x.rpeSku)mergedSkus[x.rpeSku]=1});
+    var missing=expectedSolarSkus.filter(function(x){return !mergedSkus[x]});
+    if(missing.length)console.warn("Missing solar catalogue products:",missing);
+    installUi(d,solar,catalogue.length);
 
     // Re-render the existing product section. Search, selection, WhatsApp and modal behavior stay native.
     if(typeof w.render==="function")w.render();
