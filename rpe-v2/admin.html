@@ -56,6 +56,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
     <button data-panel="seller-products" data-market-role="product">Seller products</button>
     <button data-panel="seller-stores" data-market-role="seller">Seller stores</button>
     <button data-panel="seller-orders" data-market-role="orders">Marketplace orders</button>
+    <button data-panel="deliveries" data-market-role="orders">Deliveries</button>
     <button data-panel="cases" data-market-role="orders">Cases</button>
     <button data-panel="finance" data-market-role="finance">Finance</button>
   </aside>
@@ -121,6 +122,20 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       <div class="card">
         <div class="card-head"><div><h2>Marketplace orders</h2><small style="color:var(--rpe-muted)">Orders automatically routed from buyer checkout to verified seller stores.</small></div></div>
         <div id="sellerOrdersList" class="body market-list"></div>
+      </div>
+    </section>
+
+    <section id="deliveries" class="panel">
+      <div class="hero"><small>DELIVERY OPERATIONS</small><h1>Track handover without letting one side declare victory alone.</h1><p>Seller delivery claims remain provisional. Review courier details and private proof; final confirmation comes from the buyer or an authorized RANOVA review.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Active deliveries</small><strong id="dActive">0</strong></div>
+        <div class="metric"><small>Awaiting confirmation</small><strong id="dWaiting">0</strong></div>
+        <div class="metric"><small>Proofs submitted</small><strong id="dProofs">0</strong></div>
+        <div class="metric"><small>Proofs needing review</small><strong id="dProofReview">0</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Delivery review desk</h2><small style="color:var(--rpe-muted)">Private proof links expire after 10 minutes. Reject unclear evidence; use admin delivery confirmation only after reviewing the record and writing a reason.</small></div></div>
+        <div id="adminDeliveriesList" class="body market-list"></div>
       </div>
     </section>
 
@@ -225,5 +240,5 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./admin.js?v=20260926-7"></script>
+<script src="./admin.js?v=20260926-8"></script>
 </body></html>
