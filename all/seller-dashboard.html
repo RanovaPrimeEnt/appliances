@@ -70,7 +70,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <div class="field full"><label>Store description</label><textarea id="storeDescription" maxlength="2500" placeholder="Tell customers what your business supplies and what makes your store dependable."></textarea></div>
             <div class="field"><label>Public phone</label><input id="storePhone" inputmode="tel"></div>
             <div class="field"><label>Public email</label><input id="storeEmail" type="email"></div>
-            <div class="field full"><label>Business / fulfilment location</label><input id="storeLocation" maxlength="180"></div>
+            <div class="field"><label>Store country</label><select id="storeCountry"><option value="">Choose country</option></select></div><div class="field"><label>Business / fulfilment location</label><input id="storeLocation" maxlength="180"></div>
             <div class="field full"><label>Fulfilment summary</label><textarea id="storeFulfilment" maxlength="700" placeholder="Example: Orders are prepared from our Accra warehouse. Delivery arrangements are confirmed per order."></textarea></div>
             <div class="field full"><label>Return policy summary</label><textarea id="storeReturns" maxlength="700" placeholder="Describe your store's applicable return conditions accurately."></textarea></div>
             <div class="field full"><label>Minimum order note</label><input id="storeMinimum" maxlength="300" placeholder="Example: MOQ varies by product. Contact us for carton pricing."></div>
@@ -151,8 +151,9 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co";
 var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
 var ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-store";
+var COUNTRY_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-country-service";
 var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-var session=null,state=null,logoUrl="",bannerUrl="",productMainUrl="",productGalleryUrls=[];
+var session=null,state=null,logoUrl="",bannerUrl="",productMainUrl="",productGalleryUrls=[],countryMap={},storeCountryName="",storeGooglePlaceId="",storeCountrySource="";
 
 function el(id){return document.getElementById(id)}
 function clean(v){return String(v==null?"":v)}
@@ -169,6 +170,31 @@ async function api(body){
   var out=await r.json().catch(function(){return{}});
   if(!r.ok||!out.ok)throw new Error(out.error||"Request failed.");
   return out;
+}
+
+async function countryApi(body){
+  var r=await fetch(COUNTRY_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify(body||{})});
+  var out=await r.json().catch(function(){return{}});
+  if(!r.ok||!out.ok)throw new Error(out.error||"Country lookup failed.");
+  return out;
+}
+async function loadCountries(){
+  var out=await countryApi({action:"countries"});
+  countryMap={};
+  var options=['<option value="">Choose country</option>'];
+  (out.countries||[]).forEach(function(c){countryMap[c.code]=c.name;options.push('<option value="'+esc(c.code)+'">'+esc(c.name)+'</option>')});
+  el("storeCountry").innerHTML=options.join("");
+}
+async function resolveStoreCountry(){
+  var code=el("storeCountry").value;
+  if(!code)throw new Error("Choose the store country.");
+  var out=await countryApi({action:"resolve_address_country",address:el("storeLocation").value.trim(),country_code:code});
+  var c=out.country||{};
+  storeCountryName=c.name||countryMap[code]||code;
+  storeGooglePlaceId=c.place_id||"";
+  storeCountrySource=c.source||"selected_country";
+  if(c.code&&countryMap[c.code])el("storeCountry").value=c.code;
+  return c.code||code;
 }
 async function uploadAsset(file,folder){
   if(!file)throw new Error("Choose an image first.");
@@ -211,15 +237,16 @@ function fillStore(){
   el("storeTagline").value=s.tagline||"";el("storeDescription").value=s.description||"";
   el("storePhone").value=s.public_phone||a.phone||"";el("storeEmail").value=s.public_email||a.email||"";
   el("storeLocation").value=s.business_location||a.business_location||"";
+  el("storeCountry").value=s.country_code||"";storeCountryName=s.country_name||countryMap[s.country_code]||"";storeGooglePlaceId=s.google_place_id||"";storeCountrySource=s.country_source||"";
   el("storeFulfilment").value=s.fulfilment_summary||"";el("storeReturns").value=s.return_policy_summary||"";el("storeMinimum").value=s.minimum_order_note||"";
   logoUrl=s.logo_url||"";bannerUrl=s.banner_url||"";preview(el("logoPreview"),logoUrl,true);preview(el("bannerPreview"),bannerUrl,false);
 }
 function storePayload(status){
-  return{action:"save_store",store_status:status,store_name:el("storeName").value,slug:el("storeSlug").value,tagline:el("storeTagline").value,description:el("storeDescription").value,public_phone:el("storePhone").value,public_email:el("storeEmail").value,business_location:el("storeLocation").value,fulfilment_summary:el("storeFulfilment").value,return_policy_summary:el("storeReturns").value,minimum_order_note:el("storeMinimum").value,logo_url:logoUrl,banner_url:bannerUrl};
+  return{action:"save_store",store_status:status,store_name:el("storeName").value,slug:el("storeSlug").value,tagline:el("storeTagline").value,description:el("storeDescription").value,public_phone:el("storePhone").value,public_email:el("storeEmail").value,business_location:el("storeLocation").value,country_code:el("storeCountry").value,country_name:storeCountryName||countryMap[el("storeCountry").value]||"",google_place_id:storeGooglePlaceId,country_source:storeCountrySource||"selected_country",fulfilment_summary:el("storeFulfilment").value,return_policy_summary:el("storeReturns").value,minimum_order_note:el("storeMinimum").value,logo_url:logoUrl,banner_url:bannerUrl};
 }
 async function saveStore(status,button){
   clearMsg(el("storeMsg"));var old=button.textContent;button.disabled=true;button.textContent="Saving…";
-  try{await api(storePayload(status));msg(el("storeMsg"),status==="active"?"Store published successfully.":"Store saved successfully.",true);await refresh();setPanel("store")}
+  try{var resolvedCode=await resolveStoreCountry();el("storeCountry").value=resolvedCode;await api(storePayload(status));msg(el("storeMsg"),status==="active"?"Store published successfully.":"Store saved successfully.",true);await refresh();setPanel("store")}
   catch(e){msg(el("storeMsg"),e.message||"Could not save store.")}
   finally{button.disabled=false;button.textContent=old}
 }
@@ -359,7 +386,7 @@ el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./
 async function boot(){
   var gs=await sb.auth.getSession();session=gs.data.session;
   if(!session){el("gate").innerHTML='<div class="locked"><b>Sign in to Seller Center first.</b>Your seller dashboard uses the same protected seller account.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Open Seller Center →</a></div></div>';return}
-  try{await refresh()}catch(e){el("gate").innerHTML='<div class="locked"><b>Seller Dashboard could not load.</b>'+esc(e.message||"Return to Seller Center and try again.")+'</div>'}
+  try{await loadCountries();await refresh()}catch(e){el("gate").innerHTML='<div class="locked"><b>Seller Dashboard could not load.</b>'+esc(e.message||"Return to Seller Center and try again.")+'</div>'}
 }
 sb.auth.onAuthStateChange(function(_event,newSession){session=newSession;if(!session)location.href="./seller-center.html"});
 boot();
