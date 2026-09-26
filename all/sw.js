@@ -1,10 +1,27 @@
-const CACHE="rpe-shell-v27";
-const SHELL=["./","./site.html","./about.html","./contact.html","./shipping-returns.html","./privacy.html","./terms.html","./rpe-mark.svg","./manifest.webmanifest","./images/solar-category-cover.svg",
+const CACHE="rpe-shell-v28";
+const SHELL=[
+  "./",
+  "./site.html",
+  "./about.html",
+  "./contact.html",
+  "./shipping-returns.html",
+  "./privacy.html",
+  "./terms.html",
+  "./rpe-mark.svg",
+  "./manifest.webmanifest",
+  "./images/solar-category-cover.svg",
   "./rpe-theme.css?v=20260926-1",
   "./solar-category.js?v=20260926-5",
   "./catalogue-lighting.js?v=20260926-5",
-  "./lighting-integration.js?v=20260926-8",
-  "./friendly-upgrades.js?v=20260926-10",\n  "./marketplace-v1.css?v=20260926-2",\n  "./marketplace-v1.js?v=20260926-2",\n  "./rfq.html",\n  "./supplier.html"];
+  "./lighting-integration.js?v=20260926-11",
+  "./catalogue-card-layout.js?v=20260926-1",
+  "./akwaaba-translator.js?v=20260926-1",
+  "./friendly-upgrades.js?v=20260926-10",
+  "./marketplace-v1.css?v=20260926-2",
+  "./marketplace-v1.js?v=20260926-2",
+  "./rfq.html",
+  "./supplier.html"
+];
 self.addEventListener("install",event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>Promise.all(SHELL.map(url=>cache.add(url).catch(()=>null)))));
@@ -18,8 +35,18 @@ self.addEventListener("fetch",event=>{
   const url=new URL(req.url);
   if(url.origin!==location.origin)return;
   if(req.mode==="navigate"){
-    event.respondWith(fetch(req).then(res=>{const copy=res.clone();caches.open(CACHE).then(c=>c.put(req,copy));return res}).catch(()=>caches.match(req).then(r=>r||caches.match("./"))));
+    event.respondWith(fetch(req).then(res=>{
+      const copy=res.clone();
+      caches.open(CACHE).then(c=>c.put(req,copy));
+      return res;
+    }).catch(()=>caches.match(req).then(r=>r||caches.match("./"))));
     return;
   }
-  event.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(res=>{if(res.ok){const copy=res.clone();caches.open(CACHE).then(c=>c.put(req,copy))}return res})));
+  event.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(res=>{
+    if(res.ok){
+      const copy=res.clone();
+      caches.open(CACHE).then(c=>c.put(req,copy));
+    }
+    return res;
+  })));
 });
