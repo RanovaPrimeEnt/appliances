@@ -7,7 +7,7 @@ const marketEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-admin-marketplace";
 const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
 const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
-let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
+let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],counts:{}},marketError=null,selectedApplicationRef=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -28,7 +28,7 @@ const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
 const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
 const canFinance=()=>role==="owner"||role==="manager";
 const isOwner=()=>role==="owner";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],counts:{}});
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -183,6 +183,7 @@ function renderMarketplaceAll(){
   renderSellerApplications();
   renderSellerProducts();
   renderSellerStores();
+  renderMarketplaceTrust();
   renderSellerOrders();
   renderDeliveries();
   renderCases();
@@ -340,6 +341,42 @@ function renderSellerProductDetail(id){
   host.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
+
+function renderMarketplaceTrust(){
+  const reviewHost=$("adminReviewsList"),metricHost=$("adminTrustMetricsList");
+  if(!reviewHost||!metricHost)return;
+  if(!canSellerReview()){
+    reviewHost.innerHTML='<div class="empty">Your admin role does not include review moderation.</div>';
+    metricHost.innerHTML='<div class="empty">Seller trust metrics require seller-review permission.</div>';return;
+  }
+  const c=market.counts||{},reviews=market.reviews||[],metrics=market.trust_metrics||[],stores=market.stores||[];
+  $("tReviewsPending").textContent=c.reviews_pending||0;
+  $("tReviewsPublished").textContent=c.reviews_published||0;
+  $("tReviewsHidden").textContent=c.reviews_hidden||0;
+  const storeName=id=>stores.find(s=>s.id===id)?.store_name||"Seller store";
+  reviewHost.innerHTML=reviews.length?reviews.map(r=>{
+    const flags=Array.isArray(r.moderation_flags)?r.moderation_flags:[];
+    const actions=[
+      r.moderation_status!=="published"?'<button class="primary" data-review-mod="'+r.id+'" data-review-status="published">Publish</button>':"",
+      r.moderation_status!=="hidden"?'<button data-review-mod="'+r.id+'" data-review-status="hidden">Hide</button>':"",
+      r.moderation_status!=="rejected"?'<button data-review-mod="'+r.id+'" data-review-status="rejected">Reject</button>':""
+    ].join("");
+    return '<div class="market-row"><div><b>'+esc(r.review_ref)+' · '+esc(storeName(r.store_id))+'</b><small>'+esc(r.buyer_display_name||"Verified buyer")+' · Overall '+esc(r.overall_rating)+'/5 · Product '+esc(r.product_rating)+'/5 · Service '+esc(r.service_rating)+'/5 · Delivery '+esc(r.delivery_rating)+'/5</small><small>'+esc(r.review_title||"")+(r.review_text?' · '+esc(r.review_text):'')+'</small>'+(flags.length?'<small>Automated flags: '+esc(flags.join(", "))+'</small>':'')+(r.seller_response?'<small>Seller response: '+esc(r.seller_response)+'</small>':'')+'</div><span class="chip '+statusClass(r.moderation_status)+'">'+esc(label(r.moderation_status))+'</span><div><small>Submitted</small><b>'+esc(r.submitted_at?new Date(r.submitted_at).toLocaleString():"—")+'</b></div><div class="actions">'+actions+'</div></div>';
+  }).join(""):'<div class="empty">No verified marketplace reviews yet.</div>';
+  reviewHost.querySelectorAll("[data-review-mod]").forEach(b=>b.onclick=async()=>{
+    const status=b.dataset.reviewStatus;
+    let note="";
+    if(status==="hidden"||status==="rejected"){
+      note=prompt("Record the reason for this moderation decision.","")||"";
+      if(note.trim().length<3)return;
+    }else note=prompt("Optional moderation note for publishing.","")||"";
+    b.disabled=true;
+    try{await marketApi({action:"moderate_marketplace_review",id:b.dataset.reviewMod,status,note});await reloadMarketplace()}
+    catch(err){alert(err.message||"Could not moderate review.")}
+    finally{b.disabled=false}
+  });
+  metricHost.innerHTML=metrics.length?metrics.map(t=>'<div class="market-row"><div><b>'+esc(storeName(t.store_id))+'</b><small>'+esc(t.published_review_count||0)+' published review(s) · '+esc(t.completed_orders||0)+' completed order(s)</small></div><span class="chip">'+(t.overall_rating==null?'No rating':esc(Number(t.overall_rating).toFixed(2))+'/5')+'</span><div><small>Complaint order rate</small><b>'+esc(Number(t.complaint_order_rate||0).toFixed(2))+'%</b><small>Disputes '+esc(t.dispute_orders||0)+' · Refunds '+esc(t.refund_orders||0)+'</small></div><div><small>Confirmed delivery rate</small><b>'+esc(Number(t.delivery_confirmation_rate||0).toFixed(2))+'%</b></div></div>').join(""):'<div class="empty">No seller trust metrics yet.</div>';
+}
 
 function renderSellerOrders(){
   const host=$("sellerOrdersList");if(!host)return;
