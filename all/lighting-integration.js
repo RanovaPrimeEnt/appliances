@@ -16,9 +16,9 @@
     if(!d.getElementById('rpeLightingStyle')){
       var style=d.createElement('style');style.id='rpeLightingStyle';
       style.textContent=
-        '.category-cards.rpeFourCategories{grid-template-columns:repeat(5,minmax(0,1fr))!important}' +
+        '.category-cards.rpeFourCategories{grid-template-columns:repeat(6,minmax(0,1fr))!important}' +
         '.modal.open{z-index:6000!important}' +
-        '#rpeLightingCategoryCard .category-image img{object-fit:cover!important;object-position:center 8%!important;transform:none!important}' +
+        '#rpeLightingCategoryCard .category-image img{object-fit:cover!important;object-position:center 8%!important;transform:none!important}' +'#rpeRechargeableCategoryCard .category-image img{object-fit:cover!important;object-position:center!important;transform:none!important}' +
         '.product-img img[src*="/images/lighting/source-"]{object-fit:contain!important;object-position:center!important;transform:none!important;padding:8px!important;box-sizing:border-box!important;background:#f7f9f8!important}' +
         '.product:hover .product-img img[src*="/images/lighting/source-"]{transform:none!important}' +
         '.rpe-source-label{position:absolute;bottom:9px;left:9px;z-index:2;background:rgba(255,255,255,.96);color:#214135;border:1px solid #cbd9d2;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;line-height:1.2;max-width:calc(100% - 75px)}' +
@@ -34,20 +34,38 @@
     }
 
     var cards=d.querySelector('.category-cards');
-    if(cards&&!d.getElementById('rpeLightingCategoryCard')){
-      var card=d.createElement('button');
-      card.id='rpeLightingCategoryCard';card.type='button';card.className='category-card';
-      card.innerHTML='<div class="category-image"><img src="./images/lighting/source-11.jpg" alt="Square ceiling fan light" loading="lazy" decoding="async"></div>'+
-        '<div><small>LIGHTING &amp; FANS</small><h3>Lighting &amp; Fans</h3><span>Ceiling fan lights &amp; rechargeable lights →</span></div>';
-      card.onclick=function(){w.setActiveCategory('Lighting & Fans');d.getElementById('products').scrollIntoView({behavior:'smooth',block:'start'})};
-      cards.appendChild(card);
+    if(cards){
+      if(!d.getElementById('rpeLightingCategoryCard')){
+        var card=d.createElement('button');
+        card.id='rpeLightingCategoryCard';card.type='button';card.className='category-card';
+        card.innerHTML='<div class="category-image"><img src="./images/lighting/source-11.jpg" alt="Ceiling fan lights" loading="lazy" decoding="async"></div>'+
+          '<div><small>CEILING LIGHTING</small><h3>Lighting &amp; Fans</h3><span>Ceiling fan lights →</span></div>';
+        card.onclick=function(){w.setActiveCategory('Lighting & Fans');d.getElementById('products').scrollIntoView({behavior:'smooth',block:'start'})};
+        cards.appendChild(card);
+      }
+      if(!d.getElementById('rpeRechargeableCategoryCard')){
+        var rechargeable=d.createElement('button');
+        rechargeable.id='rpeRechargeableCategoryCard';rechargeable.type='button';rechargeable.className='category-card';
+        rechargeable.innerHTML='<div class="category-image"><img src="./images/rechargeable-category-cover.svg" alt="Rechargeable searchlights and headlamps" loading="lazy" decoding="async"></div>'+
+          '<div><small>PORTABLE LIGHTING</small><h3>Rechargeable Lights</h3><span>Searchlights &amp; headlamps →</span></div>';
+        rechargeable.onclick=function(){w.setActiveCategory('Rechargeable Lights');d.getElementById('products').scrollIntoView({behavior:'smooth',block:'start'})};
+        cards.appendChild(rechargeable);
+      }
     }
     var filters=d.querySelector('.filters');
-    if(filters&&!d.getElementById('rpeLightingFilter')){
-      var filter=d.createElement('button');filter.id='rpeLightingFilter';filter.type='button';
-      filter.className='filter';filter.dataset.cat='Lighting & Fans';filter.textContent='Lighting & Fans';
-      filter.onclick=function(){w.setActiveCategory('Lighting & Fans')};
-      filters.appendChild(filter);
+    if(filters){
+      if(!d.getElementById('rpeLightingFilter')){
+        var filter=d.createElement('button');filter.id='rpeLightingFilter';filter.type='button';
+        filter.className='filter';filter.dataset.cat='Lighting & Fans';filter.textContent='Lighting & Fans';
+        filter.onclick=function(){w.setActiveCategory('Lighting & Fans')};
+        filters.appendChild(filter);
+      }
+      if(!d.getElementById('rpeRechargeableFilter')){
+        var rechargeFilter=d.createElement('button');rechargeFilter.id='rpeRechargeableFilter';rechargeFilter.type='button';
+        rechargeFilter.className='filter';rechargeFilter.dataset.cat='Rechargeable Lights';rechargeFilter.textContent='Rechargeable Lights';
+        rechargeFilter.onclick=function(){w.setActiveCategory('Rechargeable Lights')};
+        filters.appendChild(rechargeFilter);
+      }
     }
     Array.prototype.forEach.call(d.querySelectorAll('.stats div'),function(box){
       var label=box.querySelector('span'),value=box.querySelector('strong');
