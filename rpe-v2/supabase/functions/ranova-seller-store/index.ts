@@ -79,7 +79,7 @@ async function syncParentOrder(parentId:string|null){
   const parent=parents[0];
   if(!parent)return;
   const children=await serviceGet("ranova_seller_orders",{
-    select:"subtotal,delivery_fee,total,order_status",
+    select:"subtotal,delivery_fee,total,order_status,required_payment_percent_snapshot,payment_processing_rate_snapshot,payment_fixed_fee_snapshot,payment_fee_payer_snapshot",
     parent_order_id:"eq."+parentId,
     order:"created_at.asc"
   });
@@ -99,7 +99,28 @@ async function syncParentOrder(parentId:string|null){
   if(parent.order_source==="seller_store"){
     if(children.every((x:any)=>x.subtotal!==null))patch.product_total=Number(children.reduce((s:number,x:any)=>s+Number(x.subtotal||0),0).toFixed(2));
     if(children.every((x:any)=>x.delivery_fee!==null))patch.delivery_fee=Number(children.reduce((s:number,x:any)=>s+Number(x.delivery_fee||0),0).toFixed(2));
-    if(children.every((x:any)=>x.total!==null))patch.total_payment=Number(children.reduce((s:number,x:any)=>s+Number(x.total||0),0).toFixed(2));
+    if(children.every((x:any)=>x.total!==null)){
+      const baseTotal=Number(children.reduce((s:number,x:any)=>s+Number(x.total||0),0).toFixed(2));
+      const allFees=children.reduce((s:number,x:any)=>{
+        const rate=Number(x.payment_processing_rate_snapshot||0);
+        const fixed=Number(x.payment_fixed_fee_snapshot||0);
+        return s+Number((Number(x.total||0)*rate/100+fixed).toFixed(2));
+      },0);
+      const buyerFees=children.reduce((s:number,x:any)=>{
+        if(x.payment_fee_payer_snapshot!=="buyer")return s;
+        const rate=Number(x.payment_processing_rate_snapshot||0);
+        const fixed=Number(x.payment_fixed_fee_snapshot||0);
+        return s+Number((Number(x.total||0)*rate/100+fixed).toFixed(2));
+      },0);
+      const rates=children.map((x:any)=>Number(x.payment_processing_rate_snapshot||0));
+      const required=children.map((x:any)=>Number(x.required_payment_percent_snapshot==null?100:x.required_payment_percent_snapshot));
+      const payers=[...new Set(children.map((x:any)=>x.payment_fee_payer_snapshot||"platform"))];
+      patch.payment_processing_fee=Number(allFees.toFixed(2));
+      patch.payment_processing_rate=rates.length?Math.max(...rates):0;
+      patch.required_payment_percent=required.length?Math.max(...required):100;
+      patch.payment_fee_payer=payers.length===1?payers[0]:"mixed";
+      patch.total_payment=Number((baseTotal+buyerFees).toFixed(2));
+    }
   }
   await fetch(SUPABASE_URL+"/rest/v1/ranova_customer_orders?id=eq."+encodeURIComponent(parentId),{
     method:"PATCH",
@@ -133,7 +154,7 @@ async function loadDashboard(userId:string,seller:any){
     const profiles=await serviceGet("ranova_seller_finance_profiles",{select:"seller_id,store_id,payout_method,provider_name,account_name,account_reference,commission_rate_override,updated_at",seller_id:"eq."+userId,limit:"1"});
     finance_profile=profiles[0]||null;
     payouts=await serviceGet("ranova_seller_payouts",{
-      select:"id,seller_order_id,platform_order_ref,seller_order_ref,gross_product_amount,delivery_fee,commission_rate,commission_amount,adjustment_amount,payout_amount,currency,payout_status,eligible_at,payout_reference,payout_note,paid_at,created_at,updated_at",
+      select:"id,seller_order_id,platform_order_ref,seller_order_ref,gross_product_amount,delivery_fee,commission_rate,commission_amount,payment_processing_rate,payment_processing_fee,payment_fee_payer,adjustment_amount,payout_amount,currency,payout_status,eligible_at,payout_reference,payout_note,paid_at,created_at,updated_at",
       seller_id:"eq."+userId,
       order:"created_at.desc",
       limit:"100"
@@ -187,8 +208,10 @@ Deno.serve(async(req:Request)=>{
       const public_email=clean(b.public_email,180)||clean(seller.application.email,180);
       const business_location=clean(b.business_location,180)||clean(seller.application.business_location,180);
       const description=clean(b.description,2500);
-      if(store_status==="active"&&(!description||!business_location||(!public_phone&&!public_email))){
-        return response(h,400,{ok:false,error:"Before publishing, add a store description, business location and at least one public contact method."});
+      const country_code=/^[A-Z]{2}$/.test(clean(b.country_code,2).toUpperCase())?clean(b.country_code,2).toUpperCase():(existing?.country_code||null);
+      const country_name=clean(b.country_name,120)||existing?.country_name||null;
+      if(store_status==="active"&&(!description||!business_location||!country_code||(!public_phone&&!public_email))){
+        return response(h,400,{ok:false,error:"Before publishing, add a store description, business location, country and at least one public contact method."});
       }
 
       const payload={
@@ -203,6 +226,10 @@ Deno.serve(async(req:Request)=>{
         public_phone:public_phone||null,
         public_email:public_email||null,
         business_location:business_location||null,
+        country_code,
+        country_name,
+        google_place_id:clean(b.google_place_id,180)||existing?.google_place_id||null,
+        country_source:clean(b.country_source,40)||existing?.country_source||null,
         fulfilment_summary:clean(b.fulfilment_summary,700)||null,
         return_policy_summary:clean(b.return_policy_summary,700)||null,
         minimum_order_note:clean(b.minimum_order_note,300)||null,
