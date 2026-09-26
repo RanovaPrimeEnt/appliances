@@ -144,6 +144,31 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
         </div>
       </div>
 
+      <div id="countryRulesCard" class="card">
+        <div class="card-head"><div><h2>Store & country finance rules</h2><small style="color:var(--rpe-muted)">Rules are matched by specific store, seller country, buyer country and payment method. More specific rules override general ones.</small></div><span id="googleCountryStatus" class="chip">Country service</span></div>
+        <div class="body">
+          <div class="notice" style="margin-top:0">Google Maps is used only to identify/validate countries when a Google Maps API key is connected. Commission is a RANOVA policy; payment-processing rates should use an official payment-provider source, not Google Search.</div>
+          <div class="form-grid" style="margin-top:12px">
+            <input id="countryRuleId" type="hidden">
+            <div class="field"><label>Seller store</label><select id="ruleStore"><option value="">Any store</option></select></div>
+            <div class="field"><label>Payment method</label><select id="rulePaymentMethod"><option value="">Any method</option><option>Mobile Money</option><option>Bank Transfer</option></select></div>
+            <div class="field"><label>Seller country</label><select id="ruleSellerCountry"><option value="">Any country</option></select></div>
+            <div class="field"><label>Buyer country</label><select id="ruleBuyerCountry"><option value="">Any country</option></select></div>
+            <div class="field"><label>RANOVA commission (%)</label><input id="ruleCommission" type="number" min="0" max="100" step="0.01" value="0"></div>
+            <div class="field"><label>Payment processing (%)</label><input id="rulePaymentRate" type="number" min="0" max="100" step="0.01" value="0"></div>
+            <div class="field"><label>Fixed payment fee (GHS)</label><input id="ruleFixedFee" type="number" min="0" step="0.01" value="0"></div>
+            <div class="field"><label>Who absorbs payment fee?</label><select id="ruleFeePayer"><option value="platform">RANOVA platform</option><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
+            <div class="field"><label>Rate source type</label><select id="ruleSourceKind"><option value="owner_policy">RANOVA owner policy</option><option value="payment_provider">Official payment provider</option><option value="tax_authority">Official tax authority</option><option value="other_official">Other official source</option></select></div>
+            <div class="field"><label>Source name</label><input id="ruleSourceName" placeholder="Example: Provider pricing API"></div>
+            <div class="field full"><label>Official source URL</label><input id="ruleSourceUrl" type="url" placeholder="Official provider/API URL"></div>
+            <div class="field"><label><input id="ruleAutoUpdate" type="checkbox" style="width:auto;margin-right:7px"> Auto-update from official source</label></div>
+            <div class="field"><label><input id="ruleActive" type="checkbox" checked style="width:auto;margin-right:7px"> Rule active</label></div>
+          </div>
+          <div class="actions"><button id="saveCountryRule" class="primary">Save country rule</button><button id="clearCountryRule">Clear form</button><button id="syncCountryRules">Sync auto-update rules now</button></div>
+          <div id="countryRulesList" class="market-list" style="margin-top:12px"></div>
+        </div>
+      </div>
+
       <div id="paymentAccountsCard" class="card">
         <div class="card-head"><div><h2>Customer payment destinations</h2><small style="color:var(--rpe-muted)">These details stay private until a confirmed order reaches the payment stage.</small></div></div>
         <div class="body">
@@ -175,5 +200,5 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./admin.js?v=20260926-4"></script>
+<script src="./admin.js?v=20260926-5"></script>
 </body></html>
