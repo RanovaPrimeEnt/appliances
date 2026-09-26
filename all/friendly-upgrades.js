@@ -114,12 +114,15 @@ function installCategoryCarousel(d){
 
   cards.classList.add("rpe-category-carousel");
 
+  // Remove any legacy category-group controls from earlier versions.
+  [].slice.call(d.querySelectorAll(".rpe-category-groups,.rpe-category-group-btn")).forEach(function(el){el.remove()});
+
   // Final carousel sizing: exactly four categories are visible at once.
   if(!d.getElementById("rpeCategoryFourStyle")){
     var fourStyle=d.createElement("style");
     fourStyle.id="rpeCategoryFourStyle";
     fourStyle.textContent=
-      '.rpe-category-shell{position:relative!important;width:100%!important;margin:18px 0 8px!important;padding:0 52px!important;overflow:hidden!important}'+
+      '.rpe-category-shell{position:relative!important;width:100%!important;margin:20px 0 10px!important;padding:0 52px!important;overflow:hidden!important}'+
       '.category-cards.rpe-category-carousel{display:flex!important;grid-template-columns:none!important;gap:18px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x mandatory!important;scroll-behavior:smooth!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-x:contain!important;touch-action:pan-x!important;padding:10px 2px 18px!important;margin:0!important;scrollbar-width:none!important}'+
       '.category-cards.rpe-category-carousel::-webkit-scrollbar{display:none!important}'+
       '.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex:0 0 calc((100% - 54px)/4)!important;width:calc((100% - 54px)/4)!important;min-width:calc((100% - 54px)/4)!important;max-width:calc((100% - 54px)/4)!important;grid-column:auto!important;scroll-snap-align:start!important;overflow:visible!important;border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;transform:none!important}'+
@@ -130,7 +133,7 @@ function installCategoryCarousel(d){
       '.category-cards.rpe-category-carousel .category-card h3{margin:0!important;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif!important;font-size:14px!important;line-height:1.28!important;font-weight:750!important;color:#173d32!important;text-align:center!important}'+
       '.rpe-category-arrow{position:absolute!important;top:54px!important;z-index:20!important;width:46px!important;height:46px!important;border-radius:50%!important;border:1px solid #dde6e1!important;background:#fff!important;color:#173d32!important;box-shadow:0 8px 24px rgba(9,45,35,.12)!important;display:grid!important;place-items:center!important;font-size:25px!important;cursor:pointer!important}'+
       '.rpe-category-prev{left:0!important}.rpe-category-next{right:0!important}'+
-      '.rpe-category-groups{display:none!important}'+
+      '.rpe-category-groups,.rpe-category-group-btn{display:none!important}'+
       '@media(max-width:700px){.rpe-category-shell{padding:0 36px!important;margin-top:12px!important}.category-cards.rpe-category-carousel{gap:8px!important;padding:8px 0 14px!important}.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex:0 0 calc((100% - 24px)/4)!important;width:calc((100% - 24px)/4)!important;min-width:calc((100% - 24px)/4)!important;max-width:calc((100% - 24px)/4)!important}.category-cards.rpe-category-carousel .category-image{width:min(76px,86%)!important;margin-bottom:8px!important}.category-cards.rpe-category-carousel .category-card h3{font-size:10px!important;line-height:1.18!important}.rpe-category-arrow{top:25px!important;width:36px!important;height:36px!important;font-size:22px!important}}'+
       '@media(max-width:400px){.rpe-category-shell{padding:0 32px!important}.category-cards.rpe-category-carousel{gap:6px!important}.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex:0 0 calc((100% - 18px)/4)!important;width:calc((100% - 18px)/4)!important;min-width:calc((100% - 18px)/4)!important;max-width:calc((100% - 18px)/4)!important}.category-cards.rpe-category-carousel .category-image{width:min(68px,88%)!important}.category-cards.rpe-category-carousel .category-card h3{font-size:9px!important}.rpe-category-arrow{top:22px!important;width:34px!important;height:34px!important}}';
     d.head.appendChild(fourStyle);
@@ -142,6 +145,7 @@ function installCategoryCarousel(d){
     if(heading){
       heading.textContent="Shop by Category";
       heading.classList.add("rpe-category-section-title");
+      heading.style.marginBottom="0";
       var next=heading.nextElementSibling;
       if(next&&/^(P|DIV)$/i.test(next.tagName)&&!next.classList.contains("rpe-category-shell")){
         if(next.textContent.trim()){
