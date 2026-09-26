@@ -19,7 +19,7 @@ function addNav(d){
   var host=d.querySelector(".navlinks")||d.querySelector("header nav")||d.querySelector("nav");
   if(!host)return;
   var box=d.createElement("span");box.id="rpeMarketNav";box.className="rpe-market-navlinks";
-  box.innerHTML='<a href="./rfq.html" target="_top">Request a Quote</a><a href="./supplier.html" target="_top">Sell on RANOVA</a>';
+  box.innerHTML='<a href="./rfq.html" target="_top">Request a Quote</a><a href="./order-status.html" target="_top">Track Order</a><a href="./supplier.html" target="_top">Sell on RANOVA</a>';
   host.appendChild(box);
 }
 function addHero(d){
