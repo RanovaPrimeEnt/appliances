@@ -95,6 +95,7 @@ async function syncParentOrder(parentId:string|null){
   else if(states.every((x:string)=>["confirmed","delivered"].includes(x)))status="awaiting_payment";
 
   const patch:any={status};
+  if(status==="awaiting_payment")patch.payment_status="pending";
   if(parent.order_source==="seller_store"){
     if(children.every((x:any)=>x.subtotal!==null))patch.product_total=Number(children.reduce((s:number,x:any)=>s+Number(x.subtotal||0),0).toFixed(2));
     if(children.every((x:any)=>x.delivery_fee!==null))patch.delivery_fee=Number(children.reduce((s:number,x:any)=>s+Number(x.delivery_fee||0),0).toFixed(2));
@@ -127,7 +128,20 @@ async function loadDashboard(userId:string,seller:any){
     orders:orders.length,
     open_orders:orders.filter((o:any)=>!["delivered","cancelled","returned"].includes(o.order_status)).length
   };
-  return {ok:true,linked:true,approved:seller.approved,application:seller.application,store,products,orders,counts};
+  let finance_profile=null,payouts=[],finance_settings=null;
+  if(store){
+    const profiles=await serviceGet("ranova_seller_finance_profiles",{select:"seller_id,store_id,payout_method,provider_name,account_name,account_reference,commission_rate_override,updated_at",seller_id:"eq."+userId,limit:"1"});
+    finance_profile=profiles[0]||null;
+    payouts=await serviceGet("ranova_seller_payouts",{
+      select:"id,seller_order_id,platform_order_ref,seller_order_ref,gross_product_amount,delivery_fee,commission_rate,commission_amount,adjustment_amount,payout_amount,currency,payout_status,eligible_at,payout_reference,payout_note,paid_at,created_at,updated_at",
+      seller_id:"eq."+userId,
+      order:"created_at.desc",
+      limit:"100"
+    });
+    const settings=await serviceGet("ranova_marketplace_finance_settings",{select:"default_commission_rate,payout_hold_days,currency",id:"eq.1",limit:"1"});
+    finance_settings=settings[0]||{default_commission_rate:0,payout_hold_days:0,currency:"GHS"};
+  }
+  return {ok:true,linked:true,approved:seller.approved,application:seller.application,store,products,orders,counts,finance_profile,payouts,finance_settings};
 }
 function response(h:Record<string,string>,status:number,payload:any){
   return new Response(JSON.stringify(payload),{status,headers:h});
@@ -223,6 +237,34 @@ Deno.serve(async(req:Request)=>{
     const stores=await serviceGet("ranova_seller_stores",{select:"id,store_status",seller_id:"eq."+user.id,limit:"1"});
     if(!stores.length)return response(h,400,{ok:false,error:"Create your store profile first."});
     const store=stores[0];
+
+
+    if(action==="save_finance_profile"){
+      const payout_method=clean(b.payout_method,40);
+      const provider_name=clean(b.provider_name,120);
+      const account_name=clean(b.account_name,160);
+      const account_reference=clean(b.account_reference,160);
+      if(!["Mobile Money","Bank Transfer"].includes(payout_method)||!provider_name||!account_name||!account_reference){
+        return response(h,400,{ok:false,error:"Complete your payout method, provider, account name and account number/phone."});
+      }
+      const payload={
+        seller_id:user.id,
+        store_id:store.id,
+        payout_method,
+        provider_name,
+        account_name,
+        account_reference,
+        updated_at:new Date().toISOString()
+      };
+      const r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_finance_profiles",{
+        method:"POST",
+        headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=representation"},
+        body:JSON.stringify(payload)
+      });
+      const out=await r.json().catch(()=>[]);
+      if(!r.ok)throw new Error("Could not save payout details.");
+      return response(h,200,{ok:true,finance_profile:out[0]||payload});
+    }
 
     if(action==="save_product"){
       const id=clean(b.id,80);
@@ -363,6 +405,7 @@ Deno.serve(async(req:Request)=>{
         return response(h,400,{ok:false,error:"Set the final product subtotal and delivery fee before confirming this order."});
       }
       const patch:any={order_status:next,updated_at:new Date().toISOString()};
+      if(next==="confirmed")patch.payment_status="pending";
       const note=clean(b.seller_note,1000);
       if(note)patch.seller_note=note;
       const r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_orders?id=eq."+encodeURIComponent(id)+"&seller_id=eq."+encodeURIComponent(user.id),{
