@@ -7,7 +7,7 @@ const marketEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-admin-marketplace";
 const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
 const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
-let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],counts:{}},marketError=null,selectedApplicationRef=null;
+let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -28,7 +28,7 @@ const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
 const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
 const canFinance=()=>role==="owner"||role==="manager";
 const isOwner=()=>role==="owner";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],counts:{}});
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -184,6 +184,7 @@ function renderMarketplaceAll(){
   renderSellerProducts();
   renderSellerStores();
   renderSellerOrders();
+  renderDeliveries();
   renderCases();
   renderFinance();
   if(selectedApplicationRef)renderSellerDetail(selectedApplicationRef);
@@ -353,6 +354,58 @@ function renderSellerOrders(){
 }
 
 
+
+
+function renderDeliveries(){
+  const deliveries=market.deliveries||[],proofs=market.delivery_proofs||[],events=market.delivery_events||[];
+  const orders=new Map((market.seller_orders||[]).map(o=>[o.id,o]));
+  const stores=new Map((market.stores||[]).map(s=>[s.id,s]));
+  $("dActive").textContent=(market.counts||{}).deliveries_active||0;
+  $("dWaiting").textContent=(market.counts||{}).deliveries_waiting_confirmation||0;
+  $("dProofs").textContent=proofs.length;
+  $("dProofReview").textContent=proofs.filter(p=>p.review_status==="submitted").length;
+
+  const host=$("adminDeliveriesList");
+  if(!host)return;
+  if(!canOrderReview()){host.innerHTML='<div class="empty">Your admin role does not include delivery review.</div>';return}
+  host.innerHTML=deliveries.length?deliveries.map(d=>{
+    const o=orders.get(d.seller_order_id)||{},store=stores.get(d.store_id)||{};
+    const ps=proofs.filter(p=>p.delivery_id===d.id);
+    const ev=events.filter(e=>e.delivery_id===d.id).slice(0,6);
+    const proofHtml=ps.length?ps.map(p=>{
+      const buttons='<button data-delivery-proof-view="'+p.id+'">View proof</button>'+
+        (p.review_status==="submitted"?'<button data-delivery-proof-review="'+p.id+'" data-proof-status="verified">Verify</button><button data-delivery-proof-review="'+p.id+'" data-proof-status="rejected">Reject</button>':'');
+      return '<div class="finance-row-note"><b>'+esc(pretty(p.proof_type))+'</b> · '+esc(pretty(p.review_status))+(p.recipient_name?' · Recipient '+esc(p.recipient_name):'')+(p.note?' · '+esc(p.note):'')+'<div class="actions" style="margin-top:6px">'+buttons+'</div></div>';
+    }).join(""):'<div class="finance-row-note">No proof submitted yet.</div>';
+    const timeline=ev.length?'<div style="margin-top:8px">'+ev.map(e=>'<div class="finance-row-note"><b>'+esc(pretty(e.status))+'</b> · '+esc(pretty(e.actor_type))+(e.note?' · '+esc(e.note):'')+' · '+new Date(e.occurred_at).toLocaleString()+'</div>').join("")+'</div>':'';
+    const confirm=d.delivery_status==="delivered_pending_confirmation"?'<button class="primary" data-admin-confirm-delivery="'+d.id+'">Confirm after review</button>':'';
+    const tracking=d.tracking_url?'<a href="'+esc(d.tracking_url)+'" target="_blank" rel="noopener">Courier tracking</a>':'';
+    return '<div class="market-row"><div><b>'+esc(o.platform_order_ref||o.order_ref||"Seller order")+'</b><small>'+esc(store.store_name||"Seller store")+' · '+esc(o.order_ref||"")+'</small><small>'+esc(d.destination_text||"Destination not recorded")+'</small>'+tracking+proofHtml+timeline+'</div><span class="chip '+statusClass(d.delivery_status)+'">'+esc(pretty(d.delivery_status))+'</span><div><small>Method</small><b>'+esc(pretty(d.fulfilment_method))+'</b><small>'+esc(d.courier_name||"Courier not assigned")+(d.courier_reference?' · '+esc(d.courier_reference):'')+'</small></div><div><small>Delivery fee</small><b>'+fmtMoney(d.quoted_delivery_fee)+'</b><small>'+(d.eta_start_date||d.eta_end_date?'ETA '+esc(d.eta_start_date||"")+(d.eta_end_date?' → '+esc(d.eta_end_date):''):'ETA not recorded')+'</small></div><div class="actions">'+confirm+'</div></div>';
+  }).join(""):'<div class="empty">No marketplace delivery records yet.</div>';
+
+  host.querySelectorAll("[data-delivery-proof-view]").forEach(b=>b.onclick=async()=>{
+    b.disabled=true;
+    try{const out=await marketApi({action:"delivery_proof_url",proof_id:b.dataset.deliveryProofView});window.open(out.url,"_blank","noopener")}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+  host.querySelectorAll("[data-delivery-proof-review]").forEach(b=>b.onclick=async()=>{
+    const status=b.dataset.proofStatus;
+    let note="";
+    if(status==="rejected"){note=prompt("Explain why this delivery proof is not acceptable.","")||"";if(!note)return}
+    else note=prompt("Optional verification note.","")||"";
+    b.disabled=true;
+    try{await marketApi({action:"review_delivery_proof",proof_id:b.dataset.deliveryProofReview,status,note});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+  host.querySelectorAll("[data-admin-confirm-delivery]").forEach(b=>b.onclick=async()=>{
+    const note=prompt("Explain why RANOVA is confirming this delivery after reviewing the evidence.","")||"";
+    if(!note)return;
+    if(!confirm("Confirm this delivery on behalf of RANOVA? This will finalize the seller-order delivery record."))return;
+    b.disabled=true;
+    try{await marketApi({action:"admin_confirm_delivery",delivery_id:b.dataset.adminConfirmDelivery,note});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+}
 
 function renderCases(){
   const refunds=market.refunds||[],disputes=market.disputes||[],messages=market.dispute_messages||[];
