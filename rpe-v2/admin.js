@@ -7,7 +7,7 @@ const marketEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-admin-marketplace";
 const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
 const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
-let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],counts:{}},marketError=null,selectedApplicationRef=null;
+let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],counts:{}},marketError=null,selectedApplicationRef=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -28,7 +28,7 @@ const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
 const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
 const canFinance=()=>role==="owner"||role==="manager";
 const isOwner=()=>role==="owner";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],counts:{}});
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -184,6 +184,7 @@ function renderMarketplaceAll(){
   renderSellerProducts();
   renderSellerStores();
   renderSellerOrders();
+  renderCases();
   renderFinance();
   if(selectedApplicationRef)renderSellerDetail(selectedApplicationRef);
 }
@@ -198,6 +199,8 @@ function renderMarketplaceSummary(){
   $("mDocsPending").textContent=canSellerReview()?(c.documents_pending||0):"—";
   $("mSellerProductsPending").textContent=canProductReview()?(c.products_pending||0):"—";
   $("mSellerOrdersOpen").textContent=canOrderReview()?(c.seller_orders_open||0):"—";
+  $("mRefundsOpen").textContent=canOrderReview()?(c.refunds_open||0):"—";
+  $("mDisputesOpen").textContent=canOrderReview()?(c.disputes_open||0):"—";
 }
 function appStatus(a){return String(a.verification_status||a.status||"submitted").toLowerCase()}
 function filesFor(ref){return (market.files||[]).filter(f=>f.application_ref===ref)}
@@ -349,6 +352,94 @@ function renderSellerOrders(){
   }).join(""):'<div class="empty">No seller-routed marketplace orders yet.</div>';
 }
 
+
+
+function renderCases(){
+  const refunds=market.refunds||[],disputes=market.disputes||[],messages=market.dispute_messages||[];
+  const rOpen=refunds.filter(r=>!["refunded","rejected","cancelled"].includes(r.status)).length;
+  const dOpen=disputes.filter(d=>!["resolved","closed"].includes(d.status)).length;
+  const closed=refunds.filter(r=>["refunded","rejected","cancelled"].includes(r.status)).length+
+    disputes.filter(d=>["resolved","closed"].includes(d.status)).length;
+  $("cRefundsOpen").textContent=rOpen;$("cDisputesOpen").textContent=dOpen;$("cCasesClosed").textContent=closed;
+
+  const rHost=$("adminRefundsList");
+  rHost.innerHTML=refunds.length?refunds.map(r=>{
+    const actions=[];
+    if(["requested","under_review"].includes(r.status)){
+      actions.push('<button data-refund-action="under_review" data-refund-id="'+r.id+'">Review</button>');
+      if(canFinance())actions.push('<button class="primary" data-refund-action="approved" data-refund-id="'+r.id+'">Approve</button>');
+      actions.push('<button data-refund-action="rejected" data-refund-id="'+r.id+'">Reject</button>');
+    }
+    if(r.status==="approved"&&canFinance()){
+      actions.push('<button data-refund-action="processing" data-refund-id="'+r.id+'">Start refund</button>');
+      actions.push('<button class="primary" data-refund-action="refunded" data-refund-id="'+r.id+'">Mark refunded</button>');
+    }
+    if(r.status==="processing"&&canFinance())actions.push('<button class="primary" data-refund-action="refunded" data-refund-id="'+r.id+'">Mark refunded</button>');
+    return '<div class="market-row"><div><b>'+esc(r.refund_ref)+'</b><small>'+esc(pretty(r.reason_category))+' • '+esc(r.reason_detail)+'</small>'+(r.admin_note?'<small>RANOVA: '+esc(r.admin_note)+'</small>':'')+'</div><span class="chip '+statusClass(r.status)+'">'+esc(label(r.status))+'</span><div><small>Requested</small><b>'+fmtMoney(r.requested_amount)+'</b><small>'+(r.approved_amount!=null?'Approved '+fmtMoney(r.approved_amount):'Not approved yet')+'</small></div><div><small>Requested</small><b>'+new Date(r.requested_at).toLocaleString()+'</b>'+(r.refund_reference?'<small>Refund ref '+esc(r.refund_reference)+'</small>':'')+'</div><div class="actions">'+actions.join("")+'</div></div>';
+  }).join(""):'<div class="empty">No marketplace refund cases yet.</div>';
+
+  rHost.querySelectorAll("[data-refund-action]").forEach(b=>b.onclick=async()=>{
+    const action=b.dataset.refundAction,r=refunds.find(x=>x.id===b.dataset.refundId);if(!r)return;
+    let approved_amount="",refund_reference="",note="";
+    if(action==="approved"){
+      approved_amount=prompt("Approved refund amount (GHS)",String(r.approved_amount??r.requested_amount??""))||"";
+      if(!approved_amount)return;
+      note=prompt("Reason / review note","Approved after reviewing the order and case evidence.")||"";
+    }else if(action==="refunded"){
+      approved_amount=String(r.approved_amount??r.requested_amount??"");
+      refund_reference=prompt("Enter the actual refund transaction/reference.","")||"";
+      if(!refund_reference)return;
+      note=prompt("Refund note","Refund sent and independently verified.")||"";
+      if(!confirm("Confirm the refund has actually been sent?"))return;
+    }else if(action==="rejected"){
+      note=prompt("Why is this refund being rejected? This will be visible in the case record.","")||"";if(!note)return;
+    }else{
+      note=prompt(action==="processing"?"Processing note":"Review note","")||"";
+    }
+    b.disabled=true;
+    try{
+      await marketApi({action:"review_refund",id:r.id,status:action,approved_amount,refund_reference,note});
+      await reloadMarketplace();
+    }catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+
+  const dHost=$("adminDisputesList");
+  dHost.innerHTML=disputes.length?disputes.map(d=>{
+    const thread=messages.filter(m=>m.dispute_id===d.id).map(m=>'<div style="margin-top:6px;padding:8px;border-radius:9px;background:#f7f9f8"><b style="font-size:8px">'+esc(pretty(m.sender_type))+'</b><small style="display:block;margin-top:2px">'+esc(m.message)+'</small><small>'+new Date(m.created_at).toLocaleString()+'</small></div>').join("");
+    const actions=[];
+    if(!["resolved","closed"].includes(d.status)){
+      actions.push('<button data-dispute-action="under_review" data-dispute-id="'+d.id+'">Under review</button>');
+      actions.push('<button data-dispute-action="awaiting_buyer" data-dispute-id="'+d.id+'">Ask buyer</button>');
+      actions.push('<button data-dispute-action="awaiting_seller" data-dispute-id="'+d.id+'">Ask seller</button>');
+      actions.push('<button data-dispute-message="'+d.id+'">Reply</button>');
+      actions.push('<button class="primary" data-dispute-action="resolved" data-dispute-id="'+d.id+'">Resolve</button>');
+    }else if(d.status==="resolved"){
+      actions.push('<button data-dispute-action="closed" data-dispute-id="'+d.id+'">Close case</button>');
+    }
+    return '<div class="market-row" style="grid-template-columns:minmax(0,1.5fr) .55fr .8fr auto"><div><b>'+esc(d.dispute_ref)+' • '+esc(d.subject)+'</b><small>'+esc(pretty(d.category))+' • '+esc(d.description)+'</small>'+thread+(d.resolution_note?'<div class="finance-row-note"><b>Resolution:</b> '+esc(d.resolution_note)+'</div>':'')+'</div><span class="chip '+statusClass(d.status)+'">'+esc(label(d.status))+'</span><div><small>Resolution</small><b>'+esc(d.resolution?pretty(d.resolution):"Pending")+'</b><small>Opened '+new Date(d.opened_at).toLocaleString()+'</small></div><div class="actions">'+actions.join("")+'</div></div>';
+  }).join(""):'<div class="empty">No marketplace disputes yet.</div>';
+
+  dHost.querySelectorAll("[data-dispute-message]").forEach(b=>b.onclick=async()=>{
+    const message=prompt("Write a message for the dispute record.","")||"";if(!message.trim())return;
+    b.disabled=true;
+    try{await marketApi({action:"admin_dispute_message",id:b.dataset.disputeMessage,message});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+  dHost.querySelectorAll("[data-dispute-action]").forEach(b=>b.onclick=async()=>{
+    const action=b.dataset.disputeAction,d=disputes.find(x=>x.id===b.dataset.disputeId);if(!d)return;
+    let resolution="",note="";
+    if(action==="resolved"||action==="closed"){
+      resolution=action==="closed"?(d.resolution||"case_closed"):(prompt("Resolution code: buyer_refund, partial_refund, seller_favor, no_adjustment, or mutual_resolution","no_adjustment")||"");
+      if(!resolution)return;
+      note=prompt("Explain the decision clearly for both buyer and seller.",d.resolution_note||"")||"";if(!note)return;
+    }else{
+      note=prompt("Case note / message","")||"";
+    }
+    b.disabled=true;
+    try{await marketApi({action:"review_dispute",id:d.id,status:action,resolution,note});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+}
 
 function fmtMoney(v){return "GHS "+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
 function renderFinance(){
