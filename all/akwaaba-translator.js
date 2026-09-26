@@ -69,7 +69,7 @@ root.innerHTML=
   '.akwaaba-langs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}.akwaaba-lang{min-height:38px;border:1px solid #dce7e2;background:#fff;color:#425b52;border-radius:10px;font-size:11px;font-weight:850;cursor:pointer;padding:5px}.akwaaba-lang.active{background:#0e5b43;color:#fff;border-color:#0e5b43;box-shadow:0 6px 14px rgba(14,91,67,.16)}'+
   '.akwaaba-state{padding:0;border:0;background:transparent}.akwaaba-result{display:grid;gap:7px}.akwaaba-block{border:1px solid #e0e9e4;border-radius:14px;padding:10px 11px;background:#fff}.akwaaba-block.translation{background:linear-gradient(180deg,#f4fbf7 0%,#ffffff 100%);border-color:#cfe3d8}.akwaaba-block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}.akwaaba-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#7c8d85}.akwaaba-language-pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#eaf4ef;color:#0e5b43;font-size:10px;font-weight:900}.akwaaba-original{font-size:13px;line-height:1.5;color:#52665f;word-break:break-word}.akwaaba-output{font-size:17px;line-height:1.5;font-weight:850;color:#102f29;word-break:break-word}.akwaaba-arrow{display:flex;align-items:center;justify-content:center;height:16px;color:#8ba39a;font-weight:900;font-size:14px}.akwaaba-loading{display:flex;align-items:center;gap:9px;color:#52665f;font-size:13px;padding:13px;border-radius:14px;background:#f6f9f7;border:1px solid #e5ece8}.akwaaba-spin{width:16px;height:16px;border:2px solid #cfe1d8;border-top-color:#0e5b43;border-radius:50%;animation:akwaabaSpin .8s linear infinite}@keyframes akwaabaSpin{to{transform:rotate(360deg)}}'+
   '.akwaaba-actions{display:flex;gap:8px;margin-top:11px}.akwaaba-actions button{flex:1;min-height:40px;border-radius:11px;border:1px solid #dce7e2;background:#fff;color:#173d32;font-size:11px;font-weight:850;cursor:pointer}.akwaaba-actions button.primary{background:#d97706;color:#fff;border-color:#d97706}.akwaaba-note{margin-top:10px;font-size:10px;line-height:1.4;color:#819089}.akwaaba-error{color:#9d3f1a;font-size:13px;line-height:1.45;font-weight:700}'+
-  '.akwaaba-image-box{border:1px solid #dfe9e4;border-radius:12px;padding:7px;background:#fff;margin-bottom:7px;overflow:hidden}.akwaaba-image-box img{display:block;width:100%;height:110px;object-fit:contain;border-radius:8px;background:#f6f9f7}.akwaaba-image-caption{margin-top:5px;font-size:9px;line-height:1.3;color:#6b7b74;font-weight:800}.akwaaba-image-stage{display:grid;gap:7px}'+
+  '.akwaaba-detected{white-space:pre-wrap}.akwaaba-output{white-space:pre-wrap}.akwaaba-image-box{border:1px solid #dfe9e4;border-radius:12px;padding:7px;background:#fff;margin-bottom:7px;overflow:hidden}.akwaaba-image-box img{display:block;width:100%;height:110px;object-fit:contain;border-radius:8px;background:#f6f9f7}.akwaaba-image-caption{margin-top:5px;font-size:9px;line-height:1.3;color:#6b7b74;font-weight:800}.akwaaba-image-stage{display:grid;gap:7px}'+
   '@media(max-width:620px){#akwaabaOrb{width:58px;height:58px}#akwaabaOrb svg{width:28px;height:28px}#akwaabaPanel{width:calc(100vw - 18px);max-height:84vh;border-radius:18px;padding:10px}.akwaaba-langs{gap:5px}.akwaaba-lang{font-size:10px;padding:5px}.akwaaba-output{font-size:14px;line-height:1.42}.akwaaba-block{padding:9px 10px}.akwaaba-image-box img{height:82px}.akwaaba-image-caption{font-size:9px;margin-top:5px}.akwaaba-actions{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding-top:8px;margin-top:10px}}'+
   '@media(prefers-reduced-motion:reduce){#akwaabaOrb,.a-pulse,.akwaaba-spin{animation:none!important;transition:none!important}}'+
   '</style>'+
@@ -82,7 +82,7 @@ root.innerHTML=
   '<section id="akwaabaPanel" role="dialog" aria-label="Akwaaba AI Translator">'+
     '<div class="akwaaba-head"><div class="akwaaba-title"><span class="akwaaba-logo">A</span><span><b>Akwaaba AI Translator</b><small>Point • Drag • Translate</small></span></div><button class="akwaaba-close" id="akwaabaClose" type="button" aria-label="Close">×</button></div>'+
     '<div class="akwaaba-langs" id="akwaabaLangs"></div>'+
-    '<div class="akwaaba-state" id="akwaabaState"><div class="akwaaba-output">Drag Akwaaba over text or printed words on a product image, then release it.</div></div>'+
+    '<div class="akwaaba-state" id="akwaabaState"><div class="akwaaba-output">Drag Akwaaba onto a product image to scan and translate the whole image, or onto normal page text.</div></div>'+
     '<div class="akwaaba-actions"><button class="primary" id="akwaabaTranslateHere" type="button">Translate here</button><button id="akwaabaCopy" type="button">Copy</button></div>'+
     '<div class="akwaaba-note">Akwaaba does not alter the website. Verified catalogue terms are preferred, and uncertain translations are withheld rather than guessed.</div>'+
   '</section>';
@@ -217,79 +217,62 @@ function imageElementAt(clientX,clientY){
   }
   return null;
 }
-function cropImageUnderPoint(img,clientX,clientY){
-  var fr=frame.getBoundingClientRect();
-  var r=img.getBoundingClientRect();
+function prepareWholeImageForOcr(img){
   var nw=img.naturalWidth||0,nh=img.naturalHeight||0;
-  if(!nw||!nh||!r.width||!r.height)throw new Error("Image is not ready");
+  if(!nw||!nh)throw new Error("Image is not ready");
 
-  var px=clientX-fr.left-r.left,py=clientY-fr.top-r.top;
-  var cs=(frame.contentWindow||window).getComputedStyle(img);
-  var fit=(cs&&cs.objectFit)||"fill";
-  var scaleX=r.width/nw,scaleY=r.height/nh,scale=1,drawW=r.width,drawH=r.height,offX=0,offY=0;
+  // OCR copy: large enough for small supplier text, but capped for speed/memory.
+  var maxSide=1500;
+  var minSide=900;
+  var scale=Math.min(1,maxSide/Math.max(nw,nh));
+  if(Math.max(nw,nh)<minSide)scale=Math.min(2,minSide/Math.max(nw,nh));
+  var outW=Math.max(1,Math.round(nw*scale));
+  var outH=Math.max(1,Math.round(nh*scale));
 
-  if(fit==="contain"||fit==="scale-down"){
-    scale=Math.min(scaleX,scaleY);
-    drawW=nw*scale;drawH=nh*scale;offX=(r.width-drawW)/2;offY=(r.height-drawH)/2;
-  }else if(fit==="cover"){
-    scale=Math.max(scaleX,scaleY);
-    drawW=nw*scale;drawH=nh*scale;offX=(r.width-drawW)/2;offY=(r.height-drawH)/2;
-  }
-
-  var srcX,srcY,cropW,cropH;
-  if(fit==="contain"||fit==="cover"||fit==="scale-down"){
-    srcX=(px-offX)/scale;srcY=(py-offY)/scale;
-    cropW=Math.min(nw,Math.max(300/scale,nw*.46));
-    cropH=Math.min(nh,Math.max(180/scale,nh*.30));
-  }else{
-    srcX=px/scaleX;srcY=py/scaleY;
-    cropW=Math.min(nw,Math.max(300/scaleX,nw*.46));
-    cropH=Math.min(nh,Math.max(180/scaleY,nh*.30));
-  }
-
-  var sx=Math.max(0,Math.min(nw-cropW,srcX-cropW/2));
-  var sy=Math.max(0,Math.min(nh-cropH,srcY-cropH/2));
   var canvas=document.createElement("canvas");
-  var outW=Math.min(900,Math.max(600,Math.round(cropW*1.5)));
-  var outH=Math.max(240,Math.round(outW*(cropH/cropW)));
   canvas.width=outW;canvas.height=outH;
-
   var ctx=canvas.getContext("2d",{willReadFrequently:true});
   ctx.fillStyle="#fff";ctx.fillRect(0,0,outW,outH);
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
-  ctx.drawImage(img,sx,sy,cropW,cropH,0,0,outW,outH);
+  ctx.drawImage(img,0,0,nw,nh,0,0,outW,outH);
 
   return canvas;
 }
 function canvasPreview(canvas){
-  try{return canvas.toDataURL("image/jpeg",.9)}catch(e){return""}
+  try{return canvas.toDataURL("image/jpeg",.86)}catch(e){return""}
+}
+function cleanOcrLines(raw){
+  return String(raw||"").split(/\n+/).map(function(line){
+    return cleanText(line);
+  }).filter(function(x){
+    try{return x.length>0&&/[\p{L}\p{N}]/u.test(x)}catch(e){return x.length>0}
+  });
 }
 async function readImageTextAt(clientX,clientY){
   if(ocrBusy)throw new Error("Akwaaba is already reading an image");
   var img=imageElementAt(clientX,clientY);
-  if(!img)return {text:"",preview:""};
+  if(!img)return {text:"",lines:[],preview:""};
   ocrBusy=true;
 
-  var crop=cropImageUnderPoint(img,clientX,clientY);
-  var preview=canvasPreview(crop);
+  var full=prepareWholeImageForOcr(img);
+  var preview=canvasPreview(full);
+
   state.innerHTML=
     '<div class="akwaaba-image-stage">'+
       '<div class="akwaaba-image-box">'+
-        (preview?'<img src="'+preview+'" alt="Image area being translated">':'')+
-        '<div class="akwaaba-image-caption">Image area Akwaaba is reading</div>'+
+        (preview?'<img src="'+preview+'" alt="Full product image being translated">':'')+
+        '<div class="akwaaba-image-caption">Full image selected — scanning all visible words</div>'+
       '</div>'+
-      '<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Reading printed words…</span></div>'+
+      '<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Reading all text on this image…</span></div>'+
     '</div>';
   openPanel();
 
   try{
     var worker=await getAkwaabaOcrWorker();
-    var result=await worker.recognize(crop);
+    var result=await worker.recognize(full);
     var raw=(result&&result.data&&result.data.text)||"";
-    var lines=String(raw).split(/\n+/).map(cleanText).filter(function(x){
-      try{return x.length>0&&/[\p{L}\p{N}]/u.test(x)}catch(e){return x.length>0}
-    });
-    return {text:cleanText(lines.slice(0,6).join(" ")),preview:preview};
+    var lines=cleanOcrLines(raw);
+    return {text:lines.join("\n"),lines:lines,preview:preview};
   }finally{
     ocrBusy=false;
   }
@@ -399,6 +382,51 @@ function renderResult(original,translated,quality,confidence){
     '</div>';
   openPanel();
 }
+function utf8Length(s){
+  try{return new TextEncoder().encode(s).length}catch(e){return s.length}
+}
+function imageTextChunks(lines){
+  var chunks=[],current="";
+  (lines||[]).forEach(function(line){
+    line=cleanText(line);
+    if(!line)return;
+    var candidate=current?current+"\n"+line:line;
+    if(utf8Length(candidate)>520&&current){
+      chunks.push(current);
+      current=line;
+    }else{
+      current=candidate;
+    }
+  });
+  if(current)chunks.push(current);
+  return chunks;
+}
+async function translateImageChunk(text){
+  var localHit=localVerifiedTranslation(text);
+  if(localHit)return {translated:localHit,quality:"verified",confidence:1};
+  var res=await fetch(ENDPOINT,{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-akwaaba-client":"ranova-site-v1"},
+    body:JSON.stringify({q:text,target:selected})
+  });
+  var data=await res.json().catch(function(){return{}});
+  if(!res.ok||!data.translated)throw new Error(data.error||"Translation unavailable");
+  return {translated:data.translated,quality:data.quality||"automatic-checked",confidence:data.confidence};
+}
+async function translateWholeImageText(lines){
+  var chunks=imageTextChunks(lines);
+  if(!chunks.length)return {translated:"",quality:"automatic-checked"};
+  // Translate several chunks concurrently so full-image mode does not become unnecessarily slow.
+  var results=await Promise.all(chunks.map(function(chunk){return translateImageChunk(chunk)}));
+  var allVerified=results.every(function(x){return x.quality==="verified"});
+  var confidences=results.map(function(x){return typeof x.confidence==="number"?x.confidence:null}).filter(function(x){return x!==null});
+  var minConfidence=confidences.length?Math.min.apply(Math,confidences):undefined;
+  return {
+    translated:results.map(function(x){return x.translated}).join("\n"),
+    quality:allVerified?"verified":"automatic-checked",
+    confidence:minConfidence
+  };
+}
 function renderImageTranslationResult(preview,detected,translated,quality,confidence){
   lastTranslation=translated;
   var isVerified=quality==="verified";
@@ -408,10 +436,10 @@ function renderImageTranslationResult(preview,detected,translated,quality,confid
 
   state.innerHTML=
     '<div class="akwaaba-result">'+
-      '<div>'+q+'<div class="akwaaba-summary">Image text translated below.</div></div>'+
+      '<div>'+q+'<div class="akwaaba-summary">Akwaaba scanned the full image and translated the detected text below.</div></div>'+
       '<div class="akwaaba-image-box">'+
         (preview?'<img src="'+preview+'" alt="Translated image area">':'')+
-        '<div class="akwaaba-image-caption">Image area translated by Akwaaba</div>'+
+        '<div class="akwaaba-image-caption">Full image translated by Akwaaba</div>'+
       '</div>'+
       '<div class="akwaaba-block">'+
         '<div class="akwaaba-block-head"><span class="akwaaba-label">Detected text</span><span class="akwaaba-language-pill">OCR</span></div>'+
@@ -427,7 +455,7 @@ function renderImageTranslationResult(preview,detected,translated,quality,confid
 }
 function imageCacheKey(img,x,y){
   var src=(img&&((img.currentSrc||img.src)))||"image";
-  return "img|"+src+"|"+Math.round(x/24)+"|"+Math.round(y/24)+"|"+selected;
+  return "fullimg|"+src+"|"+selected;
 }
 async function translateAt(x,y){
   var img=imageElementAt(x,y);
@@ -445,33 +473,30 @@ async function translateAt(x,y){
       if(!ocr.text){
         state.innerHTML=
           '<div class="akwaaba-quality blocked">⚠ No clear text detected</div>'+
-          (ocr.preview?'<div class="akwaaba-image-box"><img src="'+ocr.preview+'" alt="Image area"><div class="akwaaba-image-caption">Akwaaba checked this image area</div></div>':'')+
-          '<div class="akwaaba-error">Place the center of Akwaaba directly over the printed words and try again.</div>';
+          (ocr.preview?'<div class="akwaaba-image-box"><img src="'+ocr.preview+'" alt="Image area"><div class="akwaaba-image-caption">Akwaaba checked the full image</div></div>':'')+
+          '<div class="akwaaba-error">Akwaaba scanned the full image but could not detect clear readable text.</div>';
         openPanel();
         return;
       }
 
       state.innerHTML=
         '<div class="akwaaba-image-box">'+
-          (ocr.preview?'<img src="'+ocr.preview+'" alt="Image area being translated">':'')+
-          '<div class="akwaaba-image-caption">Text detected. Translating to '+escapeHtml(LANGS[selected].label)+'…</div>'+
+          (ocr.preview?'<img src="'+ocr.preview+'" alt="Full image being translated">':'')+
+          '<div class="akwaaba-image-caption">All detected text is being translated to '+escapeHtml(LANGS[selected].label)+'…</div>'+
         '</div>'+
-        '<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Translating detected text…</span></div>';
+        '<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Translating all detected text…</span></div>';
       openPanel();
 
-      var res=await fetch(ENDPOINT,{
-        method:"POST",
-        headers:{"Content-Type":"application/json","x-akwaaba-client":"ranova-site-v1"},
-        body:JSON.stringify({q:ocr.text,target:selected})
-      });
-      var data=await res.json().catch(function(){return{}});
-      if(!res.ok||!data.translated){
+      var translatedPack;
+      try{
+        translatedPack=await translateWholeImageText(ocr.lines||cleanOcrLines(ocr.text));
+      }catch(err){
         lastTranslation="";
         state.innerHTML=
           '<div class="akwaaba-quality blocked">⚠ Translation withheld</div>'+
-          (ocr.preview?'<div class="akwaaba-image-box"><img src="'+ocr.preview+'" alt="Image area"><div class="akwaaba-image-caption">Detected image area</div></div>':'')+
+          (ocr.preview?'<div class="akwaaba-image-box"><img src="'+ocr.preview+'" alt="Full image"><div class="akwaaba-image-caption">Full image scanned by Akwaaba</div></div>':'')+
           '<div class="akwaaba-block"><div class="akwaaba-block-head"><span class="akwaaba-label">Detected text</span><span class="akwaaba-language-pill">OCR</span></div><div class="akwaaba-detected">'+escapeHtml(ocr.text)+'</div></div>'+
-          '<div class="akwaaba-error">'+escapeHtml(data.error||"Akwaaba could not verify this image translation.")+'</div>';
+          '<div class="akwaaba-error">'+escapeHtml(err&&err.message?err.message:"Akwaaba could not verify the full image translation.")+'</div>';
         openPanel();
         return;
       }
@@ -479,16 +504,16 @@ async function translateAt(x,y){
       var payload={
         preview:ocr.preview,
         detected:ocr.text,
-        translated:data.translated,
-        quality:data.quality||"automatic-checked",
-        confidence:data.confidence
+        translated:translatedPack.translated,
+        quality:translatedPack.quality||"automatic-checked",
+        confidence:translatedPack.confidence
       };
       cache.set(key,payload);
       persistAkwaabaCache();
       renderImageTranslationResult(payload.preview,payload.detected,payload.translated,payload.quality,payload.confidence);
       return;
     }catch(e){
-      state.innerHTML='<div class="akwaaba-quality blocked">⚠ Image translation failed</div><div class="akwaaba-error">Akwaaba could not process that image clearly. Try placing the center directly over the printed words.</div>';
+      state.innerHTML='<div class="akwaaba-quality blocked">⚠ Image translation failed</div><div class="akwaaba-error">Akwaaba could not process the full image clearly. Try again with a sharper product image.</div>';
       openPanel();
       return;
     }
