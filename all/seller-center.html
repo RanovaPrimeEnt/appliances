@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RANOVA Seller Center</title>
+<meta name="theme-color" content="#116a52">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+:root{--green:#103f34;--green2:#116a52;--orange:#ff5a2d;--ink:#15342e;--muted:#687a74;--line:#dfe8e4;--soft:#f5f8f6}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--soft);color:var(--ink)}
+a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{padding:14px 0;background:var(--green);color:#fff;position:sticky;top:0;z-index:20}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:950}.nav{display:flex;gap:8px;align-items:center}.nav a,.nav button{border:1px solid #ffffff33;background:transparent;color:#fff;border-radius:999px;padding:9px 12px;font:inherit;font-size:11px;text-decoration:none;cursor:pointer}
+.hero{padding:38px 0 22px;background:linear-gradient(135deg,#eaf8f2,#fff9ec 60%,#f4efff)}.kicker{font-size:11px;letter-spacing:.14em;font-weight:900;color:var(--green2)}.hero h1{margin:7px 0 0;font-size:clamp(32px,5vw,54px);line-height:1}.hero p{max-width:720px;color:#667871;line-height:1.6}
+.panel{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 12px 34px rgba(11,70,53,.07);margin:24px 0}.auth{width:min(620px,100%);margin:24px auto 60px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}.tabs button{height:42px;border:1px solid var(--line);border-radius:12px;background:#fff;font-weight:900;cursor:pointer}.tabs button.active{background:#ecf7f2;border-color:#9bceb9;color:var(--green2)}
+.form{display:grid;gap:12px}.field{display:grid;gap:6px}.field label{font-size:11px;font-weight:900}.field input,.field select{height:44px;border:1px solid #d7e3de;border-radius:12px;padding:0 12px;font:inherit;outline:none}.field input:focus,.field select:focus{border-color:#239277;box-shadow:0 0 0 3px #dff3eb}
+.primary{height:46px;border:0;border-radius:999px;background:var(--orange);color:#fff;font-weight:950;cursor:pointer}.primary[disabled]{opacity:.55;cursor:wait}.msg{display:none;padding:11px;border-radius:11px;background:#fff1ec;color:#8a431f;font-size:11px;font-weight:750}
+.workspace{display:none;padding:22px 0 60px}.grid{display:grid;grid-template-columns:.7fr 1.3fr;gap:20px}.side{display:grid;gap:10px;align-content:start}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px}.card h2,.card h3{margin:0 0 8px}.card p{margin:0;color:var(--muted);font-size:11px;line-height:1.55}
+.status-pill{display:inline-flex;margin-top:10px;padding:7px 10px;border-radius:999px;background:#fff2ed;color:#9d4b25;font-size:10px;font-weight:900}
+.steps{display:grid;gap:8px;margin-top:14px}.step{display:grid;grid-template-columns:30px 1fr auto;gap:9px;align-items:center;padding:10px;border:1px solid #e4ebe8;border-radius:12px}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#eef3f0;font-weight:950;color:#61766e}.step.complete .num{background:#e8f7ef;color:#0b6a45}.step.current{border-color:#f5cbb7;background:#fff9f6}.step.current .num{background:#fff0e8;color:#df5d26}.step.locked{opacity:.58}.step b{font-size:11px}.step small{display:block;margin-top:2px;color:#819089;font-size:8px}.step em{font-style:normal;font-size:8px;font-weight:900;text-transform:uppercase;color:#718078}
+.verify-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.verify-card{border:1px solid #e4ebe8;border-radius:14px;padding:14px}.verify-card b{font-size:11px}.verify-card p{margin:4px 0 10px}.upload{display:grid;gap:7px}.upload input[type=file]{font-size:10px}.upload button{height:36px;border:0;border-radius:999px;background:var(--green2);color:#fff;font-weight:900;font-size:10px;cursor:pointer}.upload button[disabled]{opacity:.5}.files{display:grid;gap:7px;margin-top:14px}.file{display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px;border-radius:10px;background:#f7f9f8}.file b{font-size:10px}.file span{font-size:8px;color:#7b8984}.file strong{font-size:8px;text-transform:uppercase;color:#9a542e}
+.locked-box{padding:16px;border:1px dashed #ccd8d3;border-radius:14px;background:#fafbfa;color:#718078;font-size:11px;line-height:1.55}
+.small{font-size:9px;color:#809089;line-height:1.5;margin-top:8px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.verify-grid{grid-template-columns:1fr}.step{grid-template-columns:30px 1fr}.step em{grid-column:2}}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap"><div class="brand">RANOVA SELLER CENTER</div><div class="nav"><a href="./seller-status.html">Application status</a><a href="./">Marketplace</a><button id="signOut" style="display:none">Sign out</button></div></div></div>
+<section class="hero"><div class="wrap"><div class="kicker">SELLER ACCOUNT</div><h1>Verify your business and build your store.</h1><p>Your Seller Center keeps verification, documents and future store-management tools in one protected workspace.</p></div></section>
+
+<main class="wrap">
+  <section id="authPanel" class="panel auth">
+    <div class="tabs"><button id="loginTab" class="active">Sign in</button><button id="signupTab">Create account</button></div>
+    <div id="authMsg" class="msg"></div>
+    <form id="authForm" class="form">
+      <div class="field"><label>Email</label><input id="email" type="email" required autocomplete="email" placeholder="Same email used in your application"></div>
+      <div class="field"><label>Password</label><input id="password" type="password" required minlength="8" autocomplete="current-password" placeholder="At least 8 characters"></div>
+      <button id="authSubmit" class="primary" type="submit">Sign in</button>
+    </form>
+    <div class="small">If you create an account, confirm your email if RANOVA sends a verification message. Use the same business email you supplied during seller registration whenever possible.</div>
+  </section>
+
+  <section id="linkPanel" class="panel auth" style="display:none">
+    <h2>Link your seller application</h2>
+    <p style="color:#687a74;font-size:11px;line-height:1.55">Enter the application reference and phone number from your existing RANOVA seller application. This is done once.</p>
+    <div id="linkMsg" class="msg"></div>
+    <form id="linkForm" class="form">
+      <div class="field"><label>Application reference</label><input id="applicationRef" required placeholder="RNV-SLR-..."></div>
+      <div class="field"><label>Application phone number</label><input id="applicationPhone" required inputmode="tel"></div>
+      <button id="linkSubmit" class="primary" type="submit">Link application</button>
+    </form>
+  </section>
+
+  <section id="workspace" class="workspace">
+    <div class="grid">
+      <aside class="side">
+        <div class="card">
+          <h2 id="businessName">Seller</h2>
+          <p id="applicationMeta"></p>
+          <div id="statusPill" class="status-pill">Verification in progress</div>
+          <div class="steps">
+            <div id="sBusiness" class="step"><div class="num">1</div><div><b>Business information</b><small>Registration application</small></div><em>Complete</em></div>
+            <div id="sDocs" class="step"><div class="num">2</div><div><b>Business documents</b><small>Registration proof</small></div><em>Required</em></div>
+            <div id="sIdentity" class="step"><div class="num">3</div><div><b>Identity verification</b><small>Authorized representative</small></div><em>Required</em></div>
+            <div id="sFulfilment" class="step"><div class="num">4</div><div><b>Fulfilment readiness</b><small>Stock and delivery capability</small></div><em>Pending</em></div>
+            <div id="sStore" class="step locked"><div class="num">5</div><div><b>Store setup</b><small>Unlocked after approval</small></div><em>Locked</em></div>
+          </div>
+        </div>
+        <div class="card"><h3>Document security</h3><p>Verification documents are stored in RANOVA's private seller-verification storage. They are not public marketplace files and are not placed in the website repository.</p></div>
+      </aside>
+
+      <section>
+        <div class="card">
+          <h2>Verification workspace</h2>
+          <p>Upload the requested documents. Each submission remains pending until RANOVA reviews it.</p>
+          <div id="verifyMsg" class="msg"></div>
+
+          <div class="verify-grid">
+            <div class="verify-card">
+              <b>Business registration document</b>
+              <p>Certificate, business registration or equivalent supporting document.</p>
+              <div class="upload"><input id="businessDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="business_registration" data-input="businessDoc">Upload business document</button></div>
+            </div>
+            <div class="verify-card">
+              <b>Authorized representative ID</b>
+              <p>Government-issued identification for the person responsible for the seller account.</p>
+              <div class="upload"><input id="identityDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="identity_document" data-input="identityDoc">Upload identity document</button></div>
+            </div>
+            <div class="verify-card">
+              <b>Business address / location proof</b>
+              <p>Optional supporting evidence for business or warehouse location.</p>
+              <div class="upload"><input id="locationDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="location_proof" data-input="locationDoc">Upload location proof</button></div>
+            </div>
+            <div class="verify-card">
+              <b>Fulfilment evidence</b>
+              <p>Optional warehouse, stock or delivery evidence to help assess order readiness.</p>
+              <div class="upload"><input id="fulfilmentDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="fulfilment_evidence" data-input="fulfilmentDoc">Upload fulfilment evidence</button></div>
+            </div>
+          </div>
+
+          <h3 style="margin-top:20px">Submitted documents</h3>
+          <div id="files" class="files"><div class="locked-box">No documents submitted yet.</div></div>
+        </div>
+
+        <div class="card">
+          <h2>Store setup</h2>
+          <div class="locked-box"><b>Locked until seller verification is approved.</b><br>After approval, this area will become the store builder where you add your logo, banner, business profile, products, wholesale prices, stock and delivery settings.</div>
+        </div>
+      </section>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co";
+var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+var LINK_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-link";
+var WORKSPACE_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-workspace";
+var mode="login",currentSession=null,currentApplication=null;
+
+var authPanel=document.getElementById("authPanel"),linkPanel=document.getElementById("linkPanel"),workspace=document.getElementById("workspace"),signOut=document.getElementById("signOut");
+var loginTab=document.getElementById("loginTab"),signupTab=document.getElementById("signupTab"),authSubmit=document.getElementById("authSubmit"),authMsg=document.getElementById("authMsg");
+
+function showMsg(el,text){el.textContent=text;el.style.display="block"}
+function hideMsg(el){el.style.display="none"}
+function pretty(v){return String(v||"").replace(/_/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
+function setMode(next){
+  mode=next;
+  loginTab.classList.toggle("active",mode==="login");signupTab.classList.toggle("active",mode==="signup");
+  authSubmit.textContent=mode==="login"?"Sign in":"Create seller account";
+  document.getElementById("password").autocomplete=mode==="login"?"current-password":"new-password";
+  hideMsg(authMsg);
+}
+loginTab.onclick=function(){setMode("login")};signupTab.onclick=function(){setMode("signup")};
+
+document.getElementById("authForm").addEventListener("submit",async function(e){
+  e.preventDefault();hideMsg(authMsg);
+  var email=document.getElementById("email").value.trim(),password=document.getElementById("password").value;
+  authSubmit.disabled=true;authSubmit.textContent=mode==="login"?"Signing in…":"Creating account…";
+  try{
+    if(mode==="signup"){
+      var su=await sb.auth.signUp({email:email,password:password});
+      if(su.error)throw su.error;
+      if(!su.data.session){
+        showMsg(authMsg,"Account created. Check your email to confirm it, then return here and sign in.");
+        setMode("login");return;
+      }
+    }else{
+      var si=await sb.auth.signInWithPassword({email:email,password:password});
+      if(si.error)throw si.error;
+    }
+    await refreshSession();
+  }catch(err){showMsg(authMsg,err.message||"Could not continue.")}
+  finally{authSubmit.disabled=false;authSubmit.textContent=mode==="login"?"Sign in":"Create seller account"}
+});
+
+async function refreshSession(){
+  var gs=await sb.auth.getSession();currentSession=gs.data.session;
+  if(!currentSession){
+    authPanel.style.display="block";linkPanel.style.display="none";workspace.style.display="none";signOut.style.display="none";return;
+  }
+  authPanel.style.display="none";signOut.style.display="inline-block";
+  await loadWorkspace();
+}
+signOut.onclick=async function(){await sb.auth.signOut();location.reload()};
+
+async function api(url,body){
+  var token=currentSession&&currentSession.access_token;
+  var res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"x-ranova-client":"ranova-site-v1","apikey":SUPABASE_KEY},body:JSON.stringify(body||{})});
+  var out=await res.json().catch(function(){return{}});
+  if(!res.ok||!out.ok)throw new Error(out.error||"Request failed.");
+  return out;
+}
+
+document.getElementById("linkForm").addEventListener("submit",async function(e){
+  e.preventDefault();var msg=document.getElementById("linkMsg"),btn=document.getElementById("linkSubmit");hideMsg(msg);btn.disabled=true;btn.textContent="Linking…";
+  try{
+    await api(LINK_ENDPOINT,{application_ref:document.getElementById("applicationRef").value.trim(),phone:document.getElementById("applicationPhone").value.trim()});
+    await loadWorkspace();
+  }catch(err){showMsg(msg,err.message||"Could not link application.")}
+  finally{btn.disabled=false;btn.textContent="Link application"}
+});
+
+function setStage(id,status){
+  var el=document.getElementById(id);if(!el)return;
+  var s=String(status||"not_started").toLowerCase();el.classList.remove("complete","current","locked");
+  if(["complete","approved","verified"].includes(s))el.classList.add("complete");
+  else if(["in_progress","submitted","under_review","needs_information"].includes(s))el.classList.add("current");
+  else if(s==="locked")el.classList.add("locked");
+  var em=el.querySelector("em");if(em)em.textContent=pretty(s);
+}
+function renderFiles(files){
+  var host=document.getElementById("files");
+  if(!files||!files.length){host.innerHTML='<div class="locked-box">No documents submitted yet.</div>';return}
+  host.innerHTML=files.map(function(f){return '<div class="file"><div><b>'+pretty(f.document_type)+'</b><span>'+String(f.original_filename||"Document")+'</span></div><strong>'+pretty(f.review_status)+'</strong></div>'}).join("");
+}
+async function loadWorkspace(){
+  try{
+    var out=await api(WORKSPACE_ENDPOINT,{});
+    if(!out.linked){linkPanel.style.display="block";workspace.style.display="none";return}
+    linkPanel.style.display="none";workspace.style.display="block";
+    currentApplication=out.application;
+    document.getElementById("businessName").textContent=currentApplication.business_name||"Seller";
+    document.getElementById("applicationMeta").textContent=(currentApplication.application_ref||"")+" · "+(currentApplication.supplier_type||"Seller")+" · "+(currentApplication.business_location||"");
+    document.getElementById("statusPill").textContent=pretty(currentApplication.verification_status||currentApplication.status||"in_progress");
+    setStage("sBusiness",currentApplication.business_info_status);
+    setStage("sDocs",currentApplication.business_documents_status);
+    setStage("sIdentity",currentApplication.identity_status);
+    setStage("sFulfilment",currentApplication.fulfilment_status);
+    setStage("sStore",currentApplication.store_setup_status);
+    renderFiles(out.files||[]);
+  }catch(err){
+    showMsg(authMsg,err.message||"Could not load Seller Center.");authPanel.style.display="block";workspace.style.display="none";
+  }
+}
+
+[].slice.call(document.querySelectorAll("[data-upload]")).forEach(function(btn){
+  btn.addEventListener("click",async function(){
+    var type=this.getAttribute("data-upload"),input=document.getElementById(this.getAttribute("data-input")),msg=document.getElementById("verifyMsg");
+    hideMsg(msg);
+    if(!input||!input.files||!input.files[0]){showMsg(msg,"Choose a file first.");return}
+    if(!currentSession||!currentApplication){showMsg(msg,"Sign in and link your application first.");return}
+    var file=input.files[0];
+    if(file.size>10*1024*1024){showMsg(msg,"Maximum file size is 10 MB.");return}
+    var safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,"_");
+    var path=currentSession.user.id+"/"+currentApplication.application_ref+"/"+type+"_"+Date.now()+"_"+safe;
+    this.disabled=true;var old=this.textContent;this.textContent="Uploading…";
+    try{
+      var up=await sb.storage.from("seller-verification").upload(path,file,{upsert:false,contentType:file.type||undefined});
+      if(up.error)throw up.error;
+      var ins=await sb.from("ranova_seller_verification_files").insert({
+        seller_id:currentSession.user.id,
+        application_ref:currentApplication.application_ref,
+        document_type:type,
+        storage_path:path,
+        original_filename:file.name,
+        review_status:"submitted"
+      });
+      if(ins.error)throw ins.error;
+      showMsg(msg,"Document uploaded securely and submitted for review.");
+      await loadWorkspace();
+      input.value="";
+    }catch(err){showMsg(msg,err.message||"Could not upload document.")}
+    finally{this.disabled=false;this.textContent=old}
+  });
+});
+
+sb.auth.onAuthStateChange(function(){setTimeout(refreshSession,0)});
+refreshSession();
+})();
+</script>
+</body>
+</html>
