@@ -68,7 +68,7 @@
       style.textContent=
         '.category-cards.rpeFourCategories{grid-template-columns:repeat(6,minmax(0,1fr))!important}' +
         '.modal.open{z-index:6000!important}' +
-        '#rpeLightingCategoryCard .category-image img{object-fit:cover!important;object-position:center 8%!important;transform:none!important}' +'#rpeRechargeableCategoryCard .category-image img{object-fit:cover!important;object-position:center!important;transform:none!important}' +
+        '#rpeLightingCategoryCard .category-image img{object-fit:cover!important;object-position:center 8%!important;transform:none!important}' +'#rpeRechargeableCategoryCard .category-image{background:#fff!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}#rpeRechargeableCategoryCard .category-image img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center center!important;transform:none!important;opacity:1!important;filter:none!important;background:#fff!important;padding:4px!important;box-sizing:border-box!important}' +
         '.product-img img[src*="/images/lighting/source-"]{object-fit:contain!important;object-position:center!important;transform:none!important;padding:8px!important;box-sizing:border-box!important;background:#f7f9f8!important}' +
         '.product:hover .product-img img[src*="/images/lighting/source-"]{transform:none!important}' +
         '.rpe-source-label{position:absolute;bottom:9px;left:9px;z-index:2;background:rgba(255,255,255,.96);color:#214135;border:1px solid #cbd9d2;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;line-height:1.2;max-width:calc(100% - 75px)}' +
@@ -96,10 +96,16 @@
       if(!d.getElementById('rpeRechargeableCategoryCard')){
         var rechargeable=d.createElement('button');
         rechargeable.id='rpeRechargeableCategoryCard';rechargeable.type='button';rechargeable.className='category-card';
-        rechargeable.innerHTML='<div class="category-image"><img src="./images/rechargeable-category-cover.svg" alt="Rechargeable searchlights and headlamps" loading="lazy" decoding="async"></div>'+
+        rechargeable.innerHTML='<div class="category-image"><img src="./images/lighting/source-41.jpg" alt="F288 rechargeable searchlight" loading="eager" decoding="async"></div>'+
           '<div><small>PORTABLE LIGHTING</small><h3>Rechargeable Lights</h3><span>Searchlights &amp; headlamps →</span></div>';
         rechargeable.onclick=function(){w.setActiveCategory('Rechargeable Lights');d.getElementById('products').scrollIntoView({behavior:'smooth',block:'start'})};
         cards.appendChild(rechargeable);
+      }
+      if(!d.getElementById('rpeRechargeableVisibilityFix')){
+        var rechargeStyle=d.createElement('style');
+        rechargeStyle.id='rpeRechargeableVisibilityFix';
+        rechargeStyle.textContent='#rpeRechargeableCategoryCard .category-image{background:#fff!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important}#rpeRechargeableCategoryCard .category-image img{display:block!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;transform:none!important;opacity:1!important;filter:none!important;background:#fff!important;padding:3px!important;box-sizing:border-box!important}@media(max-width:700px){#rpeRechargeableCategoryCard .category-image{height:210px!important;min-height:210px!important}#rpeRechargeableCategoryCard .category-image img{object-fit:contain!important;transform:none!important;padding:2px!important}}@media(max-width:420px){#rpeRechargeableCategoryCard .category-image{height:190px!important;min-height:190px!important}}';
+        d.head.appendChild(rechargeStyle);
       }
     }
     var filters=d.querySelector('.filters');
