@@ -55,6 +55,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
     <button data-panel="seller-reviews" data-market-role="seller">Seller reviews</button>
     <button data-panel="seller-products" data-market-role="product">Seller products</button>
     <button data-panel="seller-stores" data-market-role="seller">Seller stores</button>
+    <button data-panel="marketplace-trust" data-market-role="seller">Marketplace trust</button>
     <button data-panel="seller-orders" data-market-role="orders">Marketplace orders</button>
     <button data-panel="deliveries" data-market-role="orders">Deliveries</button>
     <button data-panel="cases" data-market-role="orders">Cases</button>
@@ -118,6 +119,24 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
         <div id="sellerStoresList" class="body market-list"></div>
       </div>
     </section>
+    <section id="marketplace-trust" class="panel">
+      <div class="hero"><small>MARKETPLACE TRUST</small><h1>Verified reviews with transparent seller performance.</h1><p>Only completed purchases with confirmed delivery can create ratings. Moderation changes visibility, never the buyer's original stars.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Pending review checks</small><strong id="tReviewsPending">0</strong></div>
+        <div class="metric"><small>Published reviews</small><strong id="tReviewsPublished">0</strong></div>
+        <div class="metric"><small>Hidden reviews</small><strong id="tReviewsHidden">0</strong></div>
+        <div class="metric"><small>Trust rule</small><strong style="font-size:15px">Verified purchases</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Review moderation</h2><small style="color:var(--rpe-muted)">Publish legitimate reviews; hide or reject only with a recorded reason. Seller responses do not change rating values.</small></div></div>
+        <div id="adminReviewsList" class="body market-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Seller performance indicators</h2><small style="color:var(--rpe-muted)">Complaint rate is kept separate from stars to prevent a strong rating from masking order problems.</small></div></div>
+        <div id="adminTrustMetricsList" class="body market-list"></div>
+      </div>
+    </section>
+
     <section id="seller-orders" class="panel">
       <div class="card">
         <div class="card-head"><div><h2>Marketplace orders</h2><small style="color:var(--rpe-muted)">Orders automatically routed from buyer checkout to verified seller stores.</small></div></div>
@@ -240,5 +259,5 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./admin.js?v=20260926-8"></script>
+<script src="./admin.js?v=20260926-9"></script>
 </body></html>
