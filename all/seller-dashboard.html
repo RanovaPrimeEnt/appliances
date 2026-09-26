@@ -310,15 +310,45 @@ function nextOrderActions(o){
   };
   return map[o.order_status]||[];
 }
+
+function sellerFinanceBreakdown(o,subtotal,delivery){
+  var gross=Number(subtotal||0),del=Number(delivery||0);
+  var commissionRate=Number(o.commission_rate_snapshot||0);
+  var commission=Number((gross*commissionRate/100).toFixed(2));
+  var paymentRate=Number(o.payment_processing_rate_snapshot||0);
+  var fixed=Number(o.payment_fixed_fee_snapshot||0);
+  var base=Number((gross+del).toFixed(2));
+  var providerFee=Number((base*paymentRate/100+fixed).toFixed(2));
+  var payer=o.payment_fee_payer_snapshot||"platform";
+  var sellerFee=payer==="seller"?providerFee:0;
+  var payout=Number((gross-commission+del-sellerFee).toFixed(2));
+  return{gross:gross,delivery:del,commissionRate:commissionRate,commission:commission,paymentRate:paymentRate,providerFee:providerFee,payer:payer,sellerFee:sellerFee,payout:payout};
+}
+function sellerRuleLabel(o){
+  var a=o.seller_country_name||o.seller_country_code||"Seller country";
+  var b=o.buyer_country_name||o.buyer_country_code||"Buyer country";
+  return a+" → "+b;
+}
 async function quoteOrder(o,button){
   var subtotal=prompt("Product subtotal (GHS)",o.subtotal==null?"":o.subtotal);
   if(subtotal===null)return;
   var delivery=prompt("Delivery fee (GHS). Enter 0 if none.",o.delivery_fee==null?"0":o.delivery_fee);
   if(delivery===null)return;
   var note=prompt("Seller note (optional)",o.seller_note||"");
+  var subNum=Number(subtotal),delNum=Number(delivery);
+  if(!Number.isFinite(subNum)||subNum<0||!Number.isFinite(delNum)||delNum<0){msg(el("orderMsg"),"Enter valid non-negative amounts.");return}
+  var fb=sellerFinanceBreakdown(o,subNum,delNum);
+  var confirmText="Finance breakdown\n\n"+
+    "Products: "+money(fb.gross)+"\n"+
+    "Delivery: "+money(fb.delivery)+" (not commissioned)\n"+
+    "RANOVA commission: "+fb.commissionRate.toFixed(2)+"% = -"+money(fb.commission)+"\n"+
+    (fb.providerFee>0?"Payment-provider fee: "+fb.paymentRate.toFixed(2)+"% = "+money(fb.providerFee)+" · paid by "+pretty(fb.payer)+"\n":"Payment-provider fee: none in this rule\n")+
+    "Expected seller payout after customer payment: "+money(fb.payout)+"\n\n"+
+    "Rule: "+sellerRuleLabel(o)+". This order keeps this rate even if future rates change.\n\nSave this quote?";
+  if(!confirm(confirmText))return;
   button.disabled=true;
   try{
-    await api({action:"update_order_quote",id:o.id,subtotal:subtotal,delivery_fee:delivery,seller_note:note||""});
+    await api({action:"update_order_quote",id:o.id,subtotal:subNum,delivery_fee:delNum,seller_note:note||""});
     msg(el("orderMsg"),"Order amount updated.",true);await refresh();setPanel("orders");
   }catch(err){msg(el("orderMsg"),err.message)}
   finally{button.disabled=false}
@@ -339,7 +369,9 @@ function renderOrders(){
     var items=Array.isArray(o.items)?o.items:[];
     var itemHtml=items.slice(0,5).map(function(i){return '<span>• '+esc(i.product_name||"Product")+' × '+esc(i.quantity||1)+'</span>'}).join("");
     var actions=nextOrderActions(o).map(function(a){return '<button data-order-status="'+a[0]+'" data-order-id="'+o.id+'" class="'+(a[0]==="cancelled"?"danger":"primary")+'">'+a[1]+'</button>'}).join("");
-    return '<div class="order-row" data-order-card="'+o.id+'"><div><b>'+esc(o.platform_order_ref||o.order_ref)+'</b><small>'+esc(o.buyer_name||"Customer")+' · '+esc(o.buyer_phone||"")+' · '+esc(o.delivery_location||"Delivery location pending")+'</small><div class="order-items-mini">'+itemHtml+'</div><div class="order-actions"><button data-quote-order="'+o.id+'">Set / update amount</button>'+actions+'</div></div><div><span class="status">'+esc(pretty(o.order_status))+'</span><small>'+esc(o.item_count)+' product(s)</small><small>'+esc(o.payment_method||"Payment method pending")+'</small></div><div><b>'+esc(money(o.total))+'</b><small>Payment: '+esc(pretty(o.payment_status))+'</small>'+(o.seller_note?'<small>'+esc(o.seller_note)+'</small>':'')+'</div></div>'
+    var fb=o.subtotal==null?null:sellerFinanceBreakdown(o,o.subtotal,o.delivery_fee||0);
+    var financeMini=fb?'<div class="payout-breakdown"><span>Products<b>'+esc(money(fb.gross))+'</b></span><span>Commission '+fb.commissionRate.toFixed(2)+'%<b>- '+esc(money(fb.commission))+'</b></span><span>Delivery<b>'+esc(money(fb.delivery))+'</b></span><span>Expected payout<b>'+esc(money(fb.payout))+'</b></span></div><small>Finance rule: '+esc(sellerRuleLabel(o))+' · provider fee paid by '+esc(pretty(fb.payer))+'</small>':'<small>Finance breakdown appears after you set the product subtotal and delivery.</small>';
+    return '<div class="order-row" data-order-card="'+o.id+'"><div><b>'+esc(o.platform_order_ref||o.order_ref)+'</b><small>'+esc(o.buyer_name||"Customer")+' · '+esc(o.buyer_phone||"")+' · '+esc(o.delivery_location||"Delivery location pending")+'</small><div class="order-items-mini">'+itemHtml+'</div>'+financeMini+'<div class="order-actions"><button data-quote-order="'+o.id+'">Set / update amount</button>'+actions+'</div></div><div><span class="status">'+esc(pretty(o.order_status))+'</span><small>'+esc(o.item_count)+' product(s)</small><small>'+esc(o.payment_method||"Payment method pending")+'</small></div><div><b>'+esc(money(o.total))+'</b><small>Payment: '+esc(pretty(o.payment_status))+'</small>'+(o.seller_note?'<small>'+esc(o.seller_note)+'</small>':'')+'</div></div>'
   }).join("");
   host.querySelectorAll("[data-quote-order]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.quoteOrder});if(o)quoteOrder(o,b)}});
   host.querySelectorAll("[data-order-status]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.orderId});if(o)changeOrderStatus(o,b.dataset.orderStatus,b)}});
