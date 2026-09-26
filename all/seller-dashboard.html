@@ -203,6 +203,35 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <span>Product rating<b id="trustProduct">—</b></span><span>Service rating<b id="trustService">—</b></span><span>Delivery rating<b id="trustDelivery">—</b></span><span>Completed orders<b id="trustCompleted">0</b></span>
           </div>
         </div>
+        <div class="card">
+          <h2>Seller performance level</h2><p>Performance level is calculated from real marketplace evidence. Probation and watchlist are automatic labels; only RANOVA can impose a warning, restriction or suspension.</p>
+          <div class="metrics" style="margin-top:14px">
+            <div class="metric"><small>Performance level</small><strong id="perfLevel" style="font-size:17px">Probation</strong></div>
+            <div class="metric"><small>Fulfilment score</small><strong id="perfFulfilment">100</strong></div>
+            <div class="metric"><small>Service score</small><strong id="perfService">100</strong></div>
+            <div class="metric"><small>Enforcement</small><strong id="perfEnforcement" style="font-size:17px">Good standing</strong></div>
+          </div>
+          <div class="payout-breakdown">
+            <span>Cancellation rate<b id="perfCancelRate">0%</b></span>
+            <span>Late-delivery rate<b id="perfLateRate">0%</b></span>
+            <span>Return rate<b id="perfReturnRate">0%</b></span>
+            <span>Total orders<b id="perfOrders">0</b></span>
+          </div>
+          <div id="perfReasons" class="hint" style="margin-top:10px"></div>
+          <div id="enforcementNotice" class="msg" style="display:none;margin-top:12px"></div>
+        </div>
+        <div class="card">
+          <h2>Enforcement history & appeals</h2><p>If RANOVA takes an enforcement action, the written reason and status history appear here. You can appeal an active warning, restriction or suspension.</p>
+          <div id="enforcementEvents" class="order-list"><div class="empty">No enforcement actions.</div></div>
+          <div id="appealArea" style="margin-top:14px">
+            <div class="form-grid">
+              <div class="field full"><label>Appeal subject</label><input id="appealSubject" maxlength="180" placeholder="Example: Request review of restriction"></div>
+              <div class="field full"><label>Why should RANOVA reconsider?</label><textarea id="appealText" maxlength="3000" placeholder="Explain what happened, what evidence should be reviewed, and any corrective action taken."></textarea></div>
+            </div>
+            <div class="actions"><button id="submitAppeal" class="btn green" type="button">Submit appeal</button></div>
+            <div id="appealsList" class="order-list"></div>
+          </div>
+        </div>
         <div class="card"><h2>Buyer reviews</h2><p>You may post one public response to a published review. You cannot alter buyer ratings or remove a review; RANOVA moderation controls visibility.</p><div id="sellerReviewsList" class="order-list"><div class="empty">No verified reviews yet.</div></div></div>
       </div>
 
@@ -624,7 +653,7 @@ el("uploadDeliveryProof").onclick=async function(){
 el("closeDeliveryEditor").onclick=function(){el("deliveryEditor").classList.remove("open");el("deliveryOrderId").value=""};
 
 function renderTrust(){
-  var t=state.trust_metrics||{},reviews=state.reviews||[],c=state.counts||{};
+  var t=state.trust_metrics||{},reviews=state.reviews||[],c=state.counts||{},p=state.performance||{},e=state.enforcement||{},events=state.enforcement_events||[],appeals=state.appeals||[];
   el("trustOverall").textContent=t.overall_rating==null?"—":Number(t.overall_rating).toFixed(2)+"/5";
   el("trustReviewCount").textContent=t.published_review_count||0;
   el("trustComplaintRate").textContent=Number(t.complaint_order_rate||0).toFixed(2)+"%";
@@ -634,6 +663,25 @@ function renderTrust(){
   el("trustDelivery").textContent=t.delivery_rating==null?"—":Number(t.delivery_rating).toFixed(2)+"/5";
   el("trustCompleted").textContent=t.completed_orders||0;
   el("trustNav").textContent=(c.pending_reviews||0)>0?"Reviews & Trust ("+(c.pending_reviews||0)+")":"Reviews & Trust";
+  el("perfLevel").textContent=pretty(p.performance_level||"probation")+(p.trusted_badge?" ✓":"");
+  el("perfFulfilment").textContent=Number(p.fulfillment_score==null?100:p.fulfillment_score).toFixed(0)+"/100";
+  el("perfService").textContent=Number(p.service_score==null?100:p.service_score).toFixed(0)+"/100";
+  el("perfEnforcement").textContent=pretty(e.enforcement_status||"good_standing");
+  el("perfCancelRate").textContent=Number(p.cancellation_rate||0).toFixed(2)+"%";
+  el("perfLateRate").textContent=Number(p.late_delivery_rate||0).toFixed(2)+"%";
+  el("perfReturnRate").textContent=Number(p.return_rate||0).toFixed(2)+"%";
+  el("perfOrders").textContent=p.total_orders||0;
+  var reasons=Array.isArray(p.automated_reasons)?p.automated_reasons:[];
+  el("perfReasons").innerHTML=reasons.length?"<b>Why this level:</b> "+reasons.map(esc).join(" "):"Performance will become more meaningful as real orders are completed.";
+  var activeEnforcement=!["","good_standing"].includes(String(e.enforcement_status||"good_standing"));
+  var notice=el("enforcementNotice");
+  if(activeEnforcement){
+    notice.style.display="block";notice.classList.remove("good");
+    notice.innerHTML="<b>"+esc(pretty(e.enforcement_status))+"</b> — "+esc(e.reason_detail||"RANOVA has applied an enforcement action.")+(e.ends_at?"<br>Scheduled end: "+esc(new Date(e.ends_at).toLocaleString()):"");
+  }else notice.style.display="none";
+  el("submitAppeal").disabled=!activeEnforcement||appeals.some(function(a){return["submitted","under_review"].includes(a.status)});
+  el("enforcementEvents").innerHTML=events.length?events.map(function(x){return '<div class="order-row"><div><b>'+esc(pretty(x.action))+'</b><small>'+esc(x.reason_detail||"")+'</small></div><span class="status">'+esc(pretty(x.new_status||x.action))+'</span><div><small>'+esc(x.created_at?new Date(x.created_at).toLocaleString():"")+'</small></div></div>'}).join(""):'<div class="empty">No enforcement actions.</div>';
+  el("appealsList").innerHTML=appeals.length?appeals.map(function(a){return '<div class="order-row"><div><b>'+esc(a.appeal_ref)+' · '+esc(pretty(a.status))+'</b><small>'+esc(a.subject)+'</small><small>'+esc(a.admin_note||"Awaiting RANOVA decision.")+'</small></div><span class="status">'+esc(pretty(a.status))+'</span><div><small>'+esc(a.submitted_at?new Date(a.submitted_at).toLocaleString():"")+'</small></div></div>'}).join(""):'<div class="empty">No appeals submitted.</div>';
   var host=el("sellerReviewsList");
   if(!reviews.length){host.innerHTML='<div class="empty">No verified reviews yet. Reviews unlock only after a buyer confirms delivery.</div>';return}
   host.innerHTML=reviews.map(function(r){
@@ -649,6 +697,20 @@ function renderTrust(){
     catch(e){msg(el("trustMsg"),e.message||"Could not save response.")}finally{b.disabled=false}
   }});
 }
+
+el("submitAppeal").onclick=async function(){
+  clearMsg(el("trustMsg"));
+  var subject=el("appealSubject").value.trim(),appealText=el("appealText").value.trim();
+  if(subject.length<5||appealText.length<20)return msg(el("trustMsg"),"Add a clear appeal subject and explanation.");
+  var b=this;b.disabled=true;
+  try{
+    var out=await api({action:"submit_enforcement_appeal",subject:subject,appeal_text:appealText});
+    el("appealSubject").value="";el("appealText").value="";
+    msg(el("trustMsg"),"Appeal "+(out.appeal_ref||"")+" submitted for RANOVA review.",true);
+    await refresh();setPanel("trust");
+  }catch(e){msg(el("trustMsg"),e.message||"Could not submit appeal.")}
+  finally{b.disabled=false}
+};
 
 function renderFinance(){
   var profile=state.finance_profile||{},settings=state.finance_settings||{},payouts=state.payouts||[];
