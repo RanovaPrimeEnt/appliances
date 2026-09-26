@@ -32,7 +32,7 @@ Deno.serve(async(req:Request)=>{
     if(!order_ref||!phone)return response(h,400,{ok:false,error:"Enter your order reference and phone number."});
 
     const {data:order,error}=await admin.from("ranova_customer_orders")
-      .select("id,order_ref,customer_name,customer_phone,customer_email,delivery_location,payment_method,product_name,quantity,product_total,delivery_fee,total_payment,items,item_count,status,payment_status,buyer_note,order_source,seller_order_count,created_at")
+      .select("id,order_ref,customer_name,customer_phone,customer_email,delivery_location,buyer_country_code,buyer_country_name,payment_method,product_name,quantity,product_total,delivery_fee,total_payment,payment_processing_rate,payment_processing_fee,payment_fee_payer,items,item_count,status,payment_status,buyer_note,order_source,seller_order_count,created_at")
       .eq("order_ref",order_ref).maybeSingle();
     if(error||!order)return response(h,404,{ok:false,error:"Order not found. Check the reference and try again."});
     if(normalPhone(String(order.customer_phone||""))!==phone)return response(h,403,{ok:false,error:"The phone number does not match this order."});
@@ -81,7 +81,12 @@ Deno.serve(async(req:Request)=>{
         order_ref:order.order_ref,
         customer_name:order.customer_name,
         delivery_location:order.delivery_location,
+        buyer_country_code:order.buyer_country_code,
+        buyer_country_name:order.buyer_country_name,
         payment_method:order.payment_method,
+        payment_processing_rate:order.payment_processing_rate,
+        payment_processing_fee:order.payment_processing_fee,
+        payment_fee_payer:order.payment_fee_payer,
         product_name:order.product_name,
         quantity:order.quantity,
         product_total:order.product_total,
