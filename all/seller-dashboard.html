@@ -45,6 +45,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
       <button class="navbtn" data-panel="products">Products</button>
       <button class="navbtn" data-panel="orders">Orders</button>
       <button id="deliveryNav" class="navbtn" data-panel="delivery">Delivery</button>
+      <button id="trustNav" class="navbtn" data-panel="trust">Reviews & Trust</button>
       <button class="navbtn" data-panel="payouts">Payouts</button>
       <button id="supportNav" class="navbtn" data-panel="support">Support</button>
     </aside>
@@ -188,6 +189,23 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
         </div>
       </div>
 
+      <div id="panel-trust" class="panel">
+        <div class="card">
+          <h2>Reviews & marketplace trust</h2><p>Ratings come only from completed purchases with confirmed delivery. Complaint and dispute rates are shown separately so strong star ratings cannot hide service problems.</p>
+          <div id="trustMsg" class="msg" style="margin-top:12px"></div>
+          <div class="metrics" style="margin-top:14px">
+            <div class="metric"><small>Verified rating</small><strong id="trustOverall">—</strong></div>
+            <div class="metric"><small>Published reviews</small><strong id="trustReviewCount">0</strong></div>
+            <div class="metric"><small>Complaint order rate</small><strong id="trustComplaintRate">0%</strong></div>
+            <div class="metric"><small>Confirmed delivery rate</small><strong id="trustDeliveryRate">0%</strong></div>
+          </div>
+          <div class="payout-breakdown" style="margin-top:12px">
+            <span>Product rating<b id="trustProduct">—</b></span><span>Service rating<b id="trustService">—</b></span><span>Delivery rating<b id="trustDelivery">—</b></span><span>Completed orders<b id="trustCompleted">0</b></span>
+          </div>
+        </div>
+        <div class="card"><h2>Buyer reviews</h2><p>You may post one public response to a published review. You cannot alter buyer ratings or remove a review; RANOVA moderation controls visibility.</p><div id="sellerReviewsList" class="order-list"><div class="empty">No verified reviews yet.</div></div></div>
+      </div>
+
       <div id="panel-payouts" class="panel">
         <div class="card">
           <h2>Seller payouts</h2><p>Save where RANOVA should send your marketplace payouts. These details are private and are not shown on your public store.</p>
@@ -297,7 +315,7 @@ async function refresh(){
     el("dashboard").classList.add("hide");return;
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
-  renderOverview();fillStore();renderProducts();renderOrders();renderDelivery();renderFinance();renderSupport();
+  renderOverview();fillStore();renderProducts();renderOrders();renderDelivery();renderTrust();renderFinance();renderSupport();
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
@@ -604,6 +622,33 @@ el("uploadDeliveryProof").onclick=async function(){
   }catch(e){msg(el("deliveryMsg"),e.message||"Could not upload delivery proof.")}finally{b.disabled=false;b.textContent="Upload proof privately"}
 };
 el("closeDeliveryEditor").onclick=function(){el("deliveryEditor").classList.remove("open");el("deliveryOrderId").value=""};
+
+function renderTrust(){
+  var t=state.trust_metrics||{},reviews=state.reviews||[],c=state.counts||{};
+  el("trustOverall").textContent=t.overall_rating==null?"—":Number(t.overall_rating).toFixed(2)+"/5";
+  el("trustReviewCount").textContent=t.published_review_count||0;
+  el("trustComplaintRate").textContent=Number(t.complaint_order_rate||0).toFixed(2)+"%";
+  el("trustDeliveryRate").textContent=Number(t.delivery_confirmation_rate||0).toFixed(2)+"%";
+  el("trustProduct").textContent=t.product_rating==null?"—":Number(t.product_rating).toFixed(2)+"/5";
+  el("trustService").textContent=t.service_rating==null?"—":Number(t.service_rating).toFixed(2)+"/5";
+  el("trustDelivery").textContent=t.delivery_rating==null?"—":Number(t.delivery_rating).toFixed(2)+"/5";
+  el("trustCompleted").textContent=t.completed_orders||0;
+  el("trustNav").textContent=(c.pending_reviews||0)>0?"Reviews & Trust ("+(c.pending_reviews||0)+")":"Reviews & Trust";
+  var host=el("sellerReviewsList");
+  if(!reviews.length){host.innerHTML='<div class="empty">No verified reviews yet. Reviews unlock only after a buyer confirms delivery.</div>';return}
+  host.innerHTML=reviews.map(function(r){
+    var response=r.seller_response?'<small><b>Your response:</b> '+esc(r.seller_response)+'</small>':'';
+    var action=r.moderation_status==="published"?'<button data-review-response="'+r.id+'">'+(r.seller_response?"Update response":"Respond publicly")+'</button>':'';
+    return '<div class="order-row"><div><b>'+esc(r.buyer_display_name||"Verified buyer")+' · '+esc(String(r.overall_rating))+'/5</b><small>'+esc(r.review_title||"Verified purchase review")+'</small><small>'+esc(r.review_text||"No written comment.")+'</small>'+response+'<div class="order-actions">'+action+'</div></div><div><span class="status">'+esc(pretty(r.moderation_status))+'</span><small>Product '+esc(r.product_rating)+'/5 · Service '+esc(r.service_rating)+'/5 · Delivery '+esc(r.delivery_rating)+'/5</small></div><div><small>'+(r.submitted_at?new Date(r.submitted_at).toLocaleString():"")+'</small><small>Verified purchase</small></div></div>';
+  }).join("");
+  host.querySelectorAll("[data-review-response]").forEach(function(b){b.onclick=async function(){
+    var r=reviews.find(function(x){return x.id===b.dataset.reviewResponse});if(!r)return;
+    var response=prompt("Write your public response to this buyer review.",r.seller_response||"")||"";if(!response.trim())return;
+    b.disabled=true;
+    try{await api({action:"respond_to_review",id:r.id,response:response});msg(el("trustMsg"),"Seller response published.",true);await refresh();setPanel("trust")}
+    catch(e){msg(el("trustMsg"),e.message||"Could not save response.")}finally{b.disabled=false}
+  }});
+}
 
 function renderFinance(){
   var profile=state.finance_profile||{},settings=state.finance_settings||{},payouts=state.payouts||[];
