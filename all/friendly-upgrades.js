@@ -114,57 +114,60 @@ function installCategoryCarousel(d){
 
   cards.classList.add("rpe-category-carousel");
 
+  // Final carousel sizing: exactly four categories are visible at once.
+  if(!d.getElementById("rpeCategoryFourStyle")){
+    var fourStyle=d.createElement("style");
+    fourStyle.id="rpeCategoryFourStyle";
+    fourStyle.textContent=
+      '.rpe-category-shell{position:relative!important;width:100%!important;margin:18px 0 8px!important;padding:0 52px!important;overflow:hidden!important}'+
+      '.category-cards.rpe-category-carousel{display:flex!important;grid-template-columns:none!important;gap:18px!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x mandatory!important;scroll-behavior:smooth!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-x:contain!important;touch-action:pan-x!important;padding:10px 2px 18px!important;margin:0!important;scrollbar-width:none!important}'+
+      '.category-cards.rpe-category-carousel::-webkit-scrollbar{display:none!important}'+
+      '.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex:0 0 calc((100% - 54px)/4)!important;width:calc((100% - 54px)/4)!important;min-width:calc((100% - 54px)/4)!important;max-width:calc((100% - 54px)/4)!important;grid-column:auto!important;scroll-snap-align:start!important;overflow:visible!important;border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;transform:none!important}'+
+      '.category-cards.rpe-category-carousel .category-image{width:min(132px,82%)!important;height:auto!important;aspect-ratio:1/1!important;min-height:0!important;max-height:none!important;border-radius:50%!important;background:#fff!important;border:1px solid #edf0ee!important;box-shadow:0 10px 26px rgba(12,54,43,.10)!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important;margin:0 auto 12px!important}'+
+      '.category-cards.rpe-category-carousel .category-image img,.category-cards.rpeFourCategories.rpe-category-carousel .category-card .category-image img{width:88%!important;height:88%!important;max-width:88%!important;object-fit:contain!important;object-position:center!important;transform:none!important;background:transparent!important;border-radius:0!important}'+
+      '.category-cards.rpe-category-carousel .category-card>div:last-child{padding:0!important;display:block!important;width:100%!important}'+
+      '.category-cards.rpe-category-carousel .category-card small,.category-cards.rpe-category-carousel .category-card span{display:none!important}'+
+      '.category-cards.rpe-category-carousel .category-card h3{margin:0!important;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif!important;font-size:14px!important;line-height:1.28!important;font-weight:750!important;color:#173d32!important;text-align:center!important}'+
+      '.rpe-category-arrow{position:absolute!important;top:54px!important;z-index:20!important;width:46px!important;height:46px!important;border-radius:50%!important;border:1px solid #dde6e1!important;background:#fff!important;color:#173d32!important;box-shadow:0 8px 24px rgba(9,45,35,.12)!important;display:grid!important;place-items:center!important;font-size:25px!important;cursor:pointer!important}'+
+      '.rpe-category-prev{left:0!important}.rpe-category-next{right:0!important}'+
+      '.rpe-category-groups{display:none!important}'+
+      '@media(max-width:700px){.rpe-category-shell{padding:0 36px!important;margin-top:12px!important}.category-cards.rpe-category-carousel{gap:8px!important;padding:8px 0 14px!important}.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex:0 0 calc((100% - 24px)/4)!important;width:calc((100% - 24px)/4)!important;min-width:calc((100% - 24px)/4)!important;max-width:calc((100% - 24px)/4)!important}.category-cards.rpe-category-carousel .category-image{width:min(76px,86%)!important;margin-bottom:8px!important}.category-cards.rpe-category-carousel .category-card h3{font-size:10px!important;line-height:1.18!important}.rpe-category-arrow{top:25px!important;width:36px!important;height:36px!important;font-size:22px!important}}'+
+      '@media(max-width:400px){.rpe-category-shell{padding:0 32px!important}.category-cards.rpe-category-carousel{gap:6px!important}.category-cards.rpe-category-carousel .category-card,.category-cards.rpe-category-carousel .category-card:last-child{flex:0 0 calc((100% - 18px)/4)!important;width:calc((100% - 18px)/4)!important;min-width:calc((100% - 18px)/4)!important;max-width:calc((100% - 18px)/4)!important}.category-cards.rpe-category-carousel .category-image{width:min(68px,88%)!important}.category-cards.rpe-category-carousel .category-card h3{font-size:9px!important}.rpe-category-arrow{top:22px!important;width:34px!important;height:34px!important}}';
+    d.head.appendChild(fourStyle);
+  }
+
   var section=cards.closest("section")||cards.parentElement;
-  var heading=null,groupsBar=null;
   if(section){
-    heading=section.querySelector("h2");
+    var heading=section.querySelector("h2");
     if(heading){
       heading.textContent="Shop by Category";
       heading.classList.add("rpe-category-section-title");
       var next=heading.nextElementSibling;
-      if(next&&/^(P|DIV)$/i.test(next.tagName)&&!next.classList.contains("rpe-category-shell")&&!next.classList.contains("rpe-category-groups")){
+      if(next&&/^(P|DIV)$/i.test(next.tagName)&&!next.classList.contains("rpe-category-shell")){
         if(next.textContent.trim()){
-          next.textContent="Browse related product groups, then swipe sideways to explore each category.";
+          next.textContent="Swipe or use the arrows to explore all product categories.";
           next.classList.add("rpe-category-subtitle");
         }
       }
     }
-    groupsBar=section.querySelector(".rpe-category-groups");
-    if(!groupsBar){
-      groupsBar=d.createElement("div");
-      groupsBar.className="rpe-category-groups";
-      groupsBar.setAttribute("aria-label","Product category groups");
-      var ref=heading?heading.nextElementSibling:cards;
-      if(ref&&ref.classList&&ref.classList.contains("rpe-category-subtitle"))ref.parentNode.insertBefore(groupsBar,ref.nextSibling);
-      else cards.parentNode.insertBefore(groupsBar,cards);
-    }
+    var oldGroups=section.querySelector(".rpe-category-groups");
+    if(oldGroups)oldGroups.remove();
   }
 
   function cleanTitle(card){
     var h=card.querySelector("h3");
     return h?h.textContent.trim():"";
   }
-  function groupFor(title){
-    var t=title.toLowerCase();
-    if(/solar|street light|searchlight|headlamp|head light|torch|portable light|rechargeable light/.test(t))return "outdoor";
-    if(/ceiling|fan light|bladeless|cooling|heating|indoor light|light fixture/.test(t))return "lighting";
-    if(/kitchen|cook|stove|pot|appliance/.test(t))return "home";
-    if(/household|storage|basket|bin|furniture|chair|table|stool|home essential/.test(t))return "home";
-    return "other";
-  }
   function rankFor(title){
     var t=title.toLowerCase();
     if(/kitchen/.test(t))return 10;
     if(/household|essential/.test(t))return 20;
     if(/furniture/.test(t))return 30;
-    if(/ceiling.*fan|fan.*light|bladeless/.test(t))return 40;
+    if(/ceiling.*fan|fan.*light|bladeless|cooling|heating/.test(t))return 40;
     if(/solar|street light/.test(t))return 50;
-    if(/searchlight/.test(t))return 60;
+    if(/searchlight|torch/.test(t))return 60;
     if(/headlamp|head light/.test(t))return 70;
     return 90;
-  }
-  function labelFor(group){
-    return group==="home"?"Home & Living":group==="lighting"?"Lighting & Cooling":group==="outdoor"?"Outdoor & Portable Lighting":"Other";
   }
 
   var organizing=false;
@@ -172,13 +175,8 @@ function installCategoryCarousel(d){
     if(organizing)return;
     organizing=true;
     var list=[].slice.call(cards.querySelectorAll(".category-card"));
-    list.forEach(function(card){
-      var title=cleanTitle(card);
-      card.dataset.rpeGroup=groupFor(title);
-      card.dataset.rpeRank=String(rankFor(title));
-    });
     list.sort(function(a,b){
-      return Number(a.dataset.rpeRank||99)-Number(b.dataset.rpeRank||99)||cleanTitle(a).localeCompare(cleanTitle(b));
+      return rankFor(cleanTitle(a))-rankFor(cleanTitle(b))||cleanTitle(a).localeCompare(cleanTitle(b));
     });
     list.forEach(function(card){cards.appendChild(card)});
     organizing=false;
@@ -194,96 +192,69 @@ function installCategoryCarousel(d){
     var prev=d.createElement("button");
     prev.type="button";
     prev.className="rpe-category-arrow rpe-category-prev";
-    prev.setAttribute("aria-label","Previous product categories");
+    prev.setAttribute("aria-label","Previous product category");
     prev.innerHTML="&#8249;";
 
     var nextBtn=d.createElement("button");
     nextBtn.type="button";
     nextBtn.className="rpe-category-arrow rpe-category-next";
-    nextBtn.setAttribute("aria-label","Next product categories");
+    nextBtn.setAttribute("aria-label","Next product category");
     nextBtn.innerHTML="&#8250;";
 
     shell.insertBefore(prev,cards);
     shell.appendChild(nextBtn);
 
     function step(){
-      var first=cards.querySelector(".category-card:not([hidden])");
-      return first?Math.max(120,first.getBoundingClientRect().width+18):180;
+      var first=cards.querySelector(".category-card");
+      if(!first)return 160;
+      var gap=parseFloat(getComputedStyle(cards).gap)||0;
+      return first.getBoundingClientRect().width+gap;
     }
     function updateArrows(){
       var max=Math.max(0,cards.scrollWidth-cards.clientWidth-2);
       prev.disabled=cards.scrollLeft<=2;
       nextBtn.disabled=cards.scrollLeft>=max||max<=2;
     }
-    prev.onclick=function(){cards.scrollBy({left:-step()*2,behavior:"smooth"})};
-    nextBtn.onclick=function(){cards.scrollBy({left:step()*2,behavior:"smooth"})};
+
+    // Each click shifts by exactly one category.
+    prev.onclick=function(){cards.scrollBy({left:-step(),behavior:"smooth"})};
+    nextBtn.onclick=function(){cards.scrollBy({left:step(),behavior:"smooth"})};
+
     cards.addEventListener("scroll",function(){requestAnimationFrame(updateArrows)},{passive:true});
     window.addEventListener("resize",updateArrows,{passive:true});
-    cards.__rpeUpdateArrows=updateArrows;
-
     cards.addEventListener("keydown",function(e){
-      if(e.key==="ArrowRight"){cards.scrollBy({left:step(),behavior:"smooth"})}
-      if(e.key==="ArrowLeft"){cards.scrollBy({left:-step(),behavior:"smooth"})}
+      if(e.key==="ArrowRight"){e.preventDefault();cards.scrollBy({left:step(),behavior:"smooth"})}
+      if(e.key==="ArrowLeft"){e.preventDefault();cards.scrollBy({left:-step(),behavior:"smooth"})}
     });
-  }
-
-  function applyGroup(group){
-    [].slice.call(cards.querySelectorAll(".category-card")).forEach(function(card){
-      card.hidden=group!=="all"&&card.dataset.rpeGroup!==group;
-    });
-    cards.scrollLeft=0;
-    if(groupsBar){
-      [].slice.call(groupsBar.querySelectorAll(".rpe-category-group-btn")).forEach(function(btn){
-        btn.setAttribute("aria-pressed",btn.dataset.group===group?"true":"false");
-      });
-    }
-    if(cards.__rpeUpdateArrows)setTimeout(cards.__rpeUpdateArrows,20);
-  }
-
-  if(groupsBar&&!groupsBar.dataset.ready){
-    groupsBar.dataset.ready="1";
-    [
-      ["all","All Categories"],
-      ["home","Home & Living"],
-      ["lighting","Lighting & Cooling"],
-      ["outdoor","Outdoor & Portable"]
-    ].forEach(function(item){
-      var b=d.createElement("button");
-      b.type="button";
-      b.className="rpe-category-group-btn";
-      b.dataset.group=item[0];
-      b.textContent=item[1];
-      b.setAttribute("aria-pressed",item[0]==="all"?"true":"false");
-      b.onclick=function(){applyGroup(item[0])};
-      groupsBar.appendChild(b);
-    });
+    cards.__rpeUpdateArrows=updateArrows;
   }
 
   organize();
-  applyGroup("all");
 
   [].slice.call(cards.querySelectorAll(".category-card img")).forEach(function(img){
     img.loading="lazy";
     img.decoding="async";
   });
 
-  if(!cards.__rpeGroupObserver){
-    var catObserver=new MutationObserver(function(mutations){
+  if(!cards.__rpeCategoryObserver){
+    var observer=new MutationObserver(function(mutations){
       var meaningful=mutations.some(function(m){return m.addedNodes&&m.addedNodes.length});
       if(!meaningful||organizing)return;
       setTimeout(function(){
         organize();
         [].slice.call(cards.querySelectorAll(".category-card img")).forEach(function(img){
-          img.loading="lazy";img.decoding="async";
+          img.loading="lazy";
+          img.decoding="async";
         });
-        var active=groupsBar&&groupsBar.querySelector('.rpe-category-group-btn[aria-pressed="true"]');
-        applyGroup(active?active.dataset.group:"all");
+        if(cards.__rpeUpdateArrows)cards.__rpeUpdateArrows();
       },0);
     });
-    catObserver.observe(cards,{childList:true,subtree:false});
-    cards.__rpeGroupObserver=catObserver;
+    observer.observe(cards,{childList:true,subtree:false});
+    cards.__rpeCategoryObserver=observer;
   }
 
+  cards.scrollLeft=0;
+  if(cards.__rpeUpdateArrows)setTimeout(cards.__rpeUpdateArrows,50);
   return true;
 }
 
