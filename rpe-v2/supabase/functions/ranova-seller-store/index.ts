@@ -82,7 +82,7 @@ async function loadDashboard(userId:string,seller:any){
     order:"created_at.desc"
   }):[];
   const orders=store?await serviceGet("ranova_seller_orders",{
-    select:"id,order_ref,buyer_name,buyer_phone,delivery_location,items,item_count,subtotal,delivery_fee,total,currency,payment_status,order_status,buyer_note,seller_note,created_at,updated_at",
+    select:"id,order_ref,platform_order_ref,buyer_name,buyer_phone,buyer_email,delivery_location,payment_method,items,item_count,subtotal,delivery_fee,total,currency,payment_status,order_status,buyer_note,seller_note,created_at,updated_at",
     seller_id:"eq."+userId,
     order:"created_at.desc",
     limit:"50"
@@ -275,6 +275,70 @@ Deno.serve(async(req:Request)=>{
       const out=await r.json().catch(()=>[]);
       if(!r.ok||!out.length)return response(h,404,{ok:false,error:"Product not found."});
       return response(h,200,{ok:true,product:out[0]});
+    }
+
+    if(action==="update_order_quote"){
+      const id=clean(b.id,80);
+      const rows=await serviceGet("ranova_seller_orders",{select:"*",id:"eq."+id,seller_id:"eq."+user.id,limit:"1"});
+      const order=rows[0];
+      if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      if(["dispatched","delivered","cancelled","returned"].includes(order.order_status)){
+        return response(h,400,{ok:false,error:"This order can no longer be repriced."});
+      }
+      const subtotal=num(b.subtotal);
+      const delivery_fee=num(b.delivery_fee);
+      if(subtotal===null||subtotal<0)return response(h,400,{ok:false,error:"Enter a valid product subtotal."});
+      if(delivery_fee!==null&&delivery_fee<0)return response(h,400,{ok:false,error:"Enter a valid delivery fee."});
+      const total=Number((subtotal+(delivery_fee||0)).toFixed(2));
+      const r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_orders?id=eq."+encodeURIComponent(id)+"&seller_id=eq."+encodeURIComponent(user.id),{
+        method:"PATCH",
+        headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json",Prefer:"return=representation"},
+        body:JSON.stringify({
+          subtotal:Number(subtotal.toFixed(2)),
+          delivery_fee:delivery_fee===null?null:Number(delivery_fee.toFixed(2)),
+          total,
+          seller_note:clean(b.seller_note,1000)||order.seller_note||null,
+          updated_at:new Date().toISOString()
+        })
+      });
+      const out=await r.json().catch(()=>[]);
+      if(!r.ok||!out.length)throw new Error("Could not update the order amount.");
+      return response(h,200,{ok:true,order:out[0]});
+    }
+
+    if(action==="update_order_status"){
+      const id=clean(b.id,80),next=clean(b.status,40);
+      const rows=await serviceGet("ranova_seller_orders",{select:"*",id:"eq."+id,seller_id:"eq."+user.id,limit:"1"});
+      const order=rows[0];
+      if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      const allowed:any={
+        new:["confirmed","cancelled"],
+        confirmed:["preparing","cancelled"],
+        preparing:["ready_for_dispatch","cancelled"],
+        ready_for_dispatch:["dispatched","cancelled"],
+        dispatched:["delivered"],
+        delivered:[],
+        cancelled:[],
+        return_requested:["returned"],
+        returned:[]
+      };
+      if(!(allowed[order.order_status]||[]).includes(next)){
+        return response(h,400,{ok:false,error:"That order-status change is not allowed from "+order.order_status.replace(/_/g," ")+". "});
+      }
+      if(next==="confirmed"&&order.total===null){
+        return response(h,400,{ok:false,error:"Set the final product subtotal and delivery fee before confirming this order."});
+      }
+      const patch:any={order_status:next,updated_at:new Date().toISOString()};
+      const note=clean(b.seller_note,1000);
+      if(note)patch.seller_note=note;
+      const r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_orders?id=eq."+encodeURIComponent(id)+"&seller_id=eq."+encodeURIComponent(user.id),{
+        method:"PATCH",
+        headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json",Prefer:"return=representation"},
+        body:JSON.stringify(patch)
+      });
+      const out=await r.json().catch(()=>[]);
+      if(!r.ok||!out.length)throw new Error("Could not update order status.");
+      return response(h,200,{ok:true,order:out[0]});
     }
 
     return response(h,400,{ok:false,error:"Unknown action."});
