@@ -61,12 +61,12 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
         <div class="field"><label>Full name *</label><input id="customerName" autocomplete="name"></div>
         <div class="field"><label>Phone number *</label><input id="customerPhone" inputmode="tel" autocomplete="tel"></div>
         <div class="field full"><label>Email (optional)</label><input id="customerEmail" type="email" autocomplete="email"></div>
-        <div class="field full"><label>Delivery location *</label><input id="deliveryLocation" autocomplete="street-address" placeholder="Area / landmark / delivery instructions"></div>
+        <div class="field"><label>Delivery country *</label><select id="buyerCountry"><option value="">Choose country</option></select></div><div class="field"><label>Delivery location *</label><input id="deliveryLocation" autocomplete="street-address" placeholder="Area / landmark / delivery instructions"></div>
         <div class="field"><label>Payment method *</label><select id="paymentMethod"><option value="">Choose method</option><option>Mobile Money</option><option>Bank Transfer</option></select></div>
         <div class="field"><label>Selected items</label><input id="checkoutCount" readonly></div>
         <div class="field full"><label>Order note (optional)</label><textarea id="buyerNote" placeholder="Colour, size, timing or other order details"></textarea></div>
       </div>
-      <div class="pay-note"><b>No payment account is shown at this stage.</b> Your order is sent first. The seller/RANOVA confirms availability, final amount and delivery arrangements before payment instructions are provided.</div>
+      <div class="pay-note"><b>No payment account is shown at this stage.</b> Your delivery country and the seller’s store country are used to apply the current RANOVA marketplace finance rule. Payment instructions are shown only after the order is confirmed.</div>
       <div class="checkout-actions"><button id="cancelCheckout" class="cancel" type="button">Back</button><button id="placeOrder" class="place" type="button">Place order</button></div>
     </div>
     <div id="checkoutSuccess" class="success" style="display:none"><div class="tick">✓</div><h3>Order sent successfully</h3><p>Your order has been routed to the seller. Keep the reference below. Payment remains <b>not started</b> until the order is confirmed.</p><div id="successRef" class="order-ref"></div><a id="trackSuccess" href="./order-status.html" style="display:inline-flex;margin-top:2px;min-height:40px;align-items:center;padding:0 15px;border-radius:999px;background:#eef7f3;color:#116a52;text-decoration:none;font-size:9px;font-weight:900">Track this order</a><br><button id="doneCheckout" type="button">Done</button></div>
@@ -79,12 +79,33 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
 var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co";
 var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
 var ORDER_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-place-order";
-var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[],cart={};
+var COUNTRY_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-country-service";
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[],cart={},countryMap={};
 
 function el(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function phoneDigits(v){var d=String(v||"").replace(/\D/g,"");if(d.startsWith("0"))d="233"+d.slice(1);return d}
 function money(v){return v==null?"Ask seller for price":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+async function countryApi(body){
+  var r=await fetch(COUNTRY_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify(body||{})});
+  var out=await r.json().catch(function(){return{}});
+  if(!r.ok||!out.ok)throw new Error(out.error||"Country lookup failed.");
+  return out;
+}
+async function loadCountries(){
+  var out=await countryApi({action:"countries"});
+  countryMap={};
+  var options=['<option value="">Choose country</option>'];
+  (out.countries||[]).forEach(function(c){countryMap[c.code]=c.name;options.push('<option value="'+esc(c.code)+'">'+esc(c.name)+'</option>')});
+  el("buyerCountry").innerHTML=options.join("");
+}
+async function resolveBuyerCountry(){
+  var code=el("buyerCountry").value;
+  if(!code)throw new Error("Choose your delivery country.");
+  var out=await countryApi({action:"resolve_address_country",address:el("deliveryLocation").value.trim(),country_code:code});
+  return out.country||{code:code,name:countryMap[code]||code,place_id:null,source:"selected_country"};
+}
 function cartItems(){return Object.keys(cart).map(function(id){var p=products.find(function(x){return x.id===id});return p?{product:p,quantity:cart[id]}:null}).filter(Boolean)}
 function totalQty(){return cartItems().reduce(function(s,x){return s+x.quantity},0)}
 function knownTotal(){var items=cartItems();if(!items.length||items.some(function(x){return x.product.price==null}))return null;return items.reduce(function(s,x){return s+(Number(x.product.price)*x.quantity)},0)}
@@ -144,16 +165,21 @@ function closeCheckout(){el("checkoutModal").classList.remove("open");document.b
 function showCheckoutMsg(text,good){var m=el("checkoutMsg");m.textContent=text;m.classList.toggle("good",!!good);m.style.display="block"}
 async function placeOrder(){
   var items=cartItems();
+  var country;
+  try{country=await resolveBuyerCountry()}catch(e){showCheckoutMsg(e.message||"Choose your delivery country.");return}
   var payload={
     customer_name:el("customerName").value.trim(),
     customer_phone:el("customerPhone").value.trim(),
     customer_email:el("customerEmail").value.trim(),
     delivery_location:el("deliveryLocation").value.trim(),
+    buyer_country_code:country.code||el("buyerCountry").value,
+    buyer_country_name:country.name||countryMap[el("buyerCountry").value]||el("buyerCountry").value,
+    buyer_google_place_id:country.place_id||null,
     payment_method:el("paymentMethod").value,
     buyer_note:el("buyerNote").value.trim(),
     items:items.map(function(x){return{seller_product_id:x.product.id,quantity:x.quantity}})
   };
-  if(!payload.customer_name||!payload.customer_phone||!payload.delivery_location||!payload.payment_method){showCheckoutMsg("Complete your name, phone, delivery location and payment method.");return}
+  if(!payload.customer_name||!payload.customer_phone||!payload.delivery_location||!payload.buyer_country_code||!payload.payment_method){showCheckoutMsg("Complete your name, phone, delivery country, delivery location and payment method.");return}
   var b=el("placeOrder"),old=b.textContent;b.disabled=true;b.textContent="Placing order…";el("checkoutMsg").style.display="none";
   try{
     var res=await fetch(ORDER_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify(payload)});
@@ -171,7 +197,7 @@ async function boot(){
   if(sr.error||!sr.data){el("loading").textContent="This RANOVA store is not available.";return}
   store=sr.data;
   var pr=await sb.from("ranova_seller_products").select("*").eq("store_id",store.id).eq("product_status","active").order("created_at",{ascending:false});
-  products=pr.data||[];loadCart();
+  products=pr.data||[];await loadCountries();loadCart();
   el("storeName").textContent=store.store_name;el("tagline").textContent=store.tagline||"Verified seller on RANOVA";el("drawerStoreName").textContent=store.store_name;
   el("description").textContent=store.description||"Contact this seller for business information.";
   el("location").textContent=store.business_location||"Confirm with seller";el("minimum").textContent=store.minimum_order_note||"Varies by product";
