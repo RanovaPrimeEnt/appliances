@@ -58,7 +58,7 @@ function ensureSolarCategory(d){
       '<div class="category-image" style="background:linear-gradient(145deg,#edf6f1,#e2eee8);display:flex;align-items:center;justify-content:center">'+
       '<div style="text-align:center;color:#0e5b43;padding:18px"><div style="font-size:44px;line-height:1">☀</div><b style="display:block;margin-top:8px;font-size:13px">Solar Street Lights</b></div></div>'+
       '<div><small>OUTDOOR SOLAR</small><h3>Solar Street Lights</h3><span>2 series · 6 models</span></div>';
-    cards.appendChild(card);
+    cards.insertBefore(card,d.getElementById("rpeLightingCategoryCard"));
   }
   card.onclick=function(){
     try{
@@ -84,13 +84,13 @@ function ensureSolarCategory(d){
         }catch(e){}
       });
     };
-    filters.appendChild(filter);
+    filters.insertBefore(filter,filters.querySelector('[data-cat="Lighting & Fans"]'));
   }
 
   [].slice.call(d.querySelectorAll(".stats div")).forEach(function(box){
     var label=box.querySelector("span"),strong=box.querySelector("strong");
-    if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent="4";
-    if(label&&strong&&/Catalogue items/i.test(label.textContent)&&/^\s*36\+?\s*$/.test(strong.textContent))strong.textContent="42";
+    if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent="5";
+    if(label&&strong&&/Catalogue items/i.test(label.textContent)&&/^\s*36\+?\s*$/.test(strong.textContent))strong.textContent=String((frame.contentWindow.PRODUCTS||[]).length||84);
   });
 
   return true;
@@ -110,7 +110,7 @@ function installUi(d,products,totalCount){
     var st=d.createElement("style");
     st.id="rpeSolarCatalogueStyle";
     st.textContent=`.category-cards.rpeFourCategories{
-  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
   gap:18px!important;
   align-items:stretch;
 }
@@ -281,7 +281,7 @@ function installUi(d,products,totalCount){
     var responsiveFix=d.createElement("style");
     responsiveFix.id="rpeCategoryResponsiveFix";
     responsiveFix.textContent=
-      '.category-cards.rpeFourCategories{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px!important;align-items:stretch}'+
+      '.category-cards.rpeFourCategories{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:18px!important;align-items:stretch}'+
       '.category-cards.rpeFourCategories .category-card{min-width:0!important;overflow:hidden!important;border-radius:22px!important;background:#fbfaf7!important;display:flex!important;flex-direction:column!important;transition:transform .22s ease,box-shadow .22s ease!important}'+
       '.category-cards.rpeFourCategories .category-card:hover{transform:translateY(-4px);box-shadow:0 14px 32px rgba(8,47,39,.10)!important}'+
       '.category-cards.rpeFourCategories .category-card:last-child{grid-column:auto!important}'+
@@ -303,6 +303,14 @@ function installUi(d,products,totalCount){
     d.head.appendChild(responsiveFix);
   }
 
+  if(!d.getElementById("rpeLightingCardStyle")){
+    var lightingStyle=d.createElement("style");
+    lightingStyle.id="rpeLightingCardStyle";
+    lightingStyle.textContent='#rpeLightingCategoryCard .category-image img{object-fit:cover!important;object-position:center 8%!important;transform:none!important}' +
+      '@media(max-width:700px){#rpeLightingCategoryCard .category-image img{object-position:center 6%!important}}';
+    d.head.appendChild(lightingStyle);
+  }
+
   var hero=products.find(function(p){return p.sku==="RPE-SOLAR-504-8K"})||products[products.length-1];
   var heroPic=hero?imageOf(hero):"";
 
@@ -315,7 +323,7 @@ function installUi(d,products,totalCount){
       card.type="button";
       card.id="rpeSolarCategoryCard";
       card.className="category-card";
-      cards.appendChild(card);
+      cards.insertBefore(card,d.getElementById("rpeLightingCategoryCard"));
     }
     card.innerHTML=
       '<div class="category-image">'+
@@ -339,14 +347,14 @@ function installUi(d,products,totalCount){
     filter.onclick=function(){
       try{frame.contentWindow.setActiveCategory("Solar Street Lights")}catch(e){}
     };
-    filters.appendChild(filter);
+    filters.insertBefore(filter,filters.querySelector('[data-cat="Lighting & Fans"]'));
   }
 
   // Correct the catalogue summary from three to four categories.
   [].slice.call(d.querySelectorAll(".stats div")).forEach(function(box){
     var label=box.querySelector("span"),strong=box.querySelector("strong");
-    if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent="4";
-    if(label&&strong&&/Catalogue items/i.test(label.textContent))strong.textContent=String(totalCount||42);
+    if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent="5";
+    if(label&&strong&&/Catalogue items/i.test(label.textContent))strong.textContent=String(totalCount||84);
   });
 }
 
