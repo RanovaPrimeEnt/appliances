@@ -26,7 +26,7 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
     <div class="summary"><div><span class="pill" id="masterStatus">Order received</span><h2 id="refText"></h2><p id="summaryText"></p></div><div><span class="pill" id="paymentStatus">Payment not started</span></div></div>
     <div class="master-meta">
       <div class="meta"><span>Customer</span><b id="customer"></b></div>
-      <div class="meta"><span>Delivery</span><b id="delivery"></b></div>
+      <div class="meta"><span>Delivery / country</span><b id="delivery"></b></div>
       <div class="meta"><span>Payment method</span><b id="method"></b></div>
       <div class="meta"><span>Order total</span><b id="masterTotal"></b></div>
     </div>
@@ -53,14 +53,14 @@ function render(out){
     el("payName").textContent=pi.account_name||"—";
     el("payRef").textContent=pi.account_reference||"—";
     el("payAmount").textContent=money(pi.amount);
-    el("payNote").textContent=pi.instructions||"Use your order reference as the payment reference where possible.";
+    var buyerFee=Number(o.payment_processing_fee||0)>0&&o.payment_fee_payer==="buyer"?" Buyer processing fee included: "+money(o.payment_processing_fee)+".":"";el("payNote").textContent=(pi.instructions||"Use your order reference as the payment reference where possible.")+buyerFee;
     el("copyPayRef").dataset.value=pi.account_reference||"";
   }else{
     box.style.display="none";
     el("copyPayRef").dataset.value="";
   }
   el("refText").textContent=o.order_ref||"";el("summaryText").textContent=(o.item_count||0)+" product(s) • placed "+(o.created_at?new Date(o.created_at).toLocaleString():"");
-  el("customer").textContent=o.customer_name||"—";el("delivery").textContent=o.delivery_location||"—";el("method").textContent=o.payment_method||"—";el("masterTotal").textContent=money(o.total_payment);
+  el("customer").textContent=o.customer_name||"—";el("delivery").textContent=(o.delivery_location||"—")+(o.buyer_country_name?" • "+o.buyer_country_name:"");el("method").textContent=o.payment_method||"—";el("masterTotal").textContent=money(o.total_payment);
   el("sellerOrders").innerHTML=children.length?children.map(function(x){
     var items=Array.isArray(x.items)?x.items:[];
     return '<article class="seller-card"><div class="seller-head"><div><b>'+esc(x.store_name)+'</b><small>'+esc(x.order_ref)+' • Updated '+esc(x.updated_at?new Date(x.updated_at).toLocaleString():"—")+'</small></div><span class="pill">'+esc(pretty(x.order_status))+'</span></div><div class="seller-body"><div class="items">'+items.map(function(i){return '<div class="item"><span>'+esc(i.product_name||"Product")+' × '+esc(i.quantity||1)+'</span><span>'+esc(i.line_total==null?"Price pending":money(i.line_total))+'</span></div>'}).join("")+'</div><div class="amounts"><div><span>Products</span><b>'+esc(money(x.subtotal))+'</b></div><div><span>Delivery</span><b>'+esc(x.delivery_fee==null?"Pending confirmation":money(x.delivery_fee))+'</b></div><div class="total"><span>Seller order total</span><b>'+esc(money(x.total))+'</b></div><div><span>Payment</span><b>'+esc(pretty(x.payment_status))+'</b></div></div>'+(x.seller_note?'<div class="note"><b>Seller note:</b> '+esc(x.seller_note)+'</div>':'')+(x.store_slug?'<a class="store-link" href="./seller-store.html?store='+encodeURIComponent(x.store_slug)+'">Open seller store</a>':'')+'</div></article>'
