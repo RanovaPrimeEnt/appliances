@@ -9,8 +9,7 @@ var LANGS={
   en:{label:"English",short:"EN"},
   zh:{label:"中文",short:"中"},
   es:{label:"Español",short:"ES"},
-  fr:{label:"Français",short:"FR"},
-  tw:{label:"Twi",short:"TW"}
+  fr:{label:"Français",short:"FR"}
 };
 var LOCAL_VERIFIED={
   "product id":{en:"Product ID",zh:"产品编号",es:"ID del producto",fr:"ID du produit",tw:"Product ID"},
@@ -30,7 +29,7 @@ var LOCAL_VERIFIED={
   "lighting & fans":{en:"Lighting & Fans",zh:"照明与风扇",es:"Iluminación y ventiladores",fr:"Éclairage et ventilateurs",tw:"Kanea ne mframa afiri"}
 };
 var selected=localStorage.getItem("akwaabaLang")||"en";
-if(!LANGS[selected])selected="en";
+if(!LANGS[selected]){selected="en";try{localStorage.setItem("akwaabaLang","en")}catch(e){}}
 var cache=new Map();
 try{
   var savedAkwaabaCache=JSON.parse(localStorage.getItem("akwaabaTranslationCache")||"{}");
@@ -65,10 +64,10 @@ root.innerHTML=
   '#akwaabaPanel{pointer-events:auto;position:absolute;width:min(360px,calc(100vw - 24px));max-height:min(510px,72vh);overflow:auto;background:rgba(255,255,255,.98);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(14,91,67,.15);border-radius:20px;box-shadow:0 20px 55px rgba(8,47,39,.22);padding:15px;box-sizing:border-box;display:none;color:#173d32}'+
   '#akwaabaPanel.open{display:block}'+
   '.akwaaba-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.akwaaba-title{display:flex;align-items:center;gap:9px}.akwaaba-logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#0e5b43,#178467);color:#fff;display:grid;place-items:center;font-weight:950}.akwaaba-title b{display:block;font-size:14px}.akwaaba-title small{display:block;color:#718078;font-size:11px;margin-top:2px}.akwaaba-close{border:0;background:#eef4f1;color:#173d32;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer}'+
-  '.akwaaba-langs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}.akwaaba-lang{min-height:38px;border:1px solid #dce7e2;background:#fff;color:#425b52;border-radius:10px;font-size:11px;font-weight:850;cursor:pointer;padding:5px}.akwaaba-lang.active{background:#0e5b43;color:#fff;border-color:#0e5b43;box-shadow:0 6px 14px rgba(14,91,67,.16)}'+
+  '.akwaaba-langs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}.akwaaba-lang{min-height:38px;border:1px solid #dce7e2;background:#fff;color:#425b52;border-radius:10px;font-size:11px;font-weight:850;cursor:pointer;padding:5px}.akwaaba-lang.active{background:#0e5b43;color:#fff;border-color:#0e5b43;box-shadow:0 6px 14px rgba(14,91,67,.16)}'+
   '.akwaaba-state{padding:0;border:0;background:transparent}.akwaaba-result{display:grid;gap:10px}.akwaaba-block{border:1px solid #e0e9e4;border-radius:14px;padding:12px 13px;background:#fff}.akwaaba-block.translation{background:linear-gradient(180deg,#f4fbf7 0%,#ffffff 100%);border-color:#cfe3d8}.akwaaba-block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}.akwaaba-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#7c8d85}.akwaaba-language-pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#eaf4ef;color:#0e5b43;font-size:10px;font-weight:900}.akwaaba-original{font-size:13px;line-height:1.5;color:#52665f;word-break:break-word}.akwaaba-output{font-size:17px;line-height:1.5;font-weight:850;color:#102f29;word-break:break-word}.akwaaba-arrow{display:flex;align-items:center;justify-content:center;height:24px;color:#8ba39a;font-weight:900;font-size:16px}.akwaaba-loading{display:flex;align-items:center;gap:9px;color:#52665f;font-size:13px;padding:13px;border-radius:14px;background:#f6f9f7;border:1px solid #e5ece8}.akwaaba-spin{width:16px;height:16px;border:2px solid #cfe1d8;border-top-color:#0e5b43;border-radius:50%;animation:akwaabaSpin .8s linear infinite}@keyframes akwaabaSpin{to{transform:rotate(360deg)}}'+
   '.akwaaba-actions{display:flex;gap:8px;margin-top:11px}.akwaaba-actions button{flex:1;min-height:40px;border-radius:11px;border:1px solid #dce7e2;background:#fff;color:#173d32;font-size:11px;font-weight:850;cursor:pointer}.akwaaba-actions button.primary{background:#d97706;color:#fff;border-color:#d97706}.akwaaba-note{margin-top:10px;font-size:10px;line-height:1.4;color:#819089}.akwaaba-error{color:#9d3f1a;font-size:13px;line-height:1.45;font-weight:700}'+
-  '@media(max-width:620px){#akwaabaOrb{width:58px;height:58px}#akwaabaOrb svg{width:28px;height:28px}#akwaabaPanel{width:calc(100vw - 18px);max-height:70vh;border-radius:18px;padding:13px}.akwaaba-langs{gap:4px}.akwaaba-lang{font-size:9px;padding:5px 3px}.akwaaba-output{font-size:16px}.akwaaba-block{padding:11px 12px}.akwaaba-actions{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding-top:8px;margin-top:10px}}'+
+  '@media(max-width:620px){#akwaabaOrb{width:58px;height:58px}#akwaabaOrb svg{width:28px;height:28px}#akwaabaPanel{width:calc(100vw - 18px);max-height:70vh;border-radius:18px;padding:13px}.akwaaba-langs{gap:5px}.akwaaba-lang{font-size:10px;padding:5px}.akwaaba-output{font-size:16px}.akwaaba-block{padding:11px 12px}.akwaaba-actions{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding-top:8px;margin-top:10px}}'+
   '@media(prefers-reduced-motion:reduce){#akwaabaOrb,.a-pulse,.akwaaba-spin{animation:none!important;transition:none!important}}'+
   '</style>'+
   '<button id="akwaabaOrb" type="button" aria-label="Akwaaba AI Translator. Drag over text to translate.">'+
