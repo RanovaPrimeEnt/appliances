@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Seller Application Status | RANOVA</title>
+<meta name="theme-color" content="#116a52">
+<style>
+*{box-sizing:border-box}
+:root{--green:#103f34;--green2:#116a52;--orange:#ff5a2d;--ink:#15342e;--muted:#687a74;--line:#dfe8e4;--soft:#f5f8f6}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--soft);color:var(--ink)}
+.wrap{width:min(980px,calc(100% - 28px));margin:auto}
+.top{background:var(--green);color:#fff;padding:14px 0}
+.top .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-weight:950}.back{color:inherit;text-decoration:none;font-size:12px;border:1px solid #ffffff33;padding:9px 12px;border-radius:999px}
+.hero{padding:44px 0 26px;background:linear-gradient(135deg,#eaf8f2,#fff9ec 60%,#f4efff)}.hero h1{margin:7px 0 0;font-size:clamp(34px,6vw,58px);line-height:1;letter-spacing:-.04em}.hero p{max-width:720px;color:#64766f;line-height:1.65}
+.kicker{font-size:11px;letter-spacing:.14em;font-weight:900;color:var(--green2)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 14px 38px rgba(11,70,53,.07);margin:26px auto 60px}
+.lookup{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.field{display:grid;gap:6px}.field label{font-size:11px;font-weight:900}.field input{height:44px;border:1px solid #d7e3de;border-radius:12px;padding:0 12px;font:inherit;outline:none}.field input:focus{border-color:#239277;box-shadow:0 0 0 3px #dff3eb}
+.btn{height:44px;border:0;border-radius:999px;background:var(--orange);color:#fff;padding:0 18px;font-weight:950;cursor:pointer}.btn[disabled]{opacity:.55;cursor:wait}
+.msg{display:none;margin-top:12px;padding:12px;border-radius:12px;background:#fff1ec;color:#8b431f;font-size:12px;font-weight:750}
+.result{display:none;margin-top:22px}.head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding-bottom:16px;border-bottom:1px solid #edf1ef}.head h2{margin:0}.ref{margin-top:5px;font-size:11px;color:#73827c}.pill{padding:8px 11px;border-radius:999px;background:#fff2ed;color:#a64d22;font-size:10px;font-weight:900}
+.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.meta div{padding:12px;border:1px solid #e5ebe8;border-radius:13px;background:#fafbfa}.meta span{display:block;font-size:9px;color:#7d8b85}.meta b{display:block;margin-top:4px;font-size:11px}
+.progress{display:grid;gap:9px;margin-top:18px}.stage{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:11px;border:1px solid #e2e9e6;border-radius:14px}.icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#eef3f0;color:#678078;font-weight:950}.stage.complete .icon{background:#e8f7ef;color:#0a6a44}.stage.current{border-color:#f6c8b4;background:#fff9f6}.stage.current .icon{background:#fff0e8;color:#e15c25}.stage.locked{opacity:.65}.stage b{font-size:12px}.stage small{display:block;margin-top:3px;color:#7a8983;font-size:9px}.status{font-size:9px;font-weight:900;color:#6d7c76;text-transform:uppercase}
+.note{margin-top:18px;padding:13px;border-left:3px solid #d19b38;background:#fff9ed;color:#6f644f;font-size:11px;line-height:1.5}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.actions a{display:inline-flex;align-items:center;justify-content:center;min-height:40px;border-radius:999px;padding:0 14px;text-decoration:none;font-size:10px;font-weight:900}.primary{background:var(--green2);color:#fff}.secondary{border:1px solid #d9e4df;color:var(--green2);background:#fff}
+@media(max-width:720px){.lookup{grid-template-columns:1fr}.meta{grid-template-columns:1fr}.head{flex-direction:column}.stage{grid-template-columns:32px 1fr}.status{grid-column:2}}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap"><div class="brand">RANOVA SELLER CENTER</div><a class="back" href="./supplier.html">← Seller registration</a></div></div>
+<section class="hero"><div class="wrap"><div class="kicker">APPLICATION STATUS</div><h1>Track your seller journey.</h1><p>Use the application reference you received after registering, together with the same phone number used in the application.</p></div></section>
+<main class="wrap">
+  <section class="panel">
+    <div class="lookup">
+      <div class="field"><label for="ref">Application reference</label><input id="ref" autocomplete="off" placeholder="RNV-SLR-..."></div>
+      <div class="field"><label for="phone">Phone number</label><input id="phone" inputmode="tel" autocomplete="tel" placeholder="Same number used to apply"></div>
+      <button id="check" class="btn" type="button">Check status</button>
+    </div>
+    <div id="msg" class="msg"></div>
+
+    <div id="result" class="result">
+      <div class="head">
+        <div><h2 id="businessName">Seller application</h2><div id="refText" class="ref"></div></div>
+        <div id="overallPill" class="pill">Submitted</div>
+      </div>
+
+      <div class="meta">
+        <div><span>Seller type</span><b id="sellerType">—</b></div>
+        <div><span>Business location</span><b id="location">—</b></div>
+        <div><span>Categories</span><b id="categories">—</b></div>
+      </div>
+
+      <h3 style="margin:20px 0 8px">Verification progress</h3>
+      <div class="progress">
+        <div id="stageBusiness" class="stage"><div class="icon">1</div><div><b>Business information</b><small>Application and company details</small></div><div class="status">Pending</div></div>
+        <div id="stageDocuments" class="stage"><div class="icon">2</div><div><b>Business documents</b><small>Registration and supporting documents</small></div><div class="status">Not started</div></div>
+        <div id="stageIdentity" class="stage"><div class="icon">3</div><div><b>Identity verification</b><small>Authorized representative verification</small></div><div class="status">Not started</div></div>
+        <div id="stageFulfilment" class="stage"><div class="icon">4</div><div><b>Fulfilment readiness</b><small>Stock, delivery and order handling</small></div><div class="status">Not started</div></div>
+        <div id="stageStore" class="stage locked"><div class="icon">5</div><div><b>Store setup</b><small>Storefront, products and marketplace launch</small></div><div class="status">Locked</div></div>
+      </div>
+
+      <div id="notes" class="note">RANOVA is reviewing your seller application. Sensitive documents will only be requested through the secure verification stage.</div>
+
+      <div class="actions">
+        <a class="primary" href="./supplier.html">Update / submit another application</a>
+        <a class="secondary" href="./">Return to marketplace</a>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+(function(){
+"use strict";
+var ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-seller-status";
+var btn=document.getElementById("check"),msg=document.getElementById("msg"),result=document.getElementById("result");
+function escText(v){return String(v==null?"":v)}
+function pretty(v){return escText(v).replace(/_/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
+function setStage(id,value){
+  var el=document.getElementById(id); if(!el)return;
+  var s=String(value||"not_started").toLowerCase();
+  el.classList.remove("complete","current","locked");
+  if(["complete","approved","verified"].includes(s))el.classList.add("complete");
+  else if(["submitted","under_review","in_progress","needs_information"].includes(s))el.classList.add("current");
+  else if(s==="locked")el.classList.add("locked");
+  var label=el.querySelector(".status"); if(label)label.textContent=pretty(s);
+}
+btn.addEventListener("click",async function(){
+  var ref=document.getElementById("ref").value.trim(),phone=document.getElementById("phone").value.trim();
+  msg.style.display="none";result.style.display="none";
+  if(!ref||!phone){msg.textContent="Enter your application reference and phone number.";msg.style.display="block";return}
+  btn.disabled=true;btn.textContent="Checking…";
+  try{
+    var res=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({application_ref:ref,phone:phone})});
+    var out=await res.json().catch(function(){return{}});
+    if(!res.ok||!out.ok)throw new Error(out.error||"Could not load status.");
+    var a=out.application||{};
+    document.getElementById("businessName").textContent=a.business_name||"Seller application";
+    document.getElementById("refText").textContent=a.application_ref||"";
+    document.getElementById("overallPill").textContent=pretty(a.status||"submitted");
+    document.getElementById("sellerType").textContent=a.supplier_type||"—";
+    document.getElementById("location").textContent=a.business_location||"—";
+    document.getElementById("categories").textContent=a.categories||"—";
+    setStage("stageBusiness",a.business_info_status);
+    setStage("stageDocuments",a.business_documents_status);
+    setStage("stageIdentity",a.identity_status);
+    setStage("stageFulfilment",a.fulfilment_status);
+    setStage("stageStore",a.store_setup_status);
+    document.getElementById("notes").textContent=a.verification_notes||"RANOVA is reviewing your seller application. Sensitive documents will only be requested through the secure verification stage.";
+    result.style.display="block";
+  }catch(err){
+    msg.textContent=err&&err.message?err.message:"Could not load the application status.";
+    msg.style.display="block";
+  }finally{
+    btn.disabled=false;btn.textContent="Check status";
+  }
+});
+})();
+</script>
+</body>
+</html>
