@@ -72,7 +72,7 @@ function accepted(v:any){
   return ["approved","complete","verified"].includes(String(v||"").toLowerCase());
 }
 async function dashboard(role:string){
-  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],counts:{}};
+  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],counts:{}};
   if(canSellerReview(role)){
     const [{data:apps},{data:files},{data:accounts}]=await Promise.all([
       admin.from("ranova_seller_applications")
@@ -93,6 +93,19 @@ async function dashboard(role:string){
       .select("id,order_ref,platform_order_ref,parent_order_id,seller_id,store_id,buyer_name,buyer_phone,buyer_email,delivery_location,payment_method,items,item_count,subtotal,delivery_fee,total,currency,payment_status,order_status,buyer_note,seller_note,created_at,updated_at")
       .order("created_at",{ascending:false}).limit(500);
     out.seller_orders=sellerOrders||[];
+    const [{data:deliveries},{data:proofs},{data:events}]=await Promise.all([
+      admin.from("ranova_order_deliveries")
+        .select("*").order("updated_at",{ascending:false}).limit(500),
+      admin.from("ranova_delivery_proofs")
+        .select("id,delivery_id,seller_order_id,proof_type,storage_path,recipient_name,note,uploaded_by_type,uploaded_by_user_id,captured_at,review_status,review_note,reviewed_at,reviewed_by,created_at")
+        .order("created_at",{ascending:false}).limit(1000),
+      admin.from("ranova_delivery_events")
+        .select("id,delivery_id,seller_order_id,status,actor_type,actor_user_id,note,location_text,metadata,occurred_at")
+        .order("occurred_at",{ascending:false}).limit(2000)
+    ]);
+    out.deliveries=deliveries||[];
+    out.delivery_proofs=proofs||[];
+    out.delivery_events=events||[];
   }
 
   if(canSellerReview(role)||canProductReview(role)){
@@ -164,7 +177,9 @@ async function dashboard(role:string){
     commission_total:out.payouts.reduce((s:number,p:any)=>s+Number(p.commission_amount||0),0),
     payments_due:out.marketplace_orders.filter((o:any)=>o.status==="awaiting_payment"&&!["paid","confirmed","refunded"].includes(String(o.payment_status||"").toLowerCase())).length,
     refunds_open:out.refunds.filter((r:any)=>!["refunded","rejected","cancelled"].includes(r.status)).length,
-    disputes_open:out.disputes.filter((d:any)=>!["resolved","closed"].includes(d.status)).length
+    disputes_open:out.disputes.filter((d:any)=>!["resolved","closed"].includes(d.status)).length,
+    deliveries_active:out.deliveries.filter((d:any)=>!["delivered_confirmed","returned","cancelled"].includes(d.delivery_status)).length,
+    deliveries_waiting_confirmation:out.deliveries.filter((d:any)=>d.delivery_status==="delivered_pending_confirmation").length
   };
   return out;
 }
@@ -523,7 +538,7 @@ Deno.serve(async(req:Request)=>{
               country_rule_id:child.country_rule_id||null,
               seller_country_code:child.seller_country_code||null,
               buyer_country_code:child.buyer_country_code||null,
-              payout_status:holdDays>0?"pending":"eligible",
+              payout_status:"pending",
               eligible_at:eligibleAt,
               updated_at:now
             });
@@ -553,6 +568,26 @@ Deno.serve(async(req:Request)=>{
       const {data:p}=await admin.from("ranova_seller_payouts").select("*").eq("id",id).maybeSingle();
       if(!p)return response(h,404,{ok:false,error:"Payout not found."});
       if(status==="paid"&&!payout_reference)return response(h,400,{ok:false,error:"Enter the payout transaction/reference before marking this payout paid."});
+      if(["eligible","processing","paid"].includes(status)){
+        const {data:delivery}=await admin.from("ranova_order_deliveries").select("delivery_status,delivered_at")
+          .eq("seller_order_id",p.seller_order_id).maybeSingle();
+        if(!delivery||delivery.delivery_status!=="delivered_confirmed"){
+          return response(h,409,{ok:false,error:"Seller payout cannot be released before delivery is confirmed by the buyer or RANOVA."});
+        }
+        if(p.eligible_at&&new Date(p.eligible_at).getTime()>Date.now()){
+          return response(h,409,{ok:false,error:"The payout hold period has not finished yet."});
+        }
+        const {data:so}=await admin.from("ranova_seller_orders").select("parent_order_id").eq("id",p.seller_order_id).maybeSingle();
+        if(so?.parent_order_id){
+          const [{data:refunds},{data:disputes}]=await Promise.all([
+            admin.from("ranova_marketplace_refunds").select("id").eq("customer_order_id",so.parent_order_id)
+              .in("status",["requested","under_review","approved","processing"]).limit(1),
+            admin.from("ranova_marketplace_disputes").select("id").eq("customer_order_id",so.parent_order_id)
+              .in("status",["open","awaiting_buyer","awaiting_seller","under_review"]).limit(1)
+          ]);
+          if(refunds?.length||disputes?.length)return response(h,409,{ok:false,error:"This payout is held because an open refund or dispute is still being reviewed."});
+        }
+      }
       const now=new Date().toISOString();
       const {error}=await admin.from("ranova_seller_payouts").update({
         payout_status:status,
@@ -735,6 +770,96 @@ Deno.serve(async(req:Request)=>{
       return response(h,200,{ok:true});
     }
 
+
+
+    if(action==="delivery_proof_url"){
+      if(!canOrderReview(actor.role))return response(h,403,{ok:false,error:"Order permission is required."});
+      const proofId=clean(b.proof_id,80);
+      const {data:proof}=await admin.from("ranova_delivery_proofs").select("id,storage_path").eq("id",proofId).maybeSingle();
+      if(!proof?.storage_path)return response(h,404,{ok:false,error:"Delivery proof not found."});
+      const {data,error}=await admin.storage.from("ranova-delivery-proof").createSignedUrl(proof.storage_path,600);
+      if(error||!data?.signedUrl)throw new Error("Could not open delivery proof.");
+      await log(actor.user.id,"delivery_proof_viewed","delivery_proof",proofId,{});
+      return response(h,200,{ok:true,url:data.signedUrl,expires_in:600});
+    }
+
+    if(action==="review_delivery_proof"){
+      if(!canOrderReview(actor.role))return response(h,403,{ok:false,error:"Order permission is required."});
+      const proofId=clean(b.proof_id,80),status=clean(b.status,30),note=clean(b.note,1200);
+      if(!["verified","rejected"].includes(status))return response(h,400,{ok:false,error:"Invalid proof review status."});
+      if(status==="rejected"&&!note)return response(h,400,{ok:false,error:"Explain why the proof is being rejected."});
+      const {data:proof}=await admin.from("ranova_delivery_proofs").select("*").eq("id",proofId).maybeSingle();
+      if(!proof)return response(h,404,{ok:false,error:"Delivery proof not found."});
+      const now=new Date().toISOString();
+      const {error}=await admin.from("ranova_delivery_proofs").update({
+        review_status:status,review_note:note||null,reviewed_at:now,reviewed_by:actor.user.id
+      }).eq("id",proofId);
+      if(error)throw error;
+      if(status==="verified"){
+        await admin.from("ranova_order_deliveries").update({
+          proof_verified:true,proof_verified_at:now,proof_verified_by:actor.user.id,updated_at:now
+        }).eq("id",proof.delivery_id);
+      }else{
+        const {count}=await admin.from("ranova_delivery_proofs").select("id",{count:"exact",head:true})
+          .eq("delivery_id",proof.delivery_id).eq("review_status","verified").neq("id",proofId);
+        if(!count)await admin.from("ranova_order_deliveries").update({
+          proof_verified:false,proof_verified_at:null,proof_verified_by:null,updated_at:now
+        }).eq("id",proof.delivery_id);
+      }
+      await admin.from("ranova_delivery_events").insert({
+        delivery_id:proof.delivery_id,seller_order_id:proof.seller_order_id,status:"proof_"+status,
+        actor_type:"admin",actor_user_id:actor.user.id,note:note||("Delivery proof "+status+".")
+      });
+      await log(actor.user.id,"delivery_proof_reviewed","delivery_proof",proofId,{status,note});
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="admin_confirm_delivery"){
+      if(!canOrderReview(actor.role))return response(h,403,{ok:false,error:"Order permission is required."});
+      const deliveryId=clean(b.delivery_id,80),note=clean(b.note,1800);
+      if(!note)return response(h,400,{ok:false,error:"Explain why RANOVA is confirming this delivery."});
+      const {data:delivery}=await admin.from("ranova_order_deliveries").select("*").eq("id",deliveryId).maybeSingle();
+      if(!delivery)return response(h,404,{ok:false,error:"Delivery record not found."});
+      if(delivery.delivery_status!=="delivered_pending_confirmation")return response(h,409,{ok:false,error:"Only a delivery awaiting confirmation can be confirmed by RANOVA."});
+      const {data:proofs}=await admin.from("ranova_delivery_proofs").select("*").eq("delivery_id",delivery.id).neq("review_status","rejected");
+      if(delivery.proof_required&&!(proofs||[]).length)return response(h,409,{ok:false,error:"A valid delivery proof must be present before RANOVA can confirm delivery."});
+
+      const {data:child}=await admin.from("ranova_seller_orders").select("*").eq("id",delivery.seller_order_id).maybeSingle();
+      if(!child)return response(h,404,{ok:false,error:"Seller order not found."});
+      const {data:order}=await admin.from("ranova_customer_orders").select("*").eq("id",child.parent_order_id).maybeSingle();
+      if(!order)return response(h,404,{ok:false,error:"Customer order not found."});
+      const now=new Date().toISOString();
+
+      const {error}=await admin.from("ranova_order_deliveries").update({
+        delivery_status:"delivered_confirmed",admin_confirmed_at:now,delivered_at:now,
+        proof_verified:true,proof_verified_at:now,proof_verified_by:actor.user.id,
+        delivery_note:note,updated_at:now
+      }).eq("id",delivery.id);
+      if(error)throw error;
+      if((proofs||[]).length){
+        await admin.from("ranova_delivery_proofs").update({
+          review_status:"verified",review_note:note,reviewed_at:now,reviewed_by:actor.user.id
+        }).eq("delivery_id",delivery.id).eq("review_status","submitted");
+      }
+      await admin.from("ranova_seller_orders").update({order_status:"delivered",updated_at:now}).eq("id",child.id);
+      await admin.from("ranova_delivery_events").insert({
+        delivery_id:delivery.id,seller_order_id:child.id,status:"delivered_confirmed",
+        actor_type:"admin",actor_user_id:actor.user.id,note
+      });
+
+      const {data:children}=await admin.from("ranova_seller_orders").select("order_status").eq("parent_order_id",order.id);
+      const terminal=(children||[]).every((x:any)=>["delivered","cancelled"].includes(x.order_status));
+      const anyDelivered=(children||[]).some((x:any)=>x.order_status==="delivered");
+      if(terminal&&anyDelivered)await admin.from("ranova_customer_orders").update({status:"delivered"}).eq("id",order.id);
+
+      await notifyBuyer(order,"delivery_confirmed","RANOVA confirmed delivery",
+        "RANOVA confirmed delivery for seller order "+child.order_ref+". Reason: "+note,
+        {seller_order_ref:child.order_ref,delivery_id:delivery.id});
+      await notifyOrderSellers(order,"delivery_confirmed","RANOVA confirmed a delivery",
+        "RANOVA confirmed delivery for seller order "+child.order_ref+".",{seller_order_ref:child.order_ref,delivery_id:delivery.id});
+      await log(actor.user.id,"delivery_confirmed_by_admin","order_delivery",delivery.id,{seller_order_ref:child.order_ref,note});
+      return response(h,200,{ok:true});
+    }
 
     if(action==="review_refund"){
       if(!canOrderReview(actor.role)&&!canFinance(actor.role))return response(h,403,{ok:false,error:"Order-support permission is required."});
