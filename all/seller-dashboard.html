@@ -380,8 +380,8 @@ function nextOrderActions(o){
     new:[["confirmed","Confirm order"],["cancelled","Cancel"]],
     confirmed:[["preparing","Start preparing"],["cancelled","Cancel"]],
     preparing:[["ready_for_dispatch","Mark ready"],["cancelled","Cancel"]],
-    ready_for_dispatch:[["dispatched","Mark dispatched"],["cancelled","Cancel"]],
-    dispatched:[["delivered","Mark delivered"]],
+    ready_for_dispatch:[["cancelled","Cancel"]],
+    dispatched:[],
     return_requested:[["returned","Mark returned"]]
   };
   return map[o.order_status]||[];
@@ -408,7 +408,7 @@ function sellerRuleLabel(o){
 async function quoteOrder(o,button){
   var subtotal=prompt("Product subtotal (GHS)",o.subtotal==null?"":o.subtotal);
   if(subtotal===null)return;
-  var delivery=prompt("Delivery fee (GHS). Enter 0 if none.",o.delivery_fee==null?"0":o.delivery_fee);
+  var delivery=prompt("Delivery fee (GHS). Enter 0 if none. Use the Delivery tab when a saved fixed/free delivery zone applies.",o.delivery_fee==null?"0":o.delivery_fee);
   if(delivery===null)return;
   var note=prompt("Seller note (optional)",o.seller_note||"");
   var subNum=Number(subtotal),delNum=Number(delivery);
