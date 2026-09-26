@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RANOVA Seller Dashboard</title>
+<meta name="theme-color" content="#116a52">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+:root{--green:#103f34;--green2:#116a52;--orange:#ff5a2d;--ink:#15342e;--muted:#687a74;--line:#dfe8e4;--soft:#f5f8f6;--cream:#fff9ed;--lav:#f4efff;--blue:#edf5ff}
+html{scroll-behavior:smooth}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:linear-gradient(180deg,#f6f9f7,#f8f7fb);color:var(--ink)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:none!important}.wrap{width:min(1180px,calc(100% - 28px));margin:auto}
+.top{position:sticky;top:0;z-index:50;background:rgba(16,63,52,.97);color:#fff;border-bottom:1px solid #ffffff18;backdrop-filter:blur(12px)}
+.top .wrap{height:68px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:950;letter-spacing:.02em}.topnav{display:flex;gap:7px;align-items:center}.topnav a,.topnav button{min-height:38px;padding:0 12px;border-radius:999px;border:1px solid #ffffff2e;background:transparent;color:#fff;text-decoration:none;font-size:10px;font-weight:850}
+.hero{padding:34px 0 20px;background:linear-gradient(135deg,#eaf8f2 0,#fff9ec 52%,#f4efff 100%)}.kicker{color:var(--green2);font-size:10px;font-weight:950;letter-spacing:.14em}.hero h1{font-size:clamp(31px,5vw,52px);line-height:1;margin:7px 0 10px;letter-spacing:-.04em}.hero p{margin:0;max-width:780px;color:var(--muted);font-size:12px;line-height:1.65}
+.shell{display:grid;grid-template-columns:210px minmax(0,1fr);gap:18px;padding:20px 0 70px}.side{align-self:start;position:sticky;top:88px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:10px;box-shadow:0 10px 28px rgba(11,70,53,.05)}
+.side button{width:100%;min-height:43px;border:0;border-radius:12px;background:transparent;text-align:left;padding:0 12px;color:var(--ink);font-size:11px;font-weight:850}.side button.active{background:#eaf8f2;color:var(--green2)}
+.main{min-width:0}.panel{display:none}.panel.active{display:block}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 10px 30px rgba(11,70,53,.05)}.card h2,.card h3{margin:0 0 8px}.card>p{margin:0;color:var(--muted);font-size:11px;line-height:1.55}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.metric{padding:16px;border:1px solid var(--line);border-radius:17px;background:#fff}.metric small{color:var(--muted);font-size:9px}.metric strong{display:block;margin-top:6px;font-size:25px}
+.banner{padding:17px;border-radius:18px;background:linear-gradient(135deg,#103f34,#156f57 58%,#6c6bc8);color:#fff;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:14px}.banner b{font-size:15px}.banner p{margin:5px 0 0;color:#d6e6e0;font-size:10px}.banner a{white-space:nowrap;color:#123d33;background:#fff;text-decoration:none;border-radius:999px;padding:10px 14px;font-size:10px;font-weight:900}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:grid;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:10px;font-weight:900}.field input,.field select,.field textarea{width:100%;border:1px solid #d7e3de;border-radius:11px;padding:10px 11px;outline:none;background:#fff;color:var(--ink)}.field input,.field select{height:43px}.field textarea{min-height:92px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#2a9178;box-shadow:0 0 0 3px #e1f3ec}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.btn{min-height:42px;border-radius:999px;padding:0 15px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:10px;font-weight:900}.btn.primary{background:var(--orange);border-color:var(--orange);color:#fff}.btn.green{background:var(--green2);border-color:var(--green2);color:#fff}.btn.soft{background:#eef7f3}.btn[disabled]{opacity:.5;cursor:wait}
+.msg{display:none;margin:0 0 12px;padding:11px 12px;border-radius:11px;background:#fff1ec;color:#89451f;font-size:10px;font-weight:750}.msg.good{background:#eaf8f2;color:#176047}
+.assets{display:grid;grid-template-columns:1fr 1fr;gap:12px}.asset{border:1px solid var(--line);border-radius:14px;padding:12px}.asset b{font-size:10px}.asset small{display:block;color:var(--muted);font-size:8px;margin:3px 0 8px}.asset-preview{width:100%;height:120px;border-radius:12px;background:#f4f7f5;display:grid;place-items:center;overflow:hidden;margin-bottom:8px;color:#82908b;font-size:9px}.asset-preview img{width:100%;height:100%;object-fit:cover}.asset.logo .asset-preview{height:120px}.asset.logo .asset-preview img{object-fit:contain;padding:10px}
+.locked{padding:22px;border:1px dashed #cbd9d3;border-radius:16px;background:#fafcfb;text-align:center;color:#6e7f79;font-size:11px;line-height:1.55}.locked b{display:block;color:var(--ink);font-size:13px;margin-bottom:5px}
+.product-list,.order-list{display:grid;gap:9px;margin-top:13px}.product-row,.order-row{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid #e4ebe8;border-radius:13px}.product-row img{width:60px;height:60px;border-radius:10px;object-fit:contain;background:#f5f8f6}.product-row b,.order-row b{font-size:11px}.product-row small,.order-row small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.4}.row-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.row-actions button{min-height:33px;padding:0 9px;border:1px solid #d8e3df;background:#fff;border-radius:999px;font-size:8px;font-weight:900}.chip{display:inline-flex;margin-top:5px;padding:5px 7px;border-radius:999px;background:#eef6f3;color:#27594b;font-size:8px;font-weight:900}.chip.pending_review{background:#fff5e8;color:#915d18}.chip.active{background:#e8f7ef;color:#0c6d47}.chip.rejected{background:#fff0ee;color:#a0473e}.chip.paused{background:#f0f0f0;color:#666}
+.product-editor{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:15px}.product-editor.open{display:block}.image-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hint{font-size:8px;color:#788983;line-height:1.5}.empty{padding:22px;text-align:center;color:#7b8a84;font-size:10px;background:#fafcfb;border:1px dashed #d4ded9;border-radius:13px}
+.order-row{grid-template-columns:minmax(0,1.3fr) .8fr .8fr}.status{font-size:8px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eef6f3;color:#28604f;justify-self:start}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto}.side button{width:auto;white-space:nowrap}.metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap"><div class="brand">RANOVA SELLER DASHBOARD</div><div class="topnav"><a href="./seller-center.html">Verification</a><a href="./">Marketplace</a><button id="signOut">Sign out</button></div></div></div>
+<section class="hero"><div class="wrap"><div class="kicker">STORE MANAGEMENT</div><h1>Build and manage your RANOVA store.</h1><p>Set up your public storefront, add products, control wholesale pricing and stock, and keep track of marketplace orders from one workspace.</p></div></section>
+
+<main class="wrap">
+  <div id="gate" class="card" style="margin-top:20px"><div class="locked"><b>Checking your seller account…</b>Please wait while RANOVA verifies your Seller Center session.</div></div>
+
+  <div id="dashboard" class="shell hide">
+    <aside class="side">
+      <button class="navbtn active" data-panel="overview">Overview</button>
+      <button class="navbtn" data-panel="store">Store Builder</button>
+      <button class="navbtn" data-panel="products">Products</button>
+      <button class="navbtn" data-panel="orders">Orders</button>
+    </aside>
+
+    <section class="main">
+      <div id="panel-overview" class="panel active">
+        <div id="storeBanner" class="banner"><div><b id="welcomeName">Seller Dashboard</b><p id="welcomeText">Complete your store and start preparing products for the marketplace.</p></div><a id="previewStore" href="#" target="_blank" style="display:none">View public store</a></div>
+        <div class="metrics">
+          <div class="metric"><small>Products</small><strong id="mProducts">0</strong></div>
+          <div class="metric"><small>Live products</small><strong id="mActive">0</strong></div>
+          <div class="metric"><small>Awaiting review</small><strong id="mPending">0</strong></div>
+          <div class="metric"><small>Open orders</small><strong id="mOrders">0</strong></div>
+        </div>
+        <div class="card"><h2>Seller checklist</h2><p>Your verification has to remain approved. Build your store profile, add clear product information, upload genuine product photos and submit products for review before they become public.</p></div>
+      </div>
+
+      <div id="panel-store" class="panel">
+        <div class="card">
+          <h2>Store Builder</h2><p>Create the public identity customers will see when they visit your RANOVA store.</p>
+          <div id="storeMsg" class="msg"></div>
+          <form id="storeForm" class="form-grid" style="margin-top:14px">
+            <div class="field"><label>Store name</label><input id="storeName" required maxlength="120"></div>
+            <div class="field"><label>Store web address</label><input id="storeSlug" maxlength="80" placeholder="your-store-name"></div>
+            <div class="field full"><label>Short tagline</label><input id="storeTagline" maxlength="180" placeholder="Example: Reliable wholesale electrical supplies"></div>
+            <div class="field full"><label>Store description</label><textarea id="storeDescription" maxlength="2500" placeholder="Tell customers what your business supplies and what makes your store dependable."></textarea></div>
+            <div class="field"><label>Public phone</label><input id="storePhone" inputmode="tel"></div>
+            <div class="field"><label>Public email</label><input id="storeEmail" type="email"></div>
+            <div class="field full"><label>Business / fulfilment location</label><input id="storeLocation" maxlength="180"></div>
+            <div class="field full"><label>Fulfilment summary</label><textarea id="storeFulfilment" maxlength="700" placeholder="Example: Orders are prepared from our Accra warehouse. Delivery arrangements are confirmed per order."></textarea></div>
+            <div class="field full"><label>Return policy summary</label><textarea id="storeReturns" maxlength="700" placeholder="Describe your store's applicable return conditions accurately."></textarea></div>
+            <div class="field full"><label>Minimum order note</label><input id="storeMinimum" maxlength="300" placeholder="Example: MOQ varies by product. Contact us for carton pricing."></div>
+          </form>
+
+          <div class="assets" style="margin-top:14px">
+            <div class="asset logo"><b>Store logo</b><small>PNG, JPG or WebP. Maximum 5 MB.</small><div id="logoPreview" class="asset-preview">No logo uploaded</div><input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadLogo" class="btn soft" type="button">Upload logo</button></div>
+            <div class="asset"><b>Store banner</b><small>Wide landscape image works best. Maximum 5 MB.</small><div id="bannerPreview" class="asset-preview">No banner uploaded</div><input id="bannerFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadBanner" class="btn soft" type="button">Upload banner</button></div>
+          </div>
+          <div class="actions"><button id="saveStore" class="btn green" type="button">Save store</button><button id="publishStore" class="btn primary" type="button">Publish store</button><button id="pauseStore" class="btn" type="button">Pause store</button></div>
+          <div class="hint" style="margin-top:9px">Publishing only succeeds for approved sellers with a store description, location and public contact method.</div>
+        </div>
+      </div>
+
+      <div id="panel-products" class="panel">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products</h2><p>Add products with clear names, genuine images, wholesale pricing or enquiry pricing, MOQ and stock status.</p></div><button id="newProduct" class="btn green" type="button">+ Add product</button></div>
+          <div id="productMsg" class="msg" style="margin-top:12px"></div>
+          <div id="productList" class="product-list"><div class="empty">No seller products yet.</div></div>
+
+          <div id="productEditor" class="product-editor">
+            <h3 id="productEditorTitle">Add product</h3>
+            <input id="productId" type="hidden">
+            <div class="form-grid">
+              <div class="field"><label>Product name</label><input id="productName" maxlength="180"></div>
+              <div class="field"><label>SKU / seller code</label><input id="productSku" maxlength="100"></div>
+              <div class="field"><label>Category</label><input id="productCategory" maxlength="100" placeholder="Example: Electrical & Lighting"></div>
+              <div class="field"><label>Unit label</label><input id="productUnit" maxlength="60" placeholder="piece, carton, set, bag"></div>
+              <div class="field"><label>Price (GHS)</label><input id="productPrice" type="number" min="0" step="0.01" placeholder="Leave blank for enquiry pricing"></div>
+              <div class="field"><label>Minimum order quantity</label><input id="productMoq" type="number" min="1" value="1"></div>
+              <div class="field"><label>Stock quantity</label><input id="productStockQty" type="number" min="0" placeholder="Optional"></div>
+              <div class="field"><label>Stock status</label><select id="productStockStatus"><option value="confirm_on_enquiry">Confirm on enquiry</option><option value="in_stock">In stock</option><option value="low_stock">Low stock</option><option value="out_of_stock">Out of stock</option><option value="preorder">Pre-order</option></select></div>
+              <div class="field full"><label>Short selling sentence</label><input id="productShort" maxlength="300"></div>
+              <div class="field full"><label>Full product description</label><textarea id="productDescription" maxlength="2500"></textarea></div>
+            </div>
+            <div class="image-grid" style="margin-top:12px">
+              <div class="asset"><b>Main product image</b><small>Required before product review. Use a clear, genuine product photo.</small><div id="productMainPreview" class="asset-preview">No main image</div><input id="productMainFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
+              <div class="asset"><b>Additional images</b><small>Up to 5 additional images per save.</small><input id="productGalleryFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple><div class="hint" style="margin-top:7px">Dimensions, details and lifestyle images can be added here when available.</div></div>
+            </div>
+            <div class="actions"><button id="saveProduct" class="btn green" type="button">Save product</button><button id="cancelProduct" class="btn" type="button">Cancel</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-orders" class="panel">
+        <div class="card"><h2>Orders</h2><p>Marketplace orders routed to your store will appear here. Payment and dispatch actions will be expanded in the next seller-order workflow.</p><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+(function(){
+"use strict";
+var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co";
+var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
+var ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-store";
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+var session=null,state=null,logoUrl="",bannerUrl="",productMainUrl="",productGalleryUrls=[];
+
+function el(id){return document.getElementById(id)}
+function clean(v){return String(v==null?"":v)}
+function esc(v){return clean(v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
+function pretty(v){return clean(v).replace(/_/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
+function money(v){return v==null||v===""?"Ask for price":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function msg(host,text,good){host.textContent=text;host.classList.toggle("good",!!good);host.style.display="block"}
+function clearMsg(host){host.style.display="none";host.classList.remove("good")}
+function ext(name){var m=clean(name).match(/\.([a-zA-Z0-9]+)$/);return m?m[1].toLowerCase():"jpg"}
+
+async function api(body){
+  var token=session&&session.access_token;if(!token)throw new Error("Sign in through Seller Center.");
+  var r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token,"apikey":SUPABASE_KEY,"x-ranova-client":"ranova-site-v1"},body:JSON.stringify(body||{})});
+  var out=await r.json().catch(function(){return{}});
+  if(!r.ok||!out.ok)throw new Error(out.error||"Request failed.");
+  return out;
+}
+async function uploadAsset(file,folder){
+  if(!file)throw new Error("Choose an image first.");
+  if(file.size>5*1024*1024)throw new Error("Maximum image size is 5 MB.");
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error("Use a JPG, PNG or WebP image.");
+  var path=session.user.id+"/"+folder+"/"+Date.now()+"_"+Math.random().toString(36).slice(2,8)+"."+ext(file.name);
+  var up=await sb.storage.from("seller-store-assets").upload(path,file,{upsert:false,contentType:file.type});
+  if(up.error)throw up.error;
+  return sb.storage.from("seller-store-assets").getPublicUrl(path).data.publicUrl;
+}
+function preview(host,url,contain){
+  host.innerHTML=url?'<img src="'+esc(url)+'" alt="">':(contain?"No logo uploaded":"No banner uploaded");
+}
+function setPanel(name){
+  [].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.classList.toggle("active",b.dataset.panel===name)});
+  [].slice.call(document.querySelectorAll(".panel")).forEach(function(p){p.classList.toggle("active",p.id==="panel-"+name)});
+}
+[].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.onclick=function(){setPanel(this.dataset.panel)}});
+
+async function refresh(){
+  state=await api({action:"dashboard"});
+  if(!state.approved){
+    el("gate").innerHTML='<div class="locked"><b>Seller verification is not approved yet.</b>Complete the Seller Center verification steps and wait for RANOVA approval before store-management tools unlock.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Return to Seller Center →</a></div></div>';
+    el("dashboard").classList.add("hide");return;
+  }
+  el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
+  renderOverview();fillStore();renderProducts();renderOrders();
+}
+function renderOverview(){
+  var app=state.application||{},store=state.store||{},c=state.counts||{};
+  el("welcomeName").textContent=store.store_name||app.business_name||"Seller Dashboard";
+  el("welcomeText").textContent=store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your seller account is approved. Finish the Store Builder and prepare products for review.";
+  el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mOrders").textContent=c.open_orders||0;
+  if(store.slug&&store.store_status==="active"){el("previewStore").href="./seller-store.html?store="+encodeURIComponent(store.slug);el("previewStore").style.display="inline-flex"}else el("previewStore").style.display="none";
+}
+function fillStore(){
+  var s=state.store||{},a=state.application||{};
+  el("storeName").value=s.store_name||a.business_name||"";
+  el("storeSlug").value=s.slug||"";
+  el("storeTagline").value=s.tagline||"";el("storeDescription").value=s.description||"";
+  el("storePhone").value=s.public_phone||a.phone||"";el("storeEmail").value=s.public_email||a.email||"";
+  el("storeLocation").value=s.business_location||a.business_location||"";
+  el("storeFulfilment").value=s.fulfilment_summary||"";el("storeReturns").value=s.return_policy_summary||"";el("storeMinimum").value=s.minimum_order_note||"";
+  logoUrl=s.logo_url||"";bannerUrl=s.banner_url||"";preview(el("logoPreview"),logoUrl,true);preview(el("bannerPreview"),bannerUrl,false);
+}
+function storePayload(status){
+  return{action:"save_store",store_status:status,store_name:el("storeName").value,slug:el("storeSlug").value,tagline:el("storeTagline").value,description:el("storeDescription").value,public_phone:el("storePhone").value,public_email:el("storeEmail").value,business_location:el("storeLocation").value,fulfilment_summary:el("storeFulfilment").value,return_policy_summary:el("storeReturns").value,minimum_order_note:el("storeMinimum").value,logo_url:logoUrl,banner_url:bannerUrl};
+}
+async function saveStore(status,button){
+  clearMsg(el("storeMsg"));var old=button.textContent;button.disabled=true;button.textContent="Saving…";
+  try{await api(storePayload(status));msg(el("storeMsg"),status==="active"?"Store published successfully.":"Store saved successfully.",true);await refresh();setPanel("store")}
+  catch(e){msg(el("storeMsg"),e.message||"Could not save store.")}
+  finally{button.disabled=false;button.textContent=old}
+}
+el("saveStore").onclick=function(){saveStore((state.store&&state.store.store_status)||"draft",this)};
+el("publishStore").onclick=function(){saveStore("active",this)};
+el("pauseStore").onclick=function(){saveStore("paused",this)};
+el("uploadLogo").onclick=async function(){var b=this,old=b.textContent;b.disabled=true;b.textContent="Uploading…";try{logoUrl=await uploadAsset(el("logoFile").files[0],"store");preview(el("logoPreview"),logoUrl,true);msg(el("storeMsg"),"Logo uploaded. Save the store to keep it.",true)}catch(e){msg(el("storeMsg"),e.message)}finally{b.disabled=false;b.textContent=old}};
+el("uploadBanner").onclick=async function(){var b=this,old=b.textContent;b.disabled=true;b.textContent="Uploading…";try{bannerUrl=await uploadAsset(el("bannerFile").files[0],"store");preview(el("bannerPreview"),bannerUrl,false);msg(el("storeMsg"),"Banner uploaded. Save the store to keep it.",true)}catch(e){msg(el("storeMsg"),e.message)}finally{b.disabled=false;b.textContent=old}};
+
+function statusChip(status){return '<span class="chip '+esc(status)+'">'+esc(pretty(status))+'</span>'}
+function renderProducts(){
+  var list=el("productList"),ps=state.products||[];
+  if(!ps.length){list.innerHTML='<div class="empty">No seller products yet. Use “Add product” to create your first listing.</div>';return}
+  list.innerHTML=ps.filter(function(p){return p.product_status!=="archived"}).map(function(p){
+    var img=p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="">':'<img alt="">';
+    var submit=(p.product_status==="draft"||p.product_status==="paused"||p.product_status==="rejected")?'<button data-action="submit" data-id="'+p.id+'">Submit for review</button>':'';
+    var pause=p.product_status==="active"?'<button data-action="pause" data-id="'+p.id+'">Pause</button>':'';
+    return '<div class="product-row">'+img+'<div><b>'+esc(p.name)+'</b><small>'+esc(p.category)+' · '+esc(money(p.price))+' · MOQ '+esc(p.moq)+' · '+esc(pretty(p.stock_status))+'</small>'+statusChip(p.product_status)+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':'')+'</div><div class="row-actions"><button data-action="edit" data-id="'+p.id+'">Edit</button>'+submit+pause+'<button data-action="archive" data-id="'+p.id+'">Archive</button></div></div>'
+  }).join("")||'<div class="empty">No current products.</div>';
+}
+function resetProduct(){
+  ["productId","productName","productSku","productCategory","productUnit","productPrice","productStockQty","productShort","productDescription"].forEach(function(id){el(id).value=""});
+  el("productMoq").value="1";el("productStockStatus").value="confirm_on_enquiry";productMainUrl="";productGalleryUrls=[];preview(el("productMainPreview"),"",false);el("productEditorTitle").textContent="Add product";
+}
+function openEditor(p){
+  resetProduct();el("productEditor").classList.add("open");
+  if(p){el("productEditorTitle").textContent="Edit product";el("productId").value=p.id;el("productName").value=p.name||"";el("productSku").value=p.sku||"";el("productCategory").value=p.category||"";el("productUnit").value=p.unit_label||"";el("productPrice").value=p.price==null?"":p.price;el("productMoq").value=p.moq||1;el("productStockQty").value=p.stock_quantity==null?"":p.stock_quantity;el("productStockStatus").value=p.stock_status||"confirm_on_enquiry";el("productShort").value=p.short_description||"";el("productDescription").value=p.description||"";productMainUrl=p.primary_image_url||"";productGalleryUrls=p.image_urls||[];preview(el("productMainPreview"),productMainUrl,false)}
+  el("productEditor").scrollIntoView({behavior:"smooth",block:"start"});
+}
+el("newProduct").onclick=function(){openEditor(null)};el("cancelProduct").onclick=function(){el("productEditor").classList.remove("open");resetProduct()};
+el("productList").onclick=async function(e){
+  var b=e.target.closest("button[data-action]");if(!b)return;var p=(state.products||[]).find(function(x){return x.id===b.dataset.id});if(!p)return;
+  if(b.dataset.action==="edit"){openEditor(p);return}
+  var action=b.dataset.action==="submit"?"submit_product":b.dataset.action==="pause"?"pause_product":"archive_product";
+  b.disabled=true;
+  try{await api({action:action,id:p.id});msg(el("productMsg"),action==="submit_product"?"Product submitted for RANOVA review.":"Product updated.",true);await refresh();setPanel("products")}
+  catch(err){msg(el("productMsg"),err.message)}
+  finally{b.disabled=false}
+};
+el("saveProduct").onclick=async function(){
+  var b=this,old=b.textContent;clearMsg(el("productMsg"));b.disabled=true;b.textContent="Saving…";
+  try{
+    var mainFile=el("productMainFile").files[0];if(mainFile){productMainUrl=await uploadAsset(mainFile,"products");preview(el("productMainPreview"),productMainUrl,false)}
+    var gallery=[].slice.call(el("productGalleryFiles").files||[]).slice(0,5);
+    for(var i=0;i<gallery.length;i++)productGalleryUrls.push(await uploadAsset(gallery[i],"products"));
+    productGalleryUrls=productGalleryUrls.slice(0,8);
+    await api({action:"save_product",id:el("productId").value,name:el("productName").value,sku:el("productSku").value,category:el("productCategory").value,unit_label:el("productUnit").value,price:el("productPrice").value,moq:el("productMoq").value,stock_quantity:el("productStockQty").value,stock_status:el("productStockStatus").value,short_description:el("productShort").value,description:el("productDescription").value,primary_image_url:productMainUrl,image_urls:productGalleryUrls});
+    msg(el("productMsg"),"Product saved. Submit it for review when the information and images are ready.",true);el("productEditor").classList.remove("open");resetProduct();await refresh();setPanel("products");
+  }catch(e){msg(el("productMsg"),e.message)}
+  finally{b.disabled=false;b.textContent=old}
+};
+
+function renderOrders(){
+  var host=el("orderList"),orders=state.orders||[];
+  if(!orders.length){host.innerHTML='<div class="empty">No marketplace orders have been routed to this store yet.</div>';return}
+  host.innerHTML=orders.map(function(o){return '<div class="order-row"><div><b>'+esc(o.order_ref)+'</b><small>'+esc(o.buyer_name||"Customer")+' · '+esc(o.delivery_location||"Delivery location pending")+'</small></div><div><span class="status">'+esc(pretty(o.order_status))+'</span><small>'+esc(o.item_count)+' item(s)</small></div><div><b>'+esc(money(o.total))+'</b><small>'+esc(pretty(o.payment_status))+'</small></div></div>'}).join("");
+}
+
+el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./seller-center.html"};
+async function boot(){
+  var gs=await sb.auth.getSession();session=gs.data.session;
+  if(!session){el("gate").innerHTML='<div class="locked"><b>Sign in to Seller Center first.</b>Your seller dashboard uses the same protected seller account.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Open Seller Center →</a></div></div>';return}
+  try{await refresh()}catch(e){el("gate").innerHTML='<div class="locked"><b>Seller Dashboard could not load.</b>'+esc(e.message||"Return to Seller Center and try again.")+'</div>'}
+}
+sb.auth.onAuthStateChange(function(_event,newSession){session=newSession;if(!session)location.href="./seller-center.html"});
+boot();
+})();
+</script>
+</body>
+</html>
