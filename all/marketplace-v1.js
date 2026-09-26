@@ -39,6 +39,56 @@ function addTrust(d){
   sec.innerHTML='<div class="container"><div class="rpe-market-trust-grid"><div class="rpe-market-trust-item"><b>Real RANOVA catalogue</b><span>Existing products stay intact while wholesale tools are added around them.</span></div><div class="rpe-market-trust-item"><b>Bulk quotation</b><span>Business buyers can send quantity and delivery requirements before committing.</span></div><div class="rpe-market-trust-item"><b>Supplier onboarding</b><span>New suppliers apply first; marketplace verification will be introduced carefully.</span></div><div class="rpe-market-trust-item"><b>Mobile-first sourcing</b><span>Designed for traders and business buyers using phones and limited data.</span></div></div></div>';
   anchor.insertAdjacentElement("afterend",sec);
 }
+
+function addSellerMarketplace(d){
+  if(d.getElementById("rpeSellerMarketplace"))return;
+  var anchor=d.getElementById("rpeMarketTrust")||d.getElementById("rpeMarketHero");
+  if(!anchor)return;
+
+  var sec=d.createElement("section");
+  sec.id="rpeSellerMarketplace";
+  sec.className="rpe-seller-marketplace";
+  sec.innerHTML='<div class="container"><div class="rpe-business-head"><div><span class="eyebrow">VERIFIED MARKETPLACE SELLERS</span><h2>More stores, one RANOVA marketplace</h2></div><p>Approved sellers appear here only after RANOVA verification and product moderation.</p></div><div id="rpeSellerStoreGrid" class="rpe-seller-store-grid"></div><div id="rpeSellerProductShelf" class="rpe-seller-product-shelf"></div></div>';
+  anchor.insertAdjacentElement("afterend",sec);
+
+  var base="https://igaerssbzobutlwvjfwt.supabase.co/rest/v1/";
+  var key="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
+  var headers={apikey:key,Authorization:"Bearer "+key};
+
+  Promise.all([
+    fetch(base+"ranova_seller_stores?select=id,store_name,slug,tagline,logo_url,banner_url,business_location&store_status=eq.active&order=created_at.desc&limit=12",{headers:headers}).then(function(r){return r.ok?r.json():[]}),
+    fetch(base+"ranova_seller_products?select=id,store_id,name,category,short_description,price,currency,moq,stock_status,primary_image_url&product_status=eq.active&order=created_at.desc&limit=12",{headers:headers}).then(function(r){return r.ok?r.json():[]})
+  ]).then(function(rows){
+    var stores=Array.isArray(rows[0])?rows[0]:[];
+    var products=Array.isArray(rows[1])?rows[1]:[];
+    if(!stores.length){sec.remove();return}
+    var storeMap={};stores.forEach(function(x){storeMap[x.id]=x});
+
+    var storeGrid=d.getElementById("rpeSellerStoreGrid");
+    storeGrid.innerHTML=stores.map(function(st){
+      return '<a class="rpe-seller-store-card" href="./seller-store.html?store='+encodeURIComponent(st.slug)+'" target="_top">'+
+        '<div class="rpe-seller-store-media">'+
+          (st.banner_url?'<img class="banner" src="'+escapeHtml(st.banner_url)+'" alt="" loading="lazy">':'')+
+          '<div class="logo">'+(st.logo_url?'<img src="'+escapeHtml(st.logo_url)+'" alt="" loading="lazy">':escapeHtml((st.store_name||"R").charAt(0)))+'</div>'+
+        '</div>'+
+        '<div class="rpe-seller-store-copy"><span class="rpe-verified-chip">✓ Verified seller</span><h3>'+escapeHtml(st.store_name)+'</h3><p>'+escapeHtml(st.tagline||st.business_location||"RANOVA marketplace seller")+'</p><em>Visit store →</em></div>'+
+      '</a>';
+    }).join("");
+
+    var sellerProducts=products.filter(function(p){return storeMap[p.store_id]}).slice(0,8);
+    var shelf=d.getElementById("rpeSellerProductShelf");
+    if(!sellerProducts.length){shelf.remove();return}
+    shelf.innerHTML='<div class="rpe-seller-shelf-head"><h3>New from verified sellers</h3><span>Seller products are reviewed before going live.</span></div><div class="rpe-seller-product-grid">'+sellerProducts.map(function(p){
+      var st=storeMap[p.store_id];
+      var price=p.price==null?"Ask seller for price":"GHS "+Number(p.price).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      return '<a class="rpe-seller-product-card" href="./seller-store.html?store='+encodeURIComponent(st.slug)+'" target="_top">'+
+        '<div class="image">'+(p.primary_image_url?'<img src="'+escapeHtml(p.primary_image_url)+'" alt="'+escapeHtml(p.name)+'" loading="lazy">':'')+'</div>'+
+        '<div class="copy"><small>'+escapeHtml(st.store_name)+'</small><h4>'+escapeHtml(p.name)+'</h4><p>'+escapeHtml(p.short_description||p.category||"")+'</p><div><b>'+escapeHtml(price)+'</b><span>MOQ '+escapeHtml(p.moq||1)+'</span></div></div>'+
+      '</a>';
+    }).join("")+'</div>';
+  }).catch(function(){sec.remove()});
+}
+
 function addBusinessHub(d){
   if(d.getElementById("rpeBusinessHub"))return;
   var products=d.getElementById("products");if(!products)return;
@@ -80,7 +130,7 @@ function addSupplierCTA(d){
 }
 function enhance(){
   var d=idoc();if(!d||!d.body)return false;
-  addStyles(d);addNav(d);addHero(d);addTrust(d);addBusinessHub(d);decorateProducts(d);addSupplierCTA(d);
+  addStyles(d);addNav(d);addHero(d);addTrust(d);addSellerMarketplace(d);addBusinessHub(d);decorateProducts(d);addSupplierCTA(d);
   var grid=d.getElementById("grid");
   if(grid&&!grid.__rpeMarketObserver){var o=new MutationObserver(function(){requestAnimationFrame(function(){decorateProducts(d)})});o.observe(grid,{childList:true,subtree:true});grid.__rpeMarketObserver=o}
   return true;
