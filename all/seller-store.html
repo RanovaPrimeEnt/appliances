@@ -276,6 +276,15 @@ async function boot(){
   if(store.public_email)links.push('<a href="mailto:'+esc(store.public_email)+'">Email</a>');
   el("contact").innerHTML=links.join("");
   el("loading").style.display="none";el("page").style.display="block";render();renderCart();
+  var qp=new URLSearchParams(location.search),deepProduct=qp.get("product"),deepQty=Number(qp.get("qty")||0);
+  if(deepProduct){
+    var dp=products.find(function(x){return x.id===deepProduct});
+    if(dp&&dp.stock_status!=="out_of_stock"){
+      var min=Number(dp.moq||1),q=Number.isFinite(deepQty)&&deepQty>0?Math.max(min,Math.floor(deepQty)):min;
+      if(dp.stock_quantity!=null)q=Math.min(q,Number(dp.stock_quantity));
+      if(q>=min){cart[dp.id]=q;saveCart();render();renderCart();openCart()}
+    }
+  }
 }
 el("search").addEventListener("input",render);el("buyerCountry").addEventListener("change",loadFeePreview);el("paymentMethod").addEventListener("change",loadFeePreview);
 el("topCart").onclick=el("cartFab").onclick=openCart;el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
