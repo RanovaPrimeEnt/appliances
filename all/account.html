@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>RANOVA Buyer Account</title>
+<meta name="theme-color" content="#0b5c4d">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--g:#0b5c4d;--g2:#176f5e;--ink:#17362e;--muted:#6b7c76;--line:#dfe8e4;--soft:#f5f8f7;--danger:#a43d35}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#f7f9f8;color:var(--ink)}button,input,select,textarea{font:inherit}a{text-decoration:none;color:inherit}
+.top{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}.topin{max-width:1220px;margin:auto;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:950;color:var(--g)}.topnav{display:flex;gap:9px;align-items:center}.topnav a,.topnav button{border:0;background:transparent;font-size:10px;font-weight:900;color:var(--ink);cursor:pointer}.wrap{max-width:1220px;margin:auto;padding:24px 18px 60px}
+.hero{padding:24px;border-radius:22px;background:linear-gradient(120deg,#073c32,#0b5c4d);color:#fff}.hero small{color:#b9dbd1;font-weight:900}.hero h1{font-size:clamp(28px,4vw,42px);margin:6px 0}.hero p{color:#d7e9e4;max-width:780px;font-size:12px;line-height:1.6}
+.auth{max-width:520px;margin:18px auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px}.tabs button{border:0;border-radius:10px;padding:10px;font-weight:900;background:#edf3f0;color:var(--ink)}.tabs button.active{background:var(--g);color:#fff}
+.field{margin:10px 0}.field label{display:block;font-size:9px;font-weight:900;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}.primary,.secondary,.danger{border:0;border-radius:10px;padding:10px 13px;font-weight:900;cursor:pointer}.primary{background:var(--g);color:#fff}.secondary{background:#edf3f0;color:var(--g)}.danger{background:#fff0ef;color:var(--danger)}
+.msg{display:none;padding:10px;border-radius:10px;background:#fff3e3;color:#795818;font-size:10px;margin:10px 0}.msg.good{background:#ecf8f3;color:#24644f}
+.shell{display:none;grid-template-columns:220px minmax(0,1fr);gap:16px;margin-top:18px}.side{background:#fff;border:1px solid var(--line);border-radius:16px;padding:9px;height:max-content;position:sticky;top:70px}.side button{width:100%;text-align:left;border:0;background:transparent;border-radius:9px;padding:10px;font-weight:850;font-size:10px;color:var(--ink);cursor:pointer}.side button.active{background:#eaf4f0;color:var(--g)}.panel{display:none}.panel.active{display:block}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:17px;margin-bottom:13px}.card h2{font-size:16px;margin:0 0 6px}.card p{font-size:10px;color:var(--muted);line-height:1.55}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:13px}.metric{background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px}.metric small{display:block;color:var(--muted);font-size:8px}.metric strong{font-size:20px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.list{display:grid;gap:8px}.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:11px}.row b{font-size:11px}.row small{display:block;font-size:8px;color:var(--muted);margin-top:4px}.row img{width:54px;height:54px;object-fit:contain;background:#f4f7f5;border-radius:9px;float:left;margin-right:9px}.actions{display:flex;gap:6px;flex-wrap:wrap}.actions a,.actions button{font-size:8px;padding:7px 9px}.empty{padding:20px;text-align:center;border:1px dashed var(--line);border-radius:11px;color:var(--muted);font-size:10px}
+@media(max-width:760px){.shell{display:block}.side{position:static;display:flex;overflow:auto;margin-bottom:12px}.side button{width:auto;white-space:nowrap}.metrics{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.wrap{padding:14px 10px 45px}.topnav a{display:none}}
+</style>
+</head>
+<body>
+<header class="top"><div class="topin"><a class="brand" href="./">RANOVA BUYER</a><div class="topnav"><a href="./marketplace.html">Marketplace</a><a href="./order-status.html">Track order</a><button id="signOut" style="display:none">Sign out</button></div></div></header>
+<main class="wrap">
+<section class="hero"><small>BUYER ACCOUNT</small><h1>Your RANOVA marketplace in one place.</h1><p>Save products and stores, keep carts across devices, manage delivery addresses, review your marketplace order history, and control notification preferences. Guest checkout remains available.</p></section>
+
+<section id="authPanel" class="auth">
+  <div class="tabs"><button id="loginTab" class="active">Sign in</button><button id="signupTab">Create account</button></div>
+  <div id="authMsg" class="msg"></div>
+  <form id="authForm">
+    <div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" required></div>
+    <div class="field"><label>Password</label><input id="password" type="password" minlength="8" autocomplete="current-password" required></div>
+    <button id="authSubmit" class="primary" style="width:100%" type="submit">Sign in</button>
+  </form>
+  <p style="font-size:9px;color:var(--muted);line-height:1.5;margin-bottom:0">Buyer and seller access use Supabase Auth, but your buyer marketplace data is stored separately and protected by your authenticated user ID.</p>
+</section>
+
+<div id="shell" class="shell">
+  <aside class="side">
+    <button class="navbtn active" data-panel="overview">Overview</button>
+    <button class="navbtn" data-panel="saved">Saved products</button>
+    <button class="navbtn" data-panel="stores">Saved sellers</button>
+    <button class="navbtn" data-panel="carts">Carts</button>
+    <button class="navbtn" data-panel="orders">Orders</button>
+    <button class="navbtn" data-panel="addresses">Addresses</button>
+    <button class="navbtn" data-panel="recent">Recently viewed</button>
+    <button class="navbtn" data-panel="settings">Settings & security</button>
+  </aside>
+  <section>
+    <div id="panel-overview" class="panel active">
+      <div class="metrics"><div class="metric"><small>Saved products</small><strong id="mSaved">0</strong></div><div class="metric"><small>Saved sellers</small><strong id="mStores">0</strong></div><div class="metric"><small>Active carts</small><strong id="mCarts">0</strong></div><div class="metric"><small>Account orders</small><strong id="mOrders">0</strong></div></div>
+      <div class="card"><h2 id="welcome">Buyer account</h2><p>Orders placed while signed in are attached to this account automatically. Older guest orders can be claimed only with the original order phone number and Buyer Security Code.</p></div>
+      <div class="card"><h2>Claim an older guest order</h2><div id="claimMsg" class="msg"></div><div class="grid2"><div class="field"><label>Order reference</label><input id="claimRef" placeholder="RPE-..."></div><div class="field"><label>Order phone number</label><input id="claimPhone" inputmode="tel"></div><div class="field"><label>Buyer Security Code</label><input id="claimCode" maxlength="40"></div></div><button id="claimOrder" class="secondary">Claim verified order</button></div>
+    </div>
+
+    <div id="panel-saved" class="panel"><div class="card"><h2>Saved products</h2><div id="savedList" class="list"></div></div></div>
+    <div id="panel-stores" class="panel"><div class="card"><h2>Saved sellers</h2><div id="storesList" class="list"></div></div></div>
+    <div id="panel-carts" class="panel"><div class="card"><h2>Cross-device carts</h2><p>Each seller keeps a separate cart so seller-specific delivery and pricing remain clear.</p><div id="cartsList" class="list"></div></div></div>
+    <div id="panel-orders" class="panel"><div class="card"><h2>Marketplace order history</h2><div id="ordersList" class="list"></div></div><div class="card"><h2>Refund & dispute history</h2><div id="supportList" class="list"></div></div></div>
+
+    <div id="panel-addresses" class="panel">
+      <div class="card"><h2>Delivery addresses</h2><div id="addressMsg" class="msg"></div><input id="addressId" type="hidden"><div class="grid2">
+        <div class="field"><label>Label</label><input id="addressLabel" placeholder="Home, Office, Warehouse"></div>
+        <div class="field"><label>Recipient name</label><input id="addressName"></div>
+        <div class="field"><label>Phone</label><input id="addressPhone" inputmode="tel"></div>
+        <div class="field"><label>Country code</label><input id="addressCountry" maxlength="2" placeholder="GH"></div>
+        <div class="field" style="grid-column:1/-1"><label>Delivery address</label><textarea id="addressText" rows="3"></textarea></div>
+      </div><label style="font-size:9px"><input id="addressDefault" type="checkbox"> Make this my default delivery address</label><div class="actions" style="margin-top:10px"><button id="saveAddress" class="primary">Save address</button><button id="clearAddress" class="secondary">Clear</button></div></div>
+      <div class="card"><div id="addressesList" class="list"></div></div>
+    </div>
+
+    <div id="panel-recent" class="panel"><div class="card"><h2>Recently viewed</h2><div id="recentList" class="list"></div></div></div>
+    <div id="panel-settings" class="panel">
+      <div class="card"><h2>Profile</h2><div id="profileMsg" class="msg"></div><div class="grid2"><div class="field"><label>Full name</label><input id="profileName"></div><div class="field"><label>Phone</label><input id="profilePhone" inputmode="tel"></div><div class="field"><label>Default country code</label><input id="profileCountry" maxlength="2" placeholder="GH"></div><div class="field"><label>Account email</label><input id="profileEmail" disabled></div></div><button id="saveProfile" class="primary">Save profile</button></div>
+      <div class="card"><h2>Notifications</h2><label><input id="prefOrders" type="checkbox"> Email me important order updates</label><br><label><input id="prefPromo" type="checkbox"> Email me RANOVA promotions</label><br><label><input id="prefSeller" type="checkbox"> Updates from saved sellers</label><div style="margin-top:10px"><button id="savePrefs" class="secondary">Save preferences</button></div></div>
+      <div class="card"><h2>Account security</h2><p>Use a strong password that you do not reuse elsewhere.</p><div class="field"><label>New password</label><input id="newPassword" type="password" minlength="8" autocomplete="new-password"></div><button id="changePassword" class="danger">Change password</button><div id="securityMsg" class="msg"></div></div>
+    </div>
+  </section>
+</div>
+</main>
+<script>
+(function(){
+"use strict";
+var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co",SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-buyer-account",mode="login",session=null,state=null;
+function el(id){return document.getElementById(id)}function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
+function msg(node,text,good){node.textContent=text;node.style.display="block";node.classList.toggle("good",!!good)}function clear(node){node.style.display="none";node.textContent=""}
+function pretty(v){return String(v||"").replace(/_/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}function money(v){return v==null?"Pending quote":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function setMode(x){mode=x;el("loginTab").classList.toggle("active",x==="login");el("signupTab").classList.toggle("active",x==="signup");el("authSubmit").textContent=x==="login"?"Sign in":"Create buyer account";el("password").autocomplete=x==="login"?"current-password":"new-password";clear(el("authMsg"))}
+el("loginTab").onclick=function(){setMode("login")};el("signupTab").onclick=function(){setMode("signup")};
+document.querySelectorAll(".navbtn").forEach(function(b){b.onclick=function(){document.querySelectorAll(".navbtn").forEach(x=>x.classList.toggle("active",x===b));document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id==="panel-"+b.dataset.panel))}});
+async function accountApi(body){var r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":SUPABASE_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify(body||{})});var o=await r.json().catch(function(){return{}});if(!r.ok||!o.ok)throw new Error(o.error||"Request failed.");return o}
+el("authForm").onsubmit=async function(e){e.preventDefault();clear(el("authMsg"));var email=el("email").value.trim(),password=el("password").value,b=el("authSubmit");b.disabled=true;try{if(mode==="signup"){var x=await sb.auth.signUp({email:email,password:password});if(x.error)throw x.error;if(!x.data.session){msg(el("authMsg"),"Account created. Check your email to confirm it, then return here and sign in.",true);setMode("login");return}}else{var y=await sb.auth.signInWithPassword({email:email,password:password});if(y.error)throw y.error}await refreshSession()}catch(err){msg(el("authMsg"),err.message||"Could not continue.")}finally{b.disabled=false;b.textContent=mode==="login"?"Sign in":"Create buyer account"}};
+async function refreshSession(){var x=await sb.auth.getSession();session=x.data.session;if(!session){el("authPanel").style.display="block";el("shell").style.display="none";el("signOut").style.display="none";return}el("authPanel").style.display="none";el("shell").style.display=innerWidth<=760?"block":"grid";el("signOut").style.display="inline-block";await load()}
+el("signOut").onclick=async function(){await sb.auth.signOut();location.reload()};
+function productRow(x){var p=x.product;if(!p)return '<div class="row"><div><b>Unavailable product</b><small>This saved listing is no longer public.</small></div></div>';return '<div class="row"><div>'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="">':'')+'<b>'+esc(p.name)+'</b><small>'+esc(p.category||"")+' · '+esc(money(p.price))+'</small></div><div class="actions"><a class="secondary" href="./product.html?product='+encodeURIComponent(p.id)+'">View</a><button class="danger" data-remove-product="'+p.id+'">Remove</button></div></div>'}
+function render(){
+ var s=state,profile=s.profile||{},prefs=s.preferences||{};
+ el("mSaved").textContent=(s.saved_products||[]).length;el("mStores").textContent=(s.saved_stores||[]).length;el("mCarts").textContent=(s.carts||[]).filter(x=>Object.keys(x.items||{}).length).length;el("mOrders").textContent=(s.orders||[]).length;
+ el("welcome").textContent=profile.full_name?"Welcome, "+profile.full_name:"Your buyer account";
+ el("profileName").value=profile.full_name||"";el("profilePhone").value=profile.phone||"";el("profileCountry").value=profile.default_country_code||"";el("profileEmail").value=s.user.email||"";
+ el("prefOrders").checked=prefs.email_order_updates!==false;el("prefPromo").checked=!!prefs.email_promotions;el("prefSeller").checked=!!prefs.saved_seller_updates;
+ el("savedList").innerHTML=(s.saved_products||[]).length?s.saved_products.map(productRow).join(""):'<div class="empty">No saved products yet.</div>';
+ el("savedList").querySelectorAll("[data-remove-product]").forEach(b=>b.onclick=async()=>{await sb.from("ranova_buyer_saved_products").delete().eq("user_id",session.user.id).eq("product_id",b.dataset.removeProduct);await load()});
+ el("storesList").innerHTML=(s.saved_stores||[]).length?s.saved_stores.map(function(x){var p=x.store;return p?'<div class="row"><div><b>'+esc(p.store_name)+'</b><small>'+esc(p.tagline||"")+' · '+esc(p.country_name||p.country_code||"")+'</small></div><div class="actions"><a class="secondary" href="./seller-store.html?store='+encodeURIComponent(p.slug)+'">Open store</a><button class="danger" data-remove-store="'+p.id+'">Remove</button></div></div>':''}).join(""):'<div class="empty">No saved sellers yet.</div>';
+ el("storesList").querySelectorAll("[data-remove-store]").forEach(b=>b.onclick=async()=>{await sb.from("ranova_buyer_saved_stores").delete().eq("user_id",session.user.id).eq("store_id",b.dataset.removeStore);await load()});
+ el("cartsList").innerHTML=(s.carts||[]).length?s.carts.map(function(x){var count=Object.values(x.items||{}).reduce((a,b)=>a+Number(b||0),0),st=x.store;return '<div class="row"><div><b>'+esc(st?st.store_name:"Seller cart")+'</b><small>'+count+' unit(s) saved · '+new Date(x.updated_at).toLocaleString()+'</small></div>'+(st?'<div class="actions"><a class="primary" href="./seller-store.html?store='+encodeURIComponent(st.slug)+'">Continue cart</a></div>':'')+'</div>'}).join(""):'<div class="empty">No cross-device carts yet.</div>';
+ el("ordersList").innerHTML=(s.orders||[]).length?s.orders.map(function(o){return '<div class="row"><div><b>'+esc(o.order_ref)+'</b><small>'+new Date(o.created_at).toLocaleString()+' · '+esc(o.item_count||0)+' product(s) · '+esc(pretty(o.status))+' · Payment '+esc(pretty(o.payment_status))+'</small><small>'+esc(o.delivery_location||"")+'</small></div><div class="actions"><a class="secondary" href="./order-status.html?ref='+encodeURIComponent(o.order_ref)+'">Track</a></div></div>'}).join(""):'<div class="empty">No orders attached to this account yet.</div>';
+ var support=[...(s.refunds||[]).map(x=>({kind:"Refund",ref:x.refund_ref,status:x.status,text:x.reason_category,date:x.requested_at})),...(s.disputes||[]).map(x=>({kind:"Dispute",ref:x.dispute_ref,status:x.status,text:x.subject,date:x.opened_at}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
+ el("supportList").innerHTML=support.length?support.map(x=>'<div class="row"><div><b>'+esc(x.kind+" "+x.ref)+'</b><small>'+esc(x.text||"")+'</small></div><div><b>'+esc(pretty(x.status))+'</b><small>'+new Date(x.date).toLocaleString()+'</small></div></div>').join(""):'<div class="empty">No refunds or disputes linked to your account orders.</div>';
+ el("addressesList").innerHTML=(s.addresses||[]).length?s.addresses.map(a=>'<div class="row"><div><b>'+esc(a.label)+(a.is_default?" · Default":"")+'</b><small>'+esc(a.recipient_name)+' · '+esc(a.phone||"")+'</small><small>'+esc(a.address_text)+' · '+esc(a.country_name||a.country_code||"")+'</small></div><div class="actions"><button class="secondary" data-edit-address="'+a.id+'">Edit</button><button class="danger" data-delete-address="'+a.id+'">Delete</button></div></div>').join(""):'<div class="empty">No saved delivery addresses.</div>';
+ el("addressesList").querySelectorAll("[data-edit-address]").forEach(b=>b.onclick=function(){var a=s.addresses.find(x=>x.id===b.dataset.editAddress);if(!a)return;el("addressId").value=a.id;el("addressLabel").value=a.label||"";el("addressName").value=a.recipient_name||"";el("addressPhone").value=a.phone||"";el("addressCountry").value=a.country_code||"";el("addressText").value=a.address_text||"";el("addressDefault").checked=!!a.is_default});
+ el("addressesList").querySelectorAll("[data-delete-address]").forEach(b=>b.onclick=async()=>{await sb.from("ranova_buyer_addresses").delete().eq("id",b.dataset.deleteAddress);await load()});
+ el("recentList").innerHTML=(s.recent_products||[]).length?s.recent_products.map(productRow).join(""):'<div class="empty">Your recently viewed marketplace products will appear here.</div>';
+ el("recentList").querySelectorAll("[data-remove-product]").forEach(b=>b.style.display="none");
+}
+async function load(){state=await accountApi({action:"dashboard"});render()}
+el("claimOrder").onclick=async function(){clear(el("claimMsg"));try{await accountApi({action:"claim_guest_order",order_ref:el("claimRef").value.trim(),phone:el("claimPhone").value.trim(),buyer_security_code:el("claimCode").value.trim()});msg(el("claimMsg"),"Order securely linked to this buyer account.",true);el("claimRef").value=el("claimPhone").value=el("claimCode").value="";await load()}catch(e){msg(el("claimMsg"),e.message)}};
+el("saveProfile").onclick=async function(){clear(el("profileMsg"));var row={user_id:session.user.id,full_name:el("profileName").value.trim()||null,phone:el("profilePhone").value.trim()||null,default_country_code:el("profileCountry").value.trim().toUpperCase()||null,updated_at:new Date().toISOString()};var r=await sb.from("ranova_buyer_profiles").upsert(row,{onConflict:"user_id"});if(r.error)msg(el("profileMsg"),r.error.message);else{msg(el("profileMsg"),"Profile saved.",true);await load()}};
+el("savePrefs").onclick=async function(){var r=await sb.from("ranova_buyer_preferences").upsert({user_id:session.user.id,email_order_updates:el("prefOrders").checked,email_promotions:el("prefPromo").checked,saved_seller_updates:el("prefSeller").checked,updated_at:new Date().toISOString()},{onConflict:"user_id"});if(r.error)alert(r.error.message);else await load()};
+function clearAddress(){el("addressId").value=el("addressLabel").value=el("addressName").value=el("addressPhone").value=el("addressCountry").value=el("addressText").value="";el("addressDefault").checked=false}el("clearAddress").onclick=clearAddress;
+el("saveAddress").onclick=async function(){clear(el("addressMsg"));var id=el("addressId").value,name=el("addressName").value.trim(),text=el("addressText").value.trim();if(!name||!text)return msg(el("addressMsg"),"Recipient name and delivery address are required.");if(el("addressDefault").checked)await sb.from("ranova_buyer_addresses").update({is_default:false}).eq("user_id",session.user.id);var row={user_id:session.user.id,label:el("addressLabel").value.trim()||"Delivery address",recipient_name:name,phone:el("addressPhone").value.trim()||null,country_code:el("addressCountry").value.trim().toUpperCase()||null,address_text:text,is_default:el("addressDefault").checked,updated_at:new Date().toISOString()};var r=id?await sb.from("ranova_buyer_addresses").update(row).eq("id",id):await sb.from("ranova_buyer_addresses").insert(row);if(r.error)msg(el("addressMsg"),r.error.message);else{clearAddress();msg(el("addressMsg"),"Address saved.",true);await load()}};
+el("changePassword").onclick=async function(){clear(el("securityMsg"));var p=el("newPassword").value;if(p.length<8)return msg(el("securityMsg"),"Use a password of at least 8 characters.");var r=await sb.auth.updateUser({password:p});if(r.error)msg(el("securityMsg"),r.error.message);else{el("newPassword").value="";msg(el("securityMsg"),"Password updated.",true)}};
+sb.auth.onAuthStateChange(function(){setTimeout(refreshSession,0)});refreshSession();
+})();
+</script>
+</body></html>
