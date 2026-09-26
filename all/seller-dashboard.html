@@ -26,9 +26,9 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 .locked{padding:22px;border:1px dashed #cbd9d3;border-radius:16px;background:#fafcfb;text-align:center;color:#6e7f79;font-size:11px;line-height:1.55}.locked b{display:block;color:var(--ink);font-size:13px;margin-bottom:5px}
 .product-list,.order-list{display:grid;gap:9px;margin-top:13px}.product-row,.order-row{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid #e4ebe8;border-radius:13px}.product-row img{width:60px;height:60px;border-radius:10px;object-fit:contain;background:#f5f8f6}.product-row b,.order-row b{font-size:11px}.product-row small,.order-row small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.4}.row-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.row-actions button{min-height:33px;padding:0 9px;border:1px solid #d8e3df;background:#fff;border-radius:999px;font-size:8px;font-weight:900}.chip{display:inline-flex;margin-top:5px;padding:5px 7px;border-radius:999px;background:#eef6f3;color:#27594b;font-size:8px;font-weight:900}.chip.pending_review{background:#fff5e8;color:#915d18}.chip.active{background:#e8f7ef;color:#0c6d47}.chip.rejected{background:#fff0ee;color:#a0473e}.chip.paused{background:#f0f0f0;color:#666}
 .product-editor{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:15px}.product-editor.open{display:block}.image-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hint{font-size:8px;color:#788983;line-height:1.5}.empty{padding:22px;text-align:center;color:#7b8a84;font-size:10px;background:#fafcfb;border:1px dashed #d4ded9;border-radius:13px}
-.order-row{grid-template-columns:minmax(0,1.3fr) .8fr .8fr}.status{font-size:8px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eef6f3;color:#28604f;justify-self:start}.order-items-mini{margin-top:6px;display:grid;gap:3px}.order-items-mini span{font-size:8px;color:var(--muted)}.order-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.order-actions button{min-height:32px;border:1px solid #d8e3df;border-radius:999px;background:#fff;padding:0 9px;font-size:8px;font-weight:900}.order-actions .primary{background:var(--green2);color:#fff;border-color:var(--green2)}.order-actions .danger{color:#9a453d;background:#fff1ef;border-color:#efc9c4}
+.order-row{grid-template-columns:minmax(0,1.3fr) .8fr .8fr}.status{font-size:8px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eef6f3;color:#28604f;justify-self:start}.order-items-mini{margin-top:6px;display:grid;gap:3px}.order-items-mini span{font-size:8px;color:var(--muted)}.order-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.order-actions button{min-height:32px;border:1px solid #d8e3df;border-radius:999px;background:#fff;padding:0 9px;font-size:8px;font-weight:900}.order-actions .primary{background:var(--green2);color:#fff;border-color:var(--green2)}.order-actions .danger{color:#9a453d;background:#fff1ef;border-color:#efc9c4}.payout-breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:7px}.payout-breakdown span{padding:7px;border-radius:9px;background:#f7f9f8;color:var(--muted);font-size:7px}.payout-breakdown b{display:block;color:var(--ink);font-size:9px;margin-top:2px}
 @media(max-width:900px){.shell{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto}.side button{width:auto;white-space:nowrap}.metrics{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:620px){.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
+@media(max-width:620px){.payout-breakdown{grid-template-columns:1fr 1fr}.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
 </style>
 </head>
 <body>
@@ -44,6 +44,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
       <button class="navbtn" data-panel="store">Store Builder</button>
       <button class="navbtn" data-panel="products">Products</button>
       <button class="navbtn" data-panel="orders">Orders</button>
+      <button class="navbtn" data-panel="payouts">Payouts</button>
     </aside>
 
     <section class="main">
@@ -117,6 +118,29 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
       <div id="panel-orders" class="panel">
         <div class="card"><h2>Orders</h2><p>Confirm the final amount first, then move each order through preparation and delivery. Payment status is controlled separately by RANOVA and cannot be marked paid by the seller.</p><div id="orderMsg" class="msg"></div><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div></div>
       </div>
+
+      <div id="panel-payouts" class="panel">
+        <div class="card">
+          <h2>Seller payouts</h2><p>Save where RANOVA should send your marketplace payouts. These details are private and are not shown on your public store.</p>
+          <div id="payoutMsg" class="msg"></div>
+          <div class="metrics" style="margin-top:14px">
+            <div class="metric"><small>Current commission</small><strong id="sellerCommission">0%</strong></div>
+            <div class="metric"><small>Eligible / processing</small><strong id="sellerPayoutOpen">GHS 0.00</strong></div>
+            <div class="metric"><small>Paid out</small><strong id="sellerPayoutPaid">GHS 0.00</strong></div>
+            <div class="metric"><small>Payout hold</small><strong id="sellerHoldDays">0 days</strong></div>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>Payout method</label><select id="payoutMethod"><option>Mobile Money</option><option>Bank Transfer</option></select></div>
+            <div class="field"><label>Provider / bank</label><input id="payoutProvider" placeholder="MTN MoMo, Telecel Cash, Bank name"></div>
+            <div class="field"><label>Account name</label><input id="payoutAccountName"></div>
+            <div class="field"><label>Account / MoMo number</label><input id="payoutAccountReference"></div>
+          </div>
+          <div class="actions"><button id="savePayoutProfile" class="btn green" type="button">Save payout details</button></div>
+          <div class="hint" style="margin-top:9px">Commission is calculated on the product subtotal. Delivery fees are added to your payout without commission. The commission rate used for an order is saved when customer payment is confirmed.</div>
+        </div>
+
+        <div class="card"><h2>Payout history</h2><p>Each payout is linked to a seller order and shows the commission calculation used for that order.</p><div id="payoutList" class="order-list"><div class="empty">No payouts yet.</div></div></div>
+      </div>
     </section>
   </div>
 </main>
@@ -171,7 +195,7 @@ async function refresh(){
     el("dashboard").classList.add("hide");return;
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
-  renderOverview();fillStore();renderProducts();renderOrders();
+  renderOverview();fillStore();renderProducts();renderOrders();renderFinance();
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
@@ -293,6 +317,43 @@ function renderOrders(){
   host.querySelectorAll("[data-quote-order]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.quoteOrder});if(o)quoteOrder(o,b)}});
   host.querySelectorAll("[data-order-status]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.orderId});if(o)changeOrderStatus(o,b.dataset.orderStatus,b)}});
 }
+
+function renderFinance(){
+  var profile=state.finance_profile||{},settings=state.finance_settings||{},payouts=state.payouts||[];
+  var effective=profile.commission_rate_override==null?Number(settings.default_commission_rate||0):Number(profile.commission_rate_override||0);
+  el("sellerCommission").textContent=effective.toFixed(2)+"%";
+  el("sellerHoldDays").textContent=Number(settings.payout_hold_days||0)+" day"+(Number(settings.payout_hold_days||0)===1?"":"s");
+  var open=payouts.filter(function(p){return["eligible","processing"].includes(p.payout_status)}).reduce(function(sum,p){return sum+Number(p.payout_amount||0)},0);
+  var paid=payouts.filter(function(p){return p.payout_status==="paid"}).reduce(function(sum,p){return sum+Number(p.payout_amount||0)},0);
+  el("sellerPayoutOpen").textContent=money(open);
+  el("sellerPayoutPaid").textContent=money(paid);
+  el("payoutMethod").value=profile.payout_method||"Mobile Money";
+  el("payoutProvider").value=profile.provider_name||"";
+  el("payoutAccountName").value=profile.account_name||"";
+  el("payoutAccountReference").value=profile.account_reference||"";
+
+  var host=el("payoutList");
+  if(!payouts.length){host.innerHTML='<div class="empty">No payouts have been created yet. Payouts are created after RANOVA confirms customer payment.</div>';return}
+  host.innerHTML=payouts.map(function(p){
+    return '<div class="order-row"><div><b>'+esc(p.platform_order_ref||p.seller_order_ref)+'</b><small>'+esc(p.seller_order_ref)+' · '+(p.created_at?new Date(p.created_at).toLocaleString():"")+'</small><div class="payout-breakdown"><span>Products<b>'+esc(money(p.gross_product_amount))+'</b></span><span>Commission '+Number(p.commission_rate||0).toFixed(2)+'%<b>- '+esc(money(p.commission_amount))+'</b></span><span>Delivery<b>'+esc(money(p.delivery_fee))+'</b></span><span>Your payout<b>'+esc(money(p.payout_amount))+'</b></span></div></div><div><span class="status">'+esc(pretty(p.payout_status))+'</span><small>'+(p.eligible_at?'Eligible '+new Date(p.eligible_at).toLocaleDateString():'Eligibility pending')+'</small></div><div><b>'+esc(money(p.payout_amount))+'</b><small>'+(p.payout_reference?'Payout ref: '+esc(p.payout_reference):'No payout reference yet')+'</small>'+(p.payout_note?'<small>'+esc(p.payout_note)+'</small>':'')+'</div></div>';
+  }).join("");
+}
+el("savePayoutProfile").onclick=async function(){
+  clearMsg(el("payoutMsg"));
+  if(!state.store){msg(el("payoutMsg"),"Create your store profile before adding payout details.");return}
+  var b=this,old=b.textContent;b.disabled=true;b.textContent="Saving…";
+  try{
+    await api({
+      action:"save_finance_profile",
+      payout_method:el("payoutMethod").value,
+      provider_name:el("payoutProvider").value,
+      account_name:el("payoutAccountName").value,
+      account_reference:el("payoutAccountReference").value
+    });
+    msg(el("payoutMsg"),"Payout details saved privately.",true);await refresh();setPanel("payouts");
+  }catch(err){msg(el("payoutMsg"),err.message||"Could not save payout details.")}
+  finally{b.disabled=false;b.textContent=old}
+};
 
 el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./seller-center.html"};
 async function boot(){
