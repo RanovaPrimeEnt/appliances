@@ -24,6 +24,7 @@
         '.rpe-source-label{position:absolute;bottom:9px;left:9px;z-index:2;background:rgba(255,255,255,.96);color:#214135;border:1px solid #cbd9d2;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;line-height:1.2;max-width:calc(100% - 75px)}' +
         '.rpe-source-note{font-size:12px!important;line-height:1.5!important;color:#53645c!important;margin:6px 0 14px!important;padding:10px 12px;background:#f3f7f4;border-radius:10px}' +
         '.rpe-image-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.rpe-image-tabs[hidden],.rpe-source-note[hidden]{display:none!important}.rpe-image-tabs button{border:1px solid #cbd9d2;background:#fff;border-radius:8px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}.rpe-image-tabs button[aria-pressed="true"]{background:#0e5b43;color:#fff;border-color:#0e5b43}' +
+        '.rpe-english-panel{margin:12px 0 16px;padding:16px;border:1px solid #cbd9d2;border-radius:12px;background:#fff;color:#173d32}.rpe-english-panel[hidden]{display:none!important}.rpe-english-panel h3{font-size:17px!important;margin:0 0 10px!important}.rpe-english-panel dl{margin:0}.rpe-english-panel dl div{display:grid;grid-template-columns:minmax(105px,38%) 1fr;gap:10px;padding:7px 0;border-top:1px solid #e7ede9;font-size:13px;line-height:1.5}.rpe-english-panel dt{font-weight:700}.rpe-english-panel dd{margin:0}.rpe-english-panel p{font-size:11px!important;line-height:1.5!important;color:#53645c!important;margin:11px 0 0!important}' +
         '.modal-image:has(img[src*="/images/lighting/"]){align-items:start!important;overflow:auto!important;max-height:72vh!important}' +
         '.modal-image img[src*="/images/lighting/"]{width:100%!important;height:auto!important;max-height:none!important;object-fit:contain!important}' +
         '@media(max-width:1180px){.category-cards.rpeFourCategories{grid-template-columns:repeat(2,minmax(0,1fr))!important}}' +
@@ -90,6 +91,21 @@
         if(current)Array.prototype.forEach.call(tabs.querySelectorAll('button'),function(button){
           button.setAttribute('aria-pressed',String(modalImage.getAttribute('src')===(button.dataset.view==='sheet'?current.specSheet:current.image)));
         });
+        var panel=d.getElementById('rpeEnglishPanel');
+        if(!panel){panel=d.createElement('section');panel.id='rpeEnglishPanel';panel.className='rpe-english-panel';
+          modalCopy.insertBefore(panel,note);}
+        var rows=current&&(window.RPE_LIGHTING_ENGLISH||{})[current.cataloguePage];
+        panel.hidden=!rows;
+        if(rows&&panel.dataset.page!==String(current.cataloguePage)){
+          panel.replaceChildren();
+          var heading=d.createElement('h3');heading.textContent='English translation';panel.appendChild(heading);
+          var list=d.createElement('dl');
+          rows.forEach(function(row){var line=d.createElement('div'),term=d.createElement('dt'),value=d.createElement('dd');
+            term.textContent=row[0];value.textContent=row[1];line.appendChild(term);line.appendChild(value);list.appendChild(line);});
+          panel.appendChild(list);
+          var caveat=d.createElement('p');caveat.textContent='Translated from the supplied material. Performance figures and accessories have not been independently verified.';panel.appendChild(caveat);
+          panel.dataset.page=String(current.cataloguePage);
+        }
       }
     }
     if(!w.__rpeLightingObserver){
