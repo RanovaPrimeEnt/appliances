@@ -7,7 +7,7 @@ const marketEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-admin-marketplace";
 const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
 const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
-let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],counts:{}},marketError=null,selectedApplicationRef=null;
+let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],counts:{}},marketError=null,selectedApplicationRef=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -28,7 +28,7 @@ const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
 const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
 const canFinance=()=>role==="owner"||role==="manager";
 const isOwner=()=>role==="owner";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],counts:{}});
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -184,6 +184,7 @@ function renderMarketplaceAll(){
   renderSellerProducts();
   renderSellerStores();
   renderMarketplaceTrust();
+  renderMarketplaceDiscovery();
   renderSellerOrders();
   renderDeliveries();
   renderCases();
@@ -412,6 +413,40 @@ function renderMarketplaceTrust(){
     catch(err){alert(err.message||"Could not review appeal.")}finally{b.disabled=false}
   });
 }
+
+function renderMarketplaceDiscovery(){
+  const host=$("sponsoredPlacementsList");if(!host)return;
+  if(!canSellerReview()){host.innerHTML='<div class="empty">Your admin role does not include marketplace discovery controls.</div>';return}
+  const products=(market.products||[]).filter(p=>p.product_status==="active"),stores=market.stores||[],placements=market.sponsored_placements||[];
+  $("dSponsoredActive").textContent=(market.counts||{}).sponsored_active||0;
+  const select=$("spProduct"),current=select.value;
+  select.innerHTML='<option value="">Choose active seller product</option>'+products.map(p=>{
+    const s=stores.find(x=>x.id===p.store_id);return '<option value="'+esc(p.id)+'">'+esc(p.name)+' — '+esc(s?.store_name||"Seller store")+'</option>'
+  }).join("");
+  if(products.some(p=>p.id===current))select.value=current;
+  const productName=id=>products.find(p=>p.id===id)?.name||(market.products||[]).find(p=>p.id===id)?.name||"Seller product";
+  const storeName=id=>stores.find(s=>s.id===id)?.store_name||"Seller store";
+  host.innerHTML=placements.length?placements.map(x=>{
+    const now=Date.now(),live=x.status==="active"&&new Date(x.starts_at).getTime()<=now&&new Date(x.ends_at).getTime()>now;
+    const buttons=x.status==="active"?'<button data-sp-status="'+x.id+'" data-status="paused">Pause</button><button data-sp-status="'+x.id+'" data-status="ended">End</button>':'<button class="primary" data-sp-status="'+x.id+'" data-status="active">Activate</button>';
+    return '<div class="market-row"><div><b>'+esc(productName(x.product_id))+' · '+esc(storeName(x.store_id))+'</b><small>'+esc(x.label||"Sponsored")+' · '+esc(x.disclosure_note||"Paid placement")+'</small><small>'+(x.category?'Category '+esc(x.category)+' · ':'')+(x.buyer_country_code?'Country '+esc(x.buyer_country_code)+' · ':'')+'Priority '+esc(x.priority||0)+'</small></div><span class="chip '+statusClass(live?"active":x.status)+'">'+esc(live?"Live":pretty(x.status))+'</span><div><small>Schedule</small><b>'+esc(new Date(x.starts_at).toLocaleString())+'</b><small>to '+esc(new Date(x.ends_at).toLocaleString())+'</small></div><div class="actions">'+buttons+'</div></div>'
+  }).join(""):'<div class="empty">No sponsored placements. Organic search remains unaffected.</div>';
+  host.querySelectorAll("[data-sp-status]").forEach(b=>b.onclick=async()=>{
+    let note="";if(b.dataset.status==="rejected"){note=prompt("Why is this placement rejected?","")||"";if(!note)return}
+    b.disabled=true;try{await marketApi({action:"set_sponsored_status",id:b.dataset.spStatus,status:b.dataset.status,note});await reloadMarketplace()}
+    catch(err){alert(err.message||"Could not update sponsored placement.")}finally{b.disabled=false}
+  });
+}
+if($("saveSponsored"))$("saveSponsored").onclick=async function(){
+  const product_id=$("spProduct").value,starts_at=$("spStart").value,ends_at=$("spEnd").value;
+  if(!product_id||!starts_at||!ends_at)return alert("Choose a product and a start/end time.");
+  this.disabled=true;
+  try{
+    await marketApi({action:"save_sponsored_placement",product_id,category:$("spCategory").value.trim(),buyer_country_code:$("spCountry").value.trim().toUpperCase(),priority:$("spPriority").value,starts_at,ends_at,disclosure_note:$("spDisclosure").value.trim(),label:"Sponsored"});
+    $("spProduct").value="";$("spCategory").value="";$("spCountry").value="";$("spPriority").value="0";$("spStart").value="";$("spEnd").value="";
+    await reloadMarketplace();
+  }catch(err){alert(err.message||"Could not create sponsored placement.")}finally{this.disabled=false}
+};
 
 function renderSellerOrders(){
   const host=$("sellerOrdersList");if(!host)return;
