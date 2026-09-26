@@ -33,6 +33,8 @@ async function getAdmin(req:Request){
 function canSellerReview(role:string){return role==="owner"||role==="manager"}
 function canProductReview(role:string){return role==="owner"||role==="manager"||role==="catalogue"}
 function canOrderReview(role:string){return role==="owner"||role==="manager"||role==="orders"}
+function canFinance(role:string){return role==="owner"||role==="manager"}
+function isOwner(role:string){return role==="owner"}
 async function log(adminUserId:string,action:string,entityType:string,entityId:string|null,metadata:any={}){
   await admin.from("admin_activity").insert({
     admin_user_id:adminUserId,action,entity_type:entityType,entity_id:entityId,metadata
@@ -48,7 +50,7 @@ function accepted(v:any){
   return ["approved","complete","verified"].includes(String(v||"").toLowerCase());
 }
 async function dashboard(role:string){
-  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],seller_orders:[],counts:{}};
+  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],counts:{}};
   if(canSellerReview(role)){
     const [{data:apps},{data:files},{data:accounts}]=await Promise.all([
       admin.from("ranova_seller_applications")
@@ -86,6 +88,25 @@ async function dashboard(role:string){
     out.products=products||[];
   }
 
+  if(canFinance(role)){
+    const [{data:settings},{data:accounts},{data:payouts},{data:payments},{data:marketplaceOrders}]=await Promise.all([
+      admin.from("ranova_marketplace_finance_settings").select("*").eq("id",1).maybeSingle(),
+      admin.from("ranova_marketplace_payment_accounts").select("*").order("created_at",{ascending:false}),
+      admin.from("ranova_seller_payouts").select("*").order("created_at",{ascending:false}).limit(500),
+      admin.from("ranova_marketplace_payments").select("*").order("created_at",{ascending:false}).limit(500),
+      admin.from("ranova_customer_orders")
+        .select("id,order_ref,customer_name,customer_phone,customer_email,delivery_location,payment_method,product_total,delivery_fee,total_payment,status,payment_status,order_source,seller_order_count,created_at")
+        .neq("order_source","ranova_catalogue")
+        .order("created_at",{ascending:false})
+        .limit(500)
+    ]);
+    out.finance_settings=settings||{id:1,default_commission_rate:0,payout_hold_days:0,currency:"GHS"};
+    out.payment_accounts=accounts||[];
+    out.payouts=payouts||[];
+    out.payments=payments||[];
+    out.marketplace_orders=marketplaceOrders||[];
+  }
+
   out.counts={
     seller_applications:out.applications.length,
     seller_pending:out.applications.filter((a:any)=>!["approved","rejected","suspended"].includes(String(a.verification_status||a.status||"").toLowerCase())).length,
@@ -95,7 +116,11 @@ async function dashboard(role:string){
     active_seller_products:out.products.filter((p:any)=>p.product_status==="active").length,
     active_stores:out.stores.filter((s:any)=>s.store_status==="active").length,
     seller_orders:out.seller_orders.length,
-    seller_orders_open:out.seller_orders.filter((o:any)=>!["delivered","cancelled","returned"].includes(o.order_status)).length
+    seller_orders_open:out.seller_orders.filter((o:any)=>!["delivered","cancelled","returned"].includes(o.order_status)).length,
+    payouts_pending:out.payouts.filter((p:any)=>["pending","eligible","held","processing"].includes(p.payout_status)).length,
+    payouts_paid_total:out.payouts.filter((p:any)=>p.payout_status==="paid").reduce((s:number,p:any)=>s+Number(p.payout_amount||0),0),
+    commission_total:out.payouts.reduce((s:number,p:any)=>s+Number(p.commission_amount||0),0),
+    payments_due:out.marketplace_orders.filter((o:any)=>o.status==="awaiting_payment"&&!["paid","confirmed","refunded"].includes(String(o.payment_status||"").toLowerCase())).length
   };
   return out;
 }
@@ -261,6 +286,180 @@ Deno.serve(async(req:Request)=>{
       }).eq("id",id);
       if(error)throw error;
       await log(actor.user.id,"seller_store_status_changed","seller_store",id,{status,note,store_name:store.store_name});
+      return response(h,200,{ok:true});
+    }
+
+
+    if(action==="save_finance_settings"){
+      if(!isOwner(actor.role))return response(h,403,{ok:false,error:"Only the Owner can change marketplace commission settings."});
+      const rate=Number(b.default_commission_rate);
+      const hold=Math.trunc(Number(b.payout_hold_days||0));
+      if(!Number.isFinite(rate)||rate<0||rate>100)return response(h,400,{ok:false,error:"Commission rate must be between 0 and 100."});
+      if(!Number.isFinite(hold)||hold<0||hold>90)return response(h,400,{ok:false,error:"Payout hold days must be between 0 and 90."});
+      const now=new Date().toISOString();
+      const {error}=await admin.from("ranova_marketplace_finance_settings").upsert({
+        id:1,
+        default_commission_rate:Number(rate.toFixed(2)),
+        payout_hold_days:hold,
+        currency:"GHS",
+        updated_at:now,
+        updated_by:actor.user.id
+      });
+      if(error)throw error;
+      await log(actor.user.id,"finance_settings_updated","marketplace_finance_settings","1",{default_commission_rate:Number(rate.toFixed(2)),payout_hold_days:hold});
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="save_payment_account"){
+      if(!isOwner(actor.role))return response(h,403,{ok:false,error:"Only the Owner can change customer payment destinations."});
+      const id=clean(b.id,80);
+      const payment_method=clean(b.payment_method,40);
+      const provider_name=clean(b.provider_name,120);
+      const account_name=clean(b.account_name,160);
+      const account_reference=clean(b.account_reference,160);
+      const instructions=clean(b.instructions,800);
+      if(!["Mobile Money","Bank Transfer"].includes(payment_method)||!provider_name||!account_name||!account_reference){
+        return response(h,400,{ok:false,error:"Complete the payment method, provider, account name and account reference."});
+      }
+      const payload:any={
+        payment_method,provider_name,account_name,account_reference,
+        instructions:instructions||null,
+        active:b.active!==false,
+        updated_at:new Date().toISOString(),
+        updated_by:actor.user.id
+      };
+      let q;
+      if(id){
+        q=await admin.from("ranova_marketplace_payment_accounts").update(payload).eq("id",id).select("*").maybeSingle();
+      }else{
+        q=await admin.from("ranova_marketplace_payment_accounts").insert(payload).select("*").single();
+      }
+      if(q.error)throw q.error;
+      await log(actor.user.id,"payment_account_saved","marketplace_payment_account",q.data?.id||id,{payment_method,provider_name,active:payload.active});
+      return response(h,200,{ok:true,account:q.data});
+    }
+
+    if(action==="set_payment_account_active"){
+      if(!isOwner(actor.role))return response(h,403,{ok:false,error:"Only the Owner can change customer payment destinations."});
+      const id=clean(b.id,80);
+      const active=!!b.active;
+      const {error}=await admin.from("ranova_marketplace_payment_accounts").update({
+        active,updated_at:new Date().toISOString(),updated_by:actor.user.id
+      }).eq("id",id);
+      if(error)throw error;
+      await log(actor.user.id,"payment_account_status_changed","marketplace_payment_account",id,{active});
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="set_payment_status"){
+      if(!canFinance(actor.role))return response(h,403,{ok:false,error:"Finance permission is required."});
+      const parentId=clean(b.parent_order_id,80);
+      const status=clean(b.status,40);
+      const payer_reference=clean(b.payer_reference,180);
+      const note=clean(b.note,1000);
+      if(!["pending","confirmed","failed","refunded","partially_refunded"].includes(status))return response(h,400,{ok:false,error:"Invalid payment status."});
+      const {data:order}=await admin.from("ranova_customer_orders").select("*").eq("id",parentId).maybeSingle();
+      if(!order)return response(h,404,{ok:false,error:"Marketplace order not found."});
+      if(status==="confirmed"&&order.total_payment===null)return response(h,400,{ok:false,error:"The final order total must be set before confirming payment."});
+      const now=new Date().toISOString();
+      const ledgerStatus=status==="confirmed"?"confirmed":status;
+      const {error:payErr}=await admin.from("ranova_marketplace_payments").upsert({
+        parent_order_id:order.id,
+        order_ref:order.order_ref,
+        amount:order.total_payment,
+        currency:"GHS",
+        payment_method:order.payment_method,
+        payment_status:ledgerStatus,
+        payer_reference:payer_reference||null,
+        admin_note:note||null,
+        confirmed_at:status==="confirmed"?now:null,
+        confirmed_by:status==="confirmed"?actor.user.id:null,
+        updated_at:now
+      },{onConflict:"parent_order_id"});
+      if(payErr)throw payErr;
+
+      const customerStatus=status==="confirmed"?"paid":status==="pending"?"pending":status;
+      const {error:masterErr}=await admin.from("ranova_customer_orders").update({payment_status:customerStatus}).eq("id",order.id);
+      if(masterErr)throw masterErr;
+
+      const childStatus=status==="confirmed"?"paid":status==="pending"?"pending":status==="partially_refunded"?"refunded":status;
+      const {data:children,error:childErr}=await admin.from("ranova_seller_orders")
+        .update({payment_status:childStatus,updated_at:now})
+        .eq("parent_order_id",order.id)
+        .select("*");
+      if(childErr)throw childErr;
+
+      if(status==="confirmed"){
+        const {data:settings}=await admin.from("ranova_marketplace_finance_settings").select("*").eq("id",1).maybeSingle();
+        const defaultRate=Number(settings?.default_commission_rate||0);
+        const holdDays=Math.max(0,Math.trunc(Number(settings?.payout_hold_days||0)));
+        const eligibleAt=new Date(Date.now()+holdDays*86400000).toISOString();
+        for(const child of children||[]){
+          if(child.subtotal===null)continue;
+          const {data:profile}=await admin.from("ranova_seller_finance_profiles")
+            .select("commission_rate_override").eq("seller_id",child.seller_id).maybeSingle();
+          const rate=profile?.commission_rate_override==null?defaultRate:Number(profile.commission_rate_override);
+          const gross=Number(child.subtotal||0);
+          const delivery=Number(child.delivery_fee||0);
+          const commission=Number((gross*rate/100).toFixed(2));
+          const payout=Number((gross-commission+delivery).toFixed(2));
+          const {data:existingPayout}=await admin.from("ranova_seller_payouts")
+            .select("id").eq("seller_order_id",child.id).maybeSingle();
+          if(!existingPayout){
+            const {error:payoutErr}=await admin.from("ranova_seller_payouts").insert({
+              seller_order_id:child.id,
+              seller_id:child.seller_id,
+              store_id:child.store_id,
+              platform_order_ref:child.platform_order_ref,
+              seller_order_ref:child.order_ref,
+              gross_product_amount:gross,
+              delivery_fee:delivery,
+              commission_rate:rate,
+              commission_amount:commission,
+              adjustment_amount:0,
+              payout_amount:payout,
+              currency:"GHS",
+              payout_status:holdDays>0?"pending":"eligible",
+              eligible_at:eligibleAt,
+              updated_at:now
+            });
+            if(payoutErr)throw payoutErr;
+          }
+        }
+      }
+
+      if(["refunded","partially_refunded"].includes(status)){
+        await admin.from("ranova_seller_payouts").update({
+          payout_status:"held",
+          payout_note:note||"Payment refund requires payout review.",
+          updated_at:now
+        }).eq("platform_order_ref",order.order_ref).neq("payout_status","paid");
+      }
+      await log(actor.user.id,"marketplace_payment_status_changed","marketplace_order",order.id,{status,payer_reference,note});
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="set_payout_status"){
+      if(!isOwner(actor.role))return response(h,403,{ok:false,error:"Only the Owner can release or mark seller payouts as paid."});
+      const id=clean(b.id,80);
+      const status=clean(b.status,30);
+      const payout_reference=clean(b.payout_reference,180);
+      const note=clean(b.note,1000);
+      if(!["eligible","held","processing","paid","cancelled"].includes(status))return response(h,400,{ok:false,error:"Invalid payout status."});
+      const {data:p}=await admin.from("ranova_seller_payouts").select("*").eq("id",id).maybeSingle();
+      if(!p)return response(h,404,{ok:false,error:"Payout not found."});
+      if(status==="paid"&&!payout_reference)return response(h,400,{ok:false,error:"Enter the payout transaction/reference before marking this payout paid."});
+      const now=new Date().toISOString();
+      const {error}=await admin.from("ranova_seller_payouts").update({
+        payout_status:status,
+        payout_reference:payout_reference||p.payout_reference||null,
+        payout_note:note||p.payout_note||null,
+        paid_at:status==="paid"?now:p.paid_at,
+        paid_by:status==="paid"?actor.user.id:p.paid_by,
+        updated_at:now
+      }).eq("id",id);
+      if(error)throw error;
+      await log(actor.user.id,"seller_payout_status_changed","seller_payout",id,{status,payout_reference,note});
       return response(h,200,{ok:true});
     }
 
