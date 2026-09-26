@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Track RANOVA Order</title>
 <meta name="theme-color" content="#116a52">
-<meta name="description" content="Track your RANOVA marketplace order using your order reference and phone number.">
+<meta name="description" content="Track your RANOVA marketplace order using your order reference and phone number, or your signed-in buyer account.">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}:root{--green:#103f34;--green2:#116a52;--orange:#ff5a2d;--ink:#15342e;--muted:#687a74;--line:#dfe8e4;--soft:#f5f8f6}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:linear-gradient(180deg,#f4f8f6,#faf9fd);color:var(--ink)}.wrap{width:min(960px,calc(100% - 28px));margin:auto}.top{background:var(--green);color:#fff}.top .wrap{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:950}.top a{color:#fff;text-decoration:none;border:1px solid #ffffff35;border-radius:999px;padding:9px 12px;font-size:10px;font-weight:850}.hero{padding:44px 0 26px;background:linear-gradient(135deg,#eaf8f2,#fff9ed 58%,#f4efff)}.kicker{font-size:10px;font-weight:950;letter-spacing:.14em;color:var(--green2)}.hero h1{margin:7px 0 8px;font-size:clamp(34px,6vw,56px);line-height:1;letter-spacing:-.04em}.hero p{max-width:700px;margin:0;color:#60736c;font-size:12px;line-height:1.65}.panel{margin:24px auto 60px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 14px 38px rgba(11,70,53,.07)}.lookup{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end}.field{display:grid;gap:5px}.field label{font-size:9px;font-weight:900}.field input{height:43px;border:1px solid #d7e3de;border-radius:11px;padding:0 11px;outline:none}.field input:focus{border-color:#2d9077;box-shadow:0 0 0 3px #e5f4ef}.btn{min-height:43px;border:0;border-radius:11px;padding:0 15px;background:var(--green2);color:#fff;font-size:9px;font-weight:950}.msg{display:none;margin-top:12px;padding:11px;border-radius:11px;background:#fff0ed;color:#94493e;font-size:9px}.result{display:none;margin-top:18px}.summary{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:16px;border-radius:16px;background:linear-gradient(135deg,#f0faf5,#fbf8ff)}.summary h2{margin:3px 0 4px;font-size:20px}.summary p{margin:0;color:var(--muted);font-size:9px;line-height:1.5}.pill{display:inline-flex;padding:6px 9px;border-radius:999px;background:#eaf6f1;color:#1e604d;font-size:8px;font-weight:950}.master-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.meta{padding:11px;border:1px solid var(--line);border-radius:12px}.meta span{display:block;color:var(--muted);font-size:8px}.meta b{display:block;margin-top:4px;font-size:10px}.seller-orders{display:grid;gap:10px;margin-top:16px}.seller-card{border:1px solid var(--line);border-radius:16px;overflow:hidden}.seller-head{display:flex;justify-content:space-between;gap:12px;padding:13px 14px;background:#fafcfb;border-bottom:1px solid var(--line)}.seller-head b{font-size:11px}.seller-head small{display:block;color:var(--muted);font-size:8px;margin-top:3px}.seller-body{padding:13px 14px}.items{display:grid;gap:6px}.item{display:flex;justify-content:space-between;gap:12px;font-size:9px}.item span:last-child{font-weight:850}.amounts{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);display:grid;gap:5px}.amounts div{display:flex;justify-content:space-between;gap:12px;font-size:9px}.amounts .total{font-weight:950;font-size:11px}.note{margin-top:10px;padding:9px;border-radius:10px;background:#fff8e8;color:#6f6042;font-size:8px;line-height:1.5}.store-link{display:inline-flex;margin-top:10px;min-height:34px;align-items:center;padding:0 10px;border-radius:999px;background:#eef7f3;color:var(--green);text-decoration:none;font-size:8px;font-weight:900}.empty{padding:24px;text-align:center;color:var(--muted);font-size:10px;border:1px dashed #d3ded9;border-radius:13px}.payment-box{display:none;margin-top:14px;padding:16px;border:1px solid #cfe1d8;border-radius:16px;background:linear-gradient(135deg,#f0faf5,#fffaf0)}.payment-box h3{margin:0 0 5px;font-size:14px}.payment-box>p{margin:0;color:var(--muted);font-size:9px;line-height:1.5}.payment-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.payment-cell{padding:10px;border-radius:11px;background:#fff;border:1px solid var(--line)}.payment-cell span{display:block;color:var(--muted);font-size:7px}.payment-cell b{display:block;margin-top:4px;font-size:10px;word-break:break-word}.payment-note{margin-top:10px;padding:10px;border-radius:10px;background:#fff;color:#675f4e;font-size:8px;line-height:1.5}.copy-btn{margin-top:8px;min-height:34px;border:0;border-radius:999px;background:var(--green2);color:#fff;padding:0 12px;font-size:8px;font-weight:900}
@@ -83,9 +84,10 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
 <script>
 (function(){
 "use strict";
-var ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-order-status";
-var SUPPORT_ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-order-support";
-var currentOrder=null,currentSupport=null;
+var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co",SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr",sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+var ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-order-status";
+var SUPPORT_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-order-support";
+var currentOrder=null,currentSupport=null,buyerSession=null;
 function el(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function pretty(v){return String(v||"").replace(/_/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
@@ -144,10 +146,11 @@ function render(out){
 }
 async function check(){
   var ref=el("orderRef").value.trim(),phone=el("phone").value.trim(),m=el("msg");m.style.display="none";el("result").style.display="none";
-  if(!ref||!phone){m.textContent="Enter your order reference and phone number.";m.style.display="block";return}
+  if(!ref||(!phone&&!buyerSession)){m.textContent="Enter your order reference and phone number, or sign in to the buyer account that owns this order.";m.style.display="block";return}
   var b=el("check"),old=b.textContent;b.disabled=true;b.textContent="Checking…";
   try{
-    var r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({order_ref:ref,phone:phone})});
+    var h={"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":SUPABASE_KEY};if(buyerSession)h.Authorization="Bearer "+buyerSession.access_token;
+    var r=await fetch(ENDPOINT,{method:"POST",headers:h,body:JSON.stringify({order_ref:ref,phone:phone})});
     var out=await r.json().catch(function(){return{}});
     if(!r.ok||!out.ok)throw new Error(out.error||"Could not load the order.");
     render(out);
@@ -238,6 +241,7 @@ el("openDispute").onclick=async function(){
 el("printReceipt").onclick=function(){window.print()};
 
 var qp=new URLSearchParams(location.search).get("ref");if(qp){el("orderRef").value=qp;try{el("buyerCode").value=localStorage.getItem("ranova_buyer_code_"+qp)||""}catch(e){}}
+(async function(){try{var gs=await sb.auth.getSession();buyerSession=gs.data.session;if(qp&&buyerSession)check()}catch(e){}})();
 el("copyPayRef").onclick=async function(){var v=this.dataset.value||"";if(!v)return;try{await navigator.clipboard.writeText(v);var old=this.textContent;this.textContent="Copied";setTimeout(()=>this.textContent=old,1200)}catch(e){}};
 el("check").onclick=check;el("phone").addEventListener("keydown",function(e){if(e.key==="Enter")check()});
 })();
