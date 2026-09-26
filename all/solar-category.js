@@ -43,6 +43,7 @@ function cleanDescription(p){
 
 function ensureSolarCategory(d){
   if(!d)return false;
+  var FALLBACK_SOLAR_IMAGE="./images/solar-category-cover.svg";
 
   var cards=d.querySelector(".category-cards");
   if(!cards)return false;
@@ -55,8 +56,7 @@ function ensureSolarCategory(d){
     card.id="rpeSolarCategoryCard";
     card.className="category-card";
     card.innerHTML=
-      '<div class="category-image" style="background:linear-gradient(145deg,#edf6f1,#e2eee8);display:flex;align-items:center;justify-content:center">'+
-      '<div style="text-align:center;color:#0e5b43;padding:18px"><div style="font-size:44px;line-height:1">☀</div><b style="display:block;margin-top:8px;font-size:13px">Solar Street Lights</b></div></div>'+
+      '<div class="category-image"><img src="'+FALLBACK_SOLAR_IMAGE+'" loading="eager" decoding="async" alt="Solar Street Lights" onerror="this.onerror=null;this.src=\'./images/solar-category-cover.svg\'"></div>'+
       '<div><small>OUTDOOR SOLAR</small><h3>Solar Street Lights</h3><span>2 series · 6 models</span></div>';
     cards.insertBefore(card,d.getElementById("rpeLightingCategoryCard"));
   }
@@ -313,6 +313,7 @@ function installUi(d,products,totalCount){
 
   var hero=products.find(function(p){return p.sku==="RPE-SOLAR-504-8K"})||products[products.length-1];
   var heroPic=hero?imageOf(hero):"";
+  var fallbackSolarPic="./images/solar-category-cover.svg";
 
   var cards=d.querySelector(".category-cards");
   if(cards){
@@ -327,7 +328,7 @@ function installUi(d,products,totalCount){
     }
     card.innerHTML=
       '<div class="category-image">'+
-      (heroPic?'<img src="'+heroPic+'" loading="eager" decoding="async" alt="Solar Street Lights">':'')+
+      '<img src="'+(heroPic||fallbackSolarPic)+'" loading="eager" decoding="async" alt="Solar Street Lights" onerror="this.onerror=null;this.src=\''+fallbackSolarPic+'\'">'+
       '</div><div><small>OUTDOOR SOLAR</small><h3>Solar Street Lights</h3><span>2 series · '+products.length+' models</span></div>';
     card.onclick=function(){
       try{frame.contentWindow.setActiveCategory("Solar Street Lights")}catch(e){}
