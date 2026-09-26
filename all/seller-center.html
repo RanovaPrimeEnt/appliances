@@ -196,7 +196,7 @@ function setStage(id,status){
 function renderFiles(files){
   var host=document.getElementById("files");
   if(!files||!files.length){host.innerHTML='<div class="locked-box">No documents submitted yet.</div>';return}
-  host.innerHTML=files.map(function(f){return '<div class="file"><div><b>'+pretty(f.document_type)+'</b><span>'+String(f.original_filename||"Document")+'</span></div><strong>'+pretty(f.review_status)+'</strong></div>'}).join("");
+  host.innerHTML=files.map(function(f){return '<div class="file"><div><b>'+pretty(f.document_type)+'</b><span>'+String(f.original_filename||"Document")+(f.review_note?'<br><em style="display:block;margin-top:4px;color:#9a542e;font-style:normal">'+String(f.review_note)+'</em>':'')+'</span></div><strong>'+pretty(f.review_status)+'</strong></div>'}).join("");
 }
 async function loadWorkspace(){
   try{
