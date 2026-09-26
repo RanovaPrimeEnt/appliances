@@ -48,6 +48,7 @@ function installStyles(d){
   '.rpe-compare-bar{position:fixed;left:50%;bottom:22px;transform:translate(-50%,120px);z-index:9450;background:#0d3329;color:#fff;border-radius:999px;padding:8px 9px 8px 15px;display:flex;align-items:center;gap:10px;box-shadow:0 16px 38px rgba(3,31,23,.28);opacity:0;pointer-events:none;transition:.22s}.rpe-compare-bar.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}.rpe-compare-bar span{font-size:11px;font-weight:800}.rpe-compare-bar button{min-height:38px;border:0;border-radius:999px;padding:8px 13px;font-size:10px;font-weight:900;cursor:pointer}.rpe-compare-open{background:#e0b45d;color:#0d3329}.rpe-compare-clear{background:#ffffff15;color:#fff}'+
   '.rpe-compare-backdrop{position:fixed;inset:0;background:rgba(4,26,20,.58);z-index:9900;display:none;padding:18px}.rpe-compare-backdrop.open{display:flex;align-items:center;justify-content:center}.rpe-compare-panel{width:min(1060px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:24px;box-shadow:0 30px 80px rgba(0,0,0,.22)}.rpe-compare-head{position:sticky;top:0;background:#fff;z-index:3;display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #e2eae6}.rpe-compare-head h3{margin:0;color:#173d32}.rpe-compare-close{width:42px;height:42px;border:0;border-radius:50%;background:#eef3f0;font-size:23px;cursor:pointer}.rpe-compare-scroll{overflow-x:auto;padding:18px}.rpe-compare-table{display:grid;gap:0;min-width:720px;border:1px solid #e1e9e5;border-radius:16px;overflow:hidden}.rpe-compare-row{display:grid;grid-template-columns:150px repeat(var(--compare-count),minmax(180px,1fr));border-bottom:1px solid #e6ece9}.rpe-compare-row:last-child{border-bottom:0}.rpe-compare-row>div{padding:11px;border-right:1px solid #e6ece9;font-size:11px;line-height:1.45}.rpe-compare-row>div:last-child{border-right:0}.rpe-compare-label{background:#f4f7f5;font-weight:850;color:#52675f}.rpe-compare-product{padding:14px!important}.rpe-compare-product img{width:100%;height:140px;object-fit:contain;background:#f6f8f7;border-radius:12px}.rpe-compare-product b{display:block;margin-top:9px;color:#173d32;line-height:1.3}.rpe-compare-product small{display:block;color:#75867f;margin-top:4px}.rpe-compare-product a{display:inline-flex;margin-top:9px;min-height:36px;align-items:center;padding:0 10px;border-radius:9px;text-decoration:none;background:#0e5b43;color:#fff;font-size:9px;font-weight:850}'+
   '.rpe-backtop{position:fixed;right:18px;bottom:82px;z-index:9300;width:44px;height:44px;border:1px solid #dce6e1;border-radius:50%;background:#fff;color:#173d32;box-shadow:0 10px 28px rgba(5,34,26,.14);font-size:20px;display:grid;place-items:center;cursor:pointer;opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}.rpe-backtop.show{opacity:1;transform:none;pointer-events:auto}'+
+  '.rpe-image-zoom{position:fixed;inset:0;z-index:1000000;background:rgba(2,18,13,.96);display:none;align-items:center;justify-content:center;padding:18px}.rpe-image-zoom.open{display:flex}.rpe-image-zoom img{max-width:96vw;max-height:92vh;width:auto;height:auto;object-fit:contain;border-radius:14px;box-shadow:0 26px 80px rgba(0,0,0,.48);background:#fff}.rpe-image-zoom button{position:fixed;right:18px;top:18px;width:46px;height:46px;border:1px solid #ffffff44;border-radius:50%;background:#173d32;color:#fff;font-size:26px;cursor:pointer}.rpe-image-zoom-note{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);color:#dbe8e3;background:#0b2f27;padding:8px 12px;border-radius:999px;font-size:10px;font-weight:750;white-space:nowrap}'+
   'a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #c99a3b!important;outline-offset:3px!important}.rpe-card-quick a,.rpe-card-quick button,.rpe-how-actions a,.rpe-how-actions button,.rpe-backtop,.rpe-compare-close{touch-action:manipulation}'+
   '@media(max-width:900px){.rpe-how-grid{grid-template-columns:1fr}.rpe-how-head{align-items:flex-start;flex-direction:column}.rpe-compare-bar{bottom:82px}}'+
   '@media(max-width:620px){.filters.rpe-sticky-filters{top:62px!important;padding:7px 2px!important}.rpe-how{padding:22px 0 10px}.rpe-how-card{padding:17px;border-radius:19px}.rpe-how-actions{display:grid;grid-template-columns:1fr 1fr}.rpe-how-actions .primary{grid-column:1/-1}.rpe-card-quick{grid-template-columns:1fr 1fr}.rpe-card-quick a,.rpe-card-quick button{min-height:42px}.rpe-backtop{right:14px;bottom:86px}.rpe-compare-backdrop{padding:0}.rpe-compare-panel{width:100%;max-height:94vh;border-radius:22px 22px 0 0;align-self:flex-end}.rpe-compare-product img{height:110px}}'+
@@ -168,6 +169,28 @@ function installSearch(d,w,ps){
   });
   d.addEventListener("click",function(e){if(!host.contains(e.target))close()});
 }
+
+function installImageZoom(d){
+  if(d.getElementById("rpeImageZoom"))return;
+  var z=d.createElement("div");
+  z.id="rpeImageZoom";
+  z.className="rpe-image-zoom";
+  z.setAttribute("role","dialog");
+  z.setAttribute("aria-modal","true");
+  z.setAttribute("aria-label","Enlarged product image");
+  z.innerHTML='<button type="button" aria-label="Close enlarged image">×</button><img alt=""><span class="rpe-image-zoom-note">Tap outside the image to close</span>';
+  d.body.appendChild(z);
+  var zi=z.querySelector("img"),close=z.querySelector("button");
+  function hide(){z.classList.remove("open");zi.removeAttribute("src");d.body.style.overflow=""}
+  close.onclick=hide;
+  z.onclick=function(e){if(e.target===z)hide()};
+  d.addEventListener("keydown",function(e){if(e.key==="Escape"&&z.classList.contains("open"))hide()});
+  d.addEventListener("click",function(e){
+    var img=e.target&&e.target.closest?e.target.closest("#productModal img"):null;
+    if(!img||!img.src)return;
+    zi.src=img.src;zi.alt=img.alt||"Product image";z.classList.add("open");d.body.style.overflow="hidden";setTimeout(function(){close.focus()},0);
+  });
+}
 function installBackTop(d,w){
   if(d.getElementById("rpeBackTop"))return;
   var b=d.createElement("button");
@@ -279,6 +302,7 @@ function enhance(){
   installStickyFilters(d);
   installSearch(d,w,ps);
   installBackTop(d,w);
+  installImageZoom(d);
   var grid=d.getElementById("grid");
   if(grid&&!d.getElementById("rpeCompareBar"))installCompareAndCardActions(d,w,ps,grid);
   return true;
