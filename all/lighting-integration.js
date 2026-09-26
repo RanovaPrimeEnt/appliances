@@ -19,8 +19,8 @@
         '.category-cards.rpeFourCategories{grid-template-columns:repeat(5,minmax(0,1fr))!important}' +
         '.modal.open{z-index:6000!important}' +
         '#rpeLightingCategoryCard .category-image img{object-fit:cover!important;object-position:center 8%!important;transform:none!important}' +
-        '.product-img img[src*="/images/lighting/product-"]{object-fit:cover!important;object-position:center 27%!important;transform:none!important;padding:0!important;box-sizing:border-box!important;background:#f7f9f8!important}' +
-        '.product:hover .product-img img[src*="/images/lighting/product-"]{transform:none!important}' +
+        '.product-img img[src*="/images/lighting/source-"]{object-fit:contain!important;object-position:center!important;transform:none!important;padding:8px!important;box-sizing:border-box!important;background:#f7f9f8!important}' +
+        '.product:hover .product-img img[src*="/images/lighting/source-"]{transform:none!important}' +
         '.rpe-source-label{position:absolute;bottom:9px;left:9px;z-index:2;background:rgba(255,255,255,.96);color:#214135;border:1px solid #cbd9d2;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:700;line-height:1.2;max-width:calc(100% - 75px)}' +
         '.rpe-source-note{font-size:12px!important;line-height:1.5!important;color:#53645c!important;margin:6px 0 14px!important;padding:10px 12px;background:#f3f7f4;border-radius:10px}' +
         '.rpe-image-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.rpe-image-tabs[hidden],.rpe-source-note[hidden]{display:none!important}.rpe-image-tabs button{border:1px solid #cbd9d2;background:#fff;border-radius:8px;padding:8px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}.rpe-image-tabs button[aria-pressed="true"]{background:#0e5b43;color:#fff;border-color:#0e5b43}' +
@@ -37,7 +37,7 @@
     if(cards&&!d.getElementById('rpeLightingCategoryCard')){
       var card=d.createElement('button');
       card.id='rpeLightingCategoryCard';card.type='button';card.className='category-card';
-      card.innerHTML='<div class="category-image"><img src="./images/lighting/product-11.jpg" alt="Square ceiling fan light" loading="lazy" decoding="async"></div>'+
+      card.innerHTML='<div class="category-image"><img src="./images/lighting/source-11.jpg" alt="Square ceiling fan light" loading="lazy" decoding="async"></div>'+
         '<div><small>LIGHTING &amp; FANS</small><h3>Lighting &amp; Fans</h3><span>Ceiling fan lights &amp; rechargeable lights →</span></div>';
       card.onclick=function(){w.setActiveCategory('Lighting & Fans');d.getElementById('products').scrollIntoView({behavior:'smooth',block:'start'})};
       cards.appendChild(card);
@@ -56,58 +56,10 @@
       if(/Catalogue items/i.test(label.textContent))value.textContent=String(products.length);
     });
     function markReferenceImages(){
-      var modalImage=d.getElementById('modalImage'),modalCopy=d.querySelector('#productModal .modal-copy');
-      if(!modalImage||!modalCopy)return;
-
-      var title=d.getElementById('modalTitle');
-      var current=additions.find(function(p){return title&&p.name===title.textContent});
-
-      // Remove the old floating supplier labels and duplicate image tabs.
-      Array.prototype.forEach.call(d.querySelectorAll('.rpe-source-label'),function(el){el.remove()});
-      var oldTabs=d.getElementById('rpeLightingImageTabs');
-      if(oldTabs)oldTabs.remove();
-
-      var note=d.getElementById('rpeSourceNote');
-      if(!note){
-        note=d.createElement('p');
-        note.id='rpeSourceNote';
-        note.className='rpe-source-note';
-        modalCopy.insertBefore(note,modalCopy.querySelector('.modal-price'));
-      }
-      note.hidden=!current;
-      if(current){
-        note.textContent='Product information is presented in English using the supplied catalogue material. Confirm final specifications, accessories, price and availability with RPE before purchase.';
-      }
-
-      var panel=d.getElementById('rpeEnglishPanel');
-      if(!panel){
-        panel=d.createElement('section');
-        panel.id='rpeEnglishPanel';
-        panel.className='rpe-english-panel';
-        modalCopy.insertBefore(panel,note);
-      }
-      var rows=current&&(window.RPE_LIGHTING_ENGLISH||{})[current.cataloguePage];
-      panel.hidden=!rows;
-      if(rows&&panel.dataset.page!==String(current.cataloguePage)){
-        panel.replaceChildren();
-        var heading=d.createElement('h3');
-        heading.textContent='Product specifications';
-        panel.appendChild(heading);
-        var list=d.createElement('dl');
-        rows.forEach(function(row){
-          var line=d.createElement('div'),term=d.createElement('dt'),value=d.createElement('dd');
-          term.textContent=row[0];
-          value.textContent=row[1];
-          line.appendChild(term);
-          line.appendChild(value);
-          list.appendChild(line);
-        });
-        panel.appendChild(list);
-        var caveat=d.createElement('p');
-        caveat.textContent='Based on the supplied product material. Supplier performance figures have not been independently verified.';
-        panel.appendChild(caveat);
-        panel.dataset.page=String(current.cataloguePage);
-      }
+      // Translation overlays/panels have been retired. Keep original supplier artwork untouched.
+      Array.prototype.forEach.call(d.querySelectorAll('.rpe-source-label,#rpeSourceNote,#rpeLightingImageTabs,#rpeEnglishPanel,.rpe-photo-english'),function(el){
+        el.remove();
+      });
     }
     if(!w.__rpeLightingObserver){
       w.__rpeLightingObserver=true;
