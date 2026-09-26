@@ -63,12 +63,52 @@ function installStyle(d){
     @media(min-width:621px){
       #grid .rpe-essential-name{font-size:15px!important}
     }
+
+    #grid .rpe-order-summary{display:grid!important;gap:7px!important;margin-top:8px!important;padding-top:8px!important;border-top:1px solid #edf1ef!important}
+    #grid .rpe-order-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;min-width:0!important}
+    #grid .rpe-order-label{font-size:10px!important;color:#7d8b85!important;font-weight:750!important;white-space:nowrap!important}
+    #grid .rpe-order-value{font-size:11px!important;color:#263f37!important;font-weight:850!important;text-align:right!important;min-width:0!important}
+    #grid .rpe-selected-count{color:#d95f17!important}
+    #grid .rpe-product-total{font-size:14px!important;color:#f05a21!important;font-weight:950!important}
+    #grid .rpe-delivery-fee{font-size:10px!important;color:#5e7068!important;font-weight:850!important}
+    #grid .rpe-location-select{display:block!important;min-width:0!important;max-width:122px!important;height:30px!important;border:0!important;background:#f7f8f7!important;color:#485a53!important;border-radius:8px!important;padding:0 24px 0 8px!important;font-size:9px!important;font-weight:750!important;outline:none!important;cursor:pointer!important}
+    #grid .rpe-order-now{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:40px!important;margin-top:3px!important;border:0!important;border-radius:999px!important;background:#ff5a2d!important;color:#fff!important;font-size:12px!important;font-weight:950!important;letter-spacing:.01em!important;cursor:pointer!important;box-shadow:0 7px 16px rgba(255,90,45,.18)!important;transition:transform .12s ease,opacity .12s ease!important}
+    #grid .rpe-order-now:active{transform:scale(.985)!important}
+    #grid .rpe-order-now[disabled]{opacity:.45!important;cursor:not-allowed!important;box-shadow:none!important}
+    @media(max-width:620px){
+      #grid .rpe-qty-wrap{display:flex!important;gap:4px!important;padding:6px 0 0!important}
+      #grid .rpe-qty-copy{display:none!important}
+      #grid .rpe-qty-control{grid-template-columns:29px 32px 29px!important;gap:3px!important;width:auto!important;margin-left:auto!important}
+      #grid .rpe-qty-btn{width:29px!important;height:29px!important;font-size:19px!important}
+      #grid .rpe-qty-input{width:32px!important;height:29px!important;font-size:14px!important}
+      #grid .rpe-order-summary{gap:6px!important;margin-top:7px!important;padding-top:7px!important}
+      #grid .rpe-order-label{font-size:8px!important}
+      #grid .rpe-order-value{font-size:9px!important}
+      #grid .rpe-product-total{font-size:12px!important}
+      #grid .rpe-location-select{max-width:92px!important;width:92px!important;height:28px!important;font-size:8px!important;padding-left:6px!important}
+      #grid .rpe-delivery-fee{font-size:8px!important}
+      #grid .rpe-order-now{min-height:36px!important;font-size:10px!important}
+    }
   `;
   d.head.appendChild(s);
+}
+function getUnitPrice(p){
+  var candidates=[p&&p.price,p&&p.unitPrice,p&&p.rpePrice,p&&p.salePrice,p&&p.amount];
+  for(var i=0;i<candidates.length;i++){
+    var raw=candidates[i];
+    if(raw==null||raw==="")continue;
+    var n=parseFloat(String(raw).replace(/[^0-9.]/g,""));
+    if(isFinite(n)&&n>0)return n;
+  }
+  return 0;
+}
+function money(v){
+  return "GHS "+Number(v||0).toFixed(2);
 }
 function decorateCard(card,p,w){
   var info=card.querySelector(".product-info");
   if(!info||!p)return;
+
   var id=p.rpeSku||p.rpeModel||p.id||"";
   var holder=info.querySelector(".rpe-essential-card");
   if(!holder){
@@ -76,13 +116,27 @@ function decorateCard(card,p,w){
     holder.className="rpe-essential-card";
     info.appendChild(holder);
   }
+
+  var unitPrice=getUnitPrice(p);
+  var priceDisplay=unitPrice>0?money(unitPrice):"GHS ______";
   var qtyKey="rpeQty:"+(id||p.name||p.id||"product");
+  var locationKey="rpeDeliveryLocation";
   var savedQty=0;
-  try{savedQty=Math.max(0,parseInt(w.localStorage.getItem(qtyKey)||"0",10)||0)}catch(e){}
+  var savedLocation="Accra, Ghana";
+  try{
+    savedQty=Math.max(0,parseInt(w.localStorage.getItem(qtyKey)||"0",10)||0);
+    savedLocation=w.localStorage.getItem(locationKey)||savedLocation;
+  }catch(e){}
+
+  var locations=["Accra, Ghana","Tema, Ghana","Kumasi, Ghana","Takoradi, Ghana","Cape Coast, Ghana","Tamale, Ghana","Other location"];
+  var options=locations.map(function(loc){
+    return '<option value="'+esc(loc)+'"'+(loc===savedLocation?' selected':'')+'>'+esc(loc)+'</option>';
+  }).join("");
+
   holder.innerHTML=
     '<h3 class="rpe-essential-name">'+esc(p.name||"Product")+'</h3>'+
     '<div class="rpe-essential-id">Product ID: '+esc(id)+'</div>'+
-    '<div class="rpe-essential-price">Price: <span>GHS ______</span></div>'+
+    '<div class="rpe-essential-price">Price: <span>'+esc(priceDisplay)+'</span></div>'+
     '<div class="rpe-qty-wrap">'+
       '<div class="rpe-qty-copy"><span class="rpe-qty-label">Quantity</span><span class="rpe-qty-hint">Choose how many you want</span></div>'+
       '<div class="rpe-qty-control" role="group" aria-label="Choose quantity for '+esc(p.name||"product")+'">'+
@@ -90,60 +144,98 @@ function decorateCard(card,p,w){
         '<input class="rpe-qty-input" type="number" min="0" step="1" inputmode="numeric" value="'+savedQty+'" aria-label="Quantity">'+
         '<button class="rpe-qty-btn rpe-qty-plus" type="button" aria-label="Increase quantity">+</button>'+
       '</div>'+
+    '</div>'+
+    '<div class="rpe-order-summary">'+
+      '<div class="rpe-order-row"><span class="rpe-order-label">Selected</span><span class="rpe-order-value"><span class="rpe-selected-count">'+savedQty+'</span> item(s)</span></div>'+
+      '<div class="rpe-order-row"><span class="rpe-order-label">Deliver to</span><select class="rpe-location-select" aria-label="Delivery location">'+options+'</select></div>'+
+      '<div class="rpe-order-row"><span class="rpe-order-label">Product total</span><span class="rpe-order-value rpe-product-total">'+money(unitPrice*savedQty)+'</span></div>'+
+      '<div class="rpe-order-row"><span class="rpe-order-label">Delivery fee</span><span class="rpe-order-value rpe-delivery-fee">To be confirmed</span></div>'+
+      '<button class="rpe-order-now" type="button"'+(savedQty<1?' disabled':'')+'>Order Now</button>'+
     '</div>';
 
   var qtyInput=holder.querySelector(".rpe-qty-input");
   var qtyMinus=holder.querySelector(".rpe-qty-minus");
   var qtyPlus=holder.querySelector(".rpe-qty-plus");
-  function saveQty(v){
+  var selectedCount=holder.querySelector(".rpe-selected-count");
+  var totalEl=holder.querySelector(".rpe-product-total");
+  var locationSelect=holder.querySelector(".rpe-location-select");
+  var orderBtn=holder.querySelector(".rpe-order-now");
+
+  function stopQtyEvent(e){e.stopPropagation()}
+  function refreshOrderSummary(v){
     v=Math.max(0,parseInt(v,10)||0);
     if(qtyInput)qtyInput.value=String(v);
-    try{w.localStorage.setItem(qtyKey,String(v))}catch(e){}
+    if(selectedCount)selectedCount.textContent=String(v);
+    if(totalEl)totalEl.textContent=money(unitPrice*v);
+    if(orderBtn)orderBtn.disabled=v<1;
     card.dataset.quantity=String(v);
+    try{w.localStorage.setItem(qtyKey,String(v))}catch(e){}
     return v;
   }
-  function stopQtyEvent(e){e.stopPropagation()}
+
   if(qtyMinus){
-    qtyMinus.addEventListener("click",function(e){stopQtyEvent(e);saveQty((parseInt(qtyInput.value,10)||0)-1)});
-    qtyMinus.addEventListener("pointerdown",stopQtyEvent);
+    qtyMinus.addEventListener("click",function(e){stopQtyEvent(e);refreshOrderSummary((parseInt(qtyInput.value,10)||0)-1)});
   }
   if(qtyPlus){
-    qtyPlus.addEventListener("click",function(e){stopQtyEvent(e);saveQty((parseInt(qtyInput.value,10)||0)+1)});
-    qtyPlus.addEventListener("pointerdown",stopQtyEvent);
+    qtyPlus.addEventListener("click",function(e){stopQtyEvent(e);refreshOrderSummary((parseInt(qtyInput.value,10)||0)+1)});
   }
-  var qtyRepeatTimer=null,qtyRepeatInterval=null;
-  function stopQtyRepeat(){
-    if(qtyRepeatTimer){clearTimeout(qtyRepeatTimer);qtyRepeatTimer=null}
-    if(qtyRepeatInterval){clearInterval(qtyRepeatInterval);qtyRepeatInterval=null}
+
+  var repeatTimer=null,repeatInterval=null;
+  function stopRepeat(){
+    if(repeatTimer){clearTimeout(repeatTimer);repeatTimer=null}
+    if(repeatInterval){clearInterval(repeatInterval);repeatInterval=null}
   }
-  function startQtyRepeat(direction,e){
-    stopQtyEvent(e);
-    stopQtyRepeat();
-    qtyRepeatTimer=setTimeout(function(){
-      qtyRepeatInterval=setInterval(function(){
-        var current=parseInt(qtyInput.value,10)||0;
-        saveQty(current+direction);
-      },90);
-    },420);
-  }
-  function bindQtyRepeat(btn,direction){
+  function bindRepeat(btn,dir){
     if(!btn)return;
-    btn.addEventListener("pointerdown",function(e){startQtyRepeat(direction,e)});
-    btn.addEventListener("pointerup",stopQtyRepeat);
-    btn.addEventListener("pointercancel",stopQtyRepeat);
-    btn.addEventListener("pointerleave",stopQtyRepeat);
+    btn.addEventListener("pointerdown",function(e){
+      stopQtyEvent(e);stopRepeat();
+      repeatTimer=setTimeout(function(){
+        repeatInterval=setInterval(function(){
+          refreshOrderSummary((parseInt(qtyInput.value,10)||0)+dir);
+        },90);
+      },420);
+    });
+    btn.addEventListener("pointerup",stopRepeat);
+    btn.addEventListener("pointercancel",stopRepeat);
+    btn.addEventListener("pointerleave",stopRepeat);
   }
-  bindQtyRepeat(qtyMinus,-1);
-  bindQtyRepeat(qtyPlus,1);
+  bindRepeat(qtyMinus,-1);
+  bindRepeat(qtyPlus,1);
 
   if(qtyInput){
     qtyInput.addEventListener("click",stopQtyEvent);
     qtyInput.addEventListener("pointerdown",stopQtyEvent);
-    qtyInput.addEventListener("input",function(e){stopQtyEvent(e);if(this.value!==""&&Number(this.value)<0)this.value="0"});
-    qtyInput.addEventListener("change",function(e){stopQtyEvent(e);saveQty(this.value)});
-    qtyInput.addEventListener("blur",function(){saveQty(this.value)});
+    qtyInput.addEventListener("input",function(e){
+      stopQtyEvent(e);
+      if(this.value!==""&&Number(this.value)<0)this.value="0";
+      refreshOrderSummary(this.value);
+    });
+    qtyInput.addEventListener("change",function(e){stopQtyEvent(e);refreshOrderSummary(this.value)});
   }
-  saveQty(savedQty);
+
+  if(locationSelect){
+    locationSelect.addEventListener("click",stopQtyEvent);
+    locationSelect.addEventListener("pointerdown",stopQtyEvent);
+    locationSelect.addEventListener("change",function(e){
+      stopQtyEvent(e);
+      try{w.localStorage.setItem(locationKey,this.value)}catch(err){}
+    });
+  }
+
+  if(orderBtn){
+    orderBtn.addEventListener("click",function(e){
+      stopQtyEvent(e);
+      var qty=Math.max(0,parseInt(qtyInput&&qtyInput.value,10)||0);
+      if(qty<1)return;
+      var destination=locationSelect?locationSelect.value:"Accra, Ghana";
+      var msg="Hello Ranova Prime Enterprise, I want to order "+qty+" × "+(p.name||"Product")+(id?" ("+id+")":"")+
+        ". Delivery location: "+destination+". Please confirm the current product price, delivery fee and availability.";
+      var url="https://wa.me/233542846895?text="+encodeURIComponent(msg);
+      try{w.top.location.href=url}catch(err){w.location.href=url}
+    });
+  }
+
+  refreshOrderSummary(savedQty);
 
   var imgWrap=card.querySelector(".product-img");
   var img=imgWrap&&imgWrap.querySelector("img");
@@ -166,11 +258,12 @@ function decorateCard(card,p,w){
     card.removeAttribute("tabindex");
     card.removeAttribute("aria-label");
   }
+
   if(!card.__rpeEssentialCardClick){
     card.__rpeEssentialCardClick=true;
     card.addEventListener("click",function(e){
       if(!(w.matchMedia&&w.matchMedia("(max-width:620px)").matches))return;
-      if(e.target&&e.target.closest&&e.target.closest("a,button,input,select,textarea,.rpe-qty-wrap"))return;
+      if(e.target&&e.target.closest&&e.target.closest("a,button,input,select,textarea,.rpe-qty-wrap,.rpe-order-summary"))return;
       try{if(typeof w.openProduct==="function")w.openProduct(p.id)}catch(err){}
     });
     card.addEventListener("keydown",function(e){
