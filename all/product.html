@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>RANOVA Product Details</title>
 <meta name="theme-color" content="#0b5c4d">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--g:#0b5c4d;--g2:#16705f;--ink:#17362e;--muted:#6c7d76;--line:#dfe8e4;--soft:#f5f8f7;--gold:#9b741d}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#f7f9f8;color:var(--ink)}a{text-decoration:none;color:inherit}button,input,select{font:inherit}
@@ -15,7 +16,7 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="topin"><a class="brand" href="./">RANOVA</a><nav class="nav"><a href="./marketplace.html">Marketplace</a><a href="./order-status.html">Track order</a><a href="./sell.html">Sell on RANOVA</a></nav></div></header>
+<header class="top"><div class="topin"><a class="brand" href="./">RANOVA</a><nav class="nav"><a href="./marketplace.html">Marketplace</a><a href="./account.html">Buyer account</a><a href="./order-status.html">Track order</a><a href="./sell.html">Sell on RANOVA</a></nav></div></header>
 <main class="wrap">
 <div class="crumbs"><a href="./marketplace.html">Marketplace</a> → <span id="crumb">Product</span></div>
 <div id="loading" class="empty">Loading product details…</div>
@@ -48,7 +49,8 @@
 <script>
 (function(){
 "use strict";
-var ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-product-detail",productId=new URLSearchParams(location.search).get("product")||"",current=null;
+var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co",SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr",sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+var ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-product-detail",productId=new URLSearchParams(location.search).get("product")||"",current=null,buyerSession=null,buyerSaved=false;
 function el(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function money(v){return v==null?"Ask seller for price":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
@@ -89,10 +91,30 @@ function render(out){
 function deliveryHtml(zones){return zones.length?zones.map(function(z){var price=z.pricing_type==="free"?"Free":z.pricing_type==="fixed"?money(z.fixed_fee):"Quoted per order";var eta=(z.eta_min_days!=null||z.eta_max_days!=null)?(" · "+(z.eta_min_days??z.eta_max_days)+"–"+(z.eta_max_days??z.eta_min_days)+" days"):"";return '<div class="review"><b>'+esc(z.zone_name)+'</b><small>'+esc(z.country_code)+' · '+esc(String(z.fulfilment_method||"").replace(/_/g," "))+'</small><p>'+esc(z.area_description||"")+'</p><small>'+esc(price+eta)+'</small></div>'}).join(""):'<div class="empty">No delivery zone is published for this destination yet. The seller can still confirm a custom delivery quote during ordering.</div>'}
 async function load(country){try{render(await api(country))}catch(e){el("loading").textContent=e.message||"This product is unavailable."}}
 el("qty").oninput=function(){if(!current)return;var p=current.product,q=Math.max(Number(p.moq||1),Number(this.value||p.moq||1));el("price").innerHTML=money(priceForQty(p,q))+'<small>per '+esc(p.unit_label||"unit")+'</small>';el("buyNow").href="./seller-store.html?store="+encodeURIComponent(current.store.slug)+"&product="+encodeURIComponent(p.id)+"&qty="+encodeURIComponent(q);var tiers=p.pricing_tiers||[];var next=tiers.filter(function(t){return Number(t.min_qty)>q}).sort(function(a,b){return Number(a.min_qty)-Number(b.min_qty)})[0];el("tierHint").textContent=next?"Buy "+next.min_qty+"+ for "+money(next.unit_price)+" per "+(p.unit_label||"unit")+".":"Current quantity uses the best published tier available."};
-el("saveBtn").onclick=function(){if(!current)return;try{var x=JSON.parse(localStorage.getItem("ranova_saved_products")||"[]");if(!x.includes(current.product.id))x.push(current.product.id);localStorage.setItem("ranova_saved_products",JSON.stringify(x));this.textContent="♥ Saved"}catch(e){}};
+el("saveBtn").onclick=async function(){
+  if(!current)return;
+  if(buyerSession){
+    if(buyerSaved){await sb.from("ranova_buyer_saved_products").delete().eq("user_id",buyerSession.user.id).eq("product_id",current.product.id);buyerSaved=false;this.textContent="♡ Save product"}
+    else{await sb.from("ranova_buyer_saved_products").upsert({user_id:buyerSession.user.id,product_id:current.product.id,saved_at:new Date().toISOString()},{onConflict:"user_id,product_id"});buyerSaved=true;this.textContent="♥ Saved"}
+    return;
+  }
+  try{var x=JSON.parse(localStorage.getItem("ranova_saved_products")||"[]");if(!x.includes(current.product.id))x.push(current.product.id);localStorage.setItem("ranova_saved_products",JSON.stringify(x));this.textContent="♥ Saved on this device"}catch(e){}
+};
 el("shareBtn").onclick=async function(){if(!current)return;var data={title:current.product.name,text:"View "+current.product.name+" on RANOVA Marketplace",url:location.href};try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(location.href);this.textContent="Link copied"}}catch(e){}};
 el("country").onchange=function(){load(this.value)};
-(async function(){if(!productId){el("loading").textContent="Product link is incomplete.";return}try{var r=await fetch("https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-country-service",{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({action:"countries"})});var o=await r.json();(o.countries||[]).forEach(function(c){var op=document.createElement("option");op.value=c.code;op.textContent=c.name;el("country").appendChild(op)})}catch(e){}load("")})();
+(async function(){
+  if(!productId){el("loading").textContent="Product link is incomplete.";return}
+  try{var gs=await sb.auth.getSession();buyerSession=gs.data.session}catch(e){}
+  if(buyerSession){
+    try{
+      await sb.from("ranova_buyer_recent_products").upsert({user_id:buyerSession.user.id,product_id:productId,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"});
+      var saved=await sb.from("ranova_buyer_saved_products").select("product_id").eq("user_id",buyerSession.user.id).eq("product_id",productId).maybeSingle();
+      buyerSaved=!!saved.data;el("saveBtn").textContent=buyerSaved?"♥ Saved":"♡ Save product";
+    }catch(e){}
+  }
+  try{var r=await fetch(SUPABASE_URL+"/functions/v1/ranova-country-service",{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({action:"countries"})});var o=await r.json();(o.countries||[]).forEach(function(c){var op=document.createElement("option");op.value=c.code;op.textContent=c.name;el("country").appendChild(op)})}catch(e){}
+  load("");
+})();
 })();
 </script>
 </body></html>
