@@ -50,7 +50,7 @@ function accepted(v:any){
   return ["approved","complete","verified"].includes(String(v||"").toLowerCase());
 }
 async function dashboard(role:string){
-  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],counts:{}};
+  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],counts:{}};
   if(canSellerReview(role)){
     const [{data:apps},{data:files},{data:accounts}]=await Promise.all([
       admin.from("ranova_seller_applications")
@@ -76,7 +76,7 @@ async function dashboard(role:string){
   if(canSellerReview(role)||canProductReview(role)){
     const [{data:stores},{data:products}]=await Promise.all([
       admin.from("ranova_seller_stores")
-        .select("id,seller_id,application_ref,store_name,slug,tagline,description,logo_url,banner_url,public_phone,public_email,business_location,store_status,moderation_note,created_at,updated_at,moderated_at,moderated_by")
+        .select("id,seller_id,application_ref,store_name,slug,tagline,description,logo_url,banner_url,public_phone,public_email,business_location,country_code,country_name,store_status,moderation_note,created_at,updated_at,moderated_at,moderated_by")
         .order("created_at",{ascending:false}).limit(300),
       canProductReview(role)
         ? admin.from("ranova_seller_products")
@@ -89,22 +89,25 @@ async function dashboard(role:string){
   }
 
   if(canFinance(role)){
-    const [{data:settings},{data:accounts},{data:payouts},{data:payments},{data:marketplaceOrders}]=await Promise.all([
+    const [{data:settings},{data:accounts},{data:payouts},{data:payments},{data:marketplaceOrders},{data:countryRules}]=await Promise.all([
       admin.from("ranova_marketplace_finance_settings").select("*").eq("id",1).maybeSingle(),
       admin.from("ranova_marketplace_payment_accounts").select("*").order("created_at",{ascending:false}),
       admin.from("ranova_seller_payouts").select("*").order("created_at",{ascending:false}).limit(500),
       admin.from("ranova_marketplace_payments").select("*").order("created_at",{ascending:false}).limit(500),
       admin.from("ranova_customer_orders")
-        .select("id,order_ref,customer_name,customer_phone,customer_email,delivery_location,payment_method,product_total,delivery_fee,total_payment,status,payment_status,order_source,seller_order_count,created_at")
+        .select("id,order_ref,customer_name,customer_phone,customer_email,delivery_location,buyer_country_code,buyer_country_name,payment_method,product_total,delivery_fee,total_payment,payment_processing_rate,payment_processing_fee,payment_fee_payer,status,payment_status,order_source,seller_order_count,created_at")
         .neq("order_source","ranova_catalogue")
         .order("created_at",{ascending:false})
-        .limit(500)
+        .limit(500),
+      admin.from("ranova_marketplace_country_rules")
+        .select("*").order("effective_from",{ascending:false}).limit(500)
     ]);
     out.finance_settings=settings||{id:1,default_commission_rate:0,payout_hold_days:0,currency:"GHS"};
     out.payment_accounts=accounts||[];
     out.payouts=payouts||[];
     out.payments=payments||[];
     out.marketplace_orders=marketplaceOrders||[];
+    out.country_rules=countryRules||[];
   }
 
   out.counts={
@@ -306,6 +309,11 @@ Deno.serve(async(req:Request)=>{
         updated_by:actor.user.id
       });
       if(error)throw error;
+      await admin.from("ranova_marketplace_country_rules").update({
+        commission_rate:Number(rate.toFixed(2)),
+        updated_at:now,
+        updated_by:actor.user.id
+      }).is("store_id",null).is("seller_country_code",null).is("buyer_country_code",null).is("payment_method",null);
       await log(actor.user.id,"finance_settings_updated","marketplace_finance_settings","1",{default_commission_rate:Number(rate.toFixed(2)),payout_hold_days:hold});
       return response(h,200,{ok:true});
     }
@@ -398,11 +406,19 @@ Deno.serve(async(req:Request)=>{
           if(child.subtotal===null)continue;
           const {data:profile}=await admin.from("ranova_seller_finance_profiles")
             .select("commission_rate_override").eq("seller_id",child.seller_id).maybeSingle();
-          const rate=profile?.commission_rate_override==null?defaultRate:Number(profile.commission_rate_override);
+          const snapshotRate=child.commission_rate_snapshot;
+          const rate=snapshotRate==null
+            ?(profile?.commission_rate_override==null?defaultRate:Number(profile.commission_rate_override))
+            :Number(snapshotRate);
           const gross=Number(child.subtotal||0);
           const delivery=Number(child.delivery_fee||0);
           const commission=Number((gross*rate/100).toFixed(2));
-          const payout=Number((gross-commission+delivery).toFixed(2));
+          const paymentRate=Number(child.payment_processing_rate_snapshot||0);
+          const paymentFixed=Number(child.payment_fixed_fee_snapshot||0);
+          const paymentFee=Number((Number(child.total||0)*paymentRate/100+paymentFixed).toFixed(2));
+          const paymentPayer=child.payment_fee_payer_snapshot||"platform";
+          const sellerPaymentDeduction=paymentPayer==="seller"?paymentFee:0;
+          const payout=Number((gross-commission+delivery-sellerPaymentDeduction).toFixed(2));
           const {data:existingPayout}=await admin.from("ranova_seller_payouts")
             .select("id").eq("seller_order_id",child.id).maybeSingle();
           if(!existingPayout){
@@ -416,9 +432,15 @@ Deno.serve(async(req:Request)=>{
               delivery_fee:delivery,
               commission_rate:rate,
               commission_amount:commission,
+              payment_processing_rate:paymentRate,
+              payment_processing_fee:paymentFee,
+              payment_fee_payer:paymentPayer,
               adjustment_amount:0,
               payout_amount:payout,
               currency:"GHS",
+              country_rule_id:child.country_rule_id||null,
+              seller_country_code:child.seller_country_code||null,
+              buyer_country_code:child.buyer_country_code||null,
               payout_status:holdDays>0?"pending":"eligible",
               eligible_at:eligibleAt,
               updated_at:now
@@ -460,6 +482,87 @@ Deno.serve(async(req:Request)=>{
       }).eq("id",id);
       if(error)throw error;
       await log(actor.user.id,"seller_payout_status_changed","seller_payout",id,{status,payout_reference,note});
+      return response(h,200,{ok:true});
+    }
+
+
+    if(action==="save_country_rule"){
+      if(!isOwner(actor.role))return response(h,403,{ok:false,error:"Only the Owner can change country finance rules."});
+      const id=clean(b.id,80);
+      const store_id=clean(b.store_id,80)||null;
+      const seller_country_code=clean(b.seller_country_code,2).toUpperCase()||null;
+      const buyer_country_code=clean(b.buyer_country_code,2).toUpperCase()||null;
+      const payment_method=clean(b.payment_method,40)||null;
+      const commission_rate=Number(b.commission_rate);
+      const required_payment_percent=Number(b.required_payment_percent==null?100:b.required_payment_percent);
+      const payment_processing_rate=Number(b.payment_processing_rate||0);
+      const payment_fixed_fee=Number(b.payment_fixed_fee||0);
+      const payment_fee_payer=clean(b.payment_fee_payer,20)||"platform";
+      const source_name=clean(b.source_name,180);
+      const source_url=clean(b.source_url,1000);
+      const source_kind=clean(b.source_kind,40)||"owner_policy";
+      const auto_update=!!b.auto_update;
+      if(seller_country_code&&!/^[A-Z]{2}$/.test(seller_country_code))return response(h,400,{ok:false,error:"Invalid seller country code."});
+      if(buyer_country_code&&!/^[A-Z]{2}$/.test(buyer_country_code))return response(h,400,{ok:false,error:"Invalid buyer country code."});
+      if(payment_method&&!["Mobile Money","Bank Transfer"].includes(payment_method))return response(h,400,{ok:false,error:"Invalid payment method."});
+      if(!Number.isFinite(commission_rate)||commission_rate<0||commission_rate>100)return response(h,400,{ok:false,error:"Commission must be between 0 and 100."});
+      if(!Number.isFinite(required_payment_percent)||required_payment_percent<0||required_payment_percent>100)return response(h,400,{ok:false,error:"Required payment percentage must be between 0 and 100."});
+      if(!Number.isFinite(payment_processing_rate)||payment_processing_rate<0||payment_processing_rate>100)return response(h,400,{ok:false,error:"Payment processing percentage must be between 0 and 100."});
+      if(!Number.isFinite(payment_fixed_fee)||payment_fixed_fee<0)return response(h,400,{ok:false,error:"Fixed payment fee cannot be negative."});
+      if(!["platform","buyer","seller"].includes(payment_fee_payer))return response(h,400,{ok:false,error:"Invalid payment-fee payer."});
+      if(!["owner_policy","payment_provider","tax_authority","other_official"].includes(source_kind))return response(h,400,{ok:false,error:"Invalid source type."});
+      if(auto_update&&(!source_url||source_kind==="owner_policy"))return response(h,400,{ok:false,error:"Automatic updates require an official external source URL and non-owner source type."});
+
+      const payload:any={
+        store_id,
+        seller_country_code,
+        buyer_country_code,
+        payment_method,
+        commission_rate:Number(commission_rate.toFixed(2)),
+        required_payment_percent:Number(required_payment_percent.toFixed(2)),
+        payment_processing_rate:Number(payment_processing_rate.toFixed(2)),
+        payment_fixed_fee:Number(payment_fixed_fee.toFixed(2)),
+        payment_fee_payer,
+        currency:"GHS",
+        source_name:source_name||null,
+        source_url:source_url||null,
+        source_kind,
+        auto_update,
+        active:b.active!==false,
+        effective_from:b.effective_from?new Date(b.effective_from).toISOString():new Date().toISOString(),
+        updated_at:new Date().toISOString(),
+        updated_by:actor.user.id
+      };
+      let q;
+      if(id){
+        q=await admin.from("ranova_marketplace_country_rules").update(payload).eq("id",id).select("*").maybeSingle();
+      }else{
+        q=await admin.from("ranova_marketplace_country_rules").insert(payload).select("*").single();
+      }
+      if(q.error){
+        if(String(q.error.message||"").toLowerCase().includes("duplicate"))return response(h,409,{ok:false,error:"A rule already exists for that same store/country/payment scope."});
+        throw q.error;
+      }
+      if(!store_id&&!seller_country_code&&!buyer_country_code&&!payment_method){
+        await admin.from("ranova_marketplace_finance_settings").update({
+          default_commission_rate:Number(commission_rate.toFixed(2)),
+          updated_at:new Date().toISOString(),
+          updated_by:actor.user.id
+        }).eq("id",1);
+      }
+      await log(actor.user.id,"country_finance_rule_saved","marketplace_country_rule",q.data?.id||id,{store_id,seller_country_code,buyer_country_code,payment_method,commission_rate,payment_processing_rate,payment_fee_payer,source_kind,auto_update});
+      return response(h,200,{ok:true,rule:q.data});
+    }
+
+    if(action==="set_country_rule_active"){
+      if(!isOwner(actor.role))return response(h,403,{ok:false,error:"Only the Owner can change country finance rules."});
+      const id=clean(b.id,80);
+      const active=!!b.active;
+      const {error}=await admin.from("ranova_marketplace_country_rules").update({
+        active,updated_at:new Date().toISOString(),updated_by:actor.user.id
+      }).eq("id",id);
+      if(error)throw error;
+      await log(actor.user.id,"country_finance_rule_status_changed","marketplace_country_rule",id,{active});
       return response(h,200,{ok:true});
     }
 
