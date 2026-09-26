@@ -4,8 +4,10 @@ const cfg=window.RPE_CONFIG||{},loading=document.getElementById("loading"),auth=
 if(!cfg.supabaseUrl||!cfg.supabasePublishableKey||!window.supabase){loading.textContent="Admin backend is not connected.";return}
 const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey);
 const marketEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-admin-marketplace";
-let session=null,user=null,role=null,orders=[],products=[],categories=[];
-let market={applications:[],files:[],stores:[],products:[],counts:{}},marketError=null,selectedApplicationRef=null;
+const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
+const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
+let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
+let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],counts:{}},marketError=null,selectedApplicationRef=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -26,7 +28,7 @@ const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
 const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
 const canFinance=()=>role==="owner"||role==="manager";
 const isOwner=()=>role==="owner";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],counts:{}});
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -70,6 +72,7 @@ async function loadAll(){
     loadOrders(),
     loadProducts(),
     loadCategories(),
+    loadCountryData().catch(err=>console.error(err)),
     loadMarketplace().catch(err=>{marketError=err;market=marketEmpty();console.error(err)})
   ]);
   renderToday();renderOrders();renderProducts();renderStock();renderCategoryOptions();renderMarketplaceAll();
@@ -85,6 +88,15 @@ async function loadProducts(){
 async function loadCategories(){
   const {data,error}=await sb.from("categories").select("*").order("display_order").order("name");
   if(error)throw error;categories=data||[];
+}
+
+async function loadCountryData(){
+  const res=await fetch(countryEndpoint,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({action:"countries"})});
+  const out=await res.json().catch(()=>({}));
+  if(!res.ok||!out.ok)throw new Error(out.error||"Country service unavailable.");
+  countryList=Array.isArray(out.countries)?out.countries:[];
+  countryMap={};countryList.forEach(c=>countryMap[c.code]=c.name);
+  googleCountryAvailable=!!out.google_available;
 }
 async function marketApi(payload){
   if(!session?.access_token)throw new Error("Admin session expired.");
@@ -354,6 +366,7 @@ function renderFinance(){
 
   $("financeOwnerSettings").classList.toggle("hide",!isOwner());
   $("paymentAccountsCard").classList.toggle("hide",!isOwner());
+  renderCountryRules();
 
   const accounts=market.payment_accounts||[];
   $("paymentAccountsList").innerHTML=accounts.length?accounts.map(a=>'<div class="market-row"><div><b>'+esc(a.payment_method)+' • '+esc(a.provider_name)+'</b><small>'+esc(a.account_name)+' • <span class="finance-ref">'+esc(a.account_reference)+'</span></small>'+(a.instructions?'<small>'+esc(a.instructions)+'</small>':'')+'</div><span class="chip '+(a.active?'status-approved':'status-paused')+'">'+(a.active?'Active':'Inactive')+'</span><div><small>Updated</small><b>'+new Date(a.updated_at).toLocaleString()+'</b></div><div class="actions"><button data-edit-pay-account="'+a.id+'">Edit</button><button data-toggle-pay-account="'+a.id+'" data-active="'+(!a.active)+'">'+(a.active?'Disable':'Enable')+'</button></div></div>').join(""):'<div class="empty">No customer payment destination has been added yet.</div>';
@@ -425,6 +438,79 @@ function renderFinance(){
     catch(err){alert(err.message)}finally{b.disabled=false}
   });
 }
+
+function countryOptions(selected="",allowAny=true){
+  let html=allowAny?'<option value="">Any country</option>':'<option value="">Choose country</option>';
+  html+=countryList.map(c=>'<option value="'+esc(c.code)+'"'+(c.code===selected?' selected':'')+'>'+esc(c.name)+'</option>').join("");
+  return html;
+}
+function clearCountryRuleForm(){
+  $("countryRuleId").value="";
+  $("ruleStore").value="";
+  $("rulePaymentMethod").value="";
+  $("ruleSellerCountry").value="";
+  $("ruleBuyerCountry").value="";
+  $("ruleCommission").value="0";
+  $("rulePaymentRate").value="0";
+  $("ruleFixedFee").value="0";
+  $("ruleFeePayer").value="platform";
+  $("ruleSourceKind").value="owner_policy";
+  $("ruleSourceName").value="";
+  $("ruleSourceUrl").value="";
+  $("ruleAutoUpdate").checked=false;
+  $("ruleActive").checked=true;
+}
+function renderCountryRules(){
+  const card=$("countryRulesCard");if(!card)return;
+  const status=$("googleCountryStatus");
+  status.textContent=googleCountryAvailable?"Google country lookup connected":"Google key not connected";
+  status.className="chip "+(googleCountryAvailable?"status-approved":"status-under_review");
+
+  const currentStore=$("ruleStore").value,currentSeller=$("ruleSellerCountry").value,currentBuyer=$("ruleBuyerCountry").value;
+  $("ruleStore").innerHTML='<option value="">Any store</option>'+(market.stores||[]).map(s=>'<option value="'+esc(s.id)+'">'+esc(s.store_name)+(s.country_code?' • '+esc(countryMap[s.country_code]||s.country_code):'')+'</option>').join("");
+  if(currentStore)$("ruleStore").value=currentStore;
+  $("ruleSellerCountry").innerHTML=countryOptions(currentSeller,true);
+  $("ruleBuyerCountry").innerHTML=countryOptions(currentBuyer,true);
+
+  const rules=market.country_rules||[],stores=new Map((market.stores||[]).map(s=>[s.id,s]));
+  $("countryRulesList").innerHTML=rules.length?rules.map(r=>{
+    const store=stores.get(r.store_id);
+    const scope=[
+      store?store.store_name:"Any store",
+      r.seller_country_code?(countryMap[r.seller_country_code]||r.seller_country_code)+" seller":"Any seller country",
+      r.buyer_country_code?(countryMap[r.buyer_country_code]||r.buyer_country_code)+" buyer":"Any buyer country",
+      r.payment_method||"Any payment method"
+    ].join(" → ");
+    const source=r.source_name||pretty(r.source_kind||"owner_policy");
+    const sync=r.auto_update?(r.last_sync_status||"waiting"):"manual";
+    const actions=isOwner()?'<button data-edit-country-rule="'+r.id+'">Edit</button><button data-toggle-country-rule="'+r.id+'" data-active="'+(!r.active)+'">'+(r.active?"Disable":"Enable")+'</button>':"";
+    return '<div class="market-row"><div><b>'+esc(scope)+'</b><small>Source: '+esc(source)+(r.source_url?' • official URL configured':'')+'</small><small>Sync: '+esc(sync)+(r.last_checked_at?' • '+new Date(r.last_checked_at).toLocaleString():'')+(r.last_sync_error?' • '+esc(r.last_sync_error):'')+'</small></div><span class="chip '+(r.active?'status-approved':'status-paused')+'">'+(r.active?'Active':'Inactive')+'</span><div><small>Commission</small><b>'+Number(r.commission_rate||0).toFixed(2)+'%</b><small>Payment '+Number(r.payment_processing_rate||0).toFixed(2)+'% + '+fmtMoney(r.payment_fixed_fee||0)+'</small></div><div><small>Fee payer</small><b>'+esc(pretty(r.payment_fee_payer||"platform"))+'</b><small>'+esc(pretty(r.source_kind||"owner_policy"))+'</small></div><div class="actions">'+actions+'</div></div>';
+  }).join(""):'<div class="empty">No country-specific rules yet. The global default remains in effect.</div>';
+
+  $("countryRulesList").querySelectorAll("[data-edit-country-rule]").forEach(b=>b.onclick=()=>{
+    const r=rules.find(x=>x.id===b.dataset.editCountryRule);if(!r)return;
+    $("countryRuleId").value=r.id;
+    $("ruleStore").value=r.store_id||"";
+    $("rulePaymentMethod").value=r.payment_method||"";
+    $("ruleSellerCountry").value=r.seller_country_code||"";
+    $("ruleBuyerCountry").value=r.buyer_country_code||"";
+    $("ruleCommission").value=r.commission_rate??0;
+    $("rulePaymentRate").value=r.payment_processing_rate??0;
+    $("ruleFixedFee").value=r.payment_fixed_fee??0;
+    $("ruleFeePayer").value=r.payment_fee_payer||"platform";
+    $("ruleSourceKind").value=r.source_kind||"owner_policy";
+    $("ruleSourceName").value=r.source_name||"";
+    $("ruleSourceUrl").value=r.source_url||"";
+    $("ruleAutoUpdate").checked=!!r.auto_update;
+    $("ruleActive").checked=r.active!==false;
+    card.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+  $("countryRulesList").querySelectorAll("[data-toggle-country-rule]").forEach(b=>b.onclick=async()=>{
+    b.disabled=true;
+    try{await marketApi({action:"set_country_rule_active",id:b.dataset.toggleCountryRule,active:b.dataset.active==="true"});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+}
 function clearPaymentAccountForm(){
   $("payAccountId").value="";$("payAccountMethod").value="Mobile Money";$("payAccountProvider").value="";$("payAccountName").value="";$("payAccountReference").value="";$("payAccountInstructions").value="";
 }
@@ -455,6 +541,46 @@ function renderSellerStores(){
   });
 }
 
+
+$("saveCountryRule").onclick=async()=>{
+  if(!isOwner())return alert("Only the Owner can change country finance rules.");
+  const b=$("saveCountryRule");b.disabled=true;
+  try{
+    await marketApi({
+      action:"save_country_rule",
+      id:$("countryRuleId").value,
+      store_id:$("ruleStore").value,
+      seller_country_code:$("ruleSellerCountry").value,
+      buyer_country_code:$("ruleBuyerCountry").value,
+      payment_method:$("rulePaymentMethod").value,
+      commission_rate:$("ruleCommission").value,
+      required_payment_percent:100,
+      payment_processing_rate:$("rulePaymentRate").value,
+      payment_fixed_fee:$("ruleFixedFee").value,
+      payment_fee_payer:$("ruleFeePayer").value,
+      source_kind:$("ruleSourceKind").value,
+      source_name:$("ruleSourceName").value,
+      source_url:$("ruleSourceUrl").value,
+      auto_update:$("ruleAutoUpdate").checked,
+      active:$("ruleActive").checked
+    });
+    clearCountryRuleForm();await reloadMarketplace();alert("Country finance rule saved.");
+  }catch(err){alert(err.message)}finally{b.disabled=false}
+};
+$("clearCountryRule").onclick=clearCountryRuleForm;
+$("syncCountryRules").onclick=async()=>{
+  if(!isOwner())return alert("Only the Owner can run a rate sync.");
+  const b=$("syncCountryRules");b.disabled=true;
+  try{
+    const res=await fetch(rateSyncEndpoint,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({force:true})});
+    const out=await res.json().catch(()=>({}));
+    if(!res.ok||!out.ok)throw new Error(out.error||"Rate sync failed.");
+    await reloadMarketplace();
+    const updated=(out.results||[]).filter(x=>x.status==="updated").length;
+    const errors=(out.results||[]).filter(x=>x.status==="error").length;
+    alert("Rate sync complete. Updated: "+updated+(errors?", errors: "+errors:"")+".");
+  }catch(err){alert(err.message)}finally{b.disabled=false}
+};
 $("saveFinanceSettings").onclick=async()=>{
   if(!isOwner())return alert("Only the Owner can change finance settings.");
   const b=$("saveFinanceSettings");b.disabled=true;
