@@ -145,6 +145,32 @@ create trigger trg_ranova_create_delivery_ledger
 after insert on public.ranova_seller_orders
 for each row execute function private.ranova_create_delivery_ledger();
 
+with ins as (
+  insert into public.ranova_order_deliveries(
+    customer_order_id,seller_order_id,store_id,destination_text,
+    quoted_delivery_fee,delivery_status,proof_required
+  )
+  select so.parent_order_id,so.id,so.store_id,so.delivery_location,
+         so.delivery_fee,
+         case
+           when so.order_status='delivered' then 'delivered_confirmed'
+           when so.order_status='dispatched' then 'in_transit'
+           when so.order_status='ready_for_dispatch' then 'awaiting_dispatch'
+           when so.order_status='cancelled' then 'cancelled'
+           when so.order_status='returned' then 'returned'
+           else 'pending_quote'
+         end,
+         true
+  from public.ranova_seller_orders so
+  where not exists (
+    select 1 from public.ranova_order_deliveries d where d.seller_order_id=so.id
+  )
+  returning id,seller_order_id,delivery_status
+)
+insert into public.ranova_delivery_events(delivery_id,seller_order_id,status,actor_type,note)
+select id,seller_order_id,delivery_status,'system','Existing order backfilled into delivery ledger.'
+from ins;
+
 create or replace function private.ranova_refresh_payout_eligibility()
 returns void
 language sql
