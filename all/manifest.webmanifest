@@ -5,8 +5,8 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f7f4ec",
-  "theme_color": "#0d3329",
+  "background_color": "#F6F8F7",
+  "theme_color": "#176B61",
   "icons": [
     {
       "src": "rpe-mark.svg",
