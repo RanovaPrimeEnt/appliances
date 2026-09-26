@@ -37,7 +37,7 @@ function installStyle(d){
     #grid .product-info>.rpe-essential-card{display:grid!important;gap:5px!important}
     #grid .rpe-essential-name{display:block!important;margin:0!important;font-size:14px!important;line-height:1.28!important;font-weight:800!important;color:#163c32!important;min-width:0!important;overflow-wrap:anywhere!important}
     #grid .rpe-essential-id{display:block!important;margin:0!important;font-size:12px!important;line-height:1.35!important;color:#667870!important;font-weight:650!important;overflow-wrap:anywhere!important}
-    #grid .rpe-essential-price{display:inline-flex!important;align-items:center!important;width:max-content!important;max-width:100%!important;margin:4px 0 0!important;padding:5px 8px!important;border-radius:9px!important;background:#fff3df!important;border:1px solid #f3c77a!important;font-size:13px!important;line-height:1.35!important;color:#d97706!important;font-weight:900!important;box-shadow:0 2px 8px rgba(192,90,0,.08)!important}#grid .rpe-essential-price span{color:inherit!important}#grid .rpe-qty-wrap{display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:8px!important;margin-top:6px!important;padding:8px 9px!important;border-radius:12px!important;background:linear-gradient(135deg,#f2fbf6 0%,#fff8e9 100%)!important;border:1px solid #d9eadf!important;box-shadow:0 5px 14px rgba(20,84,65,.07)!important}#grid .rpe-qty-copy{display:grid!important;gap:1px!important;min-width:0!important}#grid .rpe-qty-label{display:block!important;font-size:11px!important;line-height:1.2!important;font-weight:900!important;color:#164b3d!important}#grid .rpe-qty-hint{display:block!important;font-size:9px!important;line-height:1.25!important;color:#74837c!important;font-weight:700!important}#grid .rpe-qty-control{display:grid!important;grid-template-columns:34px 42px 34px!important;align-items:center!important;border:1px solid #cfded7!important;border-radius:12px!important;overflow:hidden!important;background:#fff!important;box-shadow:0 4px 10px rgba(13,62,49,.08)!important}#grid .rpe-qty-btn{display:grid!important;place-items:center!important;width:34px!important;height:34px!important;padding:0!important;margin:0!important;border:0!important;color:#fff!important;font-size:20px!important;line-height:1!important;font-weight:950!important;cursor:pointer!important;touch-action:manipulation!important;transition:transform .12s ease,filter .12s ease!important}#grid .rpe-qty-minus{background:#55746a!important}#grid .rpe-qty-plus{background:#d97706!important}#grid .rpe-qty-btn:hover{filter:brightness(1.04)!important}#grid .rpe-qty-btn:active{transform:scale(.93)!important;filter:brightness(.96)!important}#grid .rpe-qty-input{display:block!important;width:42px!important;height:34px!important;padding:0!important;margin:0!important;border:0!important;border-left:1px solid #e2eae6!important;border-right:1px solid #e2eae6!important;background:#fff!important;color:#123e33!important;text-align:center!important;font-size:14px!important;font-weight:950!important;outline:none!important;-moz-appearance:textfield!important}#grid .rpe-qty-input::-webkit-outer-spin-button,#grid .rpe-qty-input::-webkit-inner-spin-button{-webkit-appearance:none!important;margin:0!important}
+    #grid .rpe-essential-price{display:inline-flex!important;align-items:center!important;width:max-content!important;max-width:100%!important;margin:4px 0 0!important;padding:5px 8px!important;border-radius:9px!important;background:#fff3df!important;border:1px solid #f3c77a!important;font-size:13px!important;line-height:1.35!important;color:#d97706!important;font-weight:900!important;box-shadow:0 2px 8px rgba(192,90,0,.08)!important}#grid .rpe-essential-price span{color:inherit!important}#grid .rpe-qty-wrap{display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:8px!important;margin-top:6px!important;padding:8px 9px!important;border-radius:12px!important;background:linear-gradient(135deg,#f2fbf6 0%,#fff8e9 100%)!important;border:1px solid #d9eadf!important;box-shadow:0 5px 14px rgba(20,84,65,.07)!important}#grid .rpe-qty-copy{display:grid!important;gap:1px!important;min-width:0!important}#grid .rpe-qty-label{display:block!important;font-size:11px!important;line-height:1.2!important;font-weight:900!important;color:#164b3d!important}#grid .rpe-qty-hint{display:block!important;font-size:9px!important;line-height:1.25!important;color:#74837c!important;font-weight:700!important}#grid .rpe-qty-control{display:grid!important;grid-template-columns:34px 42px 34px!important;align-items:center!important;border:1px solid #cfded7!important;border-radius:12px!important;overflow:hidden!important;background:#fff!important;box-shadow:0 4px 10px rgba(13,62,49,.08)!important}#grid .rpe-qty-btn{display:grid!important;place-items:center!important;width:34px!important;height:34px!important;padding:0!important;margin:0!important;border:0!important;color:#fff!important;font-size:20px!important;line-height:1!important;font-weight:950!important;cursor:pointer!important;touch-action:manipulation!important;transition:transform .12s ease,filter .12s ease!important}#grid .rpe-qty-minus{background:#55746a!important}#grid .rpe-qty-plus{background:#d97706!important}#grid .rpe-qty-btn:hover{filter:brightness(1.04)!important}#grid .rpe-qty-btn:active{transform:scale(.93)!important;filter:brightness(.96)!important}#grid .rpe-qty-input{display:block!important;width:42px!important;height:34px!important;padding:0!important;margin:0!important;border:0!important;border-left:1px solid #e2eae6!important;border-right:1px solid #e2eae6!important;background:#fff!important;color:#123e33!important;text-align:center!important;font-size:14px!important;font-weight:950!important;outline:none!important;-moz-appearance:textfield!important}#grid .rpe-qty-input::-webkit-outer-spin-button,#grid .rpe-qty-input::-webkit-inner-spin-button{-webkit-appearance:none!important;margin:0!important}#grid .rpe-qty-wrap{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;margin-top:7px!important;padding:7px 0 0!important;border-top:1px solid #edf1ef!important;border-radius:0!important;background:transparent!important;border-left:0!important;border-right:0!important;border-bottom:0!important;box-shadow:none!important}#grid .rpe-qty-copy{display:grid!important;gap:1px!important;min-width:0!important}#grid .rpe-qty-label{font-size:10px!important;font-weight:850!important;color:#6c7973!important}#grid .rpe-qty-hint{font-size:8px!important;color:#9aa39f!important;font-weight:650!important}#grid .rpe-qty-control{display:grid!important;grid-template-columns:34px 38px 34px!important;gap:6px!important;align-items:center!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}#grid .rpe-qty-btn{display:grid!important;place-items:center!important;width:34px!important;height:34px!important;border:0!important;border-radius:9px!important;background:#f2f4f3!important;color:#293d36!important;font-size:22px!important;font-weight:500!important;box-shadow:none!important;transition:background .12s ease,transform .12s ease!important}#grid .rpe-qty-minus,#grid .rpe-qty-plus{background:#f2f4f3!important;color:#293d36!important}#grid .rpe-qty-btn:hover{background:#e8ecea!important;filter:none!important}#grid .rpe-qty-btn:active{background:#dde4e0!important;transform:scale(.94)!important;filter:none!important}#grid .rpe-qty-input{display:block!important;width:38px!important;height:34px!important;padding:0!important;border:0!important;background:transparent!important;color:#111!important;text-align:center!important;font-size:16px!important;font-weight:800!important;box-shadow:none!important}
     #grid .product-img{cursor:pointer!important}
     #grid .product-img img{cursor:pointer!important}
     #grid .product-info .rpe-market-product-meta,
@@ -58,7 +58,7 @@ function installStyle(d){
       #grid .product-info{padding:10px 9px 12px!important}
       #grid .rpe-essential-name{font-size:13px!important;line-height:1.25!important}
       #grid .rpe-essential-id{font-size:12px!important}
-      #grid .rpe-essential-price{font-size:12px!important;padding:5px 7px!important}#grid .rpe-qty-wrap{grid-template-columns:1fr!important;gap:6px!important;padding:7px!important}#grid .rpe-qty-copy{text-align:center!important}#grid .rpe-qty-label{font-size:10px!important}#grid .rpe-qty-hint{font-size:8px!important}#grid .rpe-qty-control{grid-template-columns:32px 1fr 32px!important;width:100%!important}#grid .rpe-qty-btn{width:32px!important;height:31px!important;font-size:18px!important}#grid .rpe-qty-input{width:100%!important;height:31px!important;font-size:13px!important}
+      #grid .rpe-essential-price{font-size:12px!important;padding:5px 7px!important}#grid .rpe-qty-wrap{display:flex!important;grid-template-columns:none!important;gap:5px!important;padding:6px 0 0!important}#grid .rpe-qty-copy{display:none!important}#grid .rpe-qty-control{grid-template-columns:30px 34px 30px!important;gap:4px!important;width:auto!important;margin-left:auto!important}#grid .rpe-qty-btn{width:30px!important;height:30px!important;font-size:20px!important}#grid .rpe-qty-input{width:34px!important;height:30px!important;font-size:15px!important}#grid .rpe-qty-wrap{grid-template-columns:1fr!important;gap:6px!important;padding:7px!important}#grid .rpe-qty-copy{text-align:center!important}#grid .rpe-qty-label{font-size:10px!important}#grid .rpe-qty-hint{font-size:8px!important}#grid .rpe-qty-control{grid-template-columns:32px 1fr 32px!important;width:100%!important}#grid .rpe-qty-btn{width:32px!important;height:31px!important;font-size:18px!important}#grid .rpe-qty-input{width:100%!important;height:31px!important;font-size:13px!important}
     }
     @media(min-width:621px){
       #grid .rpe-essential-name{font-size:15px!important}
@@ -77,17 +77,17 @@ function decorateCard(card,p,w){
     info.appendChild(holder);
   }
   var qtyKey="rpeQty:"+(id||p.name||p.id||"product");
-  var savedQty=1;
-  try{savedQty=Math.max(1,parseInt(w.localStorage.getItem(qtyKey)||"1",10)||1)}catch(e){}
+  var savedQty=0;
+  try{savedQty=Math.max(0,parseInt(w.localStorage.getItem(qtyKey)||"0",10)||0)}catch(e){}
   holder.innerHTML=
     '<h3 class="rpe-essential-name">'+esc(p.name||"Product")+'</h3>'+
     '<div class="rpe-essential-id">Product ID: '+esc(id)+'</div>'+
     '<div class="rpe-essential-price">Price: <span>GHS ______</span></div>'+
     '<div class="rpe-qty-wrap">'+
-      '<div class="rpe-qty-copy"><span class="rpe-qty-label">Choose your quantity</span><span class="rpe-qty-hint">Add as many as you need</span></div>'+
+      '<div class="rpe-qty-copy"><span class="rpe-qty-label">Quantity</span><span class="rpe-qty-hint">Choose how many you want</span></div>'+
       '<div class="rpe-qty-control" role="group" aria-label="Choose quantity for '+esc(p.name||"product")+'">'+
         '<button class="rpe-qty-btn rpe-qty-minus" type="button" aria-label="Decrease quantity">−</button>'+
-        '<input class="rpe-qty-input" type="number" min="1" step="1" inputmode="numeric" value="'+savedQty+'" aria-label="Quantity">'+
+        '<input class="rpe-qty-input" type="number" min="0" step="1" inputmode="numeric" value="'+savedQty+'" aria-label="Quantity">'+
         '<button class="rpe-qty-btn rpe-qty-plus" type="button" aria-label="Increase quantity">+</button>'+
       '</div>'+
     '</div>';
@@ -96,7 +96,7 @@ function decorateCard(card,p,w){
   var qtyMinus=holder.querySelector(".rpe-qty-minus");
   var qtyPlus=holder.querySelector(".rpe-qty-plus");
   function saveQty(v){
-    v=Math.max(1,parseInt(v,10)||1);
+    v=Math.max(0,parseInt(v,10)||0);
     if(qtyInput)qtyInput.value=String(v);
     try{w.localStorage.setItem(qtyKey,String(v))}catch(e){}
     card.dataset.quantity=String(v);
@@ -104,11 +104,11 @@ function decorateCard(card,p,w){
   }
   function stopQtyEvent(e){e.stopPropagation()}
   if(qtyMinus){
-    qtyMinus.addEventListener("click",function(e){stopQtyEvent(e);saveQty((parseInt(qtyInput.value,10)||1)-1)});
+    qtyMinus.addEventListener("click",function(e){stopQtyEvent(e);saveQty((parseInt(qtyInput.value,10)||0)-1)});
     qtyMinus.addEventListener("pointerdown",stopQtyEvent);
   }
   if(qtyPlus){
-    qtyPlus.addEventListener("click",function(e){stopQtyEvent(e);saveQty((parseInt(qtyInput.value,10)||1)+1)});
+    qtyPlus.addEventListener("click",function(e){stopQtyEvent(e);saveQty((parseInt(qtyInput.value,10)||0)+1)});
     qtyPlus.addEventListener("pointerdown",stopQtyEvent);
   }
   var qtyRepeatTimer=null,qtyRepeatInterval=null;
@@ -121,7 +121,7 @@ function decorateCard(card,p,w){
     stopQtyRepeat();
     qtyRepeatTimer=setTimeout(function(){
       qtyRepeatInterval=setInterval(function(){
-        var current=parseInt(qtyInput.value,10)||1;
+        var current=parseInt(qtyInput.value,10)||0;
         saveQty(current+direction);
       },90);
     },420);
@@ -139,7 +139,7 @@ function decorateCard(card,p,w){
   if(qtyInput){
     qtyInput.addEventListener("click",stopQtyEvent);
     qtyInput.addEventListener("pointerdown",stopQtyEvent);
-    qtyInput.addEventListener("input",function(e){stopQtyEvent(e);if(this.value!==""&&Number(this.value)<1)this.value="1"});
+    qtyInput.addEventListener("input",function(e){stopQtyEvent(e);if(this.value!==""&&Number(this.value)<0)this.value="0"});
     qtyInput.addEventListener("change",function(e){stopQtyEvent(e);saveQty(this.value)});
     qtyInput.addEventListener("blur",function(){saveQty(this.value)});
   }
