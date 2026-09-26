@@ -137,7 +137,7 @@ async function loadDashboard(userId:string,seller:any){
     order:"created_at.desc"
   }):[];
   const orders=store?await serviceGet("ranova_seller_orders",{
-    select:"id,order_ref,platform_order_ref,buyer_name,buyer_phone,buyer_email,delivery_location,payment_method,items,item_count,subtotal,delivery_fee,total,currency,payment_status,order_status,buyer_note,seller_note,created_at,updated_at",
+    select:"id,parent_order_id,order_ref,platform_order_ref,buyer_name,buyer_phone,buyer_email,delivery_location,payment_method,items,item_count,subtotal,delivery_fee,total,currency,payment_status,order_status,buyer_note,seller_note,seller_country_code,seller_country_name,buyer_country_code,buyer_country_name,country_rule_id,commission_rate_snapshot,required_payment_percent_snapshot,payment_processing_rate_snapshot,payment_fixed_fee_snapshot,payment_fee_payer_snapshot,created_at,updated_at",
     seller_id:"eq."+userId,
     order:"created_at.desc",
     limit:"50"
@@ -149,7 +149,7 @@ async function loadDashboard(userId:string,seller:any){
     orders:orders.length,
     open_orders:orders.filter((o:any)=>!["delivered","cancelled","returned"].includes(o.order_status)).length
   };
-  let finance_profile=null,payouts=[],finance_settings=null;
+  let finance_profile=null,payouts=[],finance_settings=null,notifications=[],refunds=[],disputes=[];
   if(store){
     const profiles=await serviceGet("ranova_seller_finance_profiles",{select:"seller_id,store_id,payout_method,provider_name,account_name,account_reference,commission_rate_override,updated_at",seller_id:"eq."+userId,limit:"1"});
     finance_profile=profiles[0]||null;
@@ -161,8 +161,45 @@ async function loadDashboard(userId:string,seller:any){
     });
     const settings=await serviceGet("ranova_marketplace_finance_settings",{select:"default_commission_rate,payout_hold_days,currency",id:"eq.1",limit:"1"});
     finance_settings=settings[0]||{default_commission_rate:0,payout_hold_days:0,currency:"GHS"};
+
+    notifications=await serviceGet("ranova_marketplace_notifications",{
+      select:"id,customer_order_id,seller_order_id,notification_type,title,message,metadata,read_at,created_at",
+      recipient_user_id:"eq."+userId,
+      recipient_type:"eq.seller",
+      order:"created_at.desc",
+      limit:"50"
+    });
+
+    const parentIds=[...new Set(orders.map((o:any)=>o.parent_order_id).filter(Boolean))];
+    if(parentIds.length){
+      const inParents="in.("+parentIds.join(",")+")";
+      refunds=await serviceGet("ranova_marketplace_refunds",{
+        select:"id,refund_ref,customer_order_id,seller_order_id,requested_amount,approved_amount,currency,reason_category,reason_detail,status,admin_note,refund_reference,requested_at,reviewed_at,refunded_at,updated_at",
+        customer_order_id:inParents,
+        order:"requested_at.desc",
+        limit:"100"
+      });
+      disputes=await serviceGet("ranova_marketplace_disputes",{
+        select:"id,dispute_ref,customer_order_id,seller_order_id,category,subject,description,status,resolution,resolution_note,opened_at,resolved_at,updated_at",
+        customer_order_id:inParents,
+        order:"opened_at.desc",
+        limit:"100"
+      });
+      const disputeIds=disputes.map((d:any)=>d.id);
+      if(disputeIds.length){
+        const messages=await serviceGet("ranova_marketplace_dispute_messages",{
+          select:"id,dispute_id,sender_type,message,created_at",
+          dispute_id:"in.("+disputeIds.join(",")+")",
+          order:"created_at.asc",
+          limit:"500"
+        });
+        disputes=disputes.map((d:any)=>({...d,messages:messages.filter((m:any)=>m.dispute_id===d.id)}));
+      }
+    }
   }
-  return {ok:true,linked:true,approved:seller.approved,application:seller.application,store,products,orders,counts,finance_profile,payouts,finance_settings};
+  counts.open_support_cases=refunds.filter((r:any)=>!["refunded","rejected","cancelled"].includes(r.status)).length+
+    disputes.filter((d:any)=>!["resolved","closed"].includes(d.status)).length;
+  return {ok:true,linked:true,approved:seller.approved,application:seller.application,store,products,orders,counts,finance_profile,payouts,finance_settings,notifications,refunds,disputes};
 }
 function response(h:Record<string,string>,status:number,payload:any){
   return new Response(JSON.stringify(payload),{status,headers:h});
@@ -444,6 +481,49 @@ Deno.serve(async(req:Request)=>{
       if(!r.ok||!out.length)throw new Error("Could not update order status.");
       await syncParentOrder(order.parent_order_id||null);
       return response(h,200,{ok:true,order:out[0]});
+    }
+
+
+    if(action==="seller_dispute_message"){
+      const disputeRef=clean(b.dispute_ref,80).toUpperCase();
+      const message=clean(b.message,2000);
+      if(message.length<2)return response(h,400,{ok:false,error:"Enter a message."});
+      const disputes=await serviceGet("ranova_marketplace_disputes",{select:"*",dispute_ref:"eq."+disputeRef,limit:"1"});
+      const dispute=disputes[0];
+      if(!dispute)return response(h,404,{ok:false,error:"Dispute not found."});
+      if(["resolved","closed"].includes(dispute.status))return response(h,409,{ok:false,error:"This dispute is closed."});
+      const sellerOrders=await serviceGet("ranova_seller_orders",{
+        select:"id,parent_order_id,platform_order_ref,buyer_email",
+        seller_id:"eq."+user.id,
+        parent_order_id:"eq."+dispute.customer_order_id,
+        limit:"10"
+      });
+      if(!sellerOrders.length)return response(h,403,{ok:false,error:"This dispute is not linked to your store."});
+
+      const insertMsg=await fetch(SUPABASE_URL+"/rest/v1/ranova_marketplace_dispute_messages",{
+        method:"POST",
+        headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json",Prefer:"return=representation"},
+        body:JSON.stringify({dispute_id:dispute.id,sender_type:"seller",sender_user_id:user.id,message})
+      });
+      if(!insertMsg.ok)throw new Error("Could not save dispute reply.");
+      await fetch(SUPABASE_URL+"/rest/v1/ranova_marketplace_disputes?id=eq."+encodeURIComponent(dispute.id),{
+        method:"PATCH",
+        headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json"},
+        body:JSON.stringify({status:"under_review",updated_at:new Date().toISOString()})
+      });
+
+      const buyerEmail=sellerOrders.find((x:any)=>x.buyer_email)?.buyer_email||null;
+      await fetch(SUPABASE_URL+"/rest/v1/ranova_marketplace_notifications",{
+        method:"POST",
+        headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json"},
+        body:JSON.stringify({
+          recipient_type:"buyer",recipient_email:buyerEmail,customer_order_id:dispute.customer_order_id,
+          notification_type:"dispute_message",title:"Seller replied to your RANOVA dispute",
+          message:"The seller added a message to dispute "+disputeRef+". Open order tracking to review it.",
+          metadata:{dispute_ref:disputeRef},email_requested:!!buyerEmail,email_status:buyerEmail?"queued":"not_requested"
+        })
+      });
+      return response(h,200,{ok:true});
     }
 
     return response(h,400,{ok:false,error:"Unknown action."});
