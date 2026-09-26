@@ -1,7 +1,11 @@
 -- RANOVA marketplace seller Store Builder foundation
 -- Applied to Supabase on 2026-09-26.
 
-create or replace function public.is_approved_ranova_seller(p_user_id uuid)
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to anon, authenticated;
+
+create or replace function private.is_approved_ranova_seller(p_user_id uuid)
 returns boolean
 language sql
 stable
@@ -18,8 +22,8 @@ as $$
   );
 $$;
 
-revoke all on function public.is_approved_ranova_seller(uuid) from public;
-grant execute on function public.is_approved_ranova_seller(uuid) to anon, authenticated;
+revoke all on function private.is_approved_ranova_seller(uuid) from public;
+grant execute on function private.is_approved_ranova_seller(uuid) to anon, authenticated;
 
 create table if not exists public.ranova_seller_stores (
   id uuid primary key default gen_random_uuid(),
@@ -115,17 +119,17 @@ grant select on public.ranova_seller_orders to authenticated;
 
 create policy "Public can view active seller stores"
 on public.ranova_seller_stores for select to anon, authenticated
-using (store_status='active' and public.is_approved_ranova_seller(seller_id));
+using (store_status='active' and private.is_approved_ranova_seller(seller_id));
 
 create policy "Seller can view own store"
 on public.ranova_seller_stores for select to authenticated
-using (seller_id=auth.uid());
+using (seller_id=(select auth.uid()));
 
 create policy "Public can view active seller products"
 on public.ranova_seller_products for select to anon, authenticated
 using (
   product_status='active'
-  and public.is_approved_ranova_seller(seller_id)
+  and private.is_approved_ranova_seller(seller_id)
   and exists (
     select 1 from public.ranova_seller_stores s
     where s.id=store_id and s.store_status='active'
@@ -134,11 +138,11 @@ using (
 
 create policy "Seller can view own products"
 on public.ranova_seller_products for select to authenticated
-using (seller_id=auth.uid());
+using (seller_id=(select auth.uid()));
 
 create policy "Seller can view own orders"
 on public.ranova_seller_orders for select to authenticated
-using (seller_id=auth.uid());
+using (seller_id=(select auth.uid()));
 
 insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
 values ('seller-store-assets','seller-store-assets',true,5242880,array['image/jpeg','image/png','image/webp'])
@@ -151,19 +155,26 @@ create policy "Approved sellers can upload store assets"
 on storage.objects for insert to authenticated
 with check (
   bucket_id='seller-store-assets'
-  and (storage.foldername(name))[1]=auth.uid()::text
-  and public.is_approved_ranova_seller(auth.uid())
+  and (storage.foldername(name))[1]=(select auth.uid())::text
+  and private.is_approved_ranova_seller(auth.uid())
 );
 
 create policy "Approved sellers can update own store assets"
 on storage.objects for update to authenticated
-using (bucket_id='seller-store-assets' and owner_id=auth.uid()::text)
+using (bucket_id='seller-store-assets' and owner_id=(select auth.uid())::text)
 with check (
   bucket_id='seller-store-assets'
-  and (storage.foldername(name))[1]=auth.uid()::text
-  and public.is_approved_ranova_seller(auth.uid())
+  and (storage.foldername(name))[1]=(select auth.uid())::text
+  and private.is_approved_ranova_seller(auth.uid())
 );
 
 create policy "Approved sellers can delete own store assets"
 on storage.objects for delete to authenticated
-using (bucket_id='seller-store-assets' and owner_id=auth.uid()::text);
+using (bucket_id='seller-store-assets' and owner_id=(select auth.uid())::text);
+
+
+-- Hardening indexes for seller verification lookups.
+create index if not exists idx_ranova_seller_verification_files_application_ref
+  on public.ranova_seller_verification_files(application_ref);
+create index if not exists idx_ranova_seller_verification_files_seller_id
+  on public.ranova_seller_verification_files(seller_id);
