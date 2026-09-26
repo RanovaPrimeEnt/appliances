@@ -35,6 +35,17 @@ function getProductForCard(card,ps){
   var name=h.textContent.trim();
   return ps.find(function(p){return p.name===name})||null;
 }
+
+function installThemeLink(d){
+  if(!d||d.getElementById("rpeCalmTheme"))return;
+  var link=d.createElement("link");
+  link.id="rpeCalmTheme";
+  link.rel="stylesheet";
+  link.href="./rpe-theme.css?v=20260926-1";
+  d.head.appendChild(link);
+  var meta=d.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute("content","#176B61");
+}
 function installStyles(d){
   if(d.getElementById("rpeFriendlyStyle"))return;
   var st=d.createElement("style");
@@ -454,6 +465,7 @@ function installCompareAndCardActions(d,w,ps,grid){
 function enhance(){
   var d=idoc(),w=iwin(),ps=products();
   if(!d||!w||!d.body||!ps.length)return false;
+  installThemeLink(d);
   installStyles(d);
   installSkip(d);
   installHow(d);
