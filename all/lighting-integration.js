@@ -17,6 +17,7 @@
       var style=d.createElement('style');style.id='rpeLightingStyle';
       style.textContent=
         '.category-cards.rpeFourCategories{grid-template-columns:repeat(5,minmax(0,1fr))!important}' +
+        '.modal.open{z-index:6000!important}' +
         '#rpeLightingCategoryCard .category-image img{object-fit:cover!important;object-position:center 8%!important;transform:none!important}' +
         '.product-img img[src*="/images/lighting/"]{object-fit:cover!important;object-position:center 7%!important;transform:none!important}' +
         '.modal-image:has(img[src*="/images/lighting/"]){align-items:start!important;overflow:auto!important;max-height:72vh!important}' +
