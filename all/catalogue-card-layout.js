@@ -37,7 +37,7 @@ function installStyle(d){
     #grid .product-info>.rpe-essential-card{display:grid!important;gap:5px!important}
     #grid .rpe-essential-name{display:block!important;margin:0!important;font-size:14px!important;line-height:1.28!important;font-weight:800!important;color:#163c32!important;min-width:0!important;overflow-wrap:anywhere!important}
     #grid .rpe-essential-id{display:block!important;margin:0!important;font-size:12px!important;line-height:1.35!important;color:#667870!important;font-weight:650!important;overflow-wrap:anywhere!important}
-    #grid .rpe-essential-price{display:block!important;margin:2px 0 0!important;font-size:13px!important;line-height:1.35!important;color:#0d5f49!important;font-weight:850!important}
+    #grid .rpe-essential-price{display:inline-flex!important;align-items:center!important;width:max-content!important;max-width:100%!important;margin:4px 0 0!important;padding:5px 8px!important;border-radius:9px!important;background:#fff3df!important;border:1px solid #f3c77a!important;font-size:13px!important;line-height:1.35!important;color:#c05a00!important;font-weight:900!important;box-shadow:0 2px 8px rgba(192,90,0,.08)!important}
     #grid .product-img{cursor:pointer!important}
     #grid .product-img img{cursor:pointer!important}
     #grid .product-info .rpe-market-product-meta,
@@ -58,7 +58,7 @@ function installStyle(d){
       #grid .product-info{padding:10px 9px 12px!important}
       #grid .rpe-essential-name{font-size:13px!important;line-height:1.25!important}
       #grid .rpe-essential-id{font-size:12px!important}
-      #grid .rpe-essential-price{font-size:12px!important}
+      #grid .rpe-essential-price{font-size:12px!important;padding:5px 7px!important}
     }
     @media(min-width:621px){
       #grid .rpe-essential-name{font-size:15px!important}
