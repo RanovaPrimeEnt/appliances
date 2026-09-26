@@ -1,8 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const ALLOWED_ORIGIN="https://ranovaprimeent.github.io";
+const admin=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 
 function headers(origin:string|null){
   const allow=origin===ALLOWED_ORIGIN||origin?.startsWith("http://localhost")?origin:ALLOWED_ORIGIN;
@@ -149,7 +151,7 @@ async function loadDashboard(userId:string,seller:any){
     orders:orders.length,
     open_orders:orders.filter((o:any)=>!["delivered","cancelled","returned"].includes(o.order_status)).length
   };
-  let finance_profile=null,payouts=[],finance_settings=null,notifications=[],refunds=[],disputes=[];
+  let finance_profile=null,payouts=[],finance_settings=null,notifications=[],refunds=[],disputes=[],delivery_zones=[],deliveries=[],delivery_events=[],delivery_proofs=[];
   if(store){
     const profiles=await serviceGet("ranova_seller_finance_profiles",{select:"seller_id,store_id,payout_method,provider_name,account_name,account_reference,commission_rate_override,updated_at",seller_id:"eq."+userId,limit:"1"});
     finance_profile=profiles[0]||null;
@@ -161,6 +163,34 @@ async function loadDashboard(userId:string,seller:any){
     });
     const settings=await serviceGet("ranova_marketplace_finance_settings",{select:"default_commission_rate,payout_hold_days,currency",id:"eq.1",limit:"1"});
     finance_settings=settings[0]||{default_commission_rate:0,payout_hold_days:0,currency:"GHS"};
+
+    delivery_zones=await serviceGet("ranova_delivery_zones",{
+      select:"id,store_id,zone_name,country_code,area_description,fulfilment_method,pricing_type,fixed_fee,currency,eta_min_days,eta_max_days,active,created_at,updated_at",
+      store_id:"eq."+store.id,
+      order:"zone_name.asc",
+      limit:"100"
+    });
+    deliveries=await serviceGet("ranova_order_deliveries",{
+      select:"id,customer_order_id,seller_order_id,store_id,zone_id,responsibility,fulfilment_method,delivery_status,quoted_delivery_fee,currency,destination_text,courier_name,courier_phone,courier_reference,tracking_url,eta_start_date,eta_end_date,proof_required,proof_verified,assigned_at,dispatched_at,picked_up_at,out_for_delivery_at,seller_marked_delivered_at,buyer_confirmed_at,admin_confirmed_at,delivered_at,delivery_note,created_at,updated_at",
+      store_id:"eq."+store.id,
+      order:"created_at.desc",
+      limit:"100"
+    });
+    if(deliveries.length){
+      const ids=deliveries.map((d:any)=>d.id);
+      delivery_events=await serviceGet("ranova_delivery_events",{
+        select:"id,delivery_id,seller_order_id,status,actor_type,note,location_text,metadata,occurred_at",
+        delivery_id:"in.("+ids.join(",")+")",
+        order:"occurred_at.asc",
+        limit:"1000"
+      });
+      delivery_proofs=await serviceGet("ranova_delivery_proofs",{
+        select:"id,delivery_id,seller_order_id,proof_type,recipient_name,note,uploaded_by_type,captured_at,review_status,review_note,reviewed_at,created_at",
+        delivery_id:"in.("+ids.join(",")+")",
+        order:"created_at.asc",
+        limit:"500"
+      });
+    }
 
     notifications=await serviceGet("ranova_marketplace_notifications",{
       select:"id,customer_order_id,seller_order_id,notification_type,title,message,metadata,read_at,created_at",
@@ -199,7 +229,9 @@ async function loadDashboard(userId:string,seller:any){
   }
   counts.open_support_cases=refunds.filter((r:any)=>!["refunded","rejected","cancelled"].includes(r.status)).length+
     disputes.filter((d:any)=>!["resolved","closed"].includes(d.status)).length;
-  return {ok:true,linked:true,approved:seller.approved,application:seller.application,store,products,orders,counts,finance_profile,payouts,finance_settings,notifications,refunds,disputes};
+  counts.active_deliveries=deliveries.filter((d:any)=>!["delivered_confirmed","returned","cancelled"].includes(d.delivery_status)).length;
+  counts.awaiting_delivery_confirmation=deliveries.filter((d:any)=>d.delivery_status==="delivered_pending_confirmation").length;
+  return {ok:true,linked:true,approved:seller.approved,application:seller.application,store,products,orders,counts,finance_profile,payouts,finance_settings,notifications,refunds,disputes,delivery_zones,deliveries,delivery_events,delivery_proofs};
 }
 function response(h:Record<string,string>,status:number,payload:any){
   return new Response(JSON.stringify(payload),{status,headers:h});
@@ -301,6 +333,240 @@ Deno.serve(async(req:Request)=>{
     const stores=await serviceGet("ranova_seller_stores",{select:"id,store_status",seller_id:"eq."+user.id,limit:"1"});
     if(!stores.length)return response(h,400,{ok:false,error:"Create your store profile first."});
     const store=stores[0];
+
+    if(action==="save_delivery_zone"){
+      const id=clean(b.id,80);
+      const zone_name=clean(b.zone_name,120);
+      const country_code=clean(b.country_code,2).toUpperCase();
+      const area_description=clean(b.area_description,700);
+      const fulfilment_method=clean(b.fulfilment_method,40)||"seller_delivery";
+      const pricing_type=clean(b.pricing_type,20)||"quote";
+      const fixed_fee=num(b.fixed_fee);
+      const eta_min_days=int(b.eta_min_days,0,365);
+      const eta_max_days=int(b.eta_max_days,0,365);
+      if(!zone_name||!/^[A-Z]{2}$/.test(country_code))return response(h,400,{ok:false,error:"Zone name and country are required."});
+      if(!["seller_delivery","third_party_courier","ranova_delivery","pickup"].includes(fulfilment_method))return response(h,400,{ok:false,error:"Invalid fulfilment method."});
+      if(!["quote","fixed","free"].includes(pricing_type))return response(h,400,{ok:false,error:"Invalid delivery pricing type."});
+      if(pricing_type==="fixed"&&(fixed_fee===null||fixed_fee<0))return response(h,400,{ok:false,error:"Enter a valid fixed delivery fee."});
+      if(eta_min_days!==null&&eta_max_days!==null&&eta_max_days<eta_min_days)return response(h,400,{ok:false,error:"Maximum ETA cannot be earlier than minimum ETA."});
+      const payload:any={
+        store_id:store.id,zone_name,country_code,area_description:area_description||null,
+        fulfilment_method,pricing_type,
+        fixed_fee:pricing_type==="fixed"?Number(fixed_fee!.toFixed(2)):pricing_type==="free"?0:null,
+        currency:"GHS",eta_min_days,eta_max_days,active:true,updated_at:new Date().toISOString()
+      };
+      if(id){
+        const rows=await serviceGet("ranova_delivery_zones",{select:"id",id:"eq."+id,store_id:"eq."+store.id,limit:"1"});
+        if(!rows.length)return response(h,404,{ok:false,error:"Delivery zone not found."});
+        const {error}=await admin.from("ranova_delivery_zones").update(payload).eq("id",id).eq("store_id",store.id);
+        if(error)throw error;
+        return response(h,200,{ok:true});
+      }
+      const {error}=await admin.from("ranova_delivery_zones").insert(payload);
+      if(error){
+        if(String(error.message||"").toLowerCase().includes("duplicate"))return response(h,409,{ok:false,error:"An active delivery zone with that name already exists."});
+        throw error;
+      }
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="archive_delivery_zone"){
+      const id=clean(b.id,80);
+      const rows=await serviceGet("ranova_delivery_zones",{select:"id",id:"eq."+id,store_id:"eq."+store.id,limit:"1"});
+      if(!rows.length)return response(h,404,{ok:false,error:"Delivery zone not found."});
+      const {error}=await admin.from("ranova_delivery_zones").update({active:false,updated_at:new Date().toISOString()}).eq("id",id).eq("store_id",store.id);
+      if(error)throw error;
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="save_delivery_plan"){
+      const orderId=clean(b.order_id,80);
+      const rows=await serviceGet("ranova_seller_orders",{select:"*",id:"eq."+orderId,seller_id:"eq."+user.id,limit:"1"});
+      const order=rows[0];
+      if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      if(["delivered","cancelled","returned"].includes(order.order_status))return response(h,409,{ok:false,error:"Delivery plan can no longer be changed for this order."});
+
+      const zoneId=clean(b.zone_id,80)||null;
+      let zone:any=null;
+      if(zoneId){
+        const zones=await serviceGet("ranova_delivery_zones",{select:"*",id:"eq."+zoneId,store_id:"eq."+store.id,active:"eq.true",limit:"1"});
+        zone=zones[0]||null;
+        if(!zone)return response(h,400,{ok:false,error:"Selected delivery zone is not available."});
+      }
+      const fulfilment=zone?.fulfilment_method||clean(b.fulfilment_method,40)||"seller_delivery";
+      const responsibility=fulfilment==="ranova_delivery"?"ranova":fulfilment==="third_party_courier"?"third_party":fulfilment==="pickup"?"buyer_pickup":"seller";
+      let fee=num(b.delivery_fee);
+      if(zone?.pricing_type==="fixed")fee=Number(zone.fixed_fee||0);
+      if(zone?.pricing_type==="free")fee=0;
+      if(fee===null||fee<0)return response(h,400,{ok:false,error:"Enter a valid delivery fee or select a fixed/free delivery zone."});
+      const etaStart=clean(b.eta_start_date,10)||null,etaEnd=clean(b.eta_end_date,10)||null;
+      if(etaStart&&etaEnd&&new Date(etaEnd)<new Date(etaStart))return response(h,400,{ok:false,error:"Delivery ETA end date cannot be before the start date."});
+
+      const total=order.subtotal===null?null:Number((Number(order.subtotal||0)+fee).toFixed(2));
+      const now=new Date().toISOString();
+      const {error:orderErr}=await admin.from("ranova_seller_orders").update({
+        delivery_fee:Number(fee.toFixed(2)),total,updated_at:now
+      }).eq("id",order.id).eq("seller_id",user.id);
+      if(orderErr)throw orderErr;
+
+      const existing=await serviceGet("ranova_order_deliveries",{select:"id,delivery_status",seller_order_id:"eq."+order.id,limit:"1"});
+      const deliveryStatus=order.order_status==="confirmed"||order.payment_status==="paid"?"awaiting_dispatch":"pending_quote";
+      const deliveryPayload:any={
+        customer_order_id:order.parent_order_id,store_id:store.id,zone_id:zoneId,
+        responsibility,fulfilment_method:fulfilment,quoted_delivery_fee:Number(fee.toFixed(2)),
+        destination_text:order.delivery_location,eta_start_date:etaStart,eta_end_date:etaEnd,
+        delivery_note:clean(b.delivery_note,1000)||null,
+        proof_required:fulfilment!=="pickup",
+        updated_at:now
+      };
+      let deliveryId=existing[0]?.id;
+      if(deliveryId){
+        const {error}=await admin.from("ranova_order_deliveries").update(deliveryPayload).eq("id",deliveryId);
+        if(error)throw error;
+      }else{
+        const {data,error}=await admin.from("ranova_order_deliveries").insert({
+          ...deliveryPayload,seller_order_id:order.id,delivery_status:deliveryStatus
+        }).select("id").single();
+        if(error)throw error; deliveryId=data.id;
+      }
+      await admin.from("ranova_delivery_events").insert({
+        delivery_id:deliveryId,seller_order_id:order.id,status:deliveryStatus,actor_type:"seller",actor_user_id:user.id,
+        note:"Delivery plan updated. Fee: GHS "+Number(fee).toFixed(2)+"."
+      });
+      await syncParentOrder(order.parent_order_id||null);
+      return response(h,200,{ok:true,delivery_id:deliveryId,delivery_fee:Number(fee.toFixed(2))});
+    }
+
+    if(action==="update_delivery_courier"){
+      const orderId=clean(b.order_id,80);
+      const rows=await serviceGet("ranova_seller_orders",{select:"id,parent_order_id,payment_status,order_status,buyer_email,order_ref",id:"eq."+orderId,seller_id:"eq."+user.id,limit:"1"});
+      const order=rows[0];
+      if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      const deliveries=await serviceGet("ranova_order_deliveries",{select:"*",seller_order_id:"eq."+order.id,store_id:"eq."+store.id,limit:"1"});
+      const delivery=deliveries[0];
+      if(!delivery)return response(h,400,{ok:false,error:"Save the delivery plan first."});
+      const courier_name=clean(b.courier_name,160),courier_phone=clean(b.courier_phone,60),courier_reference=clean(b.courier_reference,180),tracking_url=clean(b.tracking_url,1000);
+      if(tracking_url&&!/^https:\/\//i.test(tracking_url))return response(h,400,{ok:false,error:"Tracking link must use HTTPS."});
+      const now=new Date().toISOString();
+      const nextStatus=delivery.delivery_status==="pending_quote"?"awaiting_dispatch":delivery.delivery_status;
+      const {error}=await admin.from("ranova_order_deliveries").update({
+        courier_name:courier_name||null,courier_phone:courier_phone||null,courier_reference:courier_reference||null,
+        tracking_url:tracking_url||null,delivery_status:nextStatus,assigned_at:courier_name?now:delivery.assigned_at,updated_at:now
+      }).eq("id",delivery.id);
+      if(error)throw error;
+      await admin.from("ranova_delivery_events").insert({
+        delivery_id:delivery.id,seller_order_id:order.id,status:nextStatus,actor_type:"seller",actor_user_id:user.id,
+        note:courier_name?"Courier assigned: "+courier_name+".":"Delivery details updated."
+      });
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="create_delivery_proof_upload"){
+      const orderId=clean(b.order_id,80),mime=clean(b.mime_type,80);
+      const size=Number(b.file_size||0);
+      if(!["image/jpeg","image/png","image/webp"].includes(mime))return response(h,400,{ok:false,error:"Proof must be a JPG, PNG or WebP image."});
+      if(!Number.isFinite(size)||size<=0||size>5*1024*1024)return response(h,400,{ok:false,error:"Proof image must be 5 MB or smaller."});
+      const rows=await serviceGet("ranova_seller_orders",{select:"id",id:"eq."+orderId,seller_id:"eq."+user.id,limit:"1"});
+      if(!rows.length)return response(h,404,{ok:false,error:"Order not found."});
+      const deliveries=await serviceGet("ranova_order_deliveries",{select:"id",seller_order_id:"eq."+orderId,store_id:"eq."+store.id,limit:"1"});
+      if(!deliveries.length)return response(h,400,{ok:false,error:"Save the delivery plan first."});
+      const ext=mime==="image/png"?"png":mime==="image/webp"?"webp":"jpg";
+      const path=user.id+"/"+orderId+"/"+Date.now()+"_"+crypto.randomUUID().slice(0,8)+"."+ext;
+      const {data,error}=await admin.storage.from("ranova-delivery-proof").createSignedUploadUrl(path);
+      if(error||!data?.token)throw new Error("Could not prepare secure proof upload.");
+      return response(h,200,{ok:true,path,token:data.token});
+    }
+
+    if(action==="record_delivery_proof"){
+      const orderId=clean(b.order_id,80),path=clean(b.storage_path,500),proofType=clean(b.proof_type,40)||"photo";
+      const rows=await serviceGet("ranova_seller_orders",{select:"id",id:"eq."+orderId,seller_id:"eq."+user.id,limit:"1"});
+      if(!rows.length)return response(h,404,{ok:false,error:"Order not found."});
+      if(!path.startsWith(user.id+"/"+orderId+"/"))return response(h,403,{ok:false,error:"Invalid proof path."});
+      if(!["photo","courier_receipt","recipient_name","signature","other"].includes(proofType))return response(h,400,{ok:false,error:"Invalid proof type."});
+      const deliveries=await serviceGet("ranova_order_deliveries",{select:"id",seller_order_id:"eq."+orderId,store_id:"eq."+store.id,limit:"1"});
+      const delivery=deliveries[0];if(!delivery)return response(h,400,{ok:false,error:"Delivery record not found."});
+      const parts=path.split("/"),name=parts.pop()||"",folder=parts.join("/");
+      const {data:list,error:listErr}=await admin.storage.from("ranova-delivery-proof").list(folder,{search:name,limit:10});
+      if(listErr||!(list||[]).some((x:any)=>x.name===name))return response(h,400,{ok:false,error:"Proof upload was not found. Upload the image again."});
+      const {error}=await admin.from("ranova_delivery_proofs").insert({
+        delivery_id:delivery.id,seller_order_id:orderId,proof_type:proofType,storage_path:path,
+        recipient_name:clean(b.recipient_name,180)||null,note:clean(b.note,1000)||null,
+        uploaded_by_type:"seller",uploaded_by_user_id:user.id,captured_at:b.captured_at?new Date(b.captured_at).toISOString():new Date().toISOString()
+      });
+      if(error)throw error;
+      await admin.from("ranova_delivery_events").insert({
+        delivery_id:delivery.id,seller_order_id:orderId,status:"proof_submitted",actor_type:"seller",actor_user_id:user.id,note:"Delivery proof submitted for review."
+      });
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="delivery_proof_url"){
+      const proofId=clean(b.proof_id,80);
+      const proofs=await serviceGet("ranova_delivery_proofs",{select:"id,storage_path,seller_order_id",id:"eq."+proofId,limit:"1"});
+      const proof=proofs[0];if(!proof?.storage_path)return response(h,404,{ok:false,error:"Delivery proof not found."});
+      const rows=await serviceGet("ranova_seller_orders",{select:"id",id:"eq."+proof.seller_order_id,seller_id:"eq."+user.id,limit:"1"});
+      if(!rows.length)return response(h,403,{ok:false,error:"This proof does not belong to your store."});
+      const {data,error}=await admin.storage.from("ranova-delivery-proof").createSignedUrl(proof.storage_path,600);
+      if(error||!data?.signedUrl)throw new Error("Could not open delivery proof.");
+      return response(h,200,{ok:true,url:data.signedUrl,expires_in:600});
+    }
+
+    if(action==="update_delivery_status"){
+      const orderId=clean(b.order_id,80),next=clean(b.status,50),note=clean(b.note,1000);
+      const rows=await serviceGet("ranova_seller_orders",{select:"*",id:"eq."+orderId,seller_id:"eq."+user.id,limit:"1"});
+      const order=rows[0];if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      const deliveries=await serviceGet("ranova_order_deliveries",{select:"*",seller_order_id:"eq."+order.id,store_id:"eq."+store.id,limit:"1"});
+      const delivery=deliveries[0];if(!delivery)return response(h,400,{ok:false,error:"Save the delivery plan first."});
+      const allowed:any={
+        pending_quote:["awaiting_dispatch","cancelled"],
+        awaiting_dispatch:["assigned","picked_up","in_transit","cancelled"],
+        assigned:["picked_up","in_transit","cancelled"],
+        picked_up:["in_transit","out_for_delivery","delivered_pending_confirmation","returned"],
+        in_transit:["out_for_delivery","failed_attempt","returned"],
+        out_for_delivery:["delivered_pending_confirmation","failed_attempt","returned"],
+        failed_attempt:["out_for_delivery","returned"],
+        delivered_pending_confirmation:[],
+        delivered_confirmed:[],
+        returned:[],
+        cancelled:[]
+      };
+      if(!(allowed[delivery.delivery_status]||[]).includes(next))return response(h,400,{ok:false,error:"That delivery-status change is not allowed from "+String(delivery.delivery_status).replace(/_/g," ")+". "});
+      if(["picked_up","in_transit","out_for_delivery","delivered_pending_confirmation"].includes(next)&&String(order.payment_status)!=="paid"){
+        return response(h,409,{ok:false,error:"RANOVA must confirm customer payment before this order can be dispatched."});
+      }
+      if(next==="delivered_pending_confirmation"&&delivery.proof_required){
+        const proofs=await serviceGet("ranova_delivery_proofs",{select:"id",delivery_id:"eq."+delivery.id,limit:"1"});
+        if(!proofs.length)return response(h,409,{ok:false,error:"Upload delivery proof before marking the order delivered."});
+      }
+      const now=new Date().toISOString(),patch:any={delivery_status:next,delivery_note:note||delivery.delivery_note||null,updated_at:now};
+      if(next==="assigned")patch.assigned_at=now;
+      if(next==="picked_up"){patch.picked_up_at=now;patch.dispatched_at=delivery.dispatched_at||now}
+      if(next==="in_transit")patch.dispatched_at=delivery.dispatched_at||now;
+      if(next==="out_for_delivery")patch.out_for_delivery_at=now;
+      if(next==="delivered_pending_confirmation")patch.seller_marked_delivered_at=now;
+      const {error}=await admin.from("ranova_order_deliveries").update(patch).eq("id",delivery.id);
+      if(error)throw error;
+      const sellerStatus=next==="awaiting_dispatch"?"ready_for_dispatch":
+        ["assigned","picked_up","in_transit","out_for_delivery","delivered_pending_confirmation"].includes(next)?"dispatched":
+        next==="returned"?"returned":next==="cancelled"?"cancelled":order.order_status;
+      if(sellerStatus!==order.order_status){
+        await admin.from("ranova_seller_orders").update({order_status:sellerStatus,updated_at:now}).eq("id",order.id);
+        await syncParentOrder(order.parent_order_id||null);
+      }
+      await admin.from("ranova_delivery_events").insert({
+        delivery_id:delivery.id,seller_order_id:order.id,status:next,actor_type:"seller",actor_user_id:user.id,note:note||null
+      });
+      if(order.buyer_email){
+        await admin.from("ranova_marketplace_notifications").insert({
+          recipient_type:"buyer",recipient_email:order.buyer_email,customer_order_id:order.parent_order_id,seller_order_id:order.id,
+          notification_type:"delivery_status",title:"RANOVA delivery update",
+          message:"Delivery for seller order "+order.order_ref+" is now "+next.replace(/_/g," ")+".",
+          metadata:{seller_order_ref:order.order_ref,delivery_status:next},
+          email_requested:true,email_status:"queued"
+        });
+      }
+      return response(h,200,{ok:true});
+    }
 
 
     if(action==="save_finance_profile"){
@@ -442,6 +708,26 @@ Deno.serve(async(req:Request)=>{
       });
       const out=await r.json().catch(()=>[]);
       if(!r.ok||!out.length)throw new Error("Could not update the order amount.");
+      const existingDelivery=await serviceGet("ranova_order_deliveries",{select:"id,delivery_status",seller_order_id:"eq."+order.id,limit:"1"});
+      if(existingDelivery.length){
+        await admin.from("ranova_order_deliveries").update({
+          quoted_delivery_fee:delivery_fee===null?null:Number(delivery_fee.toFixed(2)),
+          destination_text:order.delivery_location,
+          updated_at:new Date().toISOString()
+        }).eq("id",existingDelivery[0].id);
+      }else{
+        const {data:d,error:dErr}=await admin.from("ranova_order_deliveries").insert({
+          customer_order_id:order.parent_order_id,seller_order_id:order.id,store_id:order.store_id,
+          responsibility:"seller",fulfilment_method:"seller_delivery",delivery_status:"pending_quote",
+          quoted_delivery_fee:delivery_fee===null?null:Number(delivery_fee.toFixed(2)),
+          destination_text:order.delivery_location,proof_required:true
+        }).select("id").single();
+        if(dErr)throw dErr;
+        await admin.from("ranova_delivery_events").insert({
+          delivery_id:d.id,seller_order_id:order.id,status:"pending_quote",actor_type:"seller",actor_user_id:user.id,
+          note:"Delivery fee recorded with seller quote."
+        });
+      }
       await syncParentOrder(order.parent_order_id||null);
       return response(h,200,{ok:true,order:out[0]});
     }
@@ -455,13 +741,14 @@ Deno.serve(async(req:Request)=>{
         new:["confirmed","cancelled"],
         confirmed:["preparing","cancelled"],
         preparing:["ready_for_dispatch","cancelled"],
-        ready_for_dispatch:["dispatched","cancelled"],
-        dispatched:["delivered"],
+        ready_for_dispatch:["cancelled"],
+        dispatched:[],
         delivered:[],
         cancelled:[],
         return_requested:["returned"],
         returned:[]
       };
+      if(["dispatched","delivered"].includes(next))return response(h,409,{ok:false,error:"Use Delivery tracking for dispatch and proof. Final delivery must be confirmed by the buyer or RANOVA."});
       if(!(allowed[order.order_status]||[]).includes(next)){
         return response(h,400,{ok:false,error:"That order-status change is not allowed from "+order.order_status.replace(/_/g," ")+". "});
       }
@@ -479,6 +766,16 @@ Deno.serve(async(req:Request)=>{
       });
       const out=await r.json().catch(()=>[]);
       if(!r.ok||!out.length)throw new Error("Could not update order status.");
+      if(next==="ready_for_dispatch"){
+        const deliveries=await serviceGet("ranova_order_deliveries",{select:"id,delivery_status",seller_order_id:"eq."+order.id,limit:"1"});
+        if(deliveries.length&&!["delivered_confirmed","returned","cancelled"].includes(deliveries[0].delivery_status)){
+          await admin.from("ranova_order_deliveries").update({delivery_status:"awaiting_dispatch",updated_at:new Date().toISOString()}).eq("id",deliveries[0].id);
+          await admin.from("ranova_delivery_events").insert({
+            delivery_id:deliveries[0].id,seller_order_id:order.id,status:"awaiting_dispatch",
+            actor_type:"seller",actor_user_id:user.id,note:"Order marked ready for dispatch."
+          });
+        }
+      }
       await syncParentOrder(order.parent_order_id||null);
       return response(h,200,{ok:true,order:out[0]});
     }
