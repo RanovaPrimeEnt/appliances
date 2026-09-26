@@ -69,8 +69,8 @@ root.innerHTML=
   '.akwaaba-langs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}.akwaaba-lang{min-height:38px;border:1px solid #dce7e2;background:#fff;color:#425b52;border-radius:10px;font-size:11px;font-weight:850;cursor:pointer;padding:5px}.akwaaba-lang.active{background:#0e5b43;color:#fff;border-color:#0e5b43;box-shadow:0 6px 14px rgba(14,91,67,.16)}'+
   '.akwaaba-state{padding:0;border:0;background:transparent}.akwaaba-result{display:grid;gap:7px}.akwaaba-block{border:1px solid #e0e9e4;border-radius:14px;padding:10px 11px;background:#fff}.akwaaba-block.translation{background:linear-gradient(180deg,#f4fbf7 0%,#ffffff 100%);border-color:#cfe3d8}.akwaaba-block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}.akwaaba-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#7c8d85}.akwaaba-language-pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#eaf4ef;color:#0e5b43;font-size:10px;font-weight:900}.akwaaba-original{font-size:13px;line-height:1.5;color:#52665f;word-break:break-word}.akwaaba-output{font-size:17px;line-height:1.5;font-weight:850;color:#102f29;word-break:break-word}.akwaaba-arrow{display:flex;align-items:center;justify-content:center;height:16px;color:#8ba39a;font-weight:900;font-size:14px}.akwaaba-loading{display:flex;align-items:center;gap:9px;color:#52665f;font-size:13px;padding:13px;border-radius:14px;background:#f6f9f7;border:1px solid #e5ece8}.akwaaba-spin{width:16px;height:16px;border:2px solid #cfe1d8;border-top-color:#0e5b43;border-radius:50%;animation:akwaabaSpin .8s linear infinite}@keyframes akwaabaSpin{to{transform:rotate(360deg)}}'+
   '.akwaaba-actions{display:flex;gap:8px;margin-top:11px}.akwaaba-actions button{flex:1;min-height:40px;border-radius:11px;border:1px solid #dce7e2;background:#fff;color:#173d32;font-size:11px;font-weight:850;cursor:pointer}.akwaaba-actions button.primary{background:#d97706;color:#fff;border-color:#d97706}.akwaaba-note{margin-top:10px;font-size:10px;line-height:1.4;color:#819089}.akwaaba-error{color:#9d3f1a;font-size:13px;line-height:1.45;font-weight:700}'+
-  '.akwaaba-detected{white-space:pre-wrap}.akwaaba-output{white-space:pre-wrap}'+
-  '@media(max-width:620px){#akwaabaOrb{width:58px;height:58px}#akwaabaOrb svg{width:28px;height:28px}#akwaabaPanel{width:calc(100vw - 18px);max-height:84vh;border-radius:18px;padding:10px}.akwaaba-langs{gap:5px}.akwaaba-lang{font-size:10px;padding:5px}.akwaaba-output{font-size:14px;line-height:1.42}.akwaaba-block{padding:9px 10px}.akwaaba-actions{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding-top:8px;margin-top:10px}}'+
+  '.akwaaba-detected{white-space:pre-wrap}.akwaaba-output{white-space:pre-wrap}.akwaaba-image-preview{border:1px solid #dfe8e3;border-radius:14px;padding:8px;background:#ffffff;box-shadow:0 6px 18px rgba(16,47,41,.07);overflow:hidden}.akwaaba-image-preview img{display:block;width:100%;height:150px;object-fit:contain;object-position:center;border-radius:10px;background:#f5f8f6}.akwaaba-image-preview-caption{margin-top:6px;text-align:center;font-size:9px;line-height:1.3;color:#718078;font-weight:800}.akwaaba-result.image-mode{gap:8px}'+
+  '@media(max-width:620px){.akwaaba-image-preview img{height:118px}#akwaabaOrb{width:58px;height:58px}#akwaabaOrb svg{width:28px;height:28px}#akwaabaPanel{width:calc(100vw - 18px);max-height:84vh;border-radius:18px;padding:10px}.akwaaba-langs{gap:5px}.akwaaba-lang{font-size:10px;padding:5px}.akwaaba-output{font-size:14px;line-height:1.42}.akwaaba-block{padding:9px 10px}.akwaaba-actions{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding-top:8px;margin-top:10px}}'+
   '@media(prefers-reduced-motion:reduce){#akwaabaOrb,.a-pulse,.akwaaba-spin{animation:none!important;transition:none!important}}'+
   '</style>'+
   '<button id="akwaabaOrb" type="button" aria-label="Akwaaba AI Translator. Drag over text to translate.">'+
@@ -258,6 +258,7 @@ async function readImageTextAt(clientX,clientY){
   var preview=canvasPreview(full);
 
   state.innerHTML=
+    (preview?'<div class="akwaaba-image-preview"><img src="'+preview+'" alt="Product image being read"><div class="akwaaba-image-preview-caption">Reading text from this image</div></div>':'')+
     '<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Reading words from image…</span></div>';
   openPanel();
 
@@ -429,8 +430,11 @@ function renderImageTranslationResult(preview,detected,translated,quality,confid
     :'<div class="akwaaba-quality checked">✓ Translation checked'+(typeof confidence==="number"?" · "+Math.round(confidence*100)+"%":"")+'</div>';
 
   state.innerHTML=
-    '<div class="akwaaba-result">'+
-      '<div>'+q+'<div class="akwaaba-summary">Text detected from image</div></div>'+
+    '<div class="akwaaba-result image-mode">'+
+      '<div>'+q+'<div class="akwaaba-summary">Words detected from this image</div></div>'+
+      (preview
+        ?'<div class="akwaaba-image-preview"><img src="'+preview+'" alt="Product image being translated"><div class="akwaaba-image-preview-caption">Image being translated</div></div>'
+        :'')+
       '<div class="akwaaba-block translation">'+
         '<div class="akwaaba-block-head"><span class="akwaaba-label">Translation</span><span class="akwaaba-language-pill">'+escapeHtml(LANGS[selected].label)+'</span></div>'+
         '<div class="akwaaba-output">'+escapeHtml(translated)+'</div>'+
@@ -458,12 +462,14 @@ async function translateAt(x,y){
       if(!ocr.text){
         state.innerHTML=
           '<div class="akwaaba-quality blocked">⚠ No clear text detected</div>'+
+          (ocr.preview?'<div class="akwaaba-image-preview"><img src="'+ocr.preview+'" alt="Product image checked by Akwaaba"><div class="akwaaba-image-preview-caption">Image checked by Akwaaba</div></div>':'')+
           '<div class="akwaaba-error">Akwaaba could not detect clear readable words in this image.</div>';
         openPanel();
         return;
       }
 
       state.innerHTML=
+        (ocr.preview?'<div class="akwaaba-image-preview"><img src="'+ocr.preview+'" alt="Product image being translated"><div class="akwaaba-image-preview-caption">Image being translated</div></div>':'')+
         '<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Translating image text to '+escapeHtml(LANGS[selected].label)+'…</span></div>';
       openPanel();
 
@@ -474,6 +480,7 @@ async function translateAt(x,y){
         lastTranslation="";
         state.innerHTML=
           '<div class="akwaaba-quality blocked">⚠ Translation withheld</div>'+
+          (ocr.preview?'<div class="akwaaba-image-preview"><img src="'+ocr.preview+'" alt="Product image checked by Akwaaba"><div class="akwaaba-image-preview-caption">Image checked by Akwaaba</div></div>':'')+
           '<div class="akwaaba-error">'+escapeHtml(err&&err.message?err.message:"Akwaaba could not verify this image translation.")+'</div>';
         openPanel();
         return;
