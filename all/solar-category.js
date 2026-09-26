@@ -89,7 +89,7 @@ function ensureSolarCategory(d){
 
   [].slice.call(d.querySelectorAll(".stats div")).forEach(function(box){
     var label=box.querySelector("span"),strong=box.querySelector("strong");
-    if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent="5";
+    if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent=String(d.querySelectorAll(".category-cards .category-card").length);
     if(label&&strong&&/Catalogue items/i.test(label.textContent)&&/^\s*36\+?\s*$/.test(strong.textContent))strong.textContent=String((frame.contentWindow.PRODUCTS||[]).length||84);
   });
 
@@ -354,7 +354,7 @@ function installUi(d,products,totalCount){
   // Correct the catalogue summary from three to four categories.
   [].slice.call(d.querySelectorAll(".stats div")).forEach(function(box){
     var label=box.querySelector("span"),strong=box.querySelector("strong");
-    if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent="5";
+    if(label&&strong&&/Main categories/i.test(label.textContent))strong.textContent=String(d.querySelectorAll(".category-cards .category-card").length);
     if(label&&strong&&/Catalogue items/i.test(label.textContent))strong.textContent=String(totalCount||84);
   });
 }
