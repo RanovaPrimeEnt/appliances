@@ -24,7 +24,9 @@ const label=s=>({
 const canSellerReview=()=>role==="owner"||role==="manager";
 const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
 const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],counts:{}});
+const canFinance=()=>role==="owner"||role==="manager";
+const isOwner=()=>role==="owner";
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -60,6 +62,7 @@ function renderRoleNav(){
   document.querySelectorAll('[data-market-role="seller"]').forEach(x=>x.classList.toggle("hide",!canSellerReview()));
   document.querySelectorAll('[data-market-role="product"]').forEach(x=>x.classList.toggle("hide",!canProductReview()));
   document.querySelectorAll('[data-market-role="orders"]').forEach(x=>x.classList.toggle("hide",!canOrderReview()));
+  document.querySelectorAll('[data-market-role="finance"]').forEach(x=>x.classList.toggle("hide",!canFinance()));
 }
 
 async function loadAll(){
@@ -101,7 +104,7 @@ async function marketApi(payload){
 }
 async function loadMarketplace(){
   marketError=null;
-  if(!canSellerReview()&&!canProductReview()&&!canOrderReview()){market=marketEmpty();return}
+  if(!canSellerReview()&&!canProductReview()&&!canOrderReview()&&!canFinance()){market=marketEmpty();return}
   market=await marketApi({action:"dashboard"});
 }
 async function reloadMarketplace(){
@@ -169,12 +172,13 @@ function renderMarketplaceAll(){
   renderSellerProducts();
   renderSellerStores();
   renderSellerOrders();
+  renderFinance();
   if(selectedApplicationRef)renderSellerDetail(selectedApplicationRef);
 }
 function renderMarketplaceSummary(){
   const box=$("marketplaceSummary");
   if(!box)return;
-  const allowed=canSellerReview()||canProductReview();
+  const allowed=canSellerReview()||canProductReview()||canOrderReview()||canFinance();
   box.classList.toggle("hide",!allowed);
   if(!allowed)return;
   const c=market.counts||{};
@@ -333,6 +337,97 @@ function renderSellerOrders(){
   }).join(""):'<div class="empty">No seller-routed marketplace orders yet.</div>';
 }
 
+
+function fmtMoney(v){return "GHS "+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function renderFinance(){
+  const panel=$("finance");if(!panel)return;
+  if(!canFinance())return;
+
+  const c=market.counts||{},settings=market.finance_settings||{};
+  $("fPaymentsDue").textContent=c.payments_due||0;
+  $("fPayoutsPending").textContent=c.payouts_pending||0;
+  $("fCommissionTotal").textContent=fmtMoney(c.commission_total||0);
+  $("fPayoutsPaid").textContent=fmtMoney(c.payouts_paid_total||0);
+
+  $("financeCommission").value=settings.default_commission_rate??0;
+  $("financeHoldDays").value=settings.payout_hold_days??0;
+
+  $("financeOwnerSettings").classList.toggle("hide",!isOwner());
+  $("paymentAccountsCard").classList.toggle("hide",!isOwner());
+
+  const accounts=market.payment_accounts||[];
+  $("paymentAccountsList").innerHTML=accounts.length?accounts.map(a=>'<div class="market-row"><div><b>'+esc(a.payment_method)+' • '+esc(a.provider_name)+'</b><small>'+esc(a.account_name)+' • <span class="finance-ref">'+esc(a.account_reference)+'</span></small>'+(a.instructions?'<small>'+esc(a.instructions)+'</small>':'')+'</div><span class="chip '+(a.active?'status-approved':'status-paused')+'">'+(a.active?'Active':'Inactive')+'</span><div><small>Updated</small><b>'+new Date(a.updated_at).toLocaleString()+'</b></div><div class="actions"><button data-edit-pay-account="'+a.id+'">Edit</button><button data-toggle-pay-account="'+a.id+'" data-active="'+(!a.active)+'">'+(a.active?'Disable':'Enable')+'</button></div></div>').join(""):'<div class="empty">No customer payment destination has been added yet.</div>';
+
+  $("paymentAccountsList").querySelectorAll("[data-edit-pay-account]").forEach(b=>b.onclick=()=>{
+    const a=accounts.find(x=>x.id===b.dataset.editPayAccount);if(!a)return;
+    $("payAccountId").value=a.id;$("payAccountMethod").value=a.payment_method;$("payAccountProvider").value=a.provider_name||"";$("payAccountName").value=a.account_name||"";$("payAccountReference").value=a.account_reference||"";$("payAccountInstructions").value=a.instructions||"";
+    $("paymentAccountsCard").scrollIntoView({behavior:"smooth",block:"start"});
+  });
+  $("paymentAccountsList").querySelectorAll("[data-toggle-pay-account]").forEach(b=>b.onclick=async()=>{
+    b.disabled=true;
+    try{await marketApi({action:"set_payment_account_active",id:b.dataset.togglePayAccount,active:b.dataset.active==="true"});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+
+  const payments=market.marketplace_orders||[];
+  $("financePaymentsList").innerHTML=payments.length?payments.map(o=>{
+    const due=o.status==="awaiting_payment"&&!["paid","confirmed","refunded"].includes(String(o.payment_status||"").toLowerCase());
+    const actions=[];
+    if(due){
+      actions.push('<button class="primary" data-payment-action="confirmed" data-parent-id="'+o.id+'">Confirm paid</button>');
+      actions.push('<button data-payment-action="failed" data-parent-id="'+o.id+'">Mark failed</button>');
+    }else if(String(o.payment_status||"").toLowerCase()==="paid"){
+      actions.push('<button data-payment-action="refunded" data-parent-id="'+o.id+'">Mark refunded</button>');
+    }
+    return '<div class="market-row"><div><b>'+esc(o.order_ref)+'</b><small>'+esc(o.customer_name||"Customer")+' • '+esc(o.payment_method||"No method")+' • '+new Date(o.created_at).toLocaleString()+'</small></div><span class="chip '+statusClass(o.payment_status)+'">'+esc(label(o.payment_status||"not_started"))+'</span><div><small>Order stage</small><b>'+esc(label(o.status))+'</b><small>'+esc(o.seller_order_count||0)+' seller order(s)</small></div><div><small>Total due</small><b class="finance-money">'+esc(o.total_payment==null?"Pending quote":fmtMoney(o.total_payment))+'</b></div><div class="actions">'+actions.join("")+'</div></div>';
+  }).join(""):'<div class="empty">No marketplace customer payments yet.</div>';
+
+  $("financePaymentsList").querySelectorAll("[data-payment-action]").forEach(b=>b.onclick=async()=>{
+    const status=b.dataset.paymentAction;
+    let ref="",note="";
+    if(status==="confirmed"){
+      ref=prompt("Enter the customer payment transaction/reference.","")||"";
+      if(!ref)return;
+      if(!confirm("Confirm that you independently verified this payment?"))return;
+    }else{
+      note=prompt(status==="refunded"?"Add the refund note/reference.":"Add a note for this payment status.","")||"";
+      if(!note)return;
+    }
+    b.disabled=true;
+    try{await marketApi({action:"set_payment_status",parent_order_id:b.dataset.parentId,status,payer_reference:ref,note});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+
+  const payouts=market.payouts||[];
+  const stores=new Map((market.stores||[]).map(s=>[s.id,s]));
+  $("financePayoutsList").innerHTML=payouts.length?payouts.map(p=>{
+    const st=stores.get(p.store_id),actions=[];
+    if(isOwner()){
+      if(["pending","held"].includes(p.payout_status))actions.push('<button data-payout-status="eligible" data-payout-id="'+p.id+'">Mark eligible</button>');
+      if(p.payout_status==="eligible")actions.push('<button data-payout-status="processing" data-payout-id="'+p.id+'">Start payout</button>');
+      if(["eligible","processing"].includes(p.payout_status))actions.push('<button class="primary" data-payout-status="paid" data-payout-id="'+p.id+'">Mark paid</button>');
+      if(!["paid","cancelled"].includes(p.payout_status))actions.push('<button data-payout-status="held" data-payout-id="'+p.id+'">Hold</button>');
+    }
+    return '<div class="market-row"><div><b>'+esc(st?.store_name||p.seller_order_ref)+'</b><small>'+esc(p.platform_order_ref||p.seller_order_ref)+' • '+new Date(p.created_at).toLocaleString()+'</small></div><span class="chip '+statusClass(p.payout_status)+'">'+esc(label(p.payout_status))+'</span><div><small>Gross / commission</small><b>'+fmtMoney(p.gross_product_amount)+' / '+Number(p.commission_rate||0).toFixed(2)+'%</b><small>Commission '+fmtMoney(p.commission_amount)+'</small></div><div><small>Seller payout</small><b class="finance-money">'+fmtMoney(p.payout_amount)+'</b><small>'+(p.payout_reference?'Ref '+esc(p.payout_reference):'No payout reference yet')+'</small></div><div class="actions">'+actions.join("")+'</div></div>';
+  }).join(""):'<div class="empty">No seller payouts have been created yet. Payouts are created when a customer payment is confirmed.</div>';
+
+  $("financePayoutsList").querySelectorAll("[data-payout-status]").forEach(b=>b.onclick=async()=>{
+    const status=b.dataset.payoutStatus;let payout_reference="",note="";
+    if(status==="paid"){
+      payout_reference=prompt("Enter the seller payout transaction/reference.","")||"";
+      if(!payout_reference)return;
+      if(!confirm("Confirm this seller payout has actually been sent?"))return;
+    }else if(status==="held"){
+      note=prompt("Why is this payout being held?","")||"";if(!note)return;
+    }
+    b.disabled=true;
+    try{await marketApi({action:"set_payout_status",id:b.dataset.payoutId,status,payout_reference,note});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+}
+function clearPaymentAccountForm(){
+  $("payAccountId").value="";$("payAccountMethod").value="Mobile Money";$("payAccountProvider").value="";$("payAccountName").value="";$("payAccountReference").value="";$("payAccountInstructions").value="";
+}
 function renderSellerStores(){
   const host=$("sellerStoresList");if(!host)return;
   if(!canSellerReview()){host.innerHTML='<div class="empty">Your admin role does not include seller store management.</div>';return}
@@ -359,6 +454,33 @@ function renderSellerStores(){
     catch(err){alert(err.message)}finally{b.disabled=false}
   });
 }
+
+$("saveFinanceSettings").onclick=async()=>{
+  if(!isOwner())return alert("Only the Owner can change finance settings.");
+  const b=$("saveFinanceSettings");b.disabled=true;
+  try{
+    await marketApi({action:"save_finance_settings",default_commission_rate:$("financeCommission").value,payout_hold_days:$("financeHoldDays").value});
+    await reloadMarketplace();alert("Finance settings saved.");
+  }catch(err){alert(err.message)}finally{b.disabled=false}
+};
+$("savePaymentAccount").onclick=async()=>{
+  if(!isOwner())return alert("Only the Owner can change payment destinations.");
+  const b=$("savePaymentAccount");b.disabled=true;
+  try{
+    await marketApi({
+      action:"save_payment_account",
+      id:$("payAccountId").value,
+      payment_method:$("payAccountMethod").value,
+      provider_name:$("payAccountProvider").value,
+      account_name:$("payAccountName").value,
+      account_reference:$("payAccountReference").value,
+      instructions:$("payAccountInstructions").value,
+      active:true
+    });
+    clearPaymentAccountForm();await reloadMarketplace();alert("Payment destination saved.");
+  }catch(err){alert(err.message)}finally{b.disabled=false}
+};
+$("clearPaymentAccount").onclick=clearPaymentAccountForm;
 $("refreshMarketplace").onclick=async()=>{
   $("refreshMarketplace").disabled=true;
   try{await reloadMarketplace()}catch(err){alert(err.message)}
