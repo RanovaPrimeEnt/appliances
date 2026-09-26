@@ -127,13 +127,27 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
         <div class="metric"><small>Hidden reviews</small><strong id="tReviewsHidden">0</strong></div>
         <div class="metric"><small>Trust rule</small><strong style="font-size:15px">Verified purchases</strong></div>
       </div>
+      <div class="metrics">
+        <div class="metric"><small>Watchlist sellers</small><strong id="tWatchlist">0</strong></div>
+        <div class="metric"><small>Trusted sellers</small><strong id="tTrusted">0</strong></div>
+        <div class="metric"><small>Restricted / suspended</small><strong id="tEnforced">0</strong></div>
+        <div class="metric"><small>Open appeals</small><strong id="tAppeals">0</strong></div>
+      </div>
       <div class="card">
         <div class="card-head"><div><h2>Review moderation</h2><small style="color:var(--rpe-muted)">Publish legitimate reviews; hide or reject only with a recorded reason. Seller responses do not change rating values.</small></div></div>
         <div id="adminReviewsList" class="body market-list"></div>
       </div>
       <div class="card">
-        <div class="card-head"><div><h2>Seller performance indicators</h2><small style="color:var(--rpe-muted)">Complaint rate is kept separate from stars to prevent a strong rating from masking order problems.</small></div></div>
+        <div class="card-head"><div><h2>Seller performance indicators</h2><small style="color:var(--rpe-muted)">Automatic levels are evidence signals, not punishments. RANOVA enforcement requires a separate recorded decision.</small></div></div>
         <div id="adminTrustMetricsList" class="body market-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Enforcement desk</h2><small style="color:var(--rpe-muted)">Warnings, restrictions and suspensions require a written reason. Restrictions/suspensions block new marketplace orders; existing customer obligations remain visible.</small></div></div>
+        <div id="adminEnforcementList" class="body market-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Seller appeals</h2><small style="color:var(--rpe-muted)">Review the original action, seller explanation and evidence before deciding. Overturning an appeal restores good standing but does not silently republish a suspended store.</small></div></div>
+        <div id="adminAppealsList" class="body market-list"></div>
       </div>
     </section>
 
@@ -259,5 +273,5 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./admin.js?v=20260926-9"></script>
+<script src="./admin.js?v=20260926-10"></script>
 </body></html>
