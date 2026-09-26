@@ -294,12 +294,58 @@ Deno.serve(async(req:Request)=>{
 
 
     if(action==="save_finance_settings"){
-      if(!isOwner(actor.role))return response(h,403,{ok:false,error:"Only the Owner can change marketplace commission settings."});
+      if(!isOwner(actor.role))return response(h,403,{ok:false,error:"Only the Owner can change marketplace finance settings."});
       const rate=Number(b.default_commission_rate);
       const hold=Math.trunc(Number(b.payout_hold_days||0));
-      if(!Number.isFinite(rate)||rate<0||rate>100)return response(h,400,{ok:false,error:"Commission rate must be between 0 and 100."});
+      const reason=clean(b.change_reason,700)||"Fallback commission updated in Finance settings";
+      if(!Number.isFinite(rate)||rate<0||rate>100)return response(h,400,{ok:false,error:"Fallback commission must be between 0 and 100."});
       if(!Number.isFinite(hold)||hold<0||hold>90)return response(h,400,{ok:false,error:"Payout hold days must be between 0 and 90."});
       const now=new Date().toISOString();
+
+      const {data:globalRule,error:globalErr}=await admin.from("ranova_marketplace_country_rules")
+        .select("*")
+        .is("store_id",null).is("seller_country_code",null).is("buyer_country_code",null).is("payment_method",null)
+        .eq("active",true).is("effective_to",null).maybeSingle();
+      if(globalErr)throw globalErr;
+
+      if(globalRule&&Number(globalRule.commission_rate||0)!==Number(rate.toFixed(2))){
+        const nextPayload:any={
+          ...globalRule,
+          id:undefined,
+          commission_rate:Number(rate.toFixed(2)),
+          active:false,
+          rule_version:Number(globalRule.rule_version||1)+1,
+          supersedes_rule_id:globalRule.id,
+          effective_from:now,
+          effective_to:null,
+          change_reason:reason,
+          created_at:undefined,
+          updated_at:now,
+          updated_by:actor.user.id
+        };
+        delete nextPayload.id;delete nextPayload.created_at;
+        const {data:newRule,error:insertErr}=await admin.from("ranova_marketplace_country_rules").insert(nextPayload).select("*").single();
+        if(insertErr)throw insertErr;
+        const {error:archiveErr}=await admin.from("ranova_marketplace_country_rules").update({
+          active:false,effective_to:now,updated_at:now,updated_by:actor.user.id
+        }).eq("id",globalRule.id);
+        if(archiveErr){
+          await admin.from("ranova_marketplace_country_rules").delete().eq("id",newRule.id);
+          throw archiveErr;
+        }
+        const {error:activateErr}=await admin.from("ranova_marketplace_country_rules").update({
+          active:true,updated_at:now,updated_by:actor.user.id
+        }).eq("id",newRule.id);
+        if(activateErr){
+          await admin.from("ranova_marketplace_country_rules").update({active:true,effective_to:null}).eq("id",globalRule.id);
+          await admin.from("ranova_marketplace_country_rules").delete().eq("id",newRule.id);
+          throw activateErr;
+        }
+        await log(actor.user.id,"fallback_commission_versioned","marketplace_country_rule",newRule.id,{
+          supersedes_rule_id:globalRule.id,old_rate:globalRule.commission_rate,new_rate:Number(rate.toFixed(2)),reason
+        });
+      }
+
       const {error}=await admin.from("ranova_marketplace_finance_settings").upsert({
         id:1,
         default_commission_rate:Number(rate.toFixed(2)),
@@ -309,12 +355,7 @@ Deno.serve(async(req:Request)=>{
         updated_by:actor.user.id
       });
       if(error)throw error;
-      await admin.from("ranova_marketplace_country_rules").update({
-        commission_rate:Number(rate.toFixed(2)),
-        updated_at:now,
-        updated_by:actor.user.id
-      }).is("store_id",null).is("seller_country_code",null).is("buyer_country_code",null).is("payment_method",null);
-      await log(actor.user.id,"finance_settings_updated","marketplace_finance_settings","1",{default_commission_rate:Number(rate.toFixed(2)),payout_hold_days:hold});
+      await log(actor.user.id,"finance_settings_updated","marketplace_finance_settings","1",{default_commission_rate:Number(rate.toFixed(2)),payout_hold_days:hold,reason});
       return response(h,200,{ok:true});
     }
 
@@ -502,6 +543,9 @@ Deno.serve(async(req:Request)=>{
       const source_url=clean(b.source_url,1000);
       const source_kind=clean(b.source_kind,40)||"owner_policy";
       const auto_update=!!b.auto_update;
+      const change_reason=clean(b.change_reason,700);
+      const desiredActive=b.active!==false;
+
       if(seller_country_code&&!/^[A-Z]{2}$/.test(seller_country_code))return response(h,400,{ok:false,error:"Invalid seller country code."});
       if(buyer_country_code&&!/^[A-Z]{2}$/.test(buyer_country_code))return response(h,400,{ok:false,error:"Invalid buyer country code."});
       if(payment_method&&!["Mobile Money","Bank Transfer"].includes(payment_method))return response(h,400,{ok:false,error:"Invalid payment method."});
@@ -513,7 +557,8 @@ Deno.serve(async(req:Request)=>{
       if(!["owner_policy","payment_provider","tax_authority","other_official"].includes(source_kind))return response(h,400,{ok:false,error:"Invalid source type."});
       if(auto_update&&(!source_url||source_kind==="owner_policy"))return response(h,400,{ok:false,error:"Automatic updates require an official external source URL and non-owner source type."});
 
-      const payload:any={
+      const now=new Date().toISOString();
+      const basePayload:any={
         store_id,
         seller_country_code,
         buyer_country_code,
@@ -528,41 +573,124 @@ Deno.serve(async(req:Request)=>{
         source_url:source_url||null,
         source_kind,
         auto_update,
-        active:b.active!==false,
-        effective_from:b.effective_from?new Date(b.effective_from).toISOString():new Date().toISOString(),
-        updated_at:new Date().toISOString(),
+        effective_from:b.effective_from?new Date(b.effective_from).toISOString():now,
+        updated_at:now,
         updated_by:actor.user.id
       };
-      let q;
+
+      let saved:any=null;
       if(id){
-        q=await admin.from("ranova_marketplace_country_rules").update(payload).eq("id",id).select("*").maybeSingle();
+        const {data:old,error:oldErr}=await admin.from("ranova_marketplace_country_rules").select("*").eq("id",id).maybeSingle();
+        if(oldErr)throw oldErr;
+        if(!old)return response(h,404,{ok:false,error:"Finance rule not found."});
+        if(old.effective_to)return response(h,409,{ok:false,error:"Historical rule versions cannot be edited. Create a new rule for that scope instead."});
+        if(!change_reason)return response(h,400,{ok:false,error:"Explain why this finance rule is changing. The reason is kept in the audit history."});
+        const sameScope=(old.store_id||null)===(store_id||null)
+          &&(old.seller_country_code||null)===(seller_country_code||null)
+          &&(old.buyer_country_code||null)===(buyer_country_code||null)
+          &&(old.payment_method||null)===(payment_method||null);
+        if(!sameScope)return response(h,400,{ok:false,error:"To change the store/country/payment scope, create a new rule instead of rewriting this rule's history."});
+
+        const nextPayload:any={
+          ...basePayload,
+          active:false,
+          rule_version:Number(old.rule_version||1)+1,
+          supersedes_rule_id:old.id,
+          effective_to:null,
+          change_reason
+        };
+        const {data:newRule,error:insertErr}=await admin.from("ranova_marketplace_country_rules").insert(nextPayload).select("*").single();
+        if(insertErr)throw insertErr;
+
+        const {error:archiveErr}=await admin.from("ranova_marketplace_country_rules").update({
+          active:false,
+          effective_to:now,
+          updated_at:now,
+          updated_by:actor.user.id,
+          last_sync_status:old.auto_update?"superseded":"manual_superseded"
+        }).eq("id",old.id);
+        if(archiveErr){
+          await admin.from("ranova_marketplace_country_rules").delete().eq("id",newRule.id);
+          throw archiveErr;
+        }
+
+        if(desiredActive){
+          const {data:activated,error:activateErr}=await admin.from("ranova_marketplace_country_rules").update({
+            active:true,updated_at:now,updated_by:actor.user.id
+          }).eq("id",newRule.id).select("*").single();
+          if(activateErr){
+            await admin.from("ranova_marketplace_country_rules").update({
+              active:true,effective_to:null,updated_at:now,updated_by:actor.user.id
+            }).eq("id",old.id);
+            await admin.from("ranova_marketplace_country_rules").delete().eq("id",newRule.id);
+            throw activateErr;
+          }
+          saved=activated;
+        }else saved=newRule;
+
+        await log(actor.user.id,"country_finance_rule_versioned","marketplace_country_rule",saved.id,{
+          supersedes_rule_id:old.id,
+          old_version:old.rule_version||1,
+          new_version:saved.rule_version,
+          change_reason,
+          commission_rate,
+          payment_processing_rate,
+          payment_fixed_fee,
+          payment_fee_payer,
+          source_kind,
+          auto_update
+        });
       }else{
-        q=await admin.from("ranova_marketplace_country_rules").insert(payload).select("*").single();
+        const payload:any={
+          ...basePayload,
+          active:desiredActive,
+          rule_version:1,
+          supersedes_rule_id:null,
+          effective_to:null,
+          change_reason:change_reason||"Initial rule"
+        };
+        const q=await admin.from("ranova_marketplace_country_rules").insert(payload).select("*").single();
+        if(q.error){
+          if(String(q.error.message||"").toLowerCase().includes("duplicate"))return response(h,409,{ok:false,error:"An active rule already exists for that same store/country/payment scope. Edit that rule to create the next version."});
+          throw q.error;
+        }
+        saved=q.data;
+        await log(actor.user.id,"country_finance_rule_created","marketplace_country_rule",saved.id,{
+          change_reason:payload.change_reason,
+          store_id,seller_country_code,buyer_country_code,payment_method,
+          commission_rate,payment_processing_rate,payment_fixed_fee,payment_fee_payer,source_kind,auto_update
+        });
       }
-      if(q.error){
-        if(String(q.error.message||"").toLowerCase().includes("duplicate"))return response(h,409,{ok:false,error:"A rule already exists for that same store/country/payment scope."});
-        throw q.error;
-      }
-      if(!store_id&&!seller_country_code&&!buyer_country_code&&!payment_method){
+
+      if(!store_id&&!seller_country_code&&!buyer_country_code&&!payment_method&&desiredActive){
         await admin.from("ranova_marketplace_finance_settings").update({
           default_commission_rate:Number(commission_rate.toFixed(2)),
-          updated_at:new Date().toISOString(),
+          updated_at:now,
           updated_by:actor.user.id
         }).eq("id",1);
       }
-      await log(actor.user.id,"country_finance_rule_saved","marketplace_country_rule",q.data?.id||id,{store_id,seller_country_code,buyer_country_code,payment_method,commission_rate,payment_processing_rate,payment_fee_payer,source_kind,auto_update});
-      return response(h,200,{ok:true,rule:q.data});
+      return response(h,200,{ok:true,rule:saved});
     }
 
     if(action==="set_country_rule_active"){
       if(!isOwner(actor.role))return response(h,403,{ok:false,error:"Only the Owner can change country finance rules."});
       const id=clean(b.id,80);
       const active=!!b.active;
-      const {error}=await admin.from("ranova_marketplace_country_rules").update({
-        active,updated_at:new Date().toISOString(),updated_by:actor.user.id
-      }).eq("id",id);
+      const reason=clean(b.reason,700);
+      const {data:rule,error:readErr}=await admin.from("ranova_marketplace_country_rules").select("*").eq("id",id).maybeSingle();
+      if(readErr)throw readErr;
+      if(!rule)return response(h,404,{ok:false,error:"Finance rule not found."});
+      if(active&&rule.effective_to)return response(h,409,{ok:false,error:"Historical rule versions cannot be reactivated. Create a new version instead."});
+      if(!active&&!reason)return response(h,400,{ok:false,error:"Explain why this rule is being disabled."});
+      const now=new Date().toISOString();
+      const patch:any={active,updated_at:now,updated_by:actor.user.id};
+      if(!active){
+        patch.effective_to=now;
+        patch.change_reason=reason||rule.change_reason||"Rule disabled";
+      }
+      const {error}=await admin.from("ranova_marketplace_country_rules").update(patch).eq("id",id);
       if(error)throw error;
-      await log(actor.user.id,"country_finance_rule_status_changed","marketplace_country_rule",id,{active});
+      await log(actor.user.id,"country_finance_rule_status_changed","marketplace_country_rule",id,{active,reason});
       return response(h,200,{ok:true});
     }
 
