@@ -459,6 +459,7 @@ function clearCountryRuleForm(){
   $("ruleSourceUrl").value="";
   $("ruleAutoUpdate").checked=false;
   $("ruleActive").checked=true;
+  $("ruleChangeReason").value="";
 }
 function renderCountryRules(){
   const card=$("countryRulesCard");if(!card)return;
@@ -483,9 +484,18 @@ function renderCountryRules(){
     ].join(" → ");
     const source=r.source_name||pretty(r.source_kind||"owner_policy");
     const sync=r.auto_update?(r.last_sync_status||"waiting"):"manual";
-    const actions=isOwner()?'<button data-edit-country-rule="'+r.id+'">Edit</button><button data-toggle-country-rule="'+r.id+'" data-active="'+(!r.active)+'">'+(r.active?"Disable":"Enable")+'</button>':"";
-    return '<div class="market-row"><div><b>'+esc(scope)+'</b><small>Source: '+esc(source)+(r.source_url?' • official URL configured':'')+'</small><small>Sync: '+esc(sync)+(r.last_checked_at?' • '+new Date(r.last_checked_at).toLocaleString():'')+(r.last_sync_error?' • '+esc(r.last_sync_error):'')+'</small></div><span class="chip '+(r.active?'status-approved':'status-paused')+'">'+(r.active?'Active':'Inactive')+'</span><div><small>Commission</small><b>'+Number(r.commission_rate||0).toFixed(2)+'%</b><small>Payment '+Number(r.payment_processing_rate||0).toFixed(2)+'% + '+fmtMoney(r.payment_fixed_fee||0)+'</small></div><div><small>Fee payer</small><b>'+esc(pretty(r.payment_fee_payer||"platform"))+'</b><small>'+esc(pretty(r.source_kind||"owner_policy"))+'</small></div><div class="actions">'+actions+'</div></div>';
-  }).join(""):'<div class="empty">No country-specific rules yet. The global default remains in effect.</div>';
+    const historical=!!r.effective_to;
+    const stateLabel=historical?"Historical":r.active?"Active":"Inactive";
+    const stateClass=historical?"":" "+(r.active?"status-approved":"status-paused");
+    let actions="";
+    if(isOwner()&&!historical){
+      actions='<button data-edit-country-rule="'+r.id+'">Create next version</button><button data-toggle-country-rule="'+r.id+'" data-active="'+(!r.active)+'">'+(r.active?"Disable":"Enable")+'</button>';
+    }
+    const eff='v'+Number(r.rule_version||1)+' • effective '+(r.effective_from?new Date(r.effective_from).toLocaleString():"—")+(r.effective_to?' → '+new Date(r.effective_to).toLocaleString():"");
+    const reason=r.change_reason?'<small>Why: '+esc(r.change_reason)+'</small>':'';
+    const verified=r.source_verified_at?' • source checked '+new Date(r.source_verified_at).toLocaleString():'';
+    return '<div class="market-row"><div><b>'+esc(scope)+'</b><small>'+esc(eff)+'</small><small>Source: '+esc(source)+(r.source_url?' • official URL configured':'')+verified+'</small><small>Sync: '+esc(sync)+(r.last_sync_error?' • '+esc(r.last_sync_error):'')+'</small>'+reason+'</div><span class="chip'+stateClass+'">'+stateLabel+'</span><div><small>Seller commission</small><b>'+Number(r.commission_rate||0).toFixed(2)+'%</b><small>Provider fee '+Number(r.payment_processing_rate||0).toFixed(2)+'% + '+fmtMoney(r.payment_fixed_fee||0)+'</small></div><div><small>Provider fee paid by</small><b>'+esc(pretty(r.payment_fee_payer||"platform"))+'</b><small>'+esc(pretty(r.source_kind||"owner_policy"))+'</small></div><div class="actions">'+actions+'</div></div>';
+  }).join(""):'<div class="empty">No finance rules exist yet.</div>';
 
   $("countryRulesList").querySelectorAll("[data-edit-country-rule]").forEach(b=>b.onclick=()=>{
     const r=rules.find(x=>x.id===b.dataset.editCountryRule);if(!r)return;
@@ -503,11 +513,16 @@ function renderCountryRules(){
     $("ruleSourceUrl").value=r.source_url||"";
     $("ruleAutoUpdate").checked=!!r.auto_update;
     $("ruleActive").checked=r.active!==false;
+    $("ruleChangeReason").value="";
+    $("ruleChangeReason").placeholder="Required: explain why version "+Number(r.rule_version||1)+" is changing.";
     card.scrollIntoView({behavior:"smooth",block:"start"});
   });
   $("countryRulesList").querySelectorAll("[data-toggle-country-rule]").forEach(b=>b.onclick=async()=>{
+    const active=b.dataset.active==="true";
+    let reason="";
+    if(!active){reason=prompt("Why are you disabling this finance rule? This reason will be kept in the audit history.","")||"";if(!reason)return}
     b.disabled=true;
-    try{await marketApi({action:"set_country_rule_active",id:b.dataset.toggleCountryRule,active:b.dataset.active==="true"});await reloadMarketplace()}
+    try{await marketApi({action:"set_country_rule_active",id:b.dataset.toggleCountryRule,active,reason});await reloadMarketplace()}
     catch(err){alert(err.message)}finally{b.disabled=false}
   });
 }
@@ -544,7 +559,9 @@ function renderSellerStores(){
 
 $("saveCountryRule").onclick=async()=>{
   if(!isOwner())return alert("Only the Owner can change country finance rules.");
-  const b=$("saveCountryRule");b.disabled=true;
+  const b=$("saveCountryRule");
+  if($("countryRuleId").value&&!$("ruleChangeReason").value.trim())return alert("Explain why this rule is changing. The reason will remain in the finance history.");
+  b.disabled=true;
   try{
     await marketApi({
       action:"save_country_rule",
@@ -562,7 +579,8 @@ $("saveCountryRule").onclick=async()=>{
       source_name:$("ruleSourceName").value,
       source_url:$("ruleSourceUrl").value,
       auto_update:$("ruleAutoUpdate").checked,
-      active:$("ruleActive").checked
+      active:$("ruleActive").checked,
+      change_reason:$("ruleChangeReason").value.trim()
     });
     clearCountryRuleForm();await reloadMarketplace();alert("Country finance rule saved.");
   }catch(err){alert(err.message)}finally{b.disabled=false}
@@ -585,8 +603,8 @@ $("saveFinanceSettings").onclick=async()=>{
   if(!isOwner())return alert("Only the Owner can change finance settings.");
   const b=$("saveFinanceSettings");b.disabled=true;
   try{
-    await marketApi({action:"save_finance_settings",default_commission_rate:$("financeCommission").value,payout_hold_days:$("financeHoldDays").value});
-    await reloadMarketplace();alert("Finance settings saved.");
+    await marketApi({action:"save_finance_settings",default_commission_rate:$("financeCommission").value,payout_hold_days:$("financeHoldDays").value,change_reason:$("financeChangeReason").value.trim()});
+    $("financeChangeReason").value="";await reloadMarketplace();alert("Finance settings saved.");
   }catch(err){alert(err.message)}finally{b.disabled=false}
 };
 $("savePaymentAccount").onclick=async()=>{
