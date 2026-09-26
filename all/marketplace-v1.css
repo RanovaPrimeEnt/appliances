@@ -1,0 +1,67 @@
+/* RANOVA Marketplace Foundation v1 — 2026-09-26 */
+:root{
+  --market-ink:#102f29;
+  --market-muted:#667a73;
+  --market-green:#116a52;
+  --market-green-dark:#0b4d3c;
+  --market-mint:#e9f7f1;
+  --market-gold:#c89231;
+  --market-cream:#fff9ed;
+  --market-blue:#edf5ff;
+  --market-line:#dde8e3;
+  --market-surface:#ffffff;
+  --market-shadow:0 18px 48px rgba(13,62,49,.09);
+}
+.rpe-market-navlinks{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.rpe-market-navlinks a{min-height:38px;display:inline-flex;align-items:center;padding:0 12px;border-radius:999px;border:1px solid var(--market-line);background:#fff;color:var(--market-ink)!important;text-decoration:none!important;font:800 11px/1 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+.rpe-market-navlinks a:last-child{background:var(--market-green)!important;color:#fff!important;border-color:var(--market-green)!important}
+.rpe-market-hero{padding:26px 0 8px;background:linear-gradient(180deg,rgba(244,250,247,.92),rgba(255,255,255,.96))}
+.rpe-market-hero-card{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:24px;padding:30px;border:1px solid var(--market-line);border-radius:28px;background:linear-gradient(135deg,#f2fbf7 0%,#fffaf0 48%,#f5f1ff 100%);box-shadow:var(--market-shadow)}
+.rpe-market-hero-card:after{content:"";position:absolute;width:260px;height:260px;right:-90px;top:-110px;border-radius:50%;background:rgba(189,170,255,.18);pointer-events:none}
+.rpe-market-copy{position:relative;z-index:1}
+.rpe-market-kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;color:var(--market-green);font-size:11px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
+.rpe-market-kicker:before{content:"";width:28px;height:2px;background:var(--market-gold)}
+.rpe-market-copy h2{margin:0;max-width:720px;color:var(--market-ink)!important;font-size:clamp(28px,4vw,52px);line-height:1.02;letter-spacing:-.045em}
+.rpe-market-copy p{max-width:700px;margin:15px 0 0;color:var(--market-muted);font-size:14px;line-height:1.7}
+.rpe-market-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.rpe-market-actions a,.rpe-market-actions button{min-height:46px;padding:0 17px;border-radius:13px;border:1px solid var(--market-line);background:#fff;color:var(--market-ink);text-decoration:none;font-size:11px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.rpe-market-actions .primary{background:linear-gradient(135deg,var(--market-green),#21866d);color:#fff;border-color:transparent;box-shadow:0 11px 24px rgba(17,106,82,.18)}
+.rpe-market-aside{position:relative;z-index:1;display:grid;gap:10px;align-content:center}
+.rpe-market-stat{padding:16px;border:1px solid rgba(17,106,82,.12);border-radius:17px;background:rgba(255,255,255,.82)}
+.rpe-market-stat strong{display:block;color:var(--market-ink);font-size:14px}
+.rpe-market-stat span{display:block;margin-top:4px;color:var(--market-muted);font-size:10px;line-height:1.45}
+.rpe-market-trust{padding:18px 0 8px}
+.rpe-market-trust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.rpe-market-trust-item{padding:14px 15px;border:1px solid var(--market-line);border-radius:16px;background:#fff;box-shadow:0 8px 22px rgba(13,62,49,.04)}
+.rpe-market-trust-item b{display:block;color:var(--market-ink);font-size:11px}
+.rpe-market-trust-item span{display:block;margin-top:4px;color:var(--market-muted);font-size:9px;line-height:1.45}
+.rpe-business-hub{padding:30px 0 14px}
+.rpe-business-head{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:16px}
+.rpe-business-head h2{margin:4px 0 0;color:var(--market-ink)!important;font-size:clamp(24px,3vw,34px)}
+.rpe-business-head p{max-width:560px;margin:0;color:var(--market-muted);font-size:12px;line-height:1.6}
+.rpe-business-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.rpe-business-card{display:flex;flex-direction:column;min-height:190px;padding:18px;border:1px solid var(--market-line);border-radius:20px;background:#fff;color:var(--market-ink);text-decoration:none;box-shadow:0 9px 26px rgba(13,62,49,.045);transition:.18s ease}
+.rpe-business-card:hover{transform:translateY(-3px);box-shadow:var(--market-shadow)}
+.rpe-business-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:var(--market-mint);color:var(--market-green);font-size:19px;font-weight:900}
+.rpe-business-card:nth-child(2) .rpe-business-icon{background:var(--market-cream);color:#9a6712}
+.rpe-business-card:nth-child(3) .rpe-business-icon{background:var(--market-blue);color:#315f9c}
+.rpe-business-card:nth-child(4) .rpe-business-icon{background:#f4efff;color:#6752a7}
+.rpe-business-card h3{margin:14px 0 6px;font-size:14px!important}
+.rpe-business-card p{margin:0;color:var(--market-muted);font-size:10px;line-height:1.55}
+.rpe-business-card em{margin-top:auto;padding-top:15px;color:var(--market-green);font-size:10px;font-style:normal;font-weight:900}
+.rpe-market-product-meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.rpe-market-chip{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:999px;background:#eff7f3;color:#245a49;font-size:8px;font-weight:850;letter-spacing:.01em}
+.rpe-market-chip.supplier{background:#fff8e8;color:#7c5b1f}
+.rpe-market-seller{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #edf1ef;color:var(--market-muted);font-size:8px}
+.rpe-market-seller b{color:var(--market-ink);font-size:8px}
+.rpe-bulk-quote{grid-column:1/-1!important;min-height:40px!important;border-radius:10px!important;border:1px solid #b9d8cb!important;background:#f0faf6!important;color:var(--market-green-dark)!important;font-size:10px!important;font-weight:900!important;text-decoration:none!important;display:flex!important;align-items:center!important;justify-content:center!important}
+.rpe-market-note{margin:20px 0 0;padding:12px 14px;border-left:3px solid var(--market-gold);background:#fffaf0;color:#6c614e;font-size:10px;line-height:1.55}
+.rpe-market-supplier-cta{padding:52px 0 70px}
+.rpe-market-supplier-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;padding:26px;border-radius:24px;background:#0f3f34;color:#fff;box-shadow:0 18px 45px rgba(6,42,32,.18)}
+.rpe-market-supplier-card h2{margin:0;color:#fff!important;font-size:clamp(22px,3vw,32px)}
+.rpe-market-supplier-card p{max-width:680px;margin:8px 0 0;color:#cfe1db;font-size:11px;line-height:1.6}
+.rpe-market-supplier-card a{min-height:46px;padding:0 17px;border-radius:13px;background:#fff;color:#123d33;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;white-space:nowrap}
+@media(max-width:980px){.rpe-market-hero-card{grid-template-columns:1fr}.rpe-market-aside{grid-template-columns:repeat(3,1fr)}.rpe-business-grid,.rpe-market-trust-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){.rpe-market-hero{padding-top:16px}.rpe-market-hero-card{padding:20px;border-radius:22px}.rpe-market-copy h2{font-size:31px}.rpe-market-copy p{font-size:12px}.rpe-market-aside{grid-template-columns:1fr}.rpe-market-trust-grid,.rpe-business-grid{grid-template-columns:1fr 1fr}.rpe-business-head{align-items:flex-start;flex-direction:column}.rpe-business-card{min-height:168px;padding:15px}.rpe-market-supplier-card{grid-template-columns:1fr}.rpe-market-supplier-card a{width:100%}.rpe-market-navlinks{display:none}.rpe-market-actions{display:grid;grid-template-columns:1fr 1fr}.rpe-market-actions .primary{grid-column:1/-1}}
+@media(max-width:420px){.rpe-market-trust-grid,.rpe-business-grid{grid-template-columns:1fr}.rpe-market-copy h2{font-size:28px}.rpe-market-actions{grid-template-columns:1fr}.rpe-market-actions .primary{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){.rpe-business-card{transition:none}.rpe-business-card:hover{transform:none}}
