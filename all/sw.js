@@ -1,7 +1,7 @@
-const CACHE="rpe-shell-v25";
-const SHELL=["./","./site.html","./about.html","./contact.html","./shipping-returns.html","./privacy.html","./terms.html","./rpe-mark.svg","./manifest.webmanifest",
+const CACHE="rpe-shell-v26";
+const SHELL=["./","./site.html","./about.html","./contact.html","./shipping-returns.html","./privacy.html","./terms.html","./rpe-mark.svg","./manifest.webmanifest","./images/solar-category-cover.svg",
   "./rpe-theme.css?v=20260926-1",
-  "./solar-category.js?v=20260926-4",
+  "./solar-category.js?v=20260926-5",
   "./catalogue-lighting.js?v=20260926-5",
   "./lighting-integration.js?v=20260926-8",
   "./friendly-upgrades.js?v=20260926-10",\n  "./marketplace-v1.css?v=20260926-1",\n  "./marketplace-v1.js?v=20260926-1",\n  "./rfq.html",\n  "./supplier.html"];
