@@ -63,7 +63,9 @@
         if(compact){
           add(cover,'rpe-spec',1,13,36,21,
             'High-brightness LED\nBattery display · Type-C\nSOS flash');
+          add(cover,'rpe-spec',36,13,9,17,'');
           add(cover,'rpe-spec',1,34,29,8,'Runtime: '+findRow(rows,'Supplier runtime claim'));
+          add(cover,'rpe-spec',29,34,9,6,'');
           add(cover,'rpe-tag',0,42,17,7,'Li-ion');
           add(cover,'rpe-spec',77,29,23,15,'Type-C cable pictured\nWhite light option');
         }else{
@@ -72,7 +74,7 @@
             'Power label: '+findRow(rows,'Supplier power label')+'\n'+
             'Beam: '+findRow(rows,'Supplier beam-range claim')+'\n'+
             'Runtime: '+findRow(rows,'Supplier runtime claim'));
-          if(n!==37)add(cover,'rpe-tag',1,37,n===22?40:24,12,'LED light\nModes vary');
+          if(n!==37)add(cover,'rpe-tag',1,37,n===22?40:24,14,'LED light\nModes vary');
           if(n===37){
             add(cover,'rpe-spec',0,38,42,5,'Check pictured accessories');
             add(cover,'rpe-spec',2,62,38,5,'Box · headband pictured');
@@ -82,7 +84,7 @@
             add(cover,'rpe-mini',78,14,7,7,'Ask');
           }
         }
-        add(cover,'rpe-foot',56,94,44,5,'Supplier dimensions; verify actual item');
+        add(cover,'rpe-foot',56,93,44,7,'Supplier dimensions; verify actual item');
       }
     }
     function wrap(img,item){
