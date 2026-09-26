@@ -11,9 +11,37 @@ var LANGS={
   es:{label:"Español",short:"ES"},
   tw:{label:"Twi",short:"TW"}
 };
+var LOCAL_VERIFIED={
+  "product id":{en:"Product ID",zh:"产品编号",es:"ID del producto",tw:"Aguade nɔma"},
+  "price":{en:"Price",zh:"价格",es:"Precio",tw:"Boɔ"},
+  "model":{en:"Model",zh:"型号",es:"Modelo",tw:"Mɔdel"},
+  "battery":{en:"Battery",zh:"电池",es:"Batería",tw:"Battery"},
+  "battery capacity":{en:"Battery capacity",zh:"电池容量",es:"Capacidad de la batería",tw:"Battery ahoɔden dodow"},
+  "power":{en:"Power",zh:"功率",es:"Potencia",tw:"Ahoɔden"},
+  "beam range":{en:"Beam range",zh:"射程",es:"Alcance del haz",tw:"Hann no kwan tenten"},
+  "runtime":{en:"Runtime",zh:"续航",es:"Duración",tw:"Bere a ɛyɛ adwuma"},
+  "working time":{en:"Working time",zh:"工作时间",es:"Tiempo de funcionamiento",tw:"Adwuma bere"},
+  "dimensions":{en:"Dimensions",zh:"尺寸",es:"Dimensiones",tw:"Ne kɛse"},
+  "rechargeable headlamp":{en:"Rechargeable headlamp",zh:"充电式头灯",es:"Linterna frontal recargable",tw:"Ti so kanea a wotumi san hyɛ no ahoɔden"},
+  "rechargeable searchlight":{en:"Rechargeable searchlight",zh:"充电式探照灯",es:"Reflector recargable",tw:"Nhwehwɛmu kanea a wotumi san hyɛ no ahoɔden"},
+  "rechargeable lights":{en:"Rechargeable Lights",zh:"充电灯",es:"Luces recargables",tw:"Kanea a wotumi san hyɛ no ahoɔden"},
+  "solar street lights":{en:"Solar Street Lights",zh:"太阳能路灯",es:"Farolas solares",tw:"Owia ahoɔden kwan so nkanea"},
+  "lighting & fans":{en:"Lighting & Fans",zh:"照明与风扇",es:"Iluminación y ventiladores",tw:"Kanea ne mframa afiri"}
+};
 var selected=localStorage.getItem("akwaabaLang")||"en";
 if(!LANGS[selected])selected="en";
 var cache=new Map();
+try{
+  var savedAkwaabaCache=JSON.parse(localStorage.getItem("akwaabaTranslationCache")||"{}");
+  Object.keys(savedAkwaabaCache).forEach(function(k){cache.set(k,savedAkwaabaCache[k])});
+}catch(e){}
+function persistAkwaabaCache(){
+  try{
+    var obj={},n=0;
+    Array.from(cache.entries()).slice(-250).forEach(function(pair){obj[pair[0]]=pair[1];n++});
+    localStorage.setItem("akwaabaTranslationCache",JSON.stringify(obj));
+  }catch(e){}
+}
 var lastText="";
 var lastTranslation="";
 var ocrScriptPromise=null;
@@ -274,11 +302,32 @@ function orbCenter(){
   var r=orb.getBoundingClientRect();
   return {x:r.left+r.width/2,y:r.top+r.height/2};
 }
+function localVerifiedTranslation(text){
+  var raw=cleanText(text),prefix="",body=raw;
+  var m=raw.match(/^([A-Za-z]{1,6}-?\d{1,6}(?:-\d+)?)\s+(.+)$/);
+  if(m){prefix=m[1]+" ";body=m[2]}
+  var key=body.toLowerCase().trim();
+  if(LOCAL_VERIFIED[key]&&LOCAL_VERIFIED[key][selected])return prefix+LOCAL_VERIFIED[key][selected];
+  var colon=body.match(/^([^:：]{1,40})[:：]\s*(.+)$/);
+  if(colon){
+    var label=colon[1].toLowerCase().trim();
+    if(LOCAL_VERIFIED[label]&&LOCAL_VERIFIED[label][selected])return prefix+LOCAL_VERIFIED[label][selected]+": "+colon[2];
+  }
+  return "";
+}
 async function translateText(text,force){
   text=cleanText(text);
   if(!text){showInstruction("I could not find readable text there. Drag Akwaaba directly over a word, product name, button, or sentence.");return}
   lastText=text;
   var key=selected+"|"+text;
+  var localHit=localVerifiedTranslation(text);
+  if(localHit){
+    lastTranslation=localHit;
+    cache.set(key,{text:localHit,quality:"verified",confidence:1});
+    persistAkwaabaCache();
+    renderResult(text,localHit,"verified",1);
+    return;
+  }
   state.innerHTML='<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Akwaaba is translating to '+escapeHtml(LANGS[selected].label)+'…</span></div>';
   openPanel();
   if(cache.has(key)&&!force){
@@ -301,7 +350,7 @@ async function translateText(text,force){
       openPanel();
       return;
     }
-    cache.set(key,{text:data.translated,quality:data.quality||"automatic-checked",confidence:data.confidence});
+    cache.set(key,{text:data.translated,quality:data.quality||"automatic-checked",confidence:data.confidence});persistAkwaabaCache();
     lastTranslation=data.translated;
     renderResult(text,data.translated,data.quality||"automatic-checked",data.confidence);
   }catch(e){
@@ -381,6 +430,16 @@ orb.addEventListener("pointercancel",function(e){if(drag&&e.pointerId===drag.id)
 orb.addEventListener("keydown",function(e){
   if(e.key==="Enter"||e.key===" "){e.preventDefault();panel.classList.contains("open")?closePanel():showInstruction()}
 });
+
+function akwaabaOcrWarmup(){
+  if(window.Tesseract||ocrScriptPromise)return;
+  loadOcr().catch(function(){});
+}
+if("requestIdleCallback" in window){
+  requestIdleCallback(function(){setTimeout(akwaabaOcrWarmup,1200)},{timeout:5000});
+}else{
+  setTimeout(akwaabaOcrWarmup,3500);
+}
 
 setTimeout(function(){
   if(!localStorage.getItem("akwaabaSeen")){
