@@ -9,18 +9,22 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}:root{--green:#103f34;--green2:#116a52;--orange:#ff5a2d;--ink:#15342e;--muted:#687a74;--line:#dfe8e4;--soft:#f5f8f6}
-body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#f7f9f8;color:var(--ink)}a{color:inherit}.wrap{width:min(1160px,calc(100% - 28px));margin:auto}
-.top{background:var(--green);color:#fff}.top .wrap{height:64px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:950}.top a{text-decoration:none;border:1px solid #ffffff35;border-radius:999px;padding:9px 12px;font-size:10px;font-weight:850}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#f7f9f8;color:var(--ink)}body.no-scroll{overflow:hidden}a{color:inherit}button,input,select,textarea{font:inherit}.wrap{width:min(1160px,calc(100% - 28px));margin:auto}
+.top{background:var(--green);color:#fff;position:sticky;top:0;z-index:70}.top .wrap{height:64px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:950}.toplinks{display:flex;align-items:center;gap:7px}.top a,.cart-top{min-height:38px;text-decoration:none;border:1px solid #ffffff35;border-radius:999px;padding:0 12px;font-size:10px;font-weight:850;background:transparent;color:#fff;display:inline-flex;align-items:center;justify-content:center}.cart-top{background:#fff;color:var(--green);border-color:#fff}.cart-count{margin-left:6px;min-width:20px;height:20px;border-radius:999px;background:var(--orange);color:#fff;display:grid;place-items:center;font-size:8px}
 .hero{position:relative;background:linear-gradient(135deg,#eaf8f2,#fff9ed 56%,#f4efff);overflow:hidden}.banner{height:230px;background:linear-gradient(135deg,#dcefe8,#f4efff);overflow:hidden}.banner img{width:100%;height:100%;object-fit:cover}.store-head{position:relative;margin-top:-54px;padding-bottom:24px;display:grid;grid-template-columns:110px 1fr auto;gap:18px;align-items:end}.logo{width:110px;height:110px;border-radius:24px;background:#fff;border:5px solid #fff;box-shadow:0 12px 30px rgba(11,70,53,.13);overflow:hidden;display:grid;place-items:center;font-weight:950;color:var(--green2)}.logo img{width:100%;height:100%;object-fit:contain}.store-copy{padding-bottom:4px}.verified{display:inline-flex;padding:5px 8px;border-radius:999px;background:#e5f6ed;color:#0b6b46;font-size:8px;font-weight:950}.store-copy h1{margin:6px 0 5px;font-size:clamp(28px,5vw,45px);line-height:1}.store-copy p{margin:0;color:#60736c;font-size:11px;line-height:1.55}.contact{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.contact a{min-height:40px;padding:0 13px;border-radius:999px;background:#fff;border:1px solid #d9e4df;display:inline-flex;align-items:center;text-decoration:none;font-size:9px;font-weight:900}.contact a.primary{background:var(--green2);color:#fff;border-color:var(--green2)}
 .about{padding:16px 0 6px}.about-grid{display:grid;grid-template-columns:1.5fr .7fr .8fr;gap:12px}.info{background:#fff;border:1px solid var(--line);border-radius:17px;padding:15px}.info b{display:block;font-size:10px}.info span,.info p{display:block;margin:5px 0 0;color:var(--muted);font-size:9px;line-height:1.5}
-.products{padding:30px 0 70px}.head{display:flex;justify-content:space-between;gap:14px;align-items:end;margin-bottom:15px}.head h2{margin:0;font-size:27px}.head p{margin:4px 0 0;color:var(--muted);font-size:10px}.search{width:min(320px,100%);height:42px;border:1px solid #d7e3de;border-radius:999px;background:#fff;padding:0 14px;outline:none}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.product{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}.img{height:190px;background:#f4f7f5;display:grid;place-items:center;overflow:hidden}.img img{width:100%;height:100%;object-fit:contain}.copy{padding:13px;display:flex;flex-direction:column;flex:1}.copy small{color:#74857f;font-size:8px}.copy h3{margin:5px 0 6px;font-size:13px;line-height:1.3}.copy p{margin:0;color:var(--muted);font-size:9px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.chip{padding:5px 7px;border-radius:999px;background:#eff7f3;color:#245a49;font-size:7px;font-weight:900}.price{margin-top:auto;padding-top:12px;font-weight:950;font-size:13px}.buy{margin-top:9px;min-height:39px;border:0;border-radius:11px;background:var(--orange);color:#fff;text-decoration:none;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:950}.empty{grid-column:1/-1;padding:38px;border:1px dashed #ccd9d4;border-radius:18px;text-align:center;background:#fff;color:#71827b;font-size:11px}
+.products{padding:30px 0 90px}.head{display:flex;justify-content:space-between;gap:14px;align-items:end;margin-bottom:15px}.head h2{margin:0;font-size:27px}.head p{margin:4px 0 0;color:var(--muted);font-size:10px}.search{width:min(320px,100%);height:42px;border:1px solid #d7e3de;border-radius:999px;background:#fff;padding:0 14px;outline:none}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.product{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}.img{height:190px;background:#f4f7f5;display:grid;place-items:center;overflow:hidden}.img img{width:100%;height:100%;object-fit:contain}.copy{padding:13px;display:flex;flex-direction:column;flex:1}.copy small{color:#74857f;font-size:8px}.copy h3{margin:5px 0 6px;font-size:13px;line-height:1.3}.copy p{margin:0;color:var(--muted);font-size:9px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.chip{padding:5px 7px;border-radius:999px;background:#eff7f3;color:#245a49;font-size:7px;font-weight:900}.price{margin-top:auto;padding-top:12px;font-weight:950;font-size:13px}.price small{display:block;margin-top:3px;font-weight:600}.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.buy,.contact-btn{min-height:39px;border:0;border-radius:11px;text-decoration:none;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:950}.buy{background:var(--orange);color:#fff}.buy.in-cart{background:var(--green2)}.contact-btn{background:#f1f7f4;color:var(--green);border:1px solid #d8e5df}.buy[disabled]{opacity:.45;cursor:not-allowed}.empty{grid-column:1/-1;padding:38px;border:1px dashed #ccd9d4;border-radius:18px;text-align:center;background:#fff;color:#71827b;font-size:11px}
 .footer{padding:28px 0;background:#103f34;color:#cadbd5;font-size:9px}.footer a{color:#fff}
+.cart-fab{position:fixed;right:18px;bottom:18px;z-index:80;min-height:50px;border:0;border-radius:999px;padding:0 18px;background:linear-gradient(135deg,var(--green2),#248b72);color:#fff;box-shadow:0 15px 36px rgba(9,69,52,.25);font-size:10px;font-weight:950;display:none;align-items:center;gap:8px}.cart-fab.show{display:inline-flex}.cart-fab span{min-width:22px;height:22px;border-radius:999px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:8px}
+.backdrop{position:fixed;inset:0;background:rgba(6,28,22,.52);z-index:100;display:none}.backdrop.open{display:block}.drawer{position:fixed;right:0;top:0;bottom:0;z-index:101;width:min(440px,100%);background:#fff;box-shadow:-20px 0 55px rgba(3,31,23,.2);transform:translateX(102%);transition:.22s ease;display:flex;flex-direction:column}.drawer.open{transform:none}.drawer-head{padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.drawer-head h2{margin:0;font-size:19px}.close{width:40px;height:40px;border:0;border-radius:50%;background:#eef5f2;color:var(--ink);font-size:22px}.drawer-body{padding:14px 18px;overflow:auto;flex:1}.cart-lines{display:grid;gap:9px}.cart-line{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:13px}.cart-line img{width:58px;height:58px;object-fit:contain;background:#f5f8f6;border-radius:10px}.cart-line b{display:block;font-size:10px}.cart-line small{display:block;color:var(--muted);font-size:8px;margin-top:3px}.qty{display:flex;align-items:center;gap:5px;margin-top:7px}.qty button{width:29px;height:29px;border:1px solid #d8e3de;border-radius:9px;background:#fff;font-weight:900}.qty input{width:55px;height:29px;border:1px solid #d8e3de;border-radius:8px;text-align:center;font-size:9px}.remove{border:0;background:transparent;color:#9a4a40;font-size:8px;font-weight:900}.summary{margin-top:12px;padding:12px;border-radius:13px;background:#f6faf8}.summary-row{display:flex;justify-content:space-between;gap:12px;font-size:9px;margin:5px 0}.summary-row.total{font-size:12px;font-weight:950}.drawer-foot{padding:14px 18px;border-top:1px solid var(--line)}.checkout-btn{width:100%;min-height:46px;border:0;border-radius:12px;background:var(--orange);color:#fff;font-size:10px;font-weight:950}.checkout-btn:disabled{opacity:.5}
+.modal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(5,27,21,.58)}.modal.open{display:flex}.modal-card{width:min(650px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 28px 80px rgba(0,0,0,.22)}.modal-head{padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.modal-head h2{margin:0;font-size:20px}.modal-body{padding:18px}.checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:9px;font-weight:900}.field input,.field select,.field textarea{width:100%;border:1px solid #d7e3de;border-radius:10px;padding:10px;outline:none}.field input,.field select{height:42px}.field textarea{min-height:78px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#309178;box-shadow:0 0 0 3px #e5f5ef}.pay-note{margin:12px 0 0;padding:11px;border-radius:11px;background:#fff8e8;color:#6e6045;font-size:9px;line-height:1.5}.checkout-actions{display:flex;gap:8px;margin-top:14px}.checkout-actions button{min-height:43px;border-radius:11px;padding:0 14px;font-size:9px;font-weight:950}.place{flex:1;border:0;background:var(--green2);color:#fff}.cancel{border:1px solid var(--line);background:#fff;color:var(--ink)}.checkout-msg{display:none;margin:0 0 12px;padding:11px;border-radius:11px;background:#fff0ed;color:#96483d;font-size:9px;line-height:1.5}.checkout-msg.good{background:#e9f7ef;color:#126342}.success{padding:24px;text-align:center}.success .tick{width:58px;height:58px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;background:#e6f7ee;color:#0d714a;font-size:28px}.success h3{margin:0 0 7px}.success p{margin:0;color:var(--muted);font-size:10px;line-height:1.6}.order-ref{margin:12px auto;padding:11px;border-radius:11px;background:#f2f7f5;font-weight:950;letter-spacing:.04em;max-width:330px}.success button{margin-top:14px;min-height:41px;border:0;border-radius:999px;background:var(--green2);color:#fff;padding:0 16px;font-size:9px;font-weight:900}
 @media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}.about-grid{grid-template-columns:1fr 1fr}.about-grid .info:first-child{grid-column:1/-1}.store-head{grid-template-columns:90px 1fr}.logo{width:90px;height:90px}.contact{grid-column:1/-1;justify-content:flex-start}}
-@media(max-width:620px){.banner{height:165px}.store-head{margin-top:-40px;grid-template-columns:76px 1fr;gap:12px}.logo{width:76px;height:76px;border-radius:19px}.store-copy h1{font-size:27px}.contact a{flex:1;justify-content:center}.about-grid{grid-template-columns:1fr}.about-grid .info:first-child{grid-column:auto}.head{align-items:flex-start;flex-direction:column}.search{width:100%}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.img{height:145px}.copy{padding:10px}.copy h3{font-size:11px}.price{font-size:11px}}
+@media(max-width:620px){.top .wrap{height:auto;min-height:64px;padding:9px 0}.toplinks>a{display:none}.banner{height:165px}.store-head{margin-top:-40px;grid-template-columns:76px 1fr;gap:12px}.logo{width:76px;height:76px;border-radius:19px}.store-copy h1{font-size:27px}.contact a{flex:1;justify-content:center}.about-grid{grid-template-columns:1fr}.about-grid .info:first-child{grid-column:auto}.head{align-items:flex-start;flex-direction:column}.search{width:100%}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.img{height:145px}.copy{padding:10px}.copy h3{font-size:11px}.price{font-size:11px}.card-actions{grid-template-columns:1fr}.checkout-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.modal{padding:0}.modal-card{width:100%;max-height:94vh;border-radius:22px 22px 0 0;align-self:flex-end}.cart-fab{right:12px;bottom:12px}}
+@media(prefers-reduced-motion:reduce){.drawer{transition:none}}
 </style>
 </head>
 <body>
-<div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><a href="./">Back to marketplace</a></div></div>
+<div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="./">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
 <div id="loading" class="wrap" style="padding:60px 0;text-align:center;color:#6b7d76">Loading seller store…</div>
 <div id="page" style="display:none">
   <section class="hero">
@@ -36,27 +40,129 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
     <div class="info"><b>Location</b><span id="location"></span><b style="margin-top:10px">Minimum order</b><span id="minimum"></span></div>
     <div class="info"><b>Fulfilment</b><span id="fulfilment"></span><b style="margin-top:10px">Returns</b><span id="returns"></span></div>
   </div></section>
-  <section class="products"><div class="wrap"><div class="head"><div><h2>Products</h2><p>Published products from this verified seller.</p></div><input id="search" class="search" placeholder="Search this store"></div><div id="grid" class="grid"></div></div></section>
+  <section class="products"><div class="wrap"><div class="head"><div><h2>Products</h2><p>Add products to one order, then RANOVA routes it directly to this seller.</p></div><input id="search" class="search" placeholder="Search this store"></div><div id="grid" class="grid"></div></div></section>
   <footer class="footer"><div class="wrap">RANOVA marketplace seller storefront • <a href="./">Browse the main marketplace</a></div></footer>
 </div>
+
+<button id="cartFab" class="cart-fab" type="button">Review order <span id="cartFabCount">0</span></button>
+<div id="cartBackdrop" class="backdrop"></div>
+<aside id="cartDrawer" class="drawer" aria-label="Order selection">
+  <div class="drawer-head"><div><small style="color:var(--muted);font-size:8px">YOUR SELECTION</small><h2>Order from <span id="drawerStoreName">seller</span></h2></div><button id="closeCart" class="close" type="button" aria-label="Close">×</button></div>
+  <div class="drawer-body"><div id="cartLines" class="cart-lines"></div><div id="cartSummary" class="summary"></div></div>
+  <div class="drawer-foot"><button id="checkout" class="checkout-btn" type="button">Continue to order details</button></div>
+</aside>
+
+<div id="checkoutModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+  <div class="modal-card">
+    <div class="modal-head"><div><small style="color:var(--muted);font-size:8px">RANOVA MARKETPLACE ORDER</small><h2 id="checkoutTitle">Delivery & payment preference</h2></div><button id="closeCheckout" class="close" type="button" aria-label="Close">×</button></div>
+    <div id="checkoutBody" class="modal-body">
+      <div id="checkoutMsg" class="checkout-msg"></div>
+      <div class="checkout-grid">
+        <div class="field"><label>Full name *</label><input id="customerName" autocomplete="name"></div>
+        <div class="field"><label>Phone number *</label><input id="customerPhone" inputmode="tel" autocomplete="tel"></div>
+        <div class="field full"><label>Email (optional)</label><input id="customerEmail" type="email" autocomplete="email"></div>
+        <div class="field full"><label>Delivery location *</label><input id="deliveryLocation" autocomplete="street-address" placeholder="Area / landmark / delivery instructions"></div>
+        <div class="field"><label>Payment method *</label><select id="paymentMethod"><option value="">Choose method</option><option>Mobile Money</option><option>Bank Transfer</option></select></div>
+        <div class="field"><label>Selected items</label><input id="checkoutCount" readonly></div>
+        <div class="field full"><label>Order note (optional)</label><textarea id="buyerNote" placeholder="Colour, size, timing or other order details"></textarea></div>
+      </div>
+      <div class="pay-note"><b>No payment account is shown at this stage.</b> Your order is sent first. The seller/RANOVA confirms availability, final amount and delivery arrangements before payment instructions are provided.</div>
+      <div class="checkout-actions"><button id="cancelCheckout" class="cancel" type="button">Back</button><button id="placeOrder" class="place" type="button">Place order</button></div>
+    </div>
+    <div id="checkoutSuccess" class="success" style="display:none"><div class="tick">✓</div><h3>Order sent successfully</h3><p>Your order has been routed to the seller. Keep the reference below. Payment remains <b>not started</b> until the order is confirmed.</p><div id="successRef" class="order-ref"></div><button id="doneCheckout" type="button">Done</button></div>
+  </div>
+</div>
+
 <script>
 (function(){
 "use strict";
 var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co";
 var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
-var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[];
+var ORDER_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-place-order";
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[],cart={};
+
 function el(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function phoneDigits(v){var d=String(v||"").replace(/\D/g,"");if(d.startsWith("0"))d="233"+d.slice(1);return d}
 function money(v){return v==null?"Ask seller for price":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function cartItems(){return Object.keys(cart).map(function(id){var p=products.find(function(x){return x.id===id});return p?{product:p,quantity:cart[id]}:null}).filter(Boolean)}
+function totalQty(){return cartItems().reduce(function(s,x){return s+x.quantity},0)}
+function knownTotal(){var items=cartItems();if(!items.length||items.some(function(x){return x.product.price==null}))return null;return items.reduce(function(s,x){return s+(Number(x.product.price)*x.quantity)},0)}
+function saveCart(){try{sessionStorage.setItem("ranova_store_cart_"+(store?store.id:""),JSON.stringify(cart))}catch(e){}}
+function loadCart(){try{var x=sessionStorage.getItem("ranova_store_cart_"+store.id);cart=x?JSON.parse(x):{}}catch(e){cart={}};sanitizeCart()}
+function sanitizeCart(){
+  var next={};
+  Object.keys(cart||{}).forEach(function(id){
+    var p=products.find(function(x){return x.id===id});if(!p)return;
+    var q=Math.max(Number(p.moq||1),Math.floor(Number(cart[id]||p.moq||1)));
+    if(p.stock_quantity!=null)q=Math.min(q,Number(p.stock_quantity));
+    if(p.stock_status!=="out_of_stock"&&q>=Number(p.moq||1))next[id]=q;
+  });
+  cart=next;saveCart();
+}
 function render(){
   var q=el("search").value.trim().toLowerCase();
   var list=products.filter(function(p){return !q||[p.name,p.category,p.short_description,p.description,p.sku].join(" ").toLowerCase().includes(q)});
   el("grid").innerHTML=list.length?list.map(function(p){
     var contact=phoneDigits(store.public_phone),text=encodeURIComponent("Hello "+store.store_name+", I found "+p.name+" on RANOVA. Please confirm price, stock, MOQ and delivery details.");
     var href=contact?"https://wa.me/"+contact+"?text="+text:"mailto:"+encodeURIComponent(store.public_email||"")+"?subject="+encodeURIComponent("RANOVA product enquiry - "+p.name);
-    return '<article class="product"><div class="img">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'" loading="lazy">':'')+'</div><div class="copy"><small>'+esc(p.category)+'</small><h3>'+esc(p.name)+'</h3><p>'+esc(p.short_description||p.description||"Contact the seller for product details.")+'</p><div class="meta"><span class="chip">MOQ '+esc(p.moq||1)+'</span><span class="chip">'+esc(String(p.stock_status||"confirm_on_enquiry").replace(/_/g," "))+'</span></div><div class="price">'+esc(money(p.price))+'</div><a class="buy" href="'+href+'" target="_blank" rel="noopener">Contact seller</a></div></article>'
+    var inCart=cart[p.id]!=null,disabled=p.stock_status==="out_of_stock";
+    return '<article class="product"><div class="img">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'" loading="lazy">':'')+'</div><div class="copy"><small>'+esc(p.category)+'</small><h3>'+esc(p.name)+'</h3><p>'+esc(p.short_description||p.description||"Contact the seller for product details.")+'</p><div class="meta"><span class="chip">MOQ '+esc(p.moq||1)+'</span><span class="chip">'+esc(String(p.stock_status||"confirm_on_enquiry").replace(/_/g," "))+'</span></div><div class="price">'+esc(money(p.price))+(p.price==null?'<small>Final amount confirmed before payment</small>':'')+'</div><div class="card-actions"><button class="buy'+(inCart?' in-cart':'')+'" data-add="'+p.id+'" '+(disabled?'disabled':'')+'>'+(disabled?'Out of stock':inCart?'✓ Added to order':'Add to order')+'</button><a class="contact-btn" href="'+href+'" target="_blank" rel="noopener">Ask seller</a></div></div></article>'
   }).join(""):'<div class="empty">No matching published products in this store yet.</div>';
+  el("grid").querySelectorAll("[data-add]").forEach(function(b){b.onclick=function(){addProduct(this.dataset.add)}});
+}
+function addProduct(id){
+  var p=products.find(function(x){return x.id===id});if(!p||p.stock_status==="out_of_stock")return;
+  if(cart[id]!=null){openCart();return}
+  cart[id]=Number(p.moq||1);saveCart();render();renderCart();openCart();
+}
+function setQuantity(id,value){
+  var p=products.find(function(x){return x.id===id});if(!p)return;
+  var min=Number(p.moq||1),q=Math.max(min,Math.floor(Number(value||min)));
+  if(p.stock_quantity!=null)q=Math.min(q,Number(p.stock_quantity));
+  cart[id]=q;saveCart();renderCart();
+}
+function removeItem(id){delete cart[id];saveCart();render();renderCart()}
+function renderCart(){
+  var items=cartItems(),count=items.length,qty=totalQty(),total=knownTotal();
+  el("topCartCount").textContent=count;el("cartFabCount").textContent=count;el("cartFab").classList.toggle("show",count>0);
+  el("checkout").disabled=!count;el("checkoutCount").value=count+" product(s), "+qty+" unit(s)";
+  el("cartLines").innerHTML=count?items.map(function(x){
+    var p=x.product;
+    return '<div class="cart-line"><img src="'+esc(p.primary_image_url||"")+'" alt=""><div><b>'+esc(p.name)+'</b><small>'+esc(money(p.price))+' • MOQ '+esc(p.moq||1)+'</small><div class="qty"><button data-minus="'+p.id+'" type="button">−</button><input data-qty="'+p.id+'" type="number" min="'+esc(p.moq||1)+'" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(x.quantity)+'"><button data-plus="'+p.id+'" type="button">+</button></div></div><button class="remove" data-remove="'+p.id+'" type="button">Remove</button></div>';
+  }).join(""):'<div class="empty">Your order selection is empty.</div>';
+  el("cartSummary").innerHTML='<div class="summary-row"><span>Products</span><b>'+count+'</b></div><div class="summary-row"><span>Total quantity</span><b>'+qty+'</b></div><div class="summary-row total"><span>Product total</span><b>'+(total==null?'Confirmed before payment':money(total))+'</b></div><div class="summary-row"><span>Delivery</span><b>Confirmed separately</b></div>';
+  el("cartLines").querySelectorAll("[data-minus]").forEach(function(b){b.onclick=function(){var p=products.find(function(x){return x.id===b.dataset.minus}),step=1,min=Number(p.moq||1);setQuantity(p.id,Math.max(min,(cart[p.id]||min)-step))}});
+  el("cartLines").querySelectorAll("[data-plus]").forEach(function(b){b.onclick=function(){var p=products.find(function(x){return x.id===b.dataset.plus});setQuantity(p.id,(cart[p.id]||Number(p.moq||1))+1)}});
+  el("cartLines").querySelectorAll("[data-qty]").forEach(function(inp){inp.onchange=function(){setQuantity(this.dataset.qty,this.value)}});
+  el("cartLines").querySelectorAll("[data-remove]").forEach(function(b){b.onclick=function(){removeItem(this.dataset.remove)}});
+}
+function openCart(){el("drawerStoreName").textContent=store?store.store_name:"seller";el("cartBackdrop").classList.add("open");el("cartDrawer").classList.add("open");document.body.classList.add("no-scroll")}
+function closeCart(){el("cartBackdrop").classList.remove("open");el("cartDrawer").classList.remove("open");if(!el("checkoutModal").classList.contains("open"))document.body.classList.remove("no-scroll")}
+function openCheckout(){if(!cartItems().length)return;closeCart();el("checkoutMsg").style.display="none";el("checkoutBody").style.display="block";el("checkoutSuccess").style.display="none";el("checkoutModal").classList.add("open");document.body.classList.add("no-scroll")}
+function closeCheckout(){el("checkoutModal").classList.remove("open");document.body.classList.remove("no-scroll")}
+function showCheckoutMsg(text,good){var m=el("checkoutMsg");m.textContent=text;m.classList.toggle("good",!!good);m.style.display="block"}
+async function placeOrder(){
+  var items=cartItems();
+  var payload={
+    customer_name:el("customerName").value.trim(),
+    customer_phone:el("customerPhone").value.trim(),
+    customer_email:el("customerEmail").value.trim(),
+    delivery_location:el("deliveryLocation").value.trim(),
+    payment_method:el("paymentMethod").value,
+    buyer_note:el("buyerNote").value.trim(),
+    items:items.map(function(x){return{seller_product_id:x.product.id,quantity:x.quantity}})
+  };
+  if(!payload.customer_name||!payload.customer_phone||!payload.delivery_location||!payload.payment_method){showCheckoutMsg("Complete your name, phone, delivery location and payment method.");return}
+  var b=el("placeOrder"),old=b.textContent;b.disabled=true;b.textContent="Placing order…";el("checkoutMsg").style.display="none";
+  try{
+    var res=await fetch(ORDER_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify(payload)});
+    var out=await res.json().catch(function(){return{}});
+    if(!res.ok||!out.ok)throw new Error(out.error||"Could not place the order.");
+    cart={};saveCart();render();renderCart();
+    el("checkoutBody").style.display="none";el("checkoutSuccess").style.display="block";el("successRef").textContent=out.order_ref||"Order received";
+  }catch(err){showCheckoutMsg(err&&err.message?err.message:"Could not place the order.")}
+  finally{b.disabled=false;b.textContent=old}
 }
 async function boot(){
   var slug=new URLSearchParams(location.search).get("store")||"";
@@ -65,21 +171,26 @@ async function boot(){
   if(sr.error||!sr.data){el("loading").textContent="This RANOVA store is not available.";return}
   store=sr.data;
   var pr=await sb.from("ranova_seller_products").select("*").eq("store_id",store.id).eq("product_status","active").order("created_at",{ascending:false});
-  products=pr.data||[];
-  el("storeName").textContent=store.store_name;el("tagline").textContent=store.tagline||"Verified seller on RANOVA";
+  products=pr.data||[];loadCart();
+  el("storeName").textContent=store.store_name;el("tagline").textContent=store.tagline||"Verified seller on RANOVA";el("drawerStoreName").textContent=store.store_name;
   el("description").textContent=store.description||"Contact this seller for business information.";
   el("location").textContent=store.business_location||"Confirm with seller";el("minimum").textContent=store.minimum_order_note||"Varies by product";
   el("fulfilment").textContent=store.fulfilment_summary||"Confirm with seller";el("returns").textContent=store.return_policy_summary||"Confirm applicable terms with seller before purchase.";
   if(store.logo_url)el("logo").innerHTML='<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name)+' logo">';else el("logo").textContent=store.store_name.charAt(0).toUpperCase();
   if(store.banner_url)el("banner").innerHTML='<img src="'+esc(store.banner_url)+'" alt="">';
-  var links=[];var ph=phoneDigits(store.public_phone);
+  var links=[],ph=phoneDigits(store.public_phone);
   if(ph)links.push('<a class="primary" href="https://wa.me/'+ph+'" target="_blank" rel="noopener">WhatsApp seller</a>');
   if(store.public_phone)links.push('<a href="tel:'+esc(store.public_phone)+'">Call</a>');
   if(store.public_email)links.push('<a href="mailto:'+esc(store.public_email)+'">Email</a>');
   el("contact").innerHTML=links.join("");
-  el("loading").style.display="none";el("page").style.display="block";render();
+  el("loading").style.display="none";el("page").style.display="block";render();renderCart();
 }
-el("search").addEventListener("input",render);boot();
+el("search").addEventListener("input",render);
+el("topCart").onclick=el("cartFab").onclick=openCart;el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
+el("closeCheckout").onclick=el("cancelCheckout").onclick=closeCheckout;el("placeOrder").onclick=placeOrder;el("doneCheckout").onclick=closeCheckout;
+el("checkoutModal").addEventListener("click",function(e){if(e.target===this)closeCheckout()});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeCart();closeCheckout()}});
+boot();
 })();
 </script>
 </body>
