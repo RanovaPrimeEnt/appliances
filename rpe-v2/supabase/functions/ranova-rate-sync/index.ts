@@ -22,11 +22,8 @@ function fixed(v:any){
 function parsePayload(j:any){
   const x=j&&typeof j==="object"?(j.rates&&typeof j.rates==="object"?j.rates:j):{};
   const out:any={};
-  const c=num(x.commission_rate);if(c!==null)out.commission_rate=Number(c.toFixed(2));
-  const p=num(x.required_payment_percent);if(p!==null)out.required_payment_percent=Number(p.toFixed(2));
   const pr=num(x.payment_processing_rate);if(pr!==null)out.payment_processing_rate=Number(pr.toFixed(2));
   const ff=fixed(x.payment_fixed_fee);if(ff!==null)out.payment_fixed_fee=Number(ff.toFixed(2));
-  if(["platform","buyer","seller"].includes(String(x.payment_fee_payer||"")))out.payment_fee_payer=String(x.payment_fee_payer);
   if(x.effective_from&&!Number.isNaN(new Date(x.effective_from).getTime()))out.effective_from=new Date(x.effective_from).toISOString();
   return out;
 }
@@ -43,6 +40,7 @@ Deno.serve(async(req:Request)=>{
   const results:any[]=[];
   for(const rule of rules||[]){
     const now=new Date();
+    const nowIso=now.toISOString();
     const last=rule.last_checked_at?new Date(rule.last_checked_at):null;
     if(!force&&last&&now.getTime()-last.getTime()<30*60*1000){
       results.push({id:rule.id,status:"skipped_recent"});
@@ -50,8 +48,8 @@ Deno.serve(async(req:Request)=>{
     }
     if(rule.source_kind==="owner_policy"){
       await admin.from("ranova_marketplace_country_rules").update({
-        last_checked_at:now.toISOString(),last_sync_status:"skipped_owner_policy",
-        last_sync_error:"Owner-policy rules are not externally synchronized."
+        last_checked_at:nowIso,last_sync_status:"skipped_owner_policy",
+        last_sync_error:"RANOVA commission/policy rules are never changed by an external feed."
       }).eq("id",rule.id);
       results.push({id:rule.id,status:"skipped_owner_policy"});
       continue;
@@ -64,9 +62,11 @@ Deno.serve(async(req:Request)=>{
       if(rule.source_last_modified)headers["If-Modified-Since"]=rule.source_last_modified;
       const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),10000);
       const r=await fetch(u.toString(),{headers,signal:ctrl.signal});clearTimeout(timer);
+
       if(r.status===304){
         await admin.from("ranova_marketplace_country_rules").update({
-          last_checked_at:now.toISOString(),last_sync_status:"unchanged",last_sync_error:null
+          last_checked_at:nowIso,last_sync_status:"unchanged",last_sync_error:null,
+          source_verified_at:nowIso
         }).eq("id",rule.id);
         results.push({id:rule.id,status:"unchanged"});continue;
       }
@@ -75,16 +75,90 @@ Deno.serve(async(req:Request)=>{
       if(!type.toLowerCase().includes("json"))throw new Error("Auto-update source must return JSON.");
       const j=await r.json();
       const updates=parsePayload(j);
-      if(!Object.keys(updates).length)throw new Error("Source JSON did not contain supported rate fields.");
-      updates.last_checked_at=now.toISOString();
-      updates.last_sync_status="updated";
-      updates.last_sync_error=null;
-      updates.source_etag=r.headers.get("etag")||rule.source_etag||null;
-      updates.source_last_modified=r.headers.get("last-modified")||rule.source_last_modified||null;
-      updates.updated_at=now.toISOString();
-      const {error:updateError}=await admin.from("ranova_marketplace_country_rules").update(updates).eq("id",rule.id);
-      if(updateError)throw updateError;
-      results.push({id:rule.id,status:"updated",fields:Object.keys(updates).filter(x=>!x.startsWith("last_")&&!x.startsWith("source_")&&x!=="updated_at")});
+      if(updates.payment_processing_rate===undefined&&updates.payment_fixed_fee===undefined){
+        throw new Error("Official source did not provide payment_processing_rate or payment_fixed_fee.");
+      }
+
+      const nextRate=updates.payment_processing_rate===undefined?Number(rule.payment_processing_rate||0):Number(updates.payment_processing_rate);
+      const nextFixed=updates.payment_fixed_fee===undefined?Number(rule.payment_fixed_fee||0):Number(updates.payment_fixed_fee);
+      const unchanged=nextRate===Number(rule.payment_processing_rate||0)&&nextFixed===Number(rule.payment_fixed_fee||0);
+
+      if(unchanged){
+        await admin.from("ranova_marketplace_country_rules").update({
+          last_checked_at:nowIso,last_sync_status:"unchanged",last_sync_error:null,
+          source_verified_at:nowIso,
+          source_etag:r.headers.get("etag")||rule.source_etag||null,
+          source_last_modified:r.headers.get("last-modified")||rule.source_last_modified||null
+        }).eq("id",rule.id);
+        results.push({id:rule.id,status:"unchanged"});continue;
+      }
+
+      const effectiveFrom=updates.effective_from||nowIso;
+      const nextPayload:any={
+        store_id:rule.store_id,
+        seller_country_code:rule.seller_country_code,
+        buyer_country_code:rule.buyer_country_code,
+        payment_method:rule.payment_method,
+        commission_rate:rule.commission_rate,
+        required_payment_percent:rule.required_payment_percent,
+        payment_processing_rate:nextRate,
+        payment_fixed_fee:nextFixed,
+        payment_fee_payer:rule.payment_fee_payer,
+        currency:rule.currency||"GHS",
+        source_name:rule.source_name,
+        source_url:rule.source_url,
+        source_kind:rule.source_kind,
+        auto_update:true,
+        last_checked_at:nowIso,
+        last_sync_status:"updated",
+        last_sync_error:null,
+        source_etag:r.headers.get("etag")||rule.source_etag||null,
+        source_last_modified:r.headers.get("last-modified")||rule.source_last_modified||null,
+        source_verified_at:nowIso,
+        effective_from:effectiveFrom,
+        effective_to:null,
+        active:false,
+        rule_version:Number(rule.rule_version||1)+1,
+        supersedes_rule_id:rule.id,
+        change_reason:"Automatic provider-fee update from "+(rule.source_name||u.hostname),
+        updated_at:nowIso,
+        updated_by:null
+      };
+
+      const {data:newRule,error:insertError}=await admin.from("ranova_marketplace_country_rules").insert(nextPayload).select("*").single();
+      if(insertError)throw insertError;
+
+      const {error:archiveError}=await admin.from("ranova_marketplace_country_rules").update({
+        active:false,
+        effective_to:effectiveFrom,
+        last_checked_at:nowIso,
+        last_sync_status:"superseded",
+        source_verified_at:nowIso,
+        updated_at:nowIso
+      }).eq("id",rule.id);
+      if(archiveError){
+        await admin.from("ranova_marketplace_country_rules").delete().eq("id",newRule.id);
+        throw archiveError;
+      }
+
+      const {error:activateError}=await admin.from("ranova_marketplace_country_rules").update({
+        active:true,updated_at:nowIso
+      }).eq("id",newRule.id);
+      if(activateError){
+        await admin.from("ranova_marketplace_country_rules").update({
+          active:true,effective_to:null,last_sync_status:"error",last_sync_error:"New version activation failed",updated_at:nowIso
+        }).eq("id",rule.id);
+        await admin.from("ranova_marketplace_country_rules").delete().eq("id",newRule.id);
+        throw activateError;
+      }
+
+      results.push({
+        id:newRule.id,
+        supersedes:rule.id,
+        status:"updated",
+        version:Number(rule.rule_version||1)+1,
+        fields:["payment_processing_rate","payment_fixed_fee"]
+      });
     }catch(e){
       const message=e instanceof Error?e.message:String(e);
       await admin.from("ranova_marketplace_country_rules").update({
