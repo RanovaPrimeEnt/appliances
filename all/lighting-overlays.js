@@ -65,7 +65,7 @@
             'High-brightness LED\nBattery display · Type-C\nSOS flash');
           add(cover,'rpe-spec',36,13,9,17,'');
           add(cover,'rpe-spec',1,34,29,8,'Runtime: '+findRow(rows,'Supplier runtime claim'));
-          add(cover,'rpe-spec',29,34,9,6,'');
+          add(cover,'rpe-spec',29,34,9,8,'');
           add(cover,'rpe-tag',0,42,17,7,'Li-ion');
           add(cover,'rpe-spec',77,29,23,15,'Type-C cable pictured\nWhite light option');
         }else{
