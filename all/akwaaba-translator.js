@@ -46,6 +46,8 @@ var lastText="";
 var lastTranslation="";
 var ocrScriptPromise=null;
 var ocrBusy=false;
+var akwaabaOcrWorker=null;
+var akwaabaOcrReady=false;
 
 var root=document.createElement("div");
 root.id="akwaabaTranslatorRoot";
@@ -166,6 +168,15 @@ function loadOcr(){
   });
   return ocrScriptPromise;
 }
+
+async function getAkwaabaOcrWorker(){
+  if(akwaabaOcrWorker&&akwaabaOcrReady)return akwaabaOcrWorker;
+  await loadOcr();
+  if(!window.Tesseract)throw new Error("OCR engine unavailable");
+  akwaabaOcrWorker=await window.Tesseract.createWorker("eng+chi_sim+spa+fra");
+  akwaabaOcrReady=true;
+  return akwaabaOcrWorker;
+}
 function frameElementAt(clientX,clientY){
   var rect=frame.getBoundingClientRect();
   if(clientX<rect.left||clientX>rect.right||clientY<rect.top||clientY>rect.bottom)return null;
@@ -210,73 +221,77 @@ function cropImageUnderPoint(img,clientX,clientY){
   var r=img.getBoundingClientRect();
   var nw=img.naturalWidth||0,nh=img.naturalHeight||0;
   if(!nw||!nh||!r.width||!r.height)throw new Error("Image is not ready");
+
   var px=clientX-fr.left-r.left,py=clientY-fr.top-r.top;
   var cs=(frame.contentWindow||window).getComputedStyle(img);
   var fit=(cs&&cs.objectFit)||"fill";
   var scaleX=r.width/nw,scaleY=r.height/nh,scale=1,drawW=r.width,drawH=r.height,offX=0,offY=0;
+
   if(fit==="contain"||fit==="scale-down"){
-    scale=Math.min(scaleX,scaleY);drawW=nw*scale;drawH=nh*scale;offX=(r.width-drawW)/2;offY=(r.height-drawH)/2;
+    scale=Math.min(scaleX,scaleY);
+    drawW=nw*scale;drawH=nh*scale;offX=(r.width-drawW)/2;offY=(r.height-drawH)/2;
   }else if(fit==="cover"){
-    scale=Math.max(scaleX,scaleY);drawW=nw*scale;drawH=nh*scale;offX=(r.width-drawW)/2;offY=(r.height-drawH)/2;
-  }else{
-    scaleX=r.width/nw;scaleY=r.height/nh;
+    scale=Math.max(scaleX,scaleY);
+    drawW=nw*scale;drawH=nh*scale;offX=(r.width-drawW)/2;offY=(r.height-drawH)/2;
   }
-  var sx,sy,cropW,cropH;
+
+  var srcX,srcY,cropW,cropH;
   if(fit==="contain"||fit==="cover"||fit==="scale-down"){
-    var srcX=(px-offX)/scale,srcY=(py-offY)/scale;
-    cropW=Math.min(nw,Math.max(220/scale,nw*.38));
-    cropH=Math.min(nh,Math.max(130/scale,nh*.26));
-    sx=srcX-cropW/2;sy=srcY-cropH/2;
+    srcX=(px-offX)/scale;srcY=(py-offY)/scale;
+    cropW=Math.min(nw,Math.max(300/scale,nw*.46));
+    cropH=Math.min(nh,Math.max(180/scale,nh*.30));
   }else{
-    var srcX2=px/scaleX,srcY2=py/scaleY;
-    cropW=Math.min(nw,Math.max(220/scaleX,nw*.38));
-    cropH=Math.min(nh,Math.max(130/scaleY,nh*.26));
-    sx=srcX2-cropW/2;sy=srcY2-cropH/2;
+    srcX=px/scaleX;srcY=py/scaleY;
+    cropW=Math.min(nw,Math.max(300/scaleX,nw*.46));
+    cropH=Math.min(nh,Math.max(180/scaleY,nh*.30));
   }
-  sx=Math.max(0,Math.min(nw-cropW,sx));sy=Math.max(0,Math.min(nh-cropH,sy));
+
+  var sx=Math.max(0,Math.min(nw-cropW,srcX-cropW/2));
+  var sy=Math.max(0,Math.min(nh-cropH,srcY-cropH/2));
   var canvas=document.createElement("canvas");
-  var outW=Math.min(1000,Math.max(520,Math.round(cropW*1.6)));
-  var outH=Math.round(outW*(cropH/cropW));
+  var outW=Math.min(900,Math.max(600,Math.round(cropW*1.5)));
+  var outH=Math.max(240,Math.round(outW*(cropH/cropW)));
   canvas.width=outW;canvas.height=outH;
+
   var ctx=canvas.getContext("2d",{willReadFrequently:true});
   ctx.fillStyle="#fff";ctx.fillRect(0,0,outW,outH);
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
   ctx.drawImage(img,sx,sy,cropW,cropH,0,0,outW,outH);
-  try{
-    var data=ctx.getImageData(0,0,outW,outH);
-    var p=data.data;
-    for(var i=0;i<p.length;i+=4){
-      var g=Math.round(.299*p[i]+.587*p[i+1]+.114*p[i+2]);
-      var v=g>185?255:g<70?0:g;
-      p[i]=p[i+1]=p[i+2]=v;
-    }
-    ctx.putImageData(data,0,0);
-  }catch(e){}
+
   return canvas;
+}
+function canvasPreview(canvas){
+  try{return canvas.toDataURL("image/jpeg",.9)}catch(e){return""}
 }
 async function readImageTextAt(clientX,clientY){
   if(ocrBusy)throw new Error("Akwaaba is already reading an image");
   var img=imageElementAt(clientX,clientY);
-  if(!img)return "";
+  if(!img)return {text:"",preview:""};
   ocrBusy=true;
-  state.innerHTML='<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Akwaaba is reading words from this image…</span></div>';
+
+  var crop=cropImageUnderPoint(img,clientX,clientY);
+  var preview=canvasPreview(crop);
+  state.innerHTML=
+    '<div class="akwaaba-image-stage">'+
+      '<div class="akwaaba-image-box">'+
+        (preview?'<img src="'+preview+'" alt="Image area being translated">':'')+
+        '<div class="akwaaba-image-caption">Image area Akwaaba is reading</div>'+
+      '</div>'+
+      '<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Reading printed words…</span></div>'+
+    '</div>';
   openPanel();
+
   try{
-    var T=await loadOcr();
-    var crop=cropImageUnderPoint(img,clientX,clientY);
-    var result=await T.recognize(crop,"eng+spa+chi_sim",{
-      logger:function(m){
-        if(m&&m.status&&typeof m.progress==="number"){
-          var pct=Math.round(m.progress*100);
-          state.innerHTML='<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Reading image text… '+pct+'%</span></div>';
-          positionPanel();
-        }
-      }
-    });
+    var worker=await getAkwaabaOcrWorker();
+    var result=await worker.recognize(crop);
     var raw=(result&&result.data&&result.data.text)||"";
-    var lines=String(raw).split(/\n+/).map(cleanText).filter(function(x){return x.length>0&&/[\p{L}\p{N}]/u.test(x)});
-    return cleanText(lines.slice(0,5).join(" "));
-  }finally{ocrBusy=false}
+    var lines=String(raw).split(/\n+/).map(cleanText).filter(function(x){
+      try{return x.length>0&&/[\p{L}\p{N}]/u.test(x)}catch(e){return x.length>0}
+    });
+    return {text:cleanText(lines.slice(0,6).join(" ")),preview:preview};
+  }finally{
+    ocrBusy=false;
+  }
 }
 function readableText(el){
   if(!el)return"";
@@ -383,18 +398,96 @@ function renderResult(original,translated,quality,confidence){
     '</div>';
   openPanel();
 }
+function renderImageTranslationResult(preview,detected,translated,quality,confidence){
+  lastTranslation=translated;
+  var isVerified=quality==="verified";
+  var q=isVerified
+    ?'<div class="akwaaba-quality verified">✓ Verified translation</div>'
+    :'<div class="akwaaba-quality checked">✓ Translation checked'+(typeof confidence==="number"?" · "+Math.round(confidence*100)+"%":"")+'</div>';
+
+  state.innerHTML=
+    '<div class="akwaaba-result">'+
+      '<div>'+q+'<div class="akwaaba-summary">Text was read directly from the product image and translated below.</div></div>'+
+      '<div class="akwaaba-image-box">'+
+        (preview?'<img src="'+preview+'" alt="Translated image area">':'')+
+        '<div class="akwaaba-image-caption">Image area translated by Akwaaba</div>'+
+      '</div>'+
+      '<div class="akwaaba-block">'+
+        '<div class="akwaaba-block-head"><span class="akwaaba-label">Detected text</span><span class="akwaaba-language-pill">OCR</span></div>'+
+        '<div class="akwaaba-detected">'+escapeHtml(detected)+'</div>'+
+      '</div>'+
+      '<div class="akwaaba-arrow">↓</div>'+
+      '<div class="akwaaba-block translation">'+
+        '<div class="akwaaba-block-head"><span class="akwaaba-label">Translation</span><span class="akwaaba-language-pill">'+escapeHtml(LANGS[selected].label)+'</span></div>'+
+        '<div class="akwaaba-output">'+escapeHtml(translated)+'</div>'+
+      '</div>'+
+    '</div>';
+  openPanel();
+}
+function imageCacheKey(img,x,y){
+  var src=(img&&((img.currentSrc||img.src)))||"image";
+  return "img|"+src+"|"+Math.round(x/24)+"|"+Math.round(y/24)+"|"+selected;
+}
 async function translateAt(x,y){
   var img=imageElementAt(x,y);
   if(img){
+    var key=imageCacheKey(img,x,y);
+    if(cache.has(key)){
+      var saved=cache.get(key);
+      if(saved&&saved.preview&&saved.detected&&saved.translated){
+        renderImageTranslationResult(saved.preview,saved.detected,saved.translated,saved.quality,saved.confidence);
+        return;
+      }
+    }
     try{
-      state.innerHTML='<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Image detected. Akwaaba is reading the printed words…</span></div>';
+      var ocr=await readImageTextAt(x,y);
+      if(!ocr.text){
+        state.innerHTML=
+          '<div class="akwaaba-quality blocked">⚠ No clear text detected</div>'+
+          (ocr.preview?'<div class="akwaaba-image-box"><img src="'+ocr.preview+'" alt="Image area"><div class="akwaaba-image-caption">Akwaaba checked this image area</div></div>':'')+
+          '<div class="akwaaba-error">Place the center of Akwaaba directly over the printed words and try again.</div>';
+        openPanel();
+        return;
+      }
+
+      state.innerHTML=
+        '<div class="akwaaba-image-box">'+
+          (ocr.preview?'<img src="'+ocr.preview+'" alt="Image area being translated">':'')+
+          '<div class="akwaaba-image-caption">Text detected. Translating to '+escapeHtml(LANGS[selected].label)+'…</div>'+
+        '</div>'+
+        '<div class="akwaaba-loading"><span class="akwaaba-spin"></span><span>Translating detected text…</span></div>';
       openPanel();
-      var imageText=await readImageTextAt(x,y);
-      if(imageText){await translateText(imageText,false);return}
-      showInstruction("No clear printed words were detected there. Place the center of Akwaaba directly over the text printed on the product image.");
+
+      var res=await fetch(ENDPOINT,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-akwaaba-client":"ranova-site-v1"},
+        body:JSON.stringify({q:ocr.text,target:selected})
+      });
+      var data=await res.json().catch(function(){return{}});
+      if(!res.ok||!data.translated){
+        lastTranslation="";
+        state.innerHTML=
+          '<div class="akwaaba-quality blocked">⚠ Translation withheld</div>'+
+          (ocr.preview?'<div class="akwaaba-image-box"><img src="'+ocr.preview+'" alt="Image area"><div class="akwaaba-image-caption">Detected image area</div></div>':'')+
+          '<div class="akwaaba-block"><div class="akwaaba-block-head"><span class="akwaaba-label">Detected text</span><span class="akwaaba-language-pill">OCR</span></div><div class="akwaaba-detected">'+escapeHtml(ocr.text)+'</div></div>'+
+          '<div class="akwaaba-error">'+escapeHtml(data.error||"Akwaaba could not verify this image translation.")+'</div>';
+        openPanel();
+        return;
+      }
+
+      var payload={
+        preview:ocr.preview,
+        detected:ocr.text,
+        translated:data.translated,
+        quality:data.quality||"automatic-checked",
+        confidence:data.confidence
+      };
+      cache.set(key,payload);
+      persistAkwaabaCache();
+      renderImageTranslationResult(payload.preview,payload.detected,payload.translated,payload.quality,payload.confidence);
       return;
     }catch(e){
-      state.innerHTML='<div class="akwaaba-error">Akwaaba found the image but could not read the printed words clearly. Move the center of the magnifier directly onto the text and try again.</div>';
+      state.innerHTML='<div class="akwaaba-quality blocked">⚠ Image translation failed</div><div class="akwaaba-error">Akwaaba could not process that image clearly. Try placing the center directly over the printed words.</div>';
       openPanel();
       return;
     }
@@ -445,8 +538,8 @@ orb.addEventListener("keydown",function(e){
 });
 
 function akwaabaOcrWarmup(){
-  if(window.Tesseract||ocrScriptPromise)return;
-  loadOcr().catch(function(){});
+  if(akwaabaOcrReady)return;
+  getAkwaabaOcrWorker().catch(function(){});
 }
 if("requestIdleCallback" in window){
   requestIdleCallback(function(){setTimeout(akwaabaOcrWarmup,1200)},{timeout:5000});
