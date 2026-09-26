@@ -9,24 +9,25 @@ var LANGS={
   en:{label:"English",short:"EN"},
   zh:{label:"中文",short:"中"},
   es:{label:"Español",short:"ES"},
+  fr:{label:"Français",short:"FR"},
   tw:{label:"Twi",short:"TW"}
 };
 var LOCAL_VERIFIED={
-  "product id":{en:"Product ID",zh:"产品编号",es:"ID del producto",tw:"Product ID"},
-  "price":{en:"Price",zh:"价格",es:"Precio",tw:"Boɔ"},
-  "model":{en:"Model",zh:"型号",es:"Modelo",tw:"Model"},
-  "battery":{en:"Battery",zh:"电池",es:"Batería",tw:"Battery"},
-  "battery capacity":{en:"Battery capacity",zh:"电池容量",es:"Capacidad de la batería",tw:"Battery capacity"},
-  "power":{en:"Power",zh:"功率",es:"Potencia",tw:"Ahoɔden"},
-  "beam range":{en:"Beam range",zh:"射程",es:"Alcance del haz",tw:"Baabi a kanea no tumi du"},
-  "runtime":{en:"Runtime",zh:"续航",es:"Duración",tw:"Bere a ɛtumi yɛ adwuma"},
-  "working time":{en:"Working time",zh:"工作时间",es:"Tiempo de funcionamiento",tw:"Bere a ɛtumi yɛ adwuma"},
-  "dimensions":{en:"Dimensions",zh:"尺寸",es:"Dimensiones",tw:"Ne kɛse"},
-  "rechargeable headlamp":{en:"Rechargeable headlamp",zh:"充电式头灯",es:"Linterna frontal recargable",tw:"Rechargeable ti so kanea"},
-  "rechargeable searchlight":{en:"Rechargeable searchlight",zh:"充电式探照灯",es:"Reflector recargable",tw:"Rechargeable searchlight"},
-  "rechargeable lights":{en:"Rechargeable Lights",zh:"充电灯",es:"Luces recargables",tw:"Rechargeable kanea"},
-  "solar street lights":{en:"Solar Street Lights",zh:"太阳能路灯",es:"Farolas solares",tw:"Owia ahoɔden kwan so nkanea"},
-  "lighting & fans":{en:"Lighting & Fans",zh:"照明与风扇",es:"Iluminación y ventiladores",tw:"Kanea ne mframa afiri"}
+  "product id":{en:"Product ID",zh:"产品编号",es:"ID del producto",fr:"ID du produit",tw:"Product ID"},
+  "price":{en:"Price",zh:"价格",es:"Precio",fr:"Prix",tw:"Boɔ"},
+  "model":{en:"Model",zh:"型号",es:"Modelo",fr:"Modèle",tw:"Model"},
+  "battery":{en:"Battery",zh:"电池",es:"Batería",fr:"Batterie",tw:"Battery"},
+  "battery capacity":{en:"Battery capacity",zh:"电池容量",es:"Capacidad de la batería",fr:"Capacité de la batterie",tw:"Battery capacity"},
+  "power":{en:"Power",zh:"功率",es:"Potencia",fr:"Puissance",tw:"Ahoɔden"},
+  "beam range":{en:"Beam range",zh:"射程",es:"Alcance del haz",fr:"Portée du faisceau",tw:"Baabi a kanea no tumi du"},
+  "runtime":{en:"Runtime",zh:"续航",es:"Duración",fr:"Autonomie",tw:"Bere a ɛtumi yɛ adwuma"},
+  "working time":{en:"Working time",zh:"工作时间",es:"Tiempo de funcionamiento",fr:"Durée de fonctionnement",tw:"Bere a ɛtumi yɛ adwuma"},
+  "dimensions":{en:"Dimensions",zh:"尺寸",es:"Dimensiones",fr:"Dimensions",tw:"Ne kɛse"},
+  "rechargeable headlamp":{en:"Rechargeable headlamp",zh:"充电式头灯",es:"Linterna frontal recargable",fr:"Lampe frontale rechargeable",tw:"Rechargeable ti so kanea"},
+  "rechargeable searchlight":{en:"Rechargeable searchlight",zh:"充电式探照灯",es:"Reflector recargable",fr:"Projecteur rechargeable",tw:"Rechargeable searchlight"},
+  "rechargeable lights":{en:"Rechargeable Lights",zh:"充电灯",es:"Luces recargables",fr:"Lampes rechargeables",tw:"Rechargeable kanea"},
+  "solar street lights":{en:"Solar Street Lights",zh:"太阳能路灯",es:"Farolas solares",fr:"Lampadaires solaires",tw:"Owia ahoɔden kwan so nkanea"},
+  "lighting & fans":{en:"Lighting & Fans",zh:"照明与风扇",es:"Iluminación y ventiladores",fr:"Éclairage et ventilateurs",tw:"Kanea ne mframa afiri"}
 };
 var selected=localStorage.getItem("akwaabaLang")||"en";
 if(!LANGS[selected])selected="en";
@@ -64,10 +65,10 @@ root.innerHTML=
   '#akwaabaPanel{pointer-events:auto;position:absolute;width:min(360px,calc(100vw - 24px));max-height:min(510px,72vh);overflow:auto;background:rgba(255,255,255,.98);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(14,91,67,.15);border-radius:20px;box-shadow:0 20px 55px rgba(8,47,39,.22);padding:15px;box-sizing:border-box;display:none;color:#173d32}'+
   '#akwaabaPanel.open{display:block}'+
   '.akwaaba-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.akwaaba-title{display:flex;align-items:center;gap:9px}.akwaaba-logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#0e5b43,#178467);color:#fff;display:grid;place-items:center;font-weight:950}.akwaaba-title b{display:block;font-size:14px}.akwaaba-title small{display:block;color:#718078;font-size:11px;margin-top:2px}.akwaaba-close{border:0;background:#eef4f1;color:#173d32;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer}'+
-  '.akwaaba-langs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}.akwaaba-lang{min-height:38px;border:1px solid #dce7e2;background:#fff;color:#425b52;border-radius:10px;font-size:11px;font-weight:850;cursor:pointer;padding:5px}.akwaaba-lang.active{background:#0e5b43;color:#fff;border-color:#0e5b43;box-shadow:0 6px 14px rgba(14,91,67,.16)}'+
+  '.akwaaba-langs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}.akwaaba-lang{min-height:38px;border:1px solid #dce7e2;background:#fff;color:#425b52;border-radius:10px;font-size:11px;font-weight:850;cursor:pointer;padding:5px}.akwaaba-lang.active{background:#0e5b43;color:#fff;border-color:#0e5b43;box-shadow:0 6px 14px rgba(14,91,67,.16)}'+
   '.akwaaba-state{padding:0;border:0;background:transparent}.akwaaba-result{display:grid;gap:10px}.akwaaba-block{border:1px solid #e0e9e4;border-radius:14px;padding:12px 13px;background:#fff}.akwaaba-block.translation{background:linear-gradient(180deg,#f4fbf7 0%,#ffffff 100%);border-color:#cfe3d8}.akwaaba-block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}.akwaaba-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#7c8d85}.akwaaba-language-pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#eaf4ef;color:#0e5b43;font-size:10px;font-weight:900}.akwaaba-original{font-size:13px;line-height:1.5;color:#52665f;word-break:break-word}.akwaaba-output{font-size:17px;line-height:1.5;font-weight:850;color:#102f29;word-break:break-word}.akwaaba-arrow{display:flex;align-items:center;justify-content:center;height:24px;color:#8ba39a;font-weight:900;font-size:16px}.akwaaba-loading{display:flex;align-items:center;gap:9px;color:#52665f;font-size:13px;padding:13px;border-radius:14px;background:#f6f9f7;border:1px solid #e5ece8}.akwaaba-spin{width:16px;height:16px;border:2px solid #cfe1d8;border-top-color:#0e5b43;border-radius:50%;animation:akwaabaSpin .8s linear infinite}@keyframes akwaabaSpin{to{transform:rotate(360deg)}}'+
   '.akwaaba-actions{display:flex;gap:8px;margin-top:11px}.akwaaba-actions button{flex:1;min-height:40px;border-radius:11px;border:1px solid #dce7e2;background:#fff;color:#173d32;font-size:11px;font-weight:850;cursor:pointer}.akwaaba-actions button.primary{background:#d97706;color:#fff;border-color:#d97706}.akwaaba-note{margin-top:10px;font-size:10px;line-height:1.4;color:#819089}.akwaaba-error{color:#9d3f1a;font-size:13px;line-height:1.45;font-weight:700}'+
-  '@media(max-width:620px){#akwaabaOrb{width:58px;height:58px}#akwaabaOrb svg{width:28px;height:28px}#akwaabaPanel{width:calc(100vw - 18px);max-height:70vh;border-radius:18px;padding:13px}.akwaaba-langs{gap:5px}.akwaaba-lang{font-size:10px}.akwaaba-output{font-size:16px}.akwaaba-block{padding:11px 12px}.akwaaba-actions{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding-top:8px;margin-top:10px}}'+
+  '@media(max-width:620px){#akwaabaOrb{width:58px;height:58px}#akwaabaOrb svg{width:28px;height:28px}#akwaabaPanel{width:calc(100vw - 18px);max-height:70vh;border-radius:18px;padding:13px}.akwaaba-langs{gap:4px}.akwaaba-lang{font-size:9px;padding:5px 3px}.akwaaba-output{font-size:16px}.akwaaba-block{padding:11px 12px}.akwaaba-actions{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding-top:8px;margin-top:10px}}'+
   '@media(prefers-reduced-motion:reduce){#akwaabaOrb,.a-pulse,.akwaaba-spin{animation:none!important;transition:none!important}}'+
   '</style>'+
   '<button id="akwaabaOrb" type="button" aria-label="Akwaaba AI Translator. Drag over text to translate.">'+
