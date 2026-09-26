@@ -1,6 +1,7 @@
 (function(){
 "use strict";
 var frame=document.getElementById("site");
+var ORDER_ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-place-order";
 if(!frame)return;
 
 function esc(v){
@@ -90,6 +91,27 @@ function installStyle(d){
     #grid .rpe-grand-total-value{font-size:16px!important;color:#f05a21!important;font-weight:950!important}
     #grid .rpe-checkout-note{font-size:8px!important;line-height:1.35!important;color:#8a9892!important}
     #grid .rpe-order-now.request-price{background:#0e5b43!important}
+    .rpe-checkout-modal{position:fixed!important;inset:0!important;z-index:999999!important;background:rgba(8,31,25,.48)!important;display:none!important;align-items:center!important;justify-content:center!important;padding:16px!important;box-sizing:border-box!important}
+    .rpe-checkout-modal.open{display:flex!important}
+    .rpe-checkout-sheet{width:min(430px,100%)!important;max-height:90vh!important;overflow:auto!important;background:#fff!important;border-radius:22px!important;padding:18px!important;box-shadow:0 24px 70px rgba(5,32,24,.28)!important;box-sizing:border-box!important}
+    .rpe-checkout-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin-bottom:14px!important}
+    .rpe-checkout-head h3{margin:0!important;color:#173d32!important;font-size:18px!important}
+    .rpe-checkout-close{width:34px!important;height:34px!important;border:0!important;border-radius:50%!important;background:#f1f4f2!important;color:#173d32!important;font-size:20px!important;cursor:pointer!important}
+    .rpe-checkout-product{padding:10px!important;border-radius:12px!important;background:#f7f9f8!important;margin-bottom:12px!important}
+    .rpe-checkout-product b{display:block!important;font-size:12px!important;color:#173d32!important}
+    .rpe-checkout-product span{display:block!important;margin-top:3px!important;font-size:10px!important;color:#718078!important}
+    .rpe-checkout-field{display:grid!important;gap:5px!important;margin-top:10px!important}
+    .rpe-checkout-field label{font-size:10px!important;font-weight:900!important;color:#53665e!important}
+    .rpe-checkout-field input{width:100%!important;height:42px!important;border:1px solid #dce5e1!important;border-radius:11px!important;padding:0 11px!important;box-sizing:border-box!important;font-size:13px!important;outline:none!important}
+    .rpe-checkout-summary{display:grid!important;gap:7px!important;margin:14px 0!important;padding:12px!important;border-radius:13px!important;background:#fff8f3!important;border:1px solid #ffe0d0!important}
+    .rpe-checkout-summary-row{display:flex!important;justify-content:space-between!important;gap:12px!important;font-size:10px!important;color:#65766f!important}
+    .rpe-checkout-summary-row strong{color:#243d34!important;text-align:right!important}
+    .rpe-checkout-submit{width:100%!important;min-height:46px!important;border:0!important;border-radius:999px!important;background:#ff5a2d!important;color:#fff!important;font-size:13px!important;font-weight:950!important;cursor:pointer!important}
+    .rpe-checkout-submit[disabled]{opacity:.55!important;cursor:wait!important}
+    .rpe-checkout-status{margin-top:10px!important;font-size:10px!important;line-height:1.45!important;color:#6e7d77!important}
+    .rpe-order-success{display:grid!important;gap:10px!important;text-align:center!important;padding:10px 2px!important}
+    .rpe-order-success-mark{width:54px!important;height:54px!important;border-radius:50%!important;background:#e9f7ef!important;color:#0e6b45!important;display:grid!important;place-items:center!important;margin:0 auto!important;font-size:26px!important;font-weight:950!important}
+    .rpe-order-ref{padding:10px!important;border-radius:10px!important;background:#f3f6f4!important;color:#173d32!important;font-size:14px!important;font-weight:950!important;letter-spacing:.03em!important}
     @media(max-width:620px){
       #grid .rpe-qty-wrap{display:flex!important;gap:4px!important;padding:6px 0 0!important}
       #grid .rpe-qty-copy{display:none!important}
@@ -120,6 +142,92 @@ function getUnitPrice(p){
 function money(v){
   return "GHS "+Number(v||0).toFixed(2);
 }
+function ensureCheckoutModal(d,w){
+  var modal=d.getElementById("rpeCheckoutModal");
+  if(modal)return modal;
+  modal=d.createElement("div");
+  modal.id="rpeCheckoutModal";
+  modal.className="rpe-checkout-modal";
+  modal.innerHTML=
+    '<div class="rpe-checkout-sheet" role="dialog" aria-modal="true" aria-label="Complete order">'+
+      '<div class="rpe-checkout-head"><h3>Complete your order</h3><button class="rpe-checkout-close" type="button" aria-label="Close">×</button></div>'+
+      '<div class="rpe-checkout-body"></div>'+
+    '</div>';
+  d.body.appendChild(modal);
+  var close=modal.querySelector(".rpe-checkout-close");
+  if(close)close.onclick=function(){modal.classList.remove("open")};
+  modal.addEventListener("click",function(e){if(e.target===modal)modal.classList.remove("open")});
+  return modal;
+}
+function openCheckout(d,w,data){
+  var modal=ensureCheckoutModal(d,w);
+  var body=modal.querySelector(".rpe-checkout-body");
+  if(!body)return;
+  body.innerHTML=
+    '<div class="rpe-checkout-product"><b>'+esc(data.product_name)+'</b><span>'+esc(data.product_id||"")+'</span></div>'+
+    '<div class="rpe-checkout-field"><label>Your name</label><input class="rpe-customer-name" type="text" autocomplete="name" placeholder="Full name"></div>'+
+    '<div class="rpe-checkout-field"><label>Phone number</label><input class="rpe-customer-phone" type="tel" autocomplete="tel" placeholder="e.g. 024 000 0000"></div>'+
+    '<div class="rpe-checkout-summary">'+
+      '<div class="rpe-checkout-summary-row"><span>Quantity</span><strong>'+data.quantity+'</strong></div>'+
+      '<div class="rpe-checkout-summary-row"><span>Deliver to</span><strong>'+esc(data.delivery_location)+'</strong></div>'+
+      '<div class="rpe-checkout-summary-row"><span>Payment method</span><strong>'+esc(data.payment_method)+'</strong></div>'+
+      '<div class="rpe-checkout-summary-row"><span>Product total</span><strong>'+money(data.product_total||0)+'</strong></div>'+
+      '<div class="rpe-checkout-summary-row"><span>Delivery fee</span><strong>To be confirmed</strong></div>'+
+    '</div>'+
+    '<button class="rpe-checkout-submit" type="button">Place Order</button>'+
+    '<div class="rpe-checkout-status">Your payment account details are not shown publicly. RANOVA will confirm the order before payment instructions are released.</div>';
+
+  var submit=body.querySelector(".rpe-checkout-submit");
+  if(submit)submit.onclick=async function(){
+    var name=cleanInput(body.querySelector(".rpe-customer-name"));
+    var phone=cleanInput(body.querySelector(".rpe-customer-phone"));
+    var status=body.querySelector(".rpe-checkout-status");
+    if(!name||!phone){
+      if(status)status.textContent="Please enter your name and phone number.";
+      return;
+    }
+    submit.disabled=true;
+    submit.textContent="Placing Order…";
+    if(status)status.textContent="Saving your order securely…";
+    try{
+      var res=await fetch(ORDER_ENDPOINT,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},
+        body:JSON.stringify({
+          customer_name:name,
+          customer_phone:phone,
+          product_id:data.product_id,
+          product_name:data.product_name,
+          quantity:data.quantity,
+          delivery_location:data.delivery_location,
+          payment_method:data.payment_method,
+          unit_price:data.unit_price
+        })
+      });
+      var out=await res.json().catch(function(){return{}});
+      if(!res.ok||!out.ok)throw new Error(out.error||"Could not place order.");
+      body.innerHTML=
+        '<div class="rpe-order-success">'+
+          '<div class="rpe-order-success-mark">✓</div>'+
+          '<h3 style="margin:0;color:#173d32">Order placed</h3>'+
+          '<p style="margin:0;color:#718078;font-size:11px;line-height:1.5">Your order has been recorded successfully inside RANOVA.</p>'+
+          '<div class="rpe-order-ref">'+esc(out.order_ref||"Order received")+'</div>'+
+          '<div class="rpe-checkout-summary-row"><span>Status</span><strong>Awaiting confirmation</strong></div>'+
+          '<div class="rpe-checkout-summary-row"><span>Payment method</span><strong>'+esc(data.payment_method)+'</strong></div>'+
+          '<p style="margin:0;color:#718078;font-size:10px;line-height:1.5">Payment details are kept private and will be provided after the order is confirmed.</p>'+
+          '<button class="rpe-checkout-submit rpe-checkout-done" type="button">Done</button>'+
+        '</div>';
+      var done=body.querySelector(".rpe-checkout-done");
+      if(done)done.onclick=function(){modal.classList.remove("open")};
+    }catch(err){
+      submit.disabled=false;
+      submit.textContent="Place Order";
+      if(status)status.textContent=err&&err.message?err.message:"Could not place the order. Please try again.";
+    }
+  };
+  modal.classList.add("open");
+}
+function cleanInput(el){return el?String(el.value||"").trim():""}
 function decorateCard(card,p,w){
   var info=card.querySelector(".product-info");
   if(!info||!p)return;
@@ -170,10 +278,10 @@ function decorateCard(card,p,w){
         '<div class="rpe-payment-title">Payment Method</div>'+
         '<div class="rpe-payment-methods">'+
           '<button type="button" class="rpe-payment-option" data-method="Mobile Money"><span class="rpe-payment-radio"></span><span><span class="rpe-payment-name">Mobile Money</span><span class="rpe-payment-desc">MTN MoMo, Telecel Cash or AT Money</span></span></button>'+
-          '<button type="button" class="rpe-payment-option" data-method="Card"><span class="rpe-payment-radio"></span><span><span class="rpe-payment-name">Visa / Mastercard</span><span class="rpe-payment-desc">Secure card payment</span></span></button>'+
+
           '<button type="button" class="rpe-payment-option" data-method="Bank Transfer"><span class="rpe-payment-radio"></span><span><span class="rpe-payment-name">Bank Transfer</span><span class="rpe-payment-desc">Recommended for large or bulk orders</span></span></button>'+
         '</div>'+
-        '<div class="rpe-checkout-note">Secure payment will be activated after a verified payment gateway is connected. No card or Mobile Money PIN is collected on this page.</div>'+
+        '<div class="rpe-checkout-note">Payment account details are not displayed publicly. Your order is recorded first, then secure payment instructions are provided after confirmation.</div>'+
       '</div>'+
       '<button class="rpe-order-now'+(unitPrice>0?'':' request-price')+'" type="button" disabled>'+(unitPrice>0?'Proceed to Payment':'Request Final Price')+'</button>'+
     '</div>';
@@ -248,18 +356,15 @@ function decorateCard(card,p,w){
       var qty=Math.max(0,parseInt(qtyInput&&qtyInput.value,10)||0);
       if(qty<1||!selectedPayment)return;
       var destination=locationSelect?locationSelect.value:"Accra, Ghana";
-      var msg;
-      if(unitPrice>0){
-        msg="Hello Ranova Prime Enterprise, I am ready to proceed with payment for "+qty+" × "+(p.name||"Product")+(id?" ("+id+")":"")+
-          ". Product total: "+money(unitPrice*qty)+". Delivery location: "+destination+
-          ". Preferred payment method: "+selectedPayment+". Please confirm the delivery fee and send the secure payment step.";
-      }else{
-        msg="Hello Ranova Prime Enterprise, I want "+qty+" × "+(p.name||"Product")+(id?" ("+id+")":"")+
-          ". Delivery location: "+destination+". Preferred payment method: "+selectedPayment+
-          ". Please confirm the current unit price, bulk price if available, delivery fee and availability so I can proceed to payment.";
-      }
-      var url="https://wa.me/233542846895?text="+encodeURIComponent(msg);
-      try{w.top.location.href=url}catch(err){w.location.href=url}
+      openCheckout(holder.ownerDocument,w,{
+        product_id:id,
+        product_name:p.name||"Product",
+        quantity:qty,
+        delivery_location:destination,
+        payment_method:selectedPayment,
+        unit_price:unitPrice,
+        product_total:unitPrice*qty
+      });
     });
   }
 
