@@ -277,24 +277,45 @@ function renderSellerProducts(){
   });
   host.innerHTML=list.length?list.filter(p=>p.product_status!=="archived").map(p=>{
     const store=stores.get(p.store_id),st=p.product_status;
-    const actions=[];
-    if(p.primary_image_url)actions.push('<button data-open-image="'+esc(p.primary_image_url)+'">View image</button>');
-    if(st==="pending_review"){actions.push('<button class="primary" data-product-decision="approved" data-product-id="'+p.id+'">Approve</button>');actions.push('<button data-product-decision="rejected" data-product-id="'+p.id+'">Reject</button>')}
+    const actions=['<button class="primary" data-product-review="'+p.id+'">Review listing</button>'];
     if(st==="active")actions.push('<button data-product-decision="paused" data-product-id="'+p.id+'">Pause</button>');
-    if(st==="paused")actions.push('<button class="primary" data-product-decision="approved" data-product-id="'+p.id+'">Reactivate</button>');
-    return `<div class="market-row market-product"><img src="${esc(p.primary_image_url||"")}" alt=""><div><b>${esc(p.name)}</b><small>${esc(store?.store_name||"Seller store")} • ${esc(p.category)} • SKU ${esc(p.sku||"—")}</small>${p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':""}</div><span class="chip ${statusClass(st)}">${esc(label(st))}</span><div><small>Price / MOQ</small><b>${p.price==null?"Ask for price":"GHS "+Number(p.price).toFixed(2)} / ${esc(p.moq||1)}</b><small>${esc(label(p.stock_status))}</small></div><div class="actions">${actions.join("")}</div></div>`;
+    return '<div class="market-row market-product"><img src="'+esc(p.primary_image_url||"")+'" alt=""><div><b>'+esc(p.name)+'</b><small>'+esc(store?.store_name||"Seller store")+' • '+esc(p.category)+' • SKU '+esc(p.sku||"—")+'</small>'+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':"")+'</div><span class="chip '+statusClass(st)+'">'+esc(label(st))+'</span><div><small>Price / MOQ</small><b>'+(p.price==null?"Ask for price":"GHS "+Number(p.price).toFixed(2))+' / '+esc(p.moq||1)+'</b><small>'+esc(label(p.stock_status))+'</small></div><div class="actions">'+actions.join("")+'</div></div>';
   }).join(""):'<div class="empty">No seller products yet.</div>';
-  host.querySelectorAll("[data-open-image]").forEach(b=>b.onclick=()=>window.open(b.dataset.openImage,"_blank"));
-  host.querySelectorAll("[data-product-decision]").forEach(b=>b.onclick=async()=>{
+
+  host.querySelectorAll("[data-product-review]").forEach(b=>b.onclick=()=>renderSellerProductDetail(b.dataset.productReview));
+  wireProductDecisionButtons(host);
+}
+function wireProductDecisionButtons(root){
+  root.querySelectorAll("[data-product-decision]").forEach(b=>b.onclick=async()=>{
     const decision=b.dataset.productDecision;
     let note="";
     if(decision==="rejected"){note=prompt("Why is this product being rejected? The seller will see this note.","")||"";if(!note)return}
     if(decision==="approved"&&!confirm("Approve this seller product for public marketplace visibility?"))return;
+    if(decision==="paused"&&!confirm("Pause this seller product? It will stop being publicly visible."))return;
     b.disabled=true;
-    try{await marketApi({action:"review_product",id:b.dataset.productId,decision,note});await reloadMarketplace()}
-    catch(err){alert(err.message)}finally{b.disabled=false}
+    try{
+      await marketApi({action:"review_product",id:b.dataset.productId,decision,note});
+      await reloadMarketplace();
+      const detail=$("sellerProductDetail");if(detail)detail.classList.add("hide");
+    }catch(err){alert(err.message)}finally{b.disabled=false}
   });
 }
+function renderSellerProductDetail(id){
+  const host=$("sellerProductDetail");if(!host)return;
+  const p=(market.products||[]).find(x=>x.id===id);
+  if(!p){host.classList.add("hide");return}
+  const store=(market.stores||[]).find(s=>s.id===p.store_id);
+  const imgs=[p.primary_image_url,...(Array.isArray(p.image_urls)?p.image_urls:[])].filter(Boolean);
+  const st=p.product_status,actions=[];
+  if(st==="pending_review"){actions.push('<button class="approve" data-product-decision="approved" data-product-id="'+p.id+'">Approve product</button>');actions.push('<button class="danger" data-product-decision="rejected" data-product-id="'+p.id+'">Reject product</button>')}
+  if(st==="active")actions.push('<button class="danger" data-product-decision="paused" data-product-id="'+p.id+'">Pause product</button>');
+  if(st==="paused")actions.push('<button class="approve" data-product-decision="approved" data-product-id="'+p.id+'">Reactivate product</button>');
+  host.classList.remove("hide");
+  host.innerHTML='<div class="review-head"><div><h2>'+esc(p.name)+'</h2><p>'+esc(store?.store_name||"Seller store")+' • '+esc(p.category)+' • SKU '+esc(p.sku||"—")+'</p></div><span class="chip '+statusClass(st)+'">'+esc(label(st))+'</span></div><div class="review-body"><div class="review-meta"><div><span>Price</span><b>'+(p.price==null?"Ask for price":"GHS "+Number(p.price).toFixed(2))+'</b></div><div><span>MOQ / unit</span><b>'+esc(p.moq||1)+' '+esc(p.unit_label||"unit(s)")+'</b></div><div><span>Stock</span><b>'+esc(label(p.stock_status))+'</b><span>'+esc(p.stock_quantity==null?"Quantity not set":p.stock_quantity+" available")+'</span></div></div><div class="detail-copy"><b style="color:var(--rpe-ink)">Short description</b><br>'+esc(p.short_description||"—")+'<br><br><b style="color:var(--rpe-ink)">Full description</b><br>'+esc(p.description||"No full description supplied.")+'</div><div class="product-review-gallery">'+(imgs.length?imgs.map((u,i)=>'<a href="'+esc(u)+'" target="_blank" rel="noopener"><img src="'+esc(u)+'" alt="Product image '+(i+1)+'"></a>').join(""):'<div class="empty">No product images.</div>')+'</div>'+(p.moderation_note?'<div class="detail-copy" style="margin-top:10px"><b style="color:var(--rpe-ink)">Current moderation note</b><br>'+esc(p.moderation_note)+'</div>':"")+'<div class="decision-actions">'+actions.join("")+'</div></div>';
+  wireProductDecisionButtons(host);
+  host.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
 function renderSellerStores(){
   const host=$("sellerStoresList");if(!host)return;
   if(!canSellerReview()){host.innerHTML='<div class="empty">Your admin role does not include seller store management.</div>';return}
