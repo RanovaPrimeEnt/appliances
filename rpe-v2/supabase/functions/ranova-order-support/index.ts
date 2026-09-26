@@ -16,7 +16,7 @@ function headers(origin:string|null){
   };
 }
 function clean(v:any,max=1200){return String(v??"").trim().slice(0,max)}
-function normalPhone(v:string){return v.replace(/D/g,"").replace(/^233/,"0")}
+function normalPhone(v:string){return v.replace(/\D/g,"").replace(/^233/,"0")}
 function response(h:Record<string,string>,status:number,payload:any){return new Response(JSON.stringify(payload),{status,headers:h})}
 function ref(prefix:string){return prefix+"-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+crypto.randomUUID().replace(/-/g,"").slice(0,8).toUpperCase()}
 async function getOrder(orderRef:string,phone:string){
@@ -53,7 +53,7 @@ async function notifyAdmins(order:any,type:string,title:string,message:string,me
   }
 }
 async function loadSupport(order:any){
-  const [{data:receipt},{data:refunds},{data:disputes},{data:notifications}]=await Promise.all([
+  const [{data:receipt},{data:refunds},{data:disputes},{data:notifications},{data:deliveries},{data:sellerOrders}]=await Promise.all([
     admin.from("ranova_marketplace_receipts")
       .select("receipt_ref,order_ref,customer_name,buyer_country_name,payment_method,payment_reference,product_total,delivery_fee,buyer_processing_fee,total_paid,currency,issued_at,snapshot")
       .eq("customer_order_id",order.id).maybeSingle(),
@@ -66,21 +66,62 @@ async function loadSupport(order:any){
     admin.from("ranova_marketplace_notifications")
       .select("notification_type,title,message,metadata,created_at")
       .eq("recipient_type","buyer").eq("customer_order_id",order.id).eq("in_app_visible",true)
-      .order("created_at",{ascending:false}).limit(50)
+      .order("created_at",{ascending:false}).limit(50),
+    admin.from("ranova_order_deliveries")
+      .select("id,seller_order_id,zone_id,responsibility,fulfilment_method,delivery_status,quoted_delivery_fee,currency,destination_text,courier_name,courier_reference,tracking_url,eta_start_date,eta_end_date,proof_required,proof_verified,assigned_at,dispatched_at,picked_up_at,out_for_delivery_at,seller_marked_delivered_at,buyer_confirmed_at,admin_confirmed_at,delivered_at,delivery_note,created_at,updated_at")
+      .eq("customer_order_id",order.id).order("created_at",{ascending:true}),
+    admin.from("ranova_seller_orders")
+      .select("id,order_ref,store_id,order_status").eq("parent_order_id",order.id)
   ]);
-  const ids=(disputes||[]).map((d:any)=>d.id);
+
+  const disputeIds=(disputes||[]).map((d:any)=>d.id);
   let messages:any[]=[];
-  if(ids.length){
+  if(disputeIds.length){
     const out=await admin.from("ranova_marketplace_dispute_messages")
       .select("id,dispute_id,sender_type,message,created_at")
-      .in("dispute_id",ids).order("created_at",{ascending:true});
+      .in("dispute_id",disputeIds).order("created_at",{ascending:true});
     messages=out.data||[];
   }
+
+  const deliveryIds=(deliveries||[]).map((d:any)=>d.id);
+  let events:any[]=[],proofs:any[]=[];
+  if(deliveryIds.length){
+    const [ev,pr]=await Promise.all([
+      admin.from("ranova_delivery_events")
+        .select("id,delivery_id,status,actor_type,note,location_text,occurred_at")
+        .in("delivery_id",deliveryIds).order("occurred_at",{ascending:true}),
+      admin.from("ranova_delivery_proofs")
+        .select("id,delivery_id,seller_order_id,proof_type,storage_path,recipient_name,note,captured_at,review_status,review_note,created_at")
+        .in("delivery_id",deliveryIds).order("created_at",{ascending:true})
+    ]);
+    events=ev.data||[];
+    for(const p of pr.data||[]){
+      let proof_url=null;
+      if(p.storage_path){
+        const {data:signed}=await admin.storage.from("ranova-delivery-proof").createSignedUrl(p.storage_path,600);
+        proof_url=signed?.signedUrl||null;
+      }
+      proofs.push({
+        id:p.id,delivery_id:p.delivery_id,seller_order_id:p.seller_order_id,proof_type:p.proof_type,
+        recipient_name:p.recipient_name,note:p.note,captured_at:p.captured_at,
+        review_status:p.review_status,review_note:p.review_note,created_at:p.created_at,
+        proof_url,proof_url_expires_in:proof_url?600:null
+      });
+    }
+  }
+  const sellerMap=new Map((sellerOrders||[]).map((s:any)=>[s.id,s]));
   return {
     receipt:receipt||null,
     refunds:refunds||[],
     disputes:(disputes||[]).map((d:any)=>({...d,messages:messages.filter((m:any)=>m.dispute_id===d.id)})),
-    notifications:notifications||[]
+    notifications:notifications||[],
+    deliveries:(deliveries||[]).map((d:any)=>({
+      ...d,
+      seller_order_ref:sellerMap.get(d.seller_order_id)?.order_ref||null,
+      seller_order_status:sellerMap.get(d.seller_order_id)?.order_status||null,
+      events:events.filter((e:any)=>e.delivery_id===d.id),
+      proofs:proofs.filter((p:any)=>p.delivery_id===d.id)
+    }))
   };
 }
 
@@ -184,6 +225,67 @@ Deno.serve(async(req:Request)=>{
         status:"under_review",updated_at:new Date().toISOString()
       }).eq("id",dispute.id);
       await notifyAdmins(order,"dispute_message","Buyer replied to dispute","Buyer added a message to "+disputeRef+".",{dispute_ref:disputeRef});
+      return response(h,200,{ok:true,support:await loadSupport(order)});
+    }
+
+
+    if(action==="confirm_delivery"){
+      const sellerOrderRef=clean(b.seller_order_ref,90).toUpperCase();
+      if(!sellerOrderRef)return response(h,400,{ok:false,error:"Seller order reference is required."});
+      const {data:child}=await admin.from("ranova_seller_orders").select("*")
+        .eq("parent_order_id",order.id).eq("order_ref",sellerOrderRef).maybeSingle();
+      if(!child)return response(h,404,{ok:false,error:"Seller order was not found."});
+      const {data:delivery}=await admin.from("ranova_order_deliveries").select("*")
+        .eq("seller_order_id",child.id).maybeSingle();
+      if(!delivery)return response(h,404,{ok:false,error:"Delivery record was not found."});
+      if(delivery.delivery_status!=="delivered_pending_confirmation"){
+        return response(h,409,{ok:false,error:"This delivery is not waiting for buyer confirmation."});
+      }
+      if(delivery.proof_required){
+        const {count}=await admin.from("ranova_delivery_proofs").select("id",{count:"exact",head:true}).eq("delivery_id",delivery.id);
+        if(!count)return response(h,409,{ok:false,error:"Delivery cannot be confirmed because proof has not been submitted."});
+      }
+
+      const now=new Date().toISOString();
+      const {error:dErr}=await admin.from("ranova_order_deliveries").update({
+        delivery_status:"delivered_confirmed",buyer_confirmed_at:now,delivered_at:now,
+        proof_verified:true,updated_at:now
+      }).eq("id",delivery.id);
+      if(dErr)throw dErr;
+      await admin.from("ranova_seller_orders").update({order_status:"delivered",updated_at:now}).eq("id",child.id);
+      await admin.from("ranova_delivery_events").insert({
+        delivery_id:delivery.id,seller_order_id:child.id,status:"delivered_confirmed",
+        actor_type:"buyer",note:"Buyer confirmed receipt through verified RANOVA order tracking."
+      });
+
+      const {data:children}=await admin.from("ranova_seller_orders").select("order_status").eq("parent_order_id",order.id);
+      const terminal=(children||[]).every((x:any)=>["delivered","cancelled"].includes(x.order_status));
+      const anyDelivered=(children||[]).some((x:any)=>x.order_status==="delivered");
+      if(terminal&&anyDelivered)await admin.from("ranova_customer_orders").update({status:"delivered"}).eq("id",order.id);
+
+      const {data:openRefunds}=await admin.from("ranova_marketplace_refunds").select("id").eq("customer_order_id",order.id)
+        .in("status",["requested","under_review","approved","processing"]).limit(1);
+      const {data:openDisputes}=await admin.from("ranova_marketplace_disputes").select("id").eq("customer_order_id",order.id)
+        .in("status",["open","awaiting_buyer","awaiting_seller","under_review"]).limit(1);
+      const blocked=!!(openRefunds?.length||openDisputes?.length);
+      const {data:payout}=await admin.from("ranova_seller_payouts").select("*").eq("seller_order_id",child.id).maybeSingle();
+      if(payout&&payout.payout_status==="pending"&&!blocked){
+        const eligibleAt=payout.eligible_at?new Date(payout.eligible_at).getTime():0;
+        if(eligibleAt<=Date.now()){
+          await admin.from("ranova_seller_payouts").update({
+            payout_status:"eligible",
+            payout_note:"Delivery confirmed by buyer; payout hold period satisfied.",
+            updated_at:now
+          }).eq("id",payout.id);
+        }
+      }
+
+      const sellers=await sellerUsers(order.id);
+      const seller=sellers.find((x:any)=>x.id===child.id);
+      if(seller)await notifySeller(seller,order,"delivery_confirmed","Buyer confirmed delivery",
+        "The buyer confirmed receipt for seller order "+sellerOrderRef+".",{seller_order_ref:sellerOrderRef});
+      await notifyAdmins(order,"delivery_confirmed","Marketplace delivery confirmed",
+        "Buyer confirmed receipt for "+sellerOrderRef+" under order "+order.order_ref+".",{seller_order_ref:sellerOrderRef});
       return response(h,200,{ok:true,support:await loadSupport(order)});
     }
 
