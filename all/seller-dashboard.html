@@ -26,7 +26,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 .locked{padding:22px;border:1px dashed #cbd9d3;border-radius:16px;background:#fafcfb;text-align:center;color:#6e7f79;font-size:11px;line-height:1.55}.locked b{display:block;color:var(--ink);font-size:13px;margin-bottom:5px}
 .product-list,.order-list{display:grid;gap:9px;margin-top:13px}.product-row,.order-row{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid #e4ebe8;border-radius:13px}.product-row img{width:60px;height:60px;border-radius:10px;object-fit:contain;background:#f5f8f6}.product-row b,.order-row b{font-size:11px}.product-row small,.order-row small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.4}.row-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.row-actions button{min-height:33px;padding:0 9px;border:1px solid #d8e3df;background:#fff;border-radius:999px;font-size:8px;font-weight:900}.chip{display:inline-flex;margin-top:5px;padding:5px 7px;border-radius:999px;background:#eef6f3;color:#27594b;font-size:8px;font-weight:900}.chip.pending_review{background:#fff5e8;color:#915d18}.chip.active{background:#e8f7ef;color:#0c6d47}.chip.rejected{background:#fff0ee;color:#a0473e}.chip.paused{background:#f0f0f0;color:#666}
 .product-editor{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:15px}.product-editor.open{display:block}.image-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hint{font-size:8px;color:#788983;line-height:1.5}.empty{padding:22px;text-align:center;color:#7b8a84;font-size:10px;background:#fafcfb;border:1px dashed #d4ded9;border-radius:13px}
-.order-row{grid-template-columns:minmax(0,1.3fr) .8fr .8fr}.status{font-size:8px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eef6f3;color:#28604f;justify-self:start}.order-items-mini{margin-top:6px;display:grid;gap:3px}.order-items-mini span{font-size:8px;color:var(--muted)}.order-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.order-actions button{min-height:32px;border:1px solid #d8e3df;border-radius:999px;background:#fff;padding:0 9px;font-size:8px;font-weight:900}.order-actions .primary{background:var(--green2);color:#fff;border-color:var(--green2)}.order-actions .danger{color:#9a453d;background:#fff1ef;border-color:#efc9c4}.payout-breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:7px}.payout-breakdown span{padding:7px;border-radius:9px;background:#f7f9f8;color:var(--muted);font-size:7px}.payout-breakdown b{display:block;color:var(--ink);font-size:9px;margin-top:2px}
+.order-row{grid-template-columns:minmax(0,1.3fr) .8fr .8fr}.status{font-size:8px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eef6f3;color:#28604f;justify-self:start}.order-items-mini{margin-top:6px;display:grid;gap:3px}.order-items-mini span{font-size:8px;color:var(--muted)}.order-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.order-actions button{min-height:32px;border:1px solid #d8e3df;border-radius:999px;background:#fff;padding:0 9px;font-size:8px;font-weight:900}.order-actions .primary{background:var(--green2);color:#fff;border-color:var(--green2)}.order-actions .danger{color:#9a453d;background:#fff1ef;border-color:#efc9c4}.payout-breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:7px}.payout-breakdown span{padding:7px;border-radius:9px;background:#f7f9f8;color:var(--muted);font-size:7px}.payout-breakdown b{display:block;color:var(--ink);font-size:9px;margin-top:2px}.delivery-timeline{display:grid;gap:5px;margin-top:8px}.delivery-event{padding:7px 8px;border-left:3px solid #dbe8e2;background:#f8faf9;border-radius:0 9px 9px 0}.delivery-event b{font-size:8px}.delivery-event small{display:block;margin-top:2px;color:var(--muted);font-size:7px}.delivery-editor{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:15px}.delivery-editor.open{display:block}.delivery-proof-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px;border:1px solid var(--line);border-radius:10px;margin-top:6px}.delivery-proof-row span{font-size:8px}.delivery-proof-row button{min-height:30px;border:1px solid var(--line);border-radius:999px;background:#fff;padding:0 9px;font-size:8px;font-weight:900}
 @media(max-width:900px){.shell{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto}.side button{width:auto;white-space:nowrap}.metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.payout-breakdown{grid-template-columns:1fr 1fr}.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
 </style>
@@ -44,6 +44,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
       <button class="navbtn" data-panel="store">Store Builder</button>
       <button class="navbtn" data-panel="products">Products</button>
       <button class="navbtn" data-panel="orders">Orders</button>
+      <button id="deliveryNav" class="navbtn" data-panel="delivery">Delivery</button>
       <button class="navbtn" data-panel="payouts">Payouts</button>
       <button id="supportNav" class="navbtn" data-panel="support">Support</button>
     </aside>
@@ -120,6 +121,73 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
         <div class="card"><h2>Orders</h2><p>Confirm the final amount first, then move each order through preparation and delivery. Payment status is controlled separately by RANOVA and cannot be marked paid by the seller.</p><div id="orderMsg" class="msg"></div><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div></div>
       </div>
 
+      <div id="panel-delivery" class="panel">
+        <div class="card">
+          <h2>Delivery setup</h2><p>Create reusable delivery zones so customers and RANOVA can understand how delivery is priced and fulfilled. Fixed/free zone pricing is enforced by the backend; quote-based zones stay flexible.</p>
+          <div id="deliveryMsg" class="msg"></div>
+          <input id="zoneId" type="hidden">
+          <div class="form-grid" style="margin-top:14px">
+            <div class="field"><label>Zone name</label><input id="zoneName" maxlength="120" placeholder="Example: Accra Central"></div>
+            <div class="field"><label>Country</label><select id="zoneCountry"><option value="">Choose country</option></select></div>
+            <div class="field full"><label>Area description</label><input id="zoneArea" maxlength="700" placeholder="Example: Accra Central, Osu, Ridge and nearby areas"></div>
+            <div class="field"><label>Fulfilment method</label><select id="zoneMethod"><option value="seller_delivery">Seller delivery</option><option value="third_party_courier">Third-party courier</option><option value="ranova_delivery">RANOVA delivery</option><option value="pickup">Buyer pickup</option></select></div>
+            <div class="field"><label>Delivery pricing</label><select id="zonePricing"><option value="quote">Quote per order</option><option value="fixed">Fixed fee</option><option value="free">Free delivery</option></select></div>
+            <div class="field"><label>Fixed fee (GHS)</label><input id="zoneFee" type="number" min="0" step="0.01" placeholder="Only for fixed pricing"></div>
+            <div class="field"><label>Estimated days</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><input id="zoneEtaMin" type="number" min="0" placeholder="Min"><input id="zoneEtaMax" type="number" min="0" placeholder="Max"></div></div>
+          </div>
+          <div class="actions"><button id="saveZone" class="btn green" type="button">Save delivery zone</button><button id="resetZone" class="btn" type="button">Clear</button></div>
+          <div id="zoneList" class="order-list"><div class="empty">No delivery zones yet.</div></div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><h2>Active deliveries</h2><p>Dispatch must happen here so courier information, proof and status history are recorded. “Delivered” remains provisional until the buyer or RANOVA confirms it.</p></div></div>
+          <div class="metrics" style="margin-top:14px">
+            <div class="metric"><small>Active deliveries</small><strong id="mDeliveries">0</strong></div>
+            <div class="metric"><small>Awaiting confirmation</small><strong id="mDeliveryConfirm">0</strong></div>
+            <div class="metric"><small>Proof rule</small><strong style="font-size:15px">Required</strong></div>
+            <div class="metric"><small>Final delivery</small><strong style="font-size:15px">Buyer / RANOVA</strong></div>
+          </div>
+          <div id="deliveryList" class="order-list"><div class="empty">No delivery records yet.</div></div>
+
+          <div id="deliveryEditor" class="delivery-editor">
+            <h3 id="deliveryEditorTitle">Manage delivery</h3>
+            <input id="deliveryOrderId" type="hidden">
+            <div class="form-grid">
+              <div class="field"><label>Delivery zone</label><select id="deliveryZone"><option value="">No saved zone / custom quote</option></select></div>
+              <div class="field"><label>Method</label><select id="deliveryMethod"><option value="seller_delivery">Seller delivery</option><option value="third_party_courier">Third-party courier</option><option value="ranova_delivery">RANOVA delivery</option><option value="pickup">Buyer pickup</option></select></div>
+              <div class="field"><label>Delivery fee (GHS)</label><input id="deliveryFee" type="number" min="0" step="0.01"></div>
+              <div class="field"><label>ETA</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><input id="deliveryEtaStart" type="date"><input id="deliveryEtaEnd" type="date"></div></div>
+              <div class="field full"><label>Delivery note</label><textarea id="deliveryNote" maxlength="1000" placeholder="Useful delivery instructions or agreed arrangements"></textarea></div>
+            </div>
+            <div class="actions"><button id="saveDeliveryPlan" class="btn green" type="button">Save delivery plan</button></div>
+
+            <h3 style="margin-top:18px">Courier / tracking</h3>
+            <div class="form-grid">
+              <div class="field"><label>Courier name</label><input id="courierName" maxlength="160"></div>
+              <div class="field"><label>Courier phone</label><input id="courierPhone" maxlength="60"></div>
+              <div class="field"><label>Courier reference</label><input id="courierRef" maxlength="180"></div>
+              <div class="field"><label>Tracking link (HTTPS)</label><input id="trackingUrl" maxlength="1000"></div>
+            </div>
+            <div class="actions"><button id="saveCourier" class="btn" type="button">Save courier details</button></div>
+
+            <h3 style="margin-top:18px">Delivery proof</h3>
+            <div class="form-grid">
+              <div class="field"><label>Proof image</label><input id="deliveryProofFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
+              <div class="field"><label>Proof type</label><select id="deliveryProofType"><option value="photo">Delivery photo</option><option value="courier_receipt">Courier receipt</option><option value="signature">Signature evidence</option><option value="other">Other evidence</option></select></div>
+              <div class="field"><label>Recipient name (optional)</label><input id="deliveryRecipient" maxlength="180"></div>
+              <div class="field"><label>Proof note</label><input id="deliveryProofNote" maxlength="1000"></div>
+            </div>
+            <div class="actions"><button id="uploadDeliveryProof" class="btn green" type="button">Upload proof privately</button></div>
+            <div id="deliveryProofList"></div>
+
+            <h3 style="margin-top:18px">Next delivery step</h3>
+            <div id="deliveryStatusActions" class="actions"></div>
+            <div id="deliveryTimeline" class="delivery-timeline"></div>
+            <div class="actions"><button id="closeDeliveryEditor" class="btn" type="button">Close</button></div>
+          </div>
+        </div>
+      </div>
+
       <div id="panel-payouts" class="panel">
         <div class="card">
           <h2>Seller payouts</h2><p>Save where RANOVA should send your marketplace payouts. These details are private and are not shown on your public store.</p>
@@ -137,7 +205,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <div class="field"><label>Account / MoMo number</label><input id="payoutAccountReference"></div>
           </div>
           <div class="actions"><button id="savePayoutProfile" class="btn green" type="button">Save payout details</button></div>
-          <div class="hint" style="margin-top:9px">Commission is calculated on the product subtotal. Delivery fees are added to your payout without commission. The commission rate used for an order is saved when customer payment is confirmed.</div>
+          <div class="hint" style="margin-top:9px">Commission is calculated on the product subtotal. Delivery fees are added without commission. Payout eligibility also requires confirmed delivery, the payout hold period to finish, and no open refund or dispute.</div>
         </div>
 
         <div class="card"><h2>Payout history</h2><p>Each payout is linked to a seller order and shows the commission calculation used for that order.</p><div id="payoutList" class="order-list"><div class="empty">No payouts yet.</div></div></div>
@@ -191,7 +259,7 @@ async function loadCountries(){
   countryMap={};
   var options=['<option value="">Choose country</option>'];
   (out.countries||[]).forEach(function(c){countryMap[c.code]=c.name;options.push('<option value="'+esc(c.code)+'">'+esc(c.name)+'</option>')});
-  el("storeCountry").innerHTML=options.join("");
+  el("storeCountry").innerHTML=options.join("");if(el("zoneCountry"))el("zoneCountry").innerHTML=options.join("");
 }
 async function resolveStoreCountry(){
   var code=el("storeCountry").value;
@@ -229,13 +297,13 @@ async function refresh(){
     el("dashboard").classList.add("hide");return;
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
-  renderOverview();fillStore();renderProducts();renderOrders();renderFinance();renderSupport();
+  renderOverview();fillStore();renderProducts();renderOrders();renderDelivery();renderFinance();renderSupport();
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
   el("welcomeName").textContent=store.store_name||app.business_name||"Seller Dashboard";
   el("welcomeText").textContent=store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your seller account is approved. Finish the Store Builder and prepare products for review.";
-  el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mOrders").textContent=c.open_orders||0;el("supportNav").textContent=(c.open_support_cases||0)>0?"Support ("+(c.open_support_cases||0)+")":"Support";
+  el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mOrders").textContent=c.open_orders||0;el("supportNav").textContent=(c.open_support_cases||0)>0?"Support ("+(c.open_support_cases||0)+")":"Support";el("deliveryNav").textContent=(c.awaiting_delivery_confirmation||0)>0?"Delivery ("+(c.awaiting_delivery_confirmation||0)+")":"Delivery";
   if(store.slug&&store.store_status==="active"){el("previewStore").href="./seller-store.html?store="+encodeURIComponent(store.slug);el("previewStore").style.display="inline-flex"}else el("previewStore").style.display="none";
 }
 function fillStore(){
@@ -384,6 +452,158 @@ function renderOrders(){
   host.querySelectorAll("[data-quote-order]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.quoteOrder});if(o)quoteOrder(o,b)}});
   host.querySelectorAll("[data-order-status]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.orderId});if(o)changeOrderStatus(o,b.dataset.orderStatus,b)}});
 }
+
+
+function zonePriceText(z){
+  if(z.pricing_type==="free")return "Free";
+  if(z.pricing_type==="fixed")return money(z.fixed_fee);
+  return "Quote per order";
+}
+function resetZoneForm(){
+  el("zoneId").value="";el("zoneName").value="";el("zoneArea").value="";
+  el("zoneCountry").value=(state.store&&state.store.country_code)||"";
+  el("zoneMethod").value="seller_delivery";el("zonePricing").value="quote";el("zoneFee").value="";
+  el("zoneEtaMin").value="";el("zoneEtaMax").value="";
+}
+function renderDelivery(){
+  var zones=state.delivery_zones||[],deliveries=state.deliveries||[],orders=state.orders||[],events=state.delivery_events||[],proofs=state.delivery_proofs||[],c=state.counts||{};
+  el("mDeliveries").textContent=c.active_deliveries||0;el("mDeliveryConfirm").textContent=c.awaiting_delivery_confirmation||0;
+  if(!el("zoneCountry").value&&state.store&&state.store.country_code)el("zoneCountry").value=state.store.country_code;
+
+  var zHost=el("zoneList"),activeZones=zones.filter(function(z){return z.active});
+  zHost.innerHTML=activeZones.length?activeZones.map(function(z){
+    var eta=(z.eta_min_days==null&&z.eta_max_days==null)?"ETA not set":((z.eta_min_days==null?"":z.eta_min_days)+"–"+(z.eta_max_days==null?"":z.eta_max_days)+" day(s)");
+    return '<div class="order-row"><div><b>'+esc(z.zone_name)+'</b><small>'+esc(countryMap[z.country_code]||z.country_code)+' · '+esc(z.area_description||"Area details not added")+'</small></div><div><span class="status">'+esc(pretty(z.fulfilment_method))+'</span><small>'+esc(eta)+'</small></div><div><b>'+esc(zonePriceText(z))+'</b><div class="order-actions"><button data-zone-edit="'+z.id+'">Edit</button><button data-zone-archive="'+z.id+'" class="danger">Archive</button></div></div></div>';
+  }).join(""):'<div class="empty">No delivery zones yet. Add zones for the areas you normally serve.</div>';
+
+  zHost.querySelectorAll("[data-zone-edit]").forEach(function(b){b.onclick=function(){
+    var z=zones.find(function(x){return x.id===b.dataset.zoneEdit});if(!z)return;
+    el("zoneId").value=z.id;el("zoneName").value=z.zone_name||"";el("zoneCountry").value=z.country_code||"";
+    el("zoneArea").value=z.area_description||"";el("zoneMethod").value=z.fulfilment_method||"seller_delivery";
+    el("zonePricing").value=z.pricing_type||"quote";el("zoneFee").value=z.fixed_fee==null?"":z.fixed_fee;
+    el("zoneEtaMin").value=z.eta_min_days==null?"":z.eta_min_days;el("zoneEtaMax").value=z.eta_max_days==null?"":z.eta_max_days;
+    el("zoneName").scrollIntoView({behavior:"smooth",block:"center"});
+  }});
+  zHost.querySelectorAll("[data-zone-archive]").forEach(function(b){b.onclick=async function(){
+    if(!confirm("Archive this delivery zone? Existing orders keep their delivery record."))return;b.disabled=true;
+    try{await api({action:"archive_delivery_zone",id:b.dataset.zoneArchive});await refresh();setPanel("delivery")}
+    catch(e){msg(el("deliveryMsg"),e.message||"Could not archive zone.")}finally{b.disabled=false}
+  }});
+
+  var zoneOpts='<option value="">No saved zone / custom quote</option>'+activeZones.map(function(z){return '<option value="'+z.id+'">'+esc(z.zone_name)+' · '+esc(zonePriceText(z))+'</option>'}).join("");
+  el("deliveryZone").innerHTML=zoneOpts;
+
+  var host=el("deliveryList");
+  if(!orders.length){host.innerHTML='<div class="empty">No seller orders yet.</div>';return}
+  host.innerHTML=orders.map(function(o){
+    var d=deliveries.find(function(x){return x.seller_order_id===o.id});
+    var status=d?d.delivery_status:"pending_quote";
+    var fee=d?d.quoted_delivery_fee:o.delivery_fee;
+    var proofCount=d?proofs.filter(function(x){return x.delivery_id===d.id}).length:0;
+    var eta=d&&(d.eta_start_date||d.eta_end_date)?((d.eta_start_date||"")+" → "+(d.eta_end_date||"")):"ETA not set";
+    return '<div class="order-row"><div><b>'+esc(o.platform_order_ref||o.order_ref)+'</b><small>'+esc(o.order_ref)+' · '+esc(o.delivery_location||"Destination pending")+'</small><small>'+esc(eta)+' · '+proofCount+' proof item(s)</small></div><div><span class="status">'+esc(pretty(status))+'</span><small>'+esc(d?pretty(d.fulfilment_method):"Delivery plan pending")+'</small></div><div><b>'+esc(money(fee))+'</b><small>'+(d&&d.courier_name?esc(d.courier_name)+(d.courier_reference?' · '+esc(d.courier_reference):''):'Courier not assigned')+'</small><div class="order-actions"><button data-delivery-manage="'+o.id+'">Manage</button></div></div></div>';
+  }).join("");
+  host.querySelectorAll("[data-delivery-manage]").forEach(function(b){b.onclick=function(){openDeliveryEditor(b.dataset.deliveryManage)}});
+
+  if(el("deliveryEditor").classList.contains("open")&&el("deliveryOrderId").value){
+    var id=el("deliveryOrderId").value;if(orders.some(function(o){return o.id===id}))openDeliveryEditor(id,true);
+  }
+}
+function openDeliveryEditor(orderId,keepPosition){
+  var o=(state.orders||[]).find(function(x){return x.id===orderId});if(!o)return;
+  var d=(state.deliveries||[]).find(function(x){return x.seller_order_id===orderId})||{};
+  var zones=state.delivery_zones||[];
+  el("deliveryOrderId").value=orderId;el("deliveryEditorTitle").textContent="Manage delivery · "+(o.order_ref||"");
+  el("deliveryZone").value=d.zone_id||"";el("deliveryMethod").value=d.fulfilment_method||"seller_delivery";
+  el("deliveryFee").value=d.quoted_delivery_fee==null?(o.delivery_fee==null?"":o.delivery_fee):d.quoted_delivery_fee;
+  el("deliveryEtaStart").value=d.eta_start_date||"";el("deliveryEtaEnd").value=d.eta_end_date||"";el("deliveryNote").value=d.delivery_note||"";
+  el("courierName").value=d.courier_name||"";el("courierPhone").value=d.courier_phone||"";el("courierRef").value=d.courier_reference||"";el("trackingUrl").value=d.tracking_url||"";
+  el("deliveryEditor").classList.add("open");
+  updateDeliveryZoneFields();
+  renderDeliveryEditorDetails(o,d);
+  if(!keepPosition)el("deliveryEditor").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function updateDeliveryZoneFields(){
+  var id=el("deliveryZone").value,z=(state.delivery_zones||[]).find(function(x){return x.id===id});
+  el("deliveryFee").readOnly=false;
+  if(z){
+    el("deliveryMethod").value=z.fulfilment_method||"seller_delivery";
+    el("deliveryMethod").disabled=true;
+    if(z.pricing_type==="fixed"){el("deliveryFee").value=Number(z.fixed_fee||0).toFixed(2);el("deliveryFee").readOnly=true}
+    else if(z.pricing_type==="free"){el("deliveryFee").value="0.00";el("deliveryFee").readOnly=true}
+  }else el("deliveryMethod").disabled=false;
+}
+function renderDeliveryEditorDetails(o,d){
+  var proofs=(state.delivery_proofs||[]).filter(function(x){return d.id&&x.delivery_id===d.id});
+  var events=(state.delivery_events||[]).filter(function(x){return d.id&&x.delivery_id===d.id});
+  el("deliveryProofList").innerHTML=proofs.length?proofs.map(function(p){
+    return '<div class="delivery-proof-row"><span>'+esc(pretty(p.proof_type))+' · '+esc(pretty(p.review_status))+(p.recipient_name?' · '+esc(p.recipient_name):'')+'</span><button data-proof-view="'+p.id+'" type="button">View</button></div>';
+  }).join(""):'<div class="hint" style="margin-top:8px">No proof uploaded yet.</div>';
+  el("deliveryProofList").querySelectorAll("[data-proof-view]").forEach(function(b){b.onclick=async function(){
+    b.disabled=true;try{var out=await api({action:"delivery_proof_url",proof_id:b.dataset.proofView});window.open(out.url,"_blank","noopener")}catch(e){msg(el("deliveryMsg"),e.message||"Could not open proof.")}finally{b.disabled=false}
+  }});
+  el("deliveryTimeline").innerHTML=events.length?events.map(function(e){return '<div class="delivery-event"><b>'+esc(pretty(e.status))+' · '+esc(pretty(e.actor_type))+'</b><small>'+esc(e.note||"")+'</small><small>'+new Date(e.occurred_at).toLocaleString()+'</small></div>'}).join(""):'<div class="hint">Delivery timeline starts when a delivery plan is saved.</div>';
+
+  var allowed={
+    pending_quote:["awaiting_dispatch","cancelled"],
+    awaiting_dispatch:["assigned","picked_up","in_transit","cancelled"],
+    assigned:["picked_up","in_transit","cancelled"],
+    picked_up:["in_transit","out_for_delivery","delivered_pending_confirmation","returned"],
+    in_transit:["out_for_delivery","failed_attempt","returned"],
+    out_for_delivery:["delivered_pending_confirmation","failed_attempt","returned"],
+    failed_attempt:["out_for_delivery","returned"]
+  };
+  var next=allowed[d.delivery_status||"pending_quote"]||[];
+  el("deliveryStatusActions").innerHTML=next.length?next.map(function(st){
+    var label=st==="delivered_pending_confirmation"?"Delivered — await confirmation":pretty(st);
+    return '<button class="btn '+(st==="delivered_pending_confirmation"?"green":"")+'" data-delivery-status="'+st+'" type="button">'+esc(label)+'</button>';
+  }).join(""):'<span class="hint">'+(d.delivery_status==="delivered_pending_confirmation"?"Waiting for buyer or RANOVA confirmation.":d.delivery_status==="delivered_confirmed"?"Delivery is confirmed and locked.":"No further seller action available.")+'</span>';
+  el("deliveryStatusActions").querySelectorAll("[data-delivery-status]").forEach(function(b){b.onclick=async function(){
+    var st=b.dataset.deliveryStatus,note="";
+    if(["failed_attempt","returned","cancelled"].includes(st)){note=prompt("Add a short reason for this delivery status.","")||"";if(!note)return}
+    if(st==="delivered_pending_confirmation"&&!confirm("Confirm you have handed this order to the buyer/recipient and uploaded delivery proof? Final delivery will still require buyer or RANOVA confirmation."))return;
+    b.disabled=true;
+    try{await api({action:"update_delivery_status",order_id:o.id,status:st,note:note});msg(el("deliveryMsg"),"Delivery status updated.",true);await refresh();setPanel("delivery")}
+    catch(e){msg(el("deliveryMsg"),e.message||"Could not update delivery status.")}finally{b.disabled=false}
+  }});
+}
+el("deliveryZone").onchange=updateDeliveryZoneFields;
+el("zonePricing").onchange=function(){el("zoneFee").disabled=this.value!=="fixed";if(this.value==="free")el("zoneFee").value="0"};
+el("resetZone").onclick=resetZoneForm;
+el("saveZone").onclick=async function(){
+  clearMsg(el("deliveryMsg"));var b=this;b.disabled=true;
+  try{
+    await api({action:"save_delivery_zone",id:el("zoneId").value,zone_name:el("zoneName").value,country_code:el("zoneCountry").value,area_description:el("zoneArea").value,fulfilment_method:el("zoneMethod").value,pricing_type:el("zonePricing").value,fixed_fee:el("zoneFee").value,eta_min_days:el("zoneEtaMin").value,eta_max_days:el("zoneEtaMax").value});
+    msg(el("deliveryMsg"),"Delivery zone saved.",true);resetZoneForm();await refresh();setPanel("delivery");
+  }catch(e){msg(el("deliveryMsg"),e.message||"Could not save delivery zone.")}finally{b.disabled=false}
+};
+el("saveDeliveryPlan").onclick=async function(){
+  var orderId=el("deliveryOrderId").value;if(!orderId)return;var b=this;b.disabled=true;
+  try{
+    await api({action:"save_delivery_plan",order_id:orderId,zone_id:el("deliveryZone").value,fulfilment_method:el("deliveryMethod").value,delivery_fee:el("deliveryFee").value,eta_start_date:el("deliveryEtaStart").value,eta_end_date:el("deliveryEtaEnd").value,delivery_note:el("deliveryNote").value});
+    msg(el("deliveryMsg"),"Delivery plan saved and linked to the order total.",true);await refresh();setPanel("delivery");
+  }catch(e){msg(el("deliveryMsg"),e.message||"Could not save delivery plan.")}finally{b.disabled=false}
+};
+el("saveCourier").onclick=async function(){
+  var orderId=el("deliveryOrderId").value;if(!orderId)return;var b=this;b.disabled=true;
+  try{
+    await api({action:"update_delivery_courier",order_id:orderId,courier_name:el("courierName").value,courier_phone:el("courierPhone").value,courier_reference:el("courierRef").value,tracking_url:el("trackingUrl").value});
+    msg(el("deliveryMsg"),"Courier details saved.",true);await refresh();setPanel("delivery");
+  }catch(e){msg(el("deliveryMsg"),e.message||"Could not save courier details.")}finally{b.disabled=false}
+};
+el("uploadDeliveryProof").onclick=async function(){
+  var orderId=el("deliveryOrderId").value,file=el("deliveryProofFile").files[0];if(!orderId||!file)return msg(el("deliveryMsg"),"Choose a proof image first.");
+  var b=this;b.disabled=true;b.textContent="Uploading…";
+  try{
+    var prep=await api({action:"create_delivery_proof_upload",order_id:orderId,filename:file.name,mime_type:file.type,file_size:file.size});
+    var up=await sb.storage.from("ranova-delivery-proof").uploadToSignedUrl(prep.path,prep.token,file,{contentType:file.type});
+    if(up.error)throw up.error;
+    await api({action:"record_delivery_proof",order_id:orderId,storage_path:prep.path,proof_type:el("deliveryProofType").value,recipient_name:el("deliveryRecipient").value,note:el("deliveryProofNote").value,captured_at:new Date().toISOString()});
+    el("deliveryProofFile").value="";el("deliveryRecipient").value="";el("deliveryProofNote").value="";
+    msg(el("deliveryMsg"),"Delivery proof uploaded privately.",true);await refresh();setPanel("delivery");
+  }catch(e){msg(el("deliveryMsg"),e.message||"Could not upload delivery proof.")}finally{b.disabled=false;b.textContent="Upload proof privately"}
+};
+el("closeDeliveryEditor").onclick=function(){el("deliveryEditor").classList.remove("open");el("deliveryOrderId").value=""};
 
 function renderFinance(){
   var profile=state.finance_profile||{},settings=state.finance_settings||{},payouts=state.payouts||[];
