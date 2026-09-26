@@ -40,6 +40,28 @@ async function log(adminUserId:string,action:string,entityType:string,entityId:s
     admin_user_id:adminUserId,action,entity_type:entityType,entity_id:entityId,metadata
   });
 }
+async function emailForUser(userId:string){
+  const {data:{user}}=await admin.auth.admin.getUserById(userId);
+  return user?.email||null;
+}
+async function queueNotice(recipient_type:string,recipient_user_id:string|null,recipient_email:string|null,customer_order_id:string|null,seller_order_id:string|null,notification_type:string,title:string,message:string,metadata:any={}){
+  await admin.from("ranova_marketplace_notifications").insert({
+    recipient_type,recipient_user_id,recipient_email,customer_order_id,seller_order_id,
+    notification_type,title,message,metadata,
+    email_requested:!!recipient_email,email_status:recipient_email?"queued":"not_requested"
+  });
+}
+async function notifyBuyer(order:any,type:string,title:string,message:string,metadata:any={}){
+  await queueNotice("buyer",null,order.customer_email||null,order.id,null,type,title,message,metadata);
+}
+async function notifyOrderSellers(order:any,type:string,title:string,message:string,metadata:any={}){
+  const {data:children}=await admin.from("ranova_seller_orders").select("id,seller_id").eq("parent_order_id",order.id);
+  for(const child of children||[]){
+    const email=await emailForUser(child.seller_id);
+    await queueNotice("seller",child.seller_id,email,order.id,child.id,type,title,message,metadata);
+  }
+}
+
 async function sellerApproved(userId:string){
   const {data:acc}=await admin.from("ranova_seller_accounts").select("application_ref").eq("user_id",userId).maybeSingle();
   if(!acc)return false;
@@ -50,7 +72,7 @@ function accepted(v:any){
   return ["approved","complete","verified"].includes(String(v||"").toLowerCase());
 }
 async function dashboard(role:string){
-  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],counts:{}};
+  const out:any={ok:true,role,applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],counts:{}};
   if(canSellerReview(role)){
     const [{data:apps},{data:files},{data:accounts}]=await Promise.all([
       admin.from("ranova_seller_applications")
@@ -110,6 +132,23 @@ async function dashboard(role:string){
     out.country_rules=countryRules||[];
   }
 
+
+  if(canOrderReview(role)||canFinance(role)){
+    const [{data:refunds},{data:disputes}]=await Promise.all([
+      admin.from("ranova_marketplace_refunds").select("*").order("requested_at",{ascending:false}).limit(500),
+      admin.from("ranova_marketplace_disputes").select("*").order("opened_at",{ascending:false}).limit(500)
+    ]);
+    out.refunds=refunds||[];
+    out.disputes=disputes||[];
+    const ids=out.disputes.map((d:any)=>d.id);
+    if(ids.length){
+      const {data:messages}=await admin.from("ranova_marketplace_dispute_messages")
+        .select("id,dispute_id,sender_type,sender_user_id,message,created_at")
+        .in("dispute_id",ids).order("created_at",{ascending:true}).limit(2000);
+      out.dispute_messages=messages||[];
+    }
+  }
+
   out.counts={
     seller_applications:out.applications.length,
     seller_pending:out.applications.filter((a:any)=>!["approved","rejected","suspended"].includes(String(a.verification_status||a.status||"").toLowerCase())).length,
@@ -123,7 +162,9 @@ async function dashboard(role:string){
     payouts_pending:out.payouts.filter((p:any)=>["pending","eligible","held","processing"].includes(p.payout_status)).length,
     payouts_paid_total:out.payouts.filter((p:any)=>p.payout_status==="paid").reduce((s:number,p:any)=>s+Number(p.payout_amount||0),0),
     commission_total:out.payouts.reduce((s:number,p:any)=>s+Number(p.commission_amount||0),0),
-    payments_due:out.marketplace_orders.filter((o:any)=>o.status==="awaiting_payment"&&!["paid","confirmed","refunded"].includes(String(o.payment_status||"").toLowerCase())).length
+    payments_due:out.marketplace_orders.filter((o:any)=>o.status==="awaiting_payment"&&!["paid","confirmed","refunded"].includes(String(o.payment_status||"").toLowerCase())).length,
+    refunds_open:out.refunds.filter((r:any)=>!["refunded","rejected","cancelled"].includes(r.status)).length,
+    disputes_open:out.disputes.filter((d:any)=>!["resolved","closed"].includes(d.status)).length
   };
   return out;
 }
@@ -691,6 +732,116 @@ Deno.serve(async(req:Request)=>{
       const {error}=await admin.from("ranova_marketplace_country_rules").update(patch).eq("id",id);
       if(error)throw error;
       await log(actor.user.id,"country_finance_rule_status_changed","marketplace_country_rule",id,{active,reason});
+      return response(h,200,{ok:true});
+    }
+
+
+    if(action==="review_refund"){
+      if(!canOrderReview(actor.role)&&!canFinance(actor.role))return response(h,403,{ok:false,error:"Order-support permission is required."});
+      const id=clean(b.id,80),status=clean(b.status,40),note=clean(b.note,1500);
+      const approvedRaw=b.approved_amount;
+      const refund_reference=clean(b.refund_reference,180);
+      if(!["under_review","approved","rejected","processing","refunded","cancelled"].includes(status))return response(h,400,{ok:false,error:"Invalid refund status."});
+      if(["approved","processing","refunded"].includes(status)&&!canFinance(actor.role))return response(h,403,{ok:false,error:"Finance permission is required for refund approval or payment."});
+      const {data:r}=await admin.from("ranova_marketplace_refunds").select("*").eq("id",id).maybeSingle();
+      if(!r)return response(h,404,{ok:false,error:"Refund request not found."});
+      const {data:order}=await admin.from("ranova_customer_orders").select("*").eq("id",r.customer_order_id).maybeSingle();
+      if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      const maxAmount=Number(order.total_payment||0);
+      let approved=r.approved_amount;
+      if(["approved","processing","refunded"].includes(status)){
+        approved=approvedRaw===null||approvedRaw===undefined||approvedRaw===""?Number(r.requested_amount||0):Number(approvedRaw);
+        if(!Number.isFinite(approved)||approved<=0||approved>Number(r.requested_amount||maxAmount)||approved>maxAmount)return response(h,400,{ok:false,error:"Approved refund cannot exceed the requested amount or recorded payment."});
+      }
+      if(["rejected","cancelled"].includes(status)&&!note)return response(h,400,{ok:false,error:"Add a reason for this decision."});
+      if(status==="refunded"&&!refund_reference)return response(h,400,{ok:false,error:"Enter the refund transaction/reference before marking refunded."});
+
+      const now=new Date().toISOString();
+      const patch:any={
+        status,approved_amount:approved,admin_note:note||r.admin_note||null,
+        reviewed_at:["approved","rejected","processing","refunded","cancelled"].includes(status)?now:r.reviewed_at,
+        reviewed_by:["approved","rejected","processing","refunded","cancelled"].includes(status)?actor.user.id:r.reviewed_by,
+        refund_reference:refund_reference||r.refund_reference||null,
+        refunded_at:status==="refunded"?now:r.refunded_at,
+        updated_at:now
+      };
+      const {error}=await admin.from("ranova_marketplace_refunds").update(patch).eq("id",id);
+      if(error)throw error;
+
+      if(status==="refunded"){
+        const finalStatus=Number(approved)>=maxAmount?"refunded":"partially_refunded";
+        await admin.from("ranova_marketplace_payments").update({
+          payment_status:finalStatus,admin_note:note||"Refund processed.",updated_at:now
+        }).eq("parent_order_id",order.id);
+        await admin.from("ranova_customer_orders").update({payment_status:finalStatus}).eq("id",order.id);
+        await admin.from("ranova_seller_payouts").update({
+          payout_status:"held",
+          payout_note:"Refund "+r.refund_ref+" processed. Review settlement before release.",
+          updated_at:now
+        }).eq("platform_order_ref",order.order_ref).neq("payout_status","paid");
+      }else if(["requested","under_review","approved","processing"].includes(status)){
+        await admin.from("ranova_seller_payouts").update({
+          payout_status:"held",payout_note:"Held for refund request "+r.refund_ref+".",updated_at:now
+        }).eq("platform_order_ref",order.order_ref).in("payout_status",["pending","eligible","processing"]);
+      }
+
+      const msg="Refund "+r.refund_ref+" for order "+order.order_ref+" is now "+status.replace(/_/g," ")+".";
+      await notifyBuyer(order,"refund_status","RANOVA refund update",msg,{refund_ref:r.refund_ref,status,approved_amount:approved,refund_reference});
+      await notifyOrderSellers(order,"refund_status","RANOVA refund update",msg,{refund_ref:r.refund_ref,status,approved_amount:approved});
+      await log(actor.user.id,"refund_reviewed","marketplace_refund",id,{status,approved_amount:approved,refund_reference,note});
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="review_dispute"){
+      if(!canOrderReview(actor.role)&&!canFinance(actor.role))return response(h,403,{ok:false,error:"Order-support permission is required."});
+      const id=clean(b.id,80),status=clean(b.status,40),resolution=clean(b.resolution,60),note=clean(b.note,1800);
+      if(!["awaiting_buyer","awaiting_seller","under_review","resolved","closed"].includes(status))return response(h,400,{ok:false,error:"Invalid dispute status."});
+      const allowedResolutions=["buyer_refund","partial_refund","seller_favor","no_adjustment","mutual_resolution","case_closed"];
+      if(["resolved","closed"].includes(status)&&(!resolution||!note))return response(h,400,{ok:false,error:"A final resolution and explanation are required."});
+      if(["resolved","closed"].includes(status)&&!allowedResolutions.includes(resolution))return response(h,400,{ok:false,error:"Choose a valid dispute resolution."});
+      const {data:d}=await admin.from("ranova_marketplace_disputes").select("*").eq("id",id).maybeSingle();
+      if(!d)return response(h,404,{ok:false,error:"Dispute not found."});
+      const {data:order}=await admin.from("ranova_customer_orders").select("*").eq("id",d.customer_order_id).maybeSingle();
+      if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      const now=new Date().toISOString();
+      const {error}=await admin.from("ranova_marketplace_disputes").update({
+        status,
+        resolution:resolution||d.resolution||null,
+        resolution_note:note||d.resolution_note||null,
+        resolved_at:["resolved","closed"].includes(status)?now:d.resolved_at,
+        resolved_by:["resolved","closed"].includes(status)?actor.user.id:d.resolved_by,
+        updated_at:now
+      }).eq("id",id);
+      if(error)throw error;
+      if(note){
+        await admin.from("ranova_marketplace_dispute_messages").insert({
+          dispute_id:d.id,sender_type:"admin",sender_user_id:actor.user.id,message:note
+        });
+      }
+      const msg=["resolved","closed"].includes(status)
+        ?"Dispute "+d.dispute_ref+" has been "+status.replace(/_/g," ")+": "+note
+        :"Dispute "+d.dispute_ref+" is now "+status.replace(/_/g," ")+".";
+      await notifyBuyer(order,"dispute_status","RANOVA dispute update",msg,{dispute_ref:d.dispute_ref,status,resolution});
+      await notifyOrderSellers(order,"dispute_status","RANOVA dispute update",msg,{dispute_ref:d.dispute_ref,status,resolution});
+      await log(actor.user.id,"dispute_reviewed","marketplace_dispute",id,{status,resolution,note});
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="admin_dispute_message"){
+      if(!canOrderReview(actor.role)&&!canFinance(actor.role))return response(h,403,{ok:false,error:"Order-support permission is required."});
+      const id=clean(b.id,80),message=clean(b.message,2000);
+      if(message.length<2)return response(h,400,{ok:false,error:"Enter a message."});
+      const {data:d}=await admin.from("ranova_marketplace_disputes").select("*").eq("id",id).maybeSingle();
+      if(!d)return response(h,404,{ok:false,error:"Dispute not found."});
+      const {data:order}=await admin.from("ranova_customer_orders").select("*").eq("id",d.customer_order_id).maybeSingle();
+      if(!order)return response(h,404,{ok:false,error:"Order not found."});
+      await admin.from("ranova_marketplace_dispute_messages").insert({
+        dispute_id:d.id,sender_type:"admin",sender_user_id:actor.user.id,message
+      });
+      await admin.from("ranova_marketplace_disputes").update({status:"under_review",updated_at:new Date().toISOString()}).eq("id",id);
+      await notifyBuyer(order,"dispute_message","RANOVA replied to your dispute","RANOVA added a message to dispute "+d.dispute_ref+".",{dispute_ref:d.dispute_ref});
+      await notifyOrderSellers(order,"dispute_message","RANOVA replied to a dispute","RANOVA added a message to dispute "+d.dispute_ref+".",{dispute_ref:d.dispute_ref});
+      await log(actor.user.id,"dispute_message_added","marketplace_dispute",id,{message});
       return response(h,200,{ok:true});
     }
 
