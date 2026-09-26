@@ -19,6 +19,7 @@ create table if not exists public.ranova_marketplace_notifications (
   email_attempted_at timestamptz,
   email_sent_at timestamptz,
   email_error text,
+  email_attempt_count integer not null default 0 check (email_attempt_count >= 0),
   read_at timestamptz,
   created_at timestamptz not null default now()
 );
