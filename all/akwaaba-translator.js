@@ -65,9 +65,9 @@ root.innerHTML=
   '#akwaabaPanel.open{display:block}'+
   '.akwaaba-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.akwaaba-title{display:flex;align-items:center;gap:9px}.akwaaba-logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#0e5b43,#178467);color:#fff;display:grid;place-items:center;font-weight:950}.akwaaba-title b{display:block;font-size:14px}.akwaaba-title small{display:block;color:#718078;font-size:11px;margin-top:2px}.akwaaba-close{border:0;background:#eef4f1;color:#173d32;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer}'+
   '.akwaaba-langs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}.akwaaba-lang{min-height:38px;border:1px solid #dce7e2;background:#fff;color:#425b52;border-radius:10px;font-size:11px;font-weight:850;cursor:pointer;padding:5px}.akwaaba-lang.active{background:#0e5b43;color:#fff;border-color:#0e5b43;box-shadow:0 6px 14px rgba(14,91,67,.16)}'+
-  '.akwaaba-state{padding:13px;border-radius:14px;background:#f6f9f7;border:1px solid #e5ece8}.akwaaba-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#7c8d85;margin-bottom:5px}.akwaaba-original{font-size:13px;line-height:1.45;color:#52665f;margin-bottom:11px;word-break:break-word}.akwaaba-output{font-size:16px;line-height:1.45;font-weight:800;color:#102f29;word-break:break-word}.akwaaba-loading{display:flex;align-items:center;gap:9px;color:#52665f;font-size:13px}.akwaaba-spin{width:16px;height:16px;border:2px solid #cfe1d8;border-top-color:#0e5b43;border-radius:50%;animation:akwaabaSpin .8s linear infinite}@keyframes akwaabaSpin{to{transform:rotate(360deg)}}'+
+  '.akwaaba-state{padding:0;border:0;background:transparent}.akwaaba-result{display:grid;gap:10px}.akwaaba-block{border:1px solid #e0e9e4;border-radius:14px;padding:12px 13px;background:#fff}.akwaaba-block.translation{background:linear-gradient(180deg,#f4fbf7 0%,#ffffff 100%);border-color:#cfe3d8}.akwaaba-block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}.akwaaba-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#7c8d85}.akwaaba-language-pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#eaf4ef;color:#0e5b43;font-size:10px;font-weight:900}.akwaaba-original{font-size:13px;line-height:1.5;color:#52665f;word-break:break-word}.akwaaba-output{font-size:17px;line-height:1.5;font-weight:850;color:#102f29;word-break:break-word}.akwaaba-arrow{display:flex;align-items:center;justify-content:center;height:24px;color:#8ba39a;font-weight:900;font-size:16px}.akwaaba-loading{display:flex;align-items:center;gap:9px;color:#52665f;font-size:13px;padding:13px;border-radius:14px;background:#f6f9f7;border:1px solid #e5ece8}.akwaaba-spin{width:16px;height:16px;border:2px solid #cfe1d8;border-top-color:#0e5b43;border-radius:50%;animation:akwaabaSpin .8s linear infinite}@keyframes akwaabaSpin{to{transform:rotate(360deg)}}'+
   '.akwaaba-actions{display:flex;gap:8px;margin-top:11px}.akwaaba-actions button{flex:1;min-height:40px;border-radius:11px;border:1px solid #dce7e2;background:#fff;color:#173d32;font-size:11px;font-weight:850;cursor:pointer}.akwaaba-actions button.primary{background:#d97706;color:#fff;border-color:#d97706}.akwaaba-note{margin-top:10px;font-size:10px;line-height:1.4;color:#819089}.akwaaba-error{color:#9d3f1a;font-size:13px;line-height:1.45;font-weight:700}'+
-  '@media(max-width:620px){#akwaabaOrb{width:58px;height:58px}#akwaabaOrb svg{width:28px;height:28px}#akwaabaPanel{width:calc(100vw - 20px);max-height:64vh;border-radius:18px;padding:13px}.akwaaba-langs{gap:5px}.akwaaba-lang{font-size:10px}}'+
+  '@media(max-width:620px){#akwaabaOrb{width:58px;height:58px}#akwaabaOrb svg{width:28px;height:28px}#akwaabaPanel{width:calc(100vw - 18px);max-height:70vh;border-radius:18px;padding:13px}.akwaaba-langs{gap:5px}.akwaaba-lang{font-size:10px}.akwaaba-output{font-size:16px}.akwaaba-block{padding:11px 12px}.akwaaba-actions{position:sticky;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding-top:8px;margin-top:10px}}'+
   '@media(prefers-reduced-motion:reduce){#akwaabaOrb,.a-pulse,.akwaaba-spin{animation:none!important;transition:none!important}}'+
   '</style>'+
   '<button id="akwaabaOrb" type="button" aria-label="Akwaaba AI Translator. Drag over text to translate.">'+
@@ -79,7 +79,7 @@ root.innerHTML=
   '<section id="akwaabaPanel" role="dialog" aria-label="Akwaaba AI Translator">'+
     '<div class="akwaaba-head"><div class="akwaaba-title"><span class="akwaaba-logo">A</span><span><b>Akwaaba AI Translator</b><small>Point • Drag • Translate</small></span></div><button class="akwaaba-close" id="akwaabaClose" type="button" aria-label="Close">×</button></div>'+
     '<div class="akwaaba-langs" id="akwaabaLangs"></div>'+
-    '<div class="akwaaba-state" id="akwaabaState"><div class="akwaaba-output">Drag the magnifier over any text on the page, then release it.</div></div>'+
+    '<div class="akwaaba-state" id="akwaabaState"><div class="akwaaba-output">Drag Akwaaba over text or printed words on a product image, then release it.</div></div>'+
     '<div class="akwaaba-actions"><button class="primary" id="akwaabaTranslateHere" type="button">Translate here</button><button id="akwaabaCopy" type="button">Copy</button></div>'+
     '<div class="akwaaba-note">Akwaaba does not alter the website. Verified catalogue terms are preferred, and uncertain translations are withheld rather than guessed.</div>'+
   '</section>';
@@ -346,7 +346,7 @@ async function translateText(text,force){
       var msg=data&&data.needs_review
         ?"Akwaaba is not confident enough to show a translation for this text. This result has been withheld rather than risk giving a misleading translation."
         :(data.error||"Akwaaba could not verify this translation.");
-      state.innerHTML='<div class="akwaaba-quality blocked">⚠ Not verified</div><div class="akwaaba-error">'+escapeHtml(msg)+'</div>';
+      state.innerHTML='<div class="akwaaba-quality blocked">⚠ Translation withheld</div><div class="akwaaba-error">'+escapeHtml(msg)+'</div>';
       openPanel();
       return;
     }
@@ -355,19 +355,32 @@ async function translateText(text,force){
     renderResult(text,data.translated,data.quality||"automatic-checked",data.confidence);
   }catch(e){
     lastTranslation="";
-    state.innerHTML='<div class="akwaaba-quality blocked">⚠ Not verified</div><div class="akwaaba-error">Akwaaba could not verify this translation, so no translation is being shown.</div>';
+    state.innerHTML='<div class="akwaaba-quality blocked">⚠ Translation withheld</div><div class="akwaaba-error">Akwaaba could not verify this translation, so no translation is being shown.</div>';
     openPanel();
   }
 }
 function renderResult(original,translated,quality,confidence){
   lastTranslation=translated;
-  var q=quality==="verified"
+  var isVerified=quality==="verified";
+  var q=isVerified
     ?'<div class="akwaaba-quality verified">✓ Verified catalogue term</div>'
-    :'<div class="akwaaba-quality checked">✓ Automatic translation checked'+(typeof confidence==="number"?" · "+Math.round(confidence*100)+"%":"")+'</div>';
+    :'<div class="akwaaba-quality checked">✓ Translation checked'+(typeof confidence==="number"?" · "+Math.round(confidence*100)+"%":"")+'</div>';
+  var summary=isVerified
+    ?"Matched against Ranova's verified terminology."
+    :"Automatic translation passed Akwaaba's safety checks.";
   state.innerHTML=
-    q+
-    '<div class="akwaaba-label">Original</div><div class="akwaaba-original">'+escapeHtml(original)+'</div>'+
-    '<div class="akwaaba-label">'+escapeHtml(LANGS[selected].label)+'</div><div class="akwaaba-output">'+escapeHtml(translated)+'</div>';
+    '<div class="akwaaba-result">'+
+      '<div>'+q+'<div class="akwaaba-summary">'+escapeHtml(summary)+'</div></div>'+
+      '<div class="akwaaba-block">'+
+        '<div class="akwaaba-block-head"><span class="akwaaba-label">Original text</span><span class="akwaaba-language-pill">Detected source</span></div>'+
+        '<div class="akwaaba-original">'+escapeHtml(original)+'</div>'+
+      '</div>'+
+      '<div class="akwaaba-arrow">↓</div>'+
+      '<div class="akwaaba-block translation">'+
+        '<div class="akwaaba-block-head"><span class="akwaaba-label">Translation</span><span class="akwaaba-language-pill">'+escapeHtml(LANGS[selected].label)+'</span></div>'+
+        '<div class="akwaaba-output">'+escapeHtml(translated)+'</div>'+
+      '</div>'+
+    '</div>';
   openPanel();
 }
 async function translateAt(x,y){
