@@ -69,7 +69,7 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
       <div class="pay-note"><b>No payment account is shown at this stage.</b> Your order is sent first. The seller/RANOVA confirms availability, final amount and delivery arrangements before payment instructions are provided.</div>
       <div class="checkout-actions"><button id="cancelCheckout" class="cancel" type="button">Back</button><button id="placeOrder" class="place" type="button">Place order</button></div>
     </div>
-    <div id="checkoutSuccess" class="success" style="display:none"><div class="tick">✓</div><h3>Order sent successfully</h3><p>Your order has been routed to the seller. Keep the reference below. Payment remains <b>not started</b> until the order is confirmed.</p><div id="successRef" class="order-ref"></div><button id="doneCheckout" type="button">Done</button></div>
+    <div id="checkoutSuccess" class="success" style="display:none"><div class="tick">✓</div><h3>Order sent successfully</h3><p>Your order has been routed to the seller. Keep the reference below. Payment remains <b>not started</b> until the order is confirmed.</p><div id="successRef" class="order-ref"></div><a id="trackSuccess" href="./order-status.html" style="display:inline-flex;margin-top:2px;min-height:40px;align-items:center;padding:0 15px;border-radius:999px;background:#eef7f3;color:#116a52;text-decoration:none;font-size:9px;font-weight:900">Track this order</a><br><button id="doneCheckout" type="button">Done</button></div>
   </div>
 </div>
 
@@ -160,7 +160,7 @@ async function placeOrder(){
     var out=await res.json().catch(function(){return{}});
     if(!res.ok||!out.ok)throw new Error(out.error||"Could not place the order.");
     cart={};saveCart();render();renderCart();
-    el("checkoutBody").style.display="none";el("checkoutSuccess").style.display="block";el("successRef").textContent=out.order_ref||"Order received";
+    el("checkoutBody").style.display="none";el("checkoutSuccess").style.display="block";el("successRef").textContent=out.order_ref||"Order received";el("trackSuccess").href="./order-status.html?ref="+encodeURIComponent(out.order_ref||"");
   }catch(err){showCheckoutMsg(err&&err.message?err.message:"Could not place the order.")}
   finally{b.disabled=false;b.textContent=old}
 }
