@@ -168,6 +168,13 @@ function installCategoryCarousel(d){
     window.addEventListener("resize",updateArrows,{passive:true});
     setTimeout(updateArrows,50);
     setTimeout(updateArrows,800);
+    var catObserver=new MutationObserver(function(){
+      [].slice.call(cards.querySelectorAll(".category-card img")).forEach(function(img){
+        img.loading="lazy";img.decoding="async";
+      });
+      requestAnimationFrame(updateArrows);
+    });
+    catObserver.observe(cards,{childList:true,subtree:false});
 
     // Keyboard users can move through the row as well.
     cards.addEventListener("keydown",function(e){
