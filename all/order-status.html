@@ -9,7 +9,7 @@
 <style>
 *{box-sizing:border-box}:root{--green:#103f34;--green2:#116a52;--orange:#ff5a2d;--ink:#15342e;--muted:#687a74;--line:#dfe8e4;--soft:#f5f8f6}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:linear-gradient(180deg,#f4f8f6,#faf9fd);color:var(--ink)}.wrap{width:min(960px,calc(100% - 28px));margin:auto}.top{background:var(--green);color:#fff}.top .wrap{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:950}.top a{color:#fff;text-decoration:none;border:1px solid #ffffff35;border-radius:999px;padding:9px 12px;font-size:10px;font-weight:850}.hero{padding:44px 0 26px;background:linear-gradient(135deg,#eaf8f2,#fff9ed 58%,#f4efff)}.kicker{font-size:10px;font-weight:950;letter-spacing:.14em;color:var(--green2)}.hero h1{margin:7px 0 8px;font-size:clamp(34px,6vw,56px);line-height:1;letter-spacing:-.04em}.hero p{max-width:700px;margin:0;color:#60736c;font-size:12px;line-height:1.65}.panel{margin:24px auto 60px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 14px 38px rgba(11,70,53,.07)}.lookup{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}.field{display:grid;gap:5px}.field label{font-size:9px;font-weight:900}.field input{height:43px;border:1px solid #d7e3de;border-radius:11px;padding:0 11px;outline:none}.field input:focus{border-color:#2d9077;box-shadow:0 0 0 3px #e5f4ef}.btn{min-height:43px;border:0;border-radius:11px;padding:0 15px;background:var(--green2);color:#fff;font-size:9px;font-weight:950}.msg{display:none;margin-top:12px;padding:11px;border-radius:11px;background:#fff0ed;color:#94493e;font-size:9px}.result{display:none;margin-top:18px}.summary{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:16px;border-radius:16px;background:linear-gradient(135deg,#f0faf5,#fbf8ff)}.summary h2{margin:3px 0 4px;font-size:20px}.summary p{margin:0;color:var(--muted);font-size:9px;line-height:1.5}.pill{display:inline-flex;padding:6px 9px;border-radius:999px;background:#eaf6f1;color:#1e604d;font-size:8px;font-weight:950}.master-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.meta{padding:11px;border:1px solid var(--line);border-radius:12px}.meta span{display:block;color:var(--muted);font-size:8px}.meta b{display:block;margin-top:4px;font-size:10px}.seller-orders{display:grid;gap:10px;margin-top:16px}.seller-card{border:1px solid var(--line);border-radius:16px;overflow:hidden}.seller-head{display:flex;justify-content:space-between;gap:12px;padding:13px 14px;background:#fafcfb;border-bottom:1px solid var(--line)}.seller-head b{font-size:11px}.seller-head small{display:block;color:var(--muted);font-size:8px;margin-top:3px}.seller-body{padding:13px 14px}.items{display:grid;gap:6px}.item{display:flex;justify-content:space-between;gap:12px;font-size:9px}.item span:last-child{font-weight:850}.amounts{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);display:grid;gap:5px}.amounts div{display:flex;justify-content:space-between;gap:12px;font-size:9px}.amounts .total{font-weight:950;font-size:11px}.note{margin-top:10px;padding:9px;border-radius:10px;background:#fff8e8;color:#6f6042;font-size:8px;line-height:1.5}.store-link{display:inline-flex;margin-top:10px;min-height:34px;align-items:center;padding:0 10px;border-radius:999px;background:#eef7f3;color:var(--green);text-decoration:none;font-size:8px;font-weight:900}.empty{padding:24px;text-align:center;color:var(--muted);font-size:10px;border:1px dashed #d3ded9;border-radius:13px}.payment-box{display:none;margin-top:14px;padding:16px;border:1px solid #cfe1d8;border-radius:16px;background:linear-gradient(135deg,#f0faf5,#fffaf0)}.payment-box h3{margin:0 0 5px;font-size:14px}.payment-box>p{margin:0;color:var(--muted);font-size:9px;line-height:1.5}.payment-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.payment-cell{padding:10px;border-radius:11px;background:#fff;border:1px solid var(--line)}.payment-cell span{display:block;color:var(--muted);font-size:7px}.payment-cell b{display:block;margin-top:4px;font-size:10px;word-break:break-word}.payment-note{margin-top:10px;padding:10px;border-radius:10px;background:#fff;color:#675f4e;font-size:8px;line-height:1.5}.copy-btn{margin-top:8px;min-height:34px;border:0;border-radius:999px;background:var(--green2);color:#fff;padding:0 12px;font-size:8px;font-weight:900}
-@media(max-width:700px){.lookup{grid-template-columns:1fr}.master-meta{grid-template-columns:1fr 1fr}.summary{flex-direction:column}.payment-grid{grid-template-columns:1fr 1fr}}
+.support-box{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:16px;background:#fff}.support-box h3{margin:0 0 5px;font-size:14px}.support-box>p{margin:0 0 10px;color:var(--muted);font-size:9px;line-height:1.5}.receipt{display:none;margin-top:14px;padding:16px;border:1px solid #cfe1d8;border-radius:16px;background:linear-gradient(135deg,#f2fbf6,#fffdf5)}.receipt-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.receipt-head h3{margin:0}.receipt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.receipt-cell{padding:9px;border:1px solid var(--line);border-radius:10px;background:#fff}.receipt-cell span{display:block;color:var(--muted);font-size:7px}.receipt-cell b{display:block;margin-top:3px;font-size:9px}.support-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.support-card{border:1px solid var(--line);border-radius:13px;padding:12px;background:#fafcfb}.support-card h4{margin:0 0 7px;font-size:11px}.support-card label{display:block;margin-top:7px;font-size:8px;font-weight:800}.support-card input,.support-card select,.support-card textarea{width:100%;margin-top:4px;border:1px solid #d7e3de;border-radius:9px;padding:8px;background:#fff}.support-card textarea{min-height:76px;resize:vertical}.support-card button,.receipt button{margin-top:8px;min-height:34px;border:0;border-radius:999px;background:var(--green2);color:#fff;padding:0 11px;font-size:8px;font-weight:900}.case-list{display:grid;gap:8px;margin-top:10px}.case{border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff}.case b{font-size:9px}.case small{display:block;margin-top:3px;color:var(--muted);font-size:8px;line-height:1.45}.case-message{margin-top:6px;padding:7px;border-radius:8px;background:#f5f8f6;font-size:8px;line-height:1.45}.notice-list{display:grid;gap:6px}.notice-item{padding:9px;border:1px solid var(--line);border-radius:10px;background:#fafcfb}.notice-item b{font-size:9px}.notice-item small{display:block;margin-top:3px;color:var(--muted);font-size:8px}.support-msg{display:none;margin-top:8px;padding:9px;border-radius:9px;background:#fff1ec;color:#89451f;font-size:8px}.support-msg.good{background:#eaf8f2;color:#176047}@media print{body *{visibility:hidden!important}#receiptBox,#receiptBox *{visibility:visible!important}#receiptBox{position:absolute;left:0;top:0;width:100%;border:0;box-shadow:none;background:#fff!important}.receipt button{display:none!important}}@media(max-width:700px){.lookup{grid-template-columns:1fr}.master-meta{grid-template-columns:1fr 1fr}.summary{flex-direction:column}.payment-grid,.receipt-grid{grid-template-columns:1fr 1fr}.support-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -32,12 +32,54 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
     </div>
     <div id="paymentBox" class="payment-box"><h3>Payment instructions</h3><p>Use these details only for this confirmed RANOVA order. Your payment will still be verified before the order is marked paid.</p><div class="payment-grid"><div class="payment-cell"><span>Method</span><b id="payMethod"></b></div><div class="payment-cell"><span>Provider</span><b id="payProvider"></b></div><div class="payment-cell"><span>Account name</span><b id="payName"></b></div><div class="payment-cell"><span>Account / number</span><b id="payRef"></b></div></div><div class="payment-cell" style="margin-top:8px"><span>Amount due</span><b id="payAmount"></b></div><div id="payNote" class="payment-note"></div><button id="copyPayRef" class="copy-btn" type="button">Copy account / number</button></div>
     <div id="sellerOrders" class="seller-orders"></div>
+    <div id="receiptBox" class="receipt">
+      <div class="receipt-head"><div><span class="pill">PAYMENT RECEIPT</span><h3 id="receiptRef"></h3><p id="receiptDate" style="margin:5px 0 0;color:var(--muted);font-size:8px"></p></div><button id="printReceipt" type="button">Print receipt</button></div>
+      <div class="receipt-grid">
+        <div class="receipt-cell"><span>Product total</span><b id="receiptProducts"></b></div>
+        <div class="receipt-cell"><span>Delivery</span><b id="receiptDelivery"></b></div>
+        <div class="receipt-cell"><span>Buyer processing fee</span><b id="receiptFee"></b></div>
+        <div class="receipt-cell"><span>Total paid</span><b id="receiptTotal"></b></div>
+      </div>
+      <div class="receipt-grid">
+        <div class="receipt-cell"><span>Payment method</span><b id="receiptMethod"></b></div>
+        <div class="receipt-cell"><span>Payment reference</span><b id="receiptPaymentRef"></b></div>
+        <div class="receipt-cell"><span>Country</span><b id="receiptCountry"></b></div>
+        <div class="receipt-cell"><span>Order reference</span><b id="receiptOrderRef"></b></div>
+      </div>
+    </div>
+    <div id="supportBox" class="support-box">
+      <h3>Order support</h3><p>Refunds and disputes stay linked to this order. Opening a case can place unpaid seller funds on hold while RANOVA reviews the evidence.</p>
+      <div id="supportMsg" class="support-msg"></div>
+      <div class="support-grid">
+        <div class="support-card">
+          <h4>Request a refund</h4>
+          <p style="margin:0;color:var(--muted);font-size:8px">Available after RANOVA confirms payment. The requested amount cannot exceed the recorded payment.</p>
+          <label>Reason</label><select id="refundReason"><option value="item_not_received">Item not received</option><option value="item_not_as_described">Item not as described</option><option value="damaged">Damaged item</option><option value="duplicate_payment">Duplicate payment</option><option value="cancelled_order">Cancelled order</option><option value="other">Other</option></select>
+          <label>Amount (GHS)</label><input id="refundAmount" type="number" min="0" step="0.01">
+          <label>Explain clearly</label><textarea id="refundDetail"></textarea>
+          <button id="requestRefund" type="button">Submit refund request</button>
+          <div id="refundCases" class="case-list"></div>
+        </div>
+        <div class="support-card">
+          <h4>Open a dispute</h4>
+          <p style="margin:0;color:var(--muted);font-size:8px">Use this when buyer and seller need RANOVA to review a disagreement.</p>
+          <label>Category</label><select id="disputeCategory"><option value="delivery">Delivery</option><option value="product">Product</option><option value="payment">Payment</option><option value="refund">Refund</option><option value="seller_conduct">Seller conduct</option><option value="other">Other</option></select>
+          <label>Subject</label><input id="disputeSubject" maxlength="180">
+          <label>What happened?</label><textarea id="disputeDescription"></textarea>
+          <button id="openDispute" type="button">Open dispute</button>
+          <div id="disputeCases" class="case-list"></div>
+        </div>
+      </div>
+      <div class="support-card" style="margin-top:12px"><h4>Order notifications</h4><div id="buyerNotifications" class="notice-list"></div></div>
+    </div>
   </div>
 </section></main>
 <script>
 (function(){
 "use strict";
 var ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-order-status";
+var SUPPORT_ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-order-support";
+var currentOrder=null,currentSupport=null;
 function el(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function pretty(v){return String(v||"").replace(/_/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
@@ -65,7 +107,7 @@ function render(out){
     var items=Array.isArray(x.items)?x.items:[];
     return '<article class="seller-card"><div class="seller-head"><div><b>'+esc(x.store_name)+'</b><small>'+esc(x.order_ref)+' • Updated '+esc(x.updated_at?new Date(x.updated_at).toLocaleString():"—")+'</small></div><span class="pill">'+esc(pretty(x.order_status))+'</span></div><div class="seller-body"><div class="items">'+items.map(function(i){return '<div class="item"><span>'+esc(i.product_name||"Product")+' × '+esc(i.quantity||1)+'</span><span>'+esc(i.line_total==null?"Price pending":money(i.line_total))+'</span></div>'}).join("")+'</div><div class="amounts"><div><span>Products</span><b>'+esc(money(x.subtotal))+'</b></div><div><span>Delivery</span><b>'+esc(x.delivery_fee==null?"Pending confirmation":money(x.delivery_fee))+'</b></div><div class="total"><span>Seller order total</span><b>'+esc(money(x.total))+'</b></div><div><span>Payment</span><b>'+esc(pretty(x.payment_status))+'</b></div></div>'+(x.seller_note?'<div class="note"><b>Seller note:</b> '+esc(x.seller_note)+'</div>':'')+(x.store_slug?'<a class="store-link" href="./seller-store.html?store='+encodeURIComponent(x.store_slug)+'">Open seller store</a>':'')+'</div></article>'
   }).join(""):'<div class="empty">This order is being handled directly by RANOVA. Seller-routing details are not required.</div>';
-  el("result").style.display="block";
+  currentOrder=o;el("result").style.display="block";
 }
 async function check(){
   var ref=el("orderRef").value.trim(),phone=el("phone").value.trim(),m=el("msg");m.style.display="none";el("result").style.display="none";
@@ -75,10 +117,71 @@ async function check(){
     var r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({order_ref:ref,phone:phone})});
     var out=await r.json().catch(function(){return{}});
     if(!r.ok||!out.ok)throw new Error(out.error||"Could not load the order.");
-    render(out);
+    render(out);await loadSupport();
   }catch(e){m.textContent=e.message||"Could not load the order.";m.style.display="block"}
   finally{b.disabled=false;b.textContent=old}
 }
+
+function showSupportMsg(text,good){
+  var m=el("supportMsg");m.textContent=text;m.classList.toggle("good",!!good);m.style.display="block";
+}
+async function supportApi(action,payload){
+  var ref=el("orderRef").value.trim(),phone=el("phone").value.trim();
+  var body=Object.assign({action:action,order_ref:ref,phone:phone},payload||{});
+  var r=await fetch(SUPPORT_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify(body)});
+  var out=await r.json().catch(function(){return{}});
+  if(!r.ok||!out.ok)throw new Error(out.error||"Support request failed.");
+  return out;
+}
+async function loadSupport(){
+  try{var out=await supportApi("lookup");currentSupport=out.support||{};renderSupport(currentSupport)}
+  catch(e){showSupportMsg(e.message||"Could not load support history.")}
+}
+function renderSupport(support){
+  support=support||{};
+  var receipt=support.receipt||null,box=el("receiptBox");
+  if(receipt){
+    box.style.display="block";el("receiptRef").textContent=receipt.receipt_ref||"Receipt";el("receiptDate").textContent="Issued "+(receipt.issued_at?new Date(receipt.issued_at).toLocaleString():"");
+    el("receiptProducts").textContent=money(receipt.product_total);el("receiptDelivery").textContent=money(receipt.delivery_fee);el("receiptFee").textContent=money(receipt.buyer_processing_fee||0);el("receiptTotal").textContent=money(receipt.total_paid);
+    el("receiptMethod").textContent=receipt.payment_method||"—";el("receiptPaymentRef").textContent=receipt.payment_reference||"—";el("receiptCountry").textContent=receipt.buyer_country_name||"—";el("receiptOrderRef").textContent=receipt.order_ref||"—";
+  }else box.style.display="none";
+
+  var refunds=support.refunds||[],activeRefund=refunds.find(function(r){return !["refunded","rejected","cancelled"].includes(r.status)});
+  el("requestRefund").disabled=!!activeRefund||!currentOrder||!["paid","confirmed"].includes(String(currentOrder.payment_status||"").toLowerCase());
+  if(currentOrder&&currentOrder.total_payment!=null&&!el("refundAmount").value)el("refundAmount").value=Number(currentOrder.total_payment).toFixed(2);
+  el("refundCases").innerHTML=refunds.length?refunds.map(function(r){return '<div class="case"><b>'+esc(r.refund_ref)+' • '+esc(pretty(r.status))+'</b><small>'+esc(pretty(r.reason_category))+' • Requested '+esc(money(r.requested_amount))+(r.approved_amount!=null?' • Approved '+esc(money(r.approved_amount)):'')+'</small><small>'+esc(r.reason_detail)+'</small>'+(r.admin_note?'<div class="case-message"><b>RANOVA:</b> '+esc(r.admin_note)+'</div>':'')+(r.refund_reference?'<small>Refund reference: '+esc(r.refund_reference)+'</small>':'')+'</div>'}).join(""):'<div class="case"><small>No refund request for this order.</small></div>';
+
+  var disputes=support.disputes||[],activeDispute=disputes.find(function(d){return !["resolved","closed"].includes(d.status)});
+  el("openDispute").disabled=!!activeDispute;
+  el("disputeCases").innerHTML=disputes.length?disputes.map(function(d){
+    var msgs=Array.isArray(d.messages)?d.messages:[];
+    var thread=msgs.map(function(m){return '<div class="case-message"><b>'+esc(pretty(m.sender_type))+':</b> '+esc(m.message)+'<small>'+new Date(m.created_at).toLocaleString()+'</small></div>'}).join("");
+    var reply=!["resolved","closed"].includes(d.status)?'<button data-buyer-dispute-reply="'+esc(d.dispute_ref)+'" type="button">Reply to case</button>':'';
+    return '<div class="case"><b>'+esc(d.dispute_ref)+' • '+esc(pretty(d.status))+'</b><small>'+esc(d.subject)+' • '+esc(pretty(d.category))+'</small><small>'+esc(d.description)+'</small>'+thread+(d.resolution_note?'<div class="case-message"><b>Resolution:</b> '+esc(d.resolution_note)+'</div>':'')+reply+'</div>';
+  }).join(""):'<div class="case"><small>No dispute for this order.</small></div>';
+  el("disputeCases").querySelectorAll("[data-buyer-dispute-reply]").forEach(function(b){b.onclick=async function(){
+    var message=prompt("Write your reply to this dispute.","")||"";if(!message.trim())return;b.disabled=true;
+    try{var out=await supportApi("add_dispute_message",{dispute_ref:b.dataset.buyerDisputeReply,message:message});currentSupport=out.support||{};renderSupport(currentSupport);showSupportMsg("Reply added to the dispute record.",true)}
+    catch(e){showSupportMsg(e.message||"Could not add reply.")}finally{b.disabled=false}
+  }});
+
+  var notes=support.notifications||[];
+  el("buyerNotifications").innerHTML=notes.length?notes.map(function(n){return '<div class="notice-item"><b>'+esc(n.title)+'</b><small>'+esc(n.message)+'</small><small>'+new Date(n.created_at).toLocaleString()+'</small></div>'}).join(""):'<div class="notice-item"><small>No order notifications yet.</small></div>';
+}
+el("requestRefund").onclick=async function(){
+  var amount=el("refundAmount").value,detail=el("refundDetail").value.trim();if(!amount||detail.length<12)return showSupportMsg("Enter a refund amount and explain the request clearly.");
+  var b=this;b.disabled=true;
+  try{var out=await supportApi("request_refund",{requested_amount:amount,reason_category:el("refundReason").value,reason_detail:detail});currentSupport=out.support||{};renderSupport(currentSupport);showSupportMsg("Refund request submitted. RANOVA will review the case before any money moves.",true)}
+  catch(e){showSupportMsg(e.message||"Could not submit refund request.")}finally{b.disabled=false}
+};
+el("openDispute").onclick=async function(){
+  var subject=el("disputeSubject").value.trim(),description=el("disputeDescription").value.trim();if(subject.length<5||description.length<15)return showSupportMsg("Add a clear subject and explanation.");
+  var b=this;b.disabled=true;
+  try{var out=await supportApi("open_dispute",{category:el("disputeCategory").value,subject:subject,description:description});currentSupport=out.support||{};renderSupport(currentSupport);showSupportMsg("Dispute opened. Unpaid seller payout can remain held while RANOVA reviews the case.",true)}
+  catch(e){showSupportMsg(e.message||"Could not open dispute.")}finally{b.disabled=false}
+};
+el("printReceipt").onclick=function(){window.print()};
+
 var qp=new URLSearchParams(location.search).get("ref");if(qp)el("orderRef").value=qp;
 el("copyPayRef").onclick=async function(){var v=this.dataset.value||"";if(!v)return;try{await navigator.clipboard.writeText(v);var old=this.textContent;this.textContent="Copied";setTimeout(()=>this.textContent=old,1200)}catch(e){}};
 el("check").onclick=check;el("phone").addEventListener("keydown",function(e){if(e.key==="Enter")check()});
