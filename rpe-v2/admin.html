@@ -179,19 +179,24 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
     </section>
 
     <section id="inventory-control" class="panel">
-      <div class="hero"><small>INVENTORY CONTROL</small><h1>Prevent overselling before it happens.</h1><p>Temporary reservations protect limited stock until payment is confirmed or the hold expires.</p></div>
+      <div class="hero"><small>INVENTORY PROTECTION</small><h1>Reserve limited stock without overselling it.</h1><p>Checkout creates a temporary hold, not a sale. Physical stock is deducted only after RANOVA confirms payment. Unpaid holds expire automatically and returned goods are restored only through the recorded return flow.</p></div>
       <div class="metrics">
         <div class="metric"><small>Active stock holds</small><strong id="iActiveHolds">0</strong></div>
+        <div class="metric"><small>Expiring within 30 min</small><strong id="iExpiringSoon">0</strong></div>
         <div class="metric"><small>Committed lines</small><strong id="iCommitted">0</strong></div>
-        <div class="metric"><small>Reservation window</small><strong id="iWindow">120m</strong></div>
-        <div class="metric"><small>Inventory events</small><strong id="iEvents">0</strong></div>
+        <div class="metric"><small>Restored lines</small><strong id="iRestored">0</strong></div>
       </div>
-      <div class="card"><div class="card-head"><h2>Reservation settings</h2></div><div class="body">
-        <div class="form-grid"><div class="field"><label>Reservation duration (minutes)</label><input id="inventoryMinutes" type="number" min="15" max="1440" value="120"></div>
-        <div class="field"><label>Expire unpaid orders automatically</label><select id="inventoryExpireOrders"><option value="true">Yes</option><option value="false">No</option></select></div></div>
-        <button id="saveInventorySettings" class="primary" style="margin-top:12px;border:0;border-radius:10px;background:var(--rpe-green-700);color:#fff;padding:10px 14px;font-weight:900">Save inventory settings</button>
+      <div class="card"><div class="card-head"><div><h2>Reservation safety settings</h2><small style="color:var(--rpe-muted)">Automatic expiry is permanently enabled to prevent abandoned carts from locking stock.</small></div><span class="chip status-approved">Auto-expiry on</span></div><div class="body">
+        <div class="review-meta">
+          <div><span>Reservation window</span><b id="iWindow">120 minutes</b><span>Owner-controlled, between 15 minutes and 24 hours.</span></div>
+          <div><span>Stock deduction</span><b>Payment confirmation only</b><span>A temporary hold does not reduce physical stock.</span></div>
+          <div><span>Expiry scan</span><b>Every 5 minutes</b><span>Expired unpaid orders are cancelled and their holds become available again.</span></div>
+        </div>
+        <div class="form-grid" style="margin-top:12px"><div class="field"><label>Reservation duration (minutes)</label><input id="inventoryMinutes" type="number" min="15" max="1440" value="120"></div></div>
+        <div class="actions"><button id="saveInventorySettings" class="primary">Save reservation window</button><button id="runInventoryExpiry">Run expiry check now</button></div>
       </div></div>
-      <div class="card"><div class="card-head"><h2>Recent inventory activity</h2></div><div id="inventoryAdminList" class="body market-list"></div></div>
+      <div class="card"><div class="card-head"><div><h2>Active and historical reservations</h2><small style="color:var(--rpe-muted)">Each hold is linked to an order and seller product.</small></div></div><div id="inventoryReservationsList" class="body market-list"></div></div>
+      <div class="card"><div class="card-head"><div><h2>Inventory audit trail</h2><small style="color:var(--rpe-muted)">Reserved, committed, released, expired and restored movements remain traceable.</small></div></div><div id="inventoryAdminList" class="body market-list"></div></div>
     </section>
 
     <section id="seller-orders" class="panel">
@@ -316,5 +321,5 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./admin.js?v=20260927-01"></script>
+<script src="./admin.js?v=20260927-02"></script>
 </body></html>
