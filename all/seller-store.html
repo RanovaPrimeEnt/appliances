@@ -319,10 +319,10 @@ async function boot(){
   if(store.logo_url)el("logo").innerHTML='<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name)+' logo">';else el("logo").textContent=store.store_name.charAt(0).toUpperCase();
   if(store.banner_url)el("banner").innerHTML='<img src="'+esc(store.banner_url)+'" alt="">';
   var links=[],ph=phoneDigits(store.public_phone);
-  if(ph)links.push('<a class="primary" href="https://wa.me/'+ph+'" target="_blank" rel="noopener">WhatsApp seller</a>');
+  links.push('<a class="primary" href="./messages.html?store='+encodeURIComponent(store.id)+'">Message in RANOVA</a>');
+  if(ph)links.push('<a href="https://wa.me/'+ph+'" target="_blank" rel="noopener">WhatsApp</a>');
   if(store.public_phone)links.push('<a href="tel:'+esc(store.public_phone)+'">Call</a>');
-  if(store.public_email)links.push('<a href="mailto:'+esc(store.public_email)+'">Email</a>');
-  links.push('<a class="primary" href="./messages.html?store='+encodeURIComponent(store.id)+'">Message in RANOVA</a>');links.push('<button id="saveSellerBtn" type="button" style="border:1px solid #d8e4df;background:#fff;color:#0e5b43;border-radius:999px;padding:10px 13px;font-weight:900;cursor:pointer">♡ Save seller</button>');
+  if(store.public_email)links.push('<a href="mailto:'+esc(store.public_email)+'">Email</a>');links.push('<button id="saveSellerBtn" type="button" style="border:1px solid #d8e4df;background:#fff;color:#0e5b43;border-radius:999px;padding:10px 13px;font-weight:900;cursor:pointer">♡ Save seller</button>');
   links.push('<a href="./account.html">Buyer account</a>');
   el("contact").innerHTML=links.join("");
   var saveSellerBtn=document.getElementById("saveSellerBtn");
