@@ -41,6 +41,7 @@
     <button class="navbtn" data-panel="stores">Saved sellers</button>
     <button class="navbtn" data-panel="carts">Carts</button>
     <button class="navbtn" data-panel="orders">Orders</button>
+    <button class="navbtn" data-panel="notifications">Notifications <span id="notifBadge"></span></button>
     <button class="navbtn" data-panel="addresses">Addresses</button>
     <button class="navbtn" data-panel="recent">Recently viewed</button>
     <button class="navbtn" data-panel="settings">Settings & security</button>
@@ -57,6 +58,8 @@
     <div id="panel-carts" class="panel"><div class="card"><h2>Cross-device carts</h2><p>Your seller carts combine into one universal RANOVA checkout while delivery and seller accounting stay separate.</p><a class="primary" style="display:inline-grid;place-items:center;margin:8px 0 12px" href="./cart.html">Open universal marketplace cart</a><div id="cartsList" class="list"></div></div></div>
     <div id="panel-orders" class="panel"><div class="card"><h2>Marketplace order history</h2><div id="ordersList" class="list"></div></div><div class="card"><h2>Refund & dispute history</h2><div id="supportList" class="list"></div></div></div>
 
+    <div id="panel-notifications" class="panel"><div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Notifications</h2><p>Transactional order alerts and optional shopping updates appear here.</p></div><button id="markAllRead" class="secondary">Mark all read</button></div><div id="notificationsList" class="list"></div></div></div>
+
     <div id="panel-addresses" class="panel">
       <div class="card"><h2>Delivery addresses</h2><div id="addressMsg" class="msg"></div><input id="addressId" type="hidden"><div class="grid2">
         <div class="field"><label>Label</label><input id="addressLabel" placeholder="Home, Office, Warehouse"></div>
@@ -71,7 +74,7 @@
     <div id="panel-recent" class="panel"><div class="card"><h2>Recently viewed</h2><div id="recentList" class="list"></div></div></div>
     <div id="panel-settings" class="panel">
       <div class="card"><h2>Profile</h2><div id="profileMsg" class="msg"></div><div class="grid2"><div class="field"><label>Full name</label><input id="profileName"></div><div class="field"><label>Phone</label><input id="profilePhone" inputmode="tel"></div><div class="field"><label>Default country code</label><input id="profileCountry" maxlength="2" placeholder="GH"></div><div class="field"><label>Account email</label><input id="profileEmail" disabled></div></div><button id="saveProfile" class="primary">Save profile</button></div>
-      <div class="card"><h2>Notifications</h2><label><input id="prefOrders" type="checkbox"> Email me important order updates</label><br><label><input id="prefPromo" type="checkbox"> Email me RANOVA promotions</label><br><label><input id="prefSeller" type="checkbox"> Updates from saved sellers</label><div style="margin-top:10px"><button id="savePrefs" class="secondary">Save preferences</button></div></div>
+      <div class="card"><h2>Notification preferences</h2><p>Important order activity can always appear in your account. Email choices are controlled separately.</p><label><input id="prefOrders" type="checkbox"> Email me important order, payment, delivery and reservation updates</label><br><label><input id="prefPromo" type="checkbox"> Email me optional RANOVA shopping and abandoned-cart reminders</label><br><label><input id="prefSeller" type="checkbox"> Email me new-product updates from sellers I saved</label><div style="margin-top:10px"><button id="savePrefs" class="secondary">Save preferences</button></div></div>
       <div class="card"><h2>Account security</h2><p>Use a strong password that you do not reuse elsewhere.</p><div class="field"><label>New password</label><input id="newPassword" type="password" minlength="8" autocomplete="new-password"></div><button id="changePassword" class="danger">Change password</button><div id="securityMsg" class="msg"></div></div>
     </div>
   </section>
@@ -96,6 +99,7 @@ function productRow(x){var p=x.product;if(!p)return '<div class="row"><div><b>Un
 function render(){
  var s=state,profile=s.profile||{},prefs=s.preferences||{};
  el("mSaved").textContent=(s.saved_products||[]).length;el("mStores").textContent=(s.saved_stores||[]).length;el("mCarts").textContent=(s.carts||[]).filter(x=>Object.keys(x.items||{}).length).length;el("mOrders").textContent=(s.orders||[]).length;
+ var unread=Number(s.unread_notifications||0);el("notifBadge").textContent=unread?"("+unread+")":"";
  el("welcome").textContent=profile.full_name?"Welcome, "+profile.full_name:"Your buyer account";
  el("profileName").value=profile.full_name||"";el("profilePhone").value=profile.phone||"";el("profileCountry").value=profile.default_country_code||"";el("profileEmail").value=s.user.email||"";
  el("prefOrders").checked=prefs.email_order_updates!==false;el("prefPromo").checked=!!prefs.email_promotions;el("prefSeller").checked=!!prefs.saved_seller_updates;
@@ -110,7 +114,10 @@ function render(){
  el("addressesList").innerHTML=(s.addresses||[]).length?s.addresses.map(a=>'<div class="row"><div><b>'+esc(a.label)+(a.is_default?" · Default":"")+'</b><small>'+esc(a.recipient_name)+' · '+esc(a.phone||"")+'</small><small>'+esc(a.address_text)+' · '+esc(a.country_name||a.country_code||"")+'</small></div><div class="actions"><button class="secondary" data-edit-address="'+a.id+'">Edit</button><button class="danger" data-delete-address="'+a.id+'">Delete</button></div></div>').join(""):'<div class="empty">No saved delivery addresses.</div>';
  el("addressesList").querySelectorAll("[data-edit-address]").forEach(b=>b.onclick=function(){var a=s.addresses.find(x=>x.id===b.dataset.editAddress);if(!a)return;el("addressId").value=a.id;el("addressLabel").value=a.label||"";el("addressName").value=a.recipient_name||"";el("addressPhone").value=a.phone||"";el("addressCountry").value=a.country_code||"";el("addressText").value=a.address_text||"";el("addressDefault").checked=!!a.is_default});
  el("addressesList").querySelectorAll("[data-delete-address]").forEach(b=>b.onclick=async()=>{await sb.from("ranova_buyer_addresses").delete().eq("id",b.dataset.deleteAddress);await load()});
- el("recentList").innerHTML=(s.recent_products||[]).length?s.recent_products.map(productRow).join(""):'<div class="empty">Your recently viewed marketplace products will appear here.</div>';
+ var notes=s.notifications||[];
+ el("notificationsList").innerHTML=notes.length?notes.map(function(n){return '<div class="row" style="'+(!n.read_at?'background:#f7fbf9':'')+'"><div><b>'+esc(n.title)+'</b><small>'+esc(n.message)+'</small><small>'+esc(pretty(n.notification_category||"transactional"))+' · '+new Date(n.created_at).toLocaleString()+'</small></div><div class="actions">'+(n.action_url?'<a class="secondary" href="'+esc(n.action_url)+'">Open</a>':'')+(!n.read_at?'<button class="secondary" data-read-note="'+n.id+'">Mark read</button>':'')+'</div></div>'}).join(""):'<div class="empty">No notifications yet.</div>';
+ el("notificationsList").querySelectorAll("[data-read-note]").forEach(b=>b.onclick=async()=>{await accountApi({action:"mark_notifications_read",id:b.dataset.readNote});await load()});
+  el("recentList").innerHTML=(s.recent_products||[]).length?s.recent_products.map(productRow).join(""):'<div class="empty">Your recently viewed marketplace products will appear here.</div>';
  el("recentList").querySelectorAll("[data-remove-product]").forEach(b=>b.style.display="none");
 }
 async function load(){state=await accountApi({action:"dashboard"});render()}
@@ -119,6 +126,7 @@ el("saveProfile").onclick=async function(){clear(el("profileMsg"));var row={user
 el("savePrefs").onclick=async function(){var r=await sb.from("ranova_buyer_preferences").upsert({user_id:session.user.id,email_order_updates:el("prefOrders").checked,email_promotions:el("prefPromo").checked,saved_seller_updates:el("prefSeller").checked,updated_at:new Date().toISOString()},{onConflict:"user_id"});if(r.error)alert(r.error.message);else await load()};
 function clearAddress(){el("addressId").value=el("addressLabel").value=el("addressName").value=el("addressPhone").value=el("addressCountry").value=el("addressText").value="";el("addressDefault").checked=false}el("clearAddress").onclick=clearAddress;
 el("saveAddress").onclick=async function(){clear(el("addressMsg"));var id=el("addressId").value,name=el("addressName").value.trim(),text=el("addressText").value.trim();if(!name||!text)return msg(el("addressMsg"),"Recipient name and delivery address are required.");if(el("addressDefault").checked)await sb.from("ranova_buyer_addresses").update({is_default:false}).eq("user_id",session.user.id);var row={user_id:session.user.id,label:el("addressLabel").value.trim()||"Delivery address",recipient_name:name,phone:el("addressPhone").value.trim()||null,country_code:el("addressCountry").value.trim().toUpperCase()||null,address_text:text,is_default:el("addressDefault").checked,updated_at:new Date().toISOString()};var r=id?await sb.from("ranova_buyer_addresses").update(row).eq("id",id):await sb.from("ranova_buyer_addresses").insert(row);if(r.error)msg(el("addressMsg"),r.error.message);else{clearAddress();msg(el("addressMsg"),"Address saved.",true);await load()}};
+el("markAllRead").onclick=async function(){await accountApi({action:"mark_notifications_read"});await load()};
 el("changePassword").onclick=async function(){clear(el("securityMsg"));var p=el("newPassword").value;if(p.length<8)return msg(el("securityMsg"),"Use a password of at least 8 characters.");var r=await sb.auth.updateUser({password:p});if(r.error)msg(el("securityMsg"),r.error.message);else{el("newPassword").value="";msg(el("securityMsg"),"Password updated.",true)}};
 sb.auth.onAuthStateChange(function(){setTimeout(refreshSession,0)});refreshSession();
 })();
