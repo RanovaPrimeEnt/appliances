@@ -450,18 +450,53 @@ if($("saveSponsored"))$("saveSponsored").onclick=async function(){
 };
 
 function renderInventoryControl(){
-  const host=$("inventoryAdminList");if(!host)return;
-  const settings=market.inventory_settings||{reservation_minutes:120,expire_unpaid_orders:true},events=market.inventory_events||[],products=market.products||[],stores=market.stores||[],c=market.counts||{};
-  $("iActiveHolds").textContent=c.inventory_holds||0;$("iCommitted").textContent=c.inventory_committed||0;$("iWindow").textContent=(settings.reservation_minutes||120)+"m";$("iEvents").textContent=events.length;
-  $("inventoryMinutes").value=settings.reservation_minutes||120;$("inventoryExpireOrders").value=settings.expire_unpaid_orders===false?"false":"true";
-  host.innerHTML=events.length?events.slice(0,100).map(e=>{
-    const p=products.find(x=>x.id===e.product_id),s=stores.find(x=>x.id===e.store_id);
-    return '<div class="market-row"><div><b>'+esc(p?.name||"Seller product")+'</b><small>'+esc(s?.store_name||"Seller store")+' · '+esc(e.order_ref||"No order")+'</small></div><span class="chip '+statusClass(e.event_type)+'">'+esc(pretty(e.event_type))+'</span><div><b>'+esc(e.quantity)+' unit(s)</b><small>Stock '+esc(e.stock_before==null?"untracked":e.stock_before)+' → '+esc(e.stock_after==null?"untracked":e.stock_after)+'</small></div><div><small>'+esc(new Date(e.created_at).toLocaleString())+'</small></div></div>'
+  const host=$("inventoryAdminList"),rHost=$("inventoryReservationsList");if(!host||!rHost)return;
+  const settings=market.inventory_settings||{reservation_minutes:120,expire_unpaid_orders:true},
+    reservations=market.inventory_reservations||[],events=market.inventory_events||[],
+    products=market.products||[],stores=market.stores||[],c=market.counts||{},now=Date.now();
+  $("iActiveHolds").textContent=c.inventory_holds||0;
+  $("iExpiringSoon").textContent=c.inventory_expiring_soon||0;
+  $("iCommitted").textContent=c.inventory_committed||0;
+  $("iRestored").textContent=c.inventory_restored||0;
+  $("iWindow").textContent=(settings.reservation_minutes||120)+" minutes";
+  $("inventoryMinutes").value=settings.reservation_minutes||120;
+
+  const productName=id=>products.find(x=>x.id===id)?.name||"Seller product";
+  const storeName=id=>stores.find(x=>x.id===id)?.store_name||"Seller store";
+  rHost.innerHTML=reservations.length?reservations.slice(0,200).map(r=>{
+    const expires=r.expires_at?new Date(r.expires_at):null;
+    let timing="";
+    if(r.status==="held"&&expires){
+      const ms=expires.getTime()-now;
+      timing=ms>0?"Expires "+expires.toLocaleString()+" · "+Math.max(1,Math.ceil(ms/60000))+" min left":"Expiry due";
+    }else if(r.committed_at)timing="Committed "+new Date(r.committed_at).toLocaleString();
+    else if(r.released_at)timing=pretty(r.status)+" "+new Date(r.released_at).toLocaleString();
+    const reason=r.release_reason?'<small>'+esc(r.release_reason)+'</small>':"";
+    return '<div class="market-row"><div><b>'+esc(productName(r.product_id))+'</b><small>'+esc(storeName(r.store_id))+' · '+esc(r.order_ref||"No order")+'</small>'+reason+'</div><span class="chip '+statusClass(r.status)+'">'+esc(pretty(r.status))+'</span><div><small>Quantity protected</small><b>'+esc(r.quantity)+' unit(s)</b></div><div><small>'+esc(timing||new Date(r.reserved_at).toLocaleString())+'</small></div></div>';
+  }).join(""):'<div class="empty">No inventory reservations yet.</div>';
+
+  host.innerHTML=events.length?events.slice(0,200).map(e=>{
+    return '<div class="market-row"><div><b>'+esc(productName(e.product_id))+'</b><small>'+esc(storeName(e.store_id))+' · '+esc(e.order_ref||"No order")+'</small>'+(e.note?'<small>'+esc(e.note)+'</small>':'')+'</div><span class="chip '+statusClass(e.event_type)+'">'+esc(pretty(e.event_type))+'</span><div><b>'+esc(e.quantity)+' unit(s)</b><small>Stock '+esc(e.stock_before==null?"untracked":e.stock_before)+' → '+esc(e.stock_after==null?"untracked":e.stock_after)+'</small></div><div><small>'+esc(new Date(e.created_at).toLocaleString())+' · '+esc(pretty(e.actor_type||"system"))+'</small></div></div>';
   }).join(""):'<div class="empty">No inventory activity yet.</div>';
 }
 if($("saveInventorySettings"))$("saveInventorySettings").onclick=async function(){
   if(!isOwner())return alert("Only the Owner can change inventory settings.");
-  this.disabled=true;try{await marketApi({action:"save_inventory_settings",reservation_minutes:$("inventoryMinutes").value,expire_unpaid_orders:$("inventoryExpireOrders").value==="true"});await reloadMarketplace()}catch(err){alert(err.message||"Could not save inventory settings.")}finally{this.disabled=false}
+  const minutes=Math.trunc(Number($("inventoryMinutes").value));
+  if(!Number.isFinite(minutes)||minutes<15||minutes>1440)return alert("Reservation window must be between 15 minutes and 24 hours.");
+  this.disabled=true;
+  try{await marketApi({action:"save_inventory_settings",reservation_minutes:minutes});await reloadMarketplace()}
+  catch(err){alert(err.message||"Could not save inventory settings.")}
+  finally{this.disabled=false}
+};
+if($("runInventoryExpiry"))$("runInventoryExpiry").onclick=async function(){
+  if(!confirm("Run the inventory expiry check now? Only genuinely expired unpaid holds will be released."))return;
+  this.disabled=true;
+  try{
+    const out=await marketApi({action:"run_inventory_expiry"});
+    await reloadMarketplace();
+    alert((out.expired_count||0)+" expired inventory hold(s) processed.");
+  }catch(err){alert(err.message||"Could not run inventory expiry check.")}
+  finally{this.disabled=false}
 };
 
 function renderSellerOrders(){
