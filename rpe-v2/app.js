@@ -60,13 +60,15 @@ document.addEventListener("click",e=>{
   if(b){orderFilter=null;showPanel(b.dataset.panel)}
   const s=e.target.closest("[data-order-filter]");
   if(s){orderFilter=s.dataset.orderFilter;showPanel("ordersPanel")}
+  const coming=e.target.closest("[data-coming]");
+  if(coming){showToast(coming.dataset.coming+" is coming soon to RANOVA.")}
 });
-$("contactShortcut").onclick=contactRpe;
-$("helpContact").onclick=contactRpe;
-$("notifBtn").onclick=()=>showPanel("notifPanel");
-$("cartBtn").onclick=openCart;
-$("bottomCart").onclick=openCart;
-$("openCartShortcut").onclick=openCart;
+if($("contactShortcut"))$("contactShortcut").onclick=contactRpe;
+if($("helpContact"))$("helpContact").onclick=contactRpe;
+if($("notifBtn"))$("notifBtn").onclick=()=>showPanel("notifPanel");
+if($("cartBtn"))$("cartBtn").onclick=openCart;
+if($("bottomCart"))$("bottomCart").onclick=openCart;
+if($("openCartShortcut"))$("openCartShortcut").onclick=openCart;
 $("closeCart").onclick=closeCart;
 $("cartDrawer").addEventListener("click",e=>{if(e.target===$("cartDrawer"))closeCart()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
@@ -170,7 +172,9 @@ async function loadCartItems(){
 
 function renderAll(){
   const fallback=user.user_metadata?.first_name || user.email?.split("@")[0] || "Customer";
-  $("helloName").textContent=profile?.first_name||fallback;
+  const fullName=[profile?.first_name,profile?.last_name].filter(Boolean).join(" ")||fallback;
+  $("helloName").textContent=fullName;
+  if($("accountAvatar"))$("accountAvatar").textContent=fullName.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]||"").join("").toUpperCase()||"R";
   $("profileFirst").value=profile?.first_name||"";
   $("profileLast").value=profile?.last_name||"";
   $("profilePhone").value=profile?.phone||"";
@@ -302,6 +306,10 @@ function orderMatches(o){
   if(!orderFilter)return true;
   if(orderFilter==="receive")return ["ready_for_dispatch","dispatched","out_for_delivery"].includes(o.order_status);
   if(orderFilter==="returns")return ["return_requested","returned","refund_pending","refunded"].includes(o.order_status);
+  if(orderFilter==="international"){
+    const country=String(o.delivery_country_code||o.country_code||o.shipping_country_code||"").toUpperCase();
+    return !!country&&country!=="GH";
+  }
   return o.order_status===orderFilter;
 }
 function renderOrders(){
@@ -325,7 +333,7 @@ function openOrder(id){
 }
 function renderCounts(){
   setBadge("payN",orders.filter(o=>o.order_status==="awaiting_payment").length);
-  setBadge("prepN",orders.filter(o=>["payment_confirmed","preparing"].includes(o.order_status)).length);
+  setBadge("prepN",orders.filter(o=>["payment_confirmed","preparing","ready_for_dispatch"].includes(o.order_status)).length);
   setBadge("recvN",orders.filter(o=>["ready_for_dispatch","dispatched","out_for_delivery"].includes(o.order_status)).length);
   setBadge("reviewN",orders.filter(o=>o.order_status==="delivered").length);
   setBadge("retN",returns.filter(r=>!["completed","rejected"].includes(r.return_status)).length);
