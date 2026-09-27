@@ -1,7 +1,8 @@
-const CACHE="ranova-seller-shell-v6";
+const CACHE="ranova-seller-shell-v7";
 const CORE=[
   "./all/seller-center.html",
   "./all/seller-dashboard.html",
+  "./all/seller-admin-messages.html",
   "./all/seller-status.html",
   "./all/seller-icon.svg",
   "./all/seller-icon-v2.svg",
