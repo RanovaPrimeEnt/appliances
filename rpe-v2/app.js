@@ -32,7 +32,7 @@ let accountRequested = false;
 window.RPE_ACCOUNT_OPEN = () => {
   accountRequested = true;
   document.getElementById('marketApp').classList.add('hide');
-  if(user){authBox.classList.add('hide');appBox.classList.remove('hide');showPanel('homePanel')}
+  if(user){authBox.classList.add('hide');appBox.classList.remove('hide');renderCart();showPanel('homePanel')}
   else{appBox.classList.add('hide');authBox.classList.remove('hide');authUI()}
 };
 
@@ -274,6 +274,8 @@ async function handleIncomingCartLink(){
 }
 
 async function addToCart(productId){
+  const marketplaceProduct=products.find(x=>x.id===productId);
+  if(window.RPE_MARKET_ADD){window.RPE_MARKET_ADD(productId,marketplaceProduct?.name||'');return}
   if(!cartId)return showToast("Cart is not ready");
   const existing=cartItems.find(x=>x.product_id===productId);
   let res;
@@ -288,6 +290,7 @@ async function changeQty(item,delta){
 }
 async function removeCart(item){const {error}=await sb.from("cart_items").delete().eq("id",item.id);if(error)return showToast("Could not remove product");await loadCartItems();renderCart()}
 function renderCart(){
+  if(window.RPE_MARKET_CART&&!cartItems.length){const n=Number(document.getElementById('marketCartCount')?.textContent||0);setBadge('cartCount',n);setBadge('bottomCartCount',n);return}
   const list=$("cartList");setBadge("cartCount",cartItems.length);setBadge("bottomCartCount",cartItems.length);
   if(!cartItems.length){list.innerHTML='<div class="empty"><b>Your cart is empty</b>Add products you want and they will appear here.</div>';return}
   list.innerHTML=cartItems.map(i=>{const p=i.products||{},img=imageFor(p);return `<div class="cart-item" data-cart="${i.id}">
@@ -299,7 +302,7 @@ function renderCart(){
   list.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>changeQty(cartItems.find(x=>x.id===b.dataset.plus),1));
   list.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeCart(cartItems.find(x=>x.id===b.dataset.remove)));
 }
-function openCart(){renderCart();$("cartDrawer").classList.add("open")}
+function openCart(){if(window.RPE_MARKET_CART&&!cartItems.length){window.RPE_MARKET_CART();return}renderCart();$("cartDrawer").classList.add("open")}
 function closeCart(){$("cartDrawer").classList.remove("open")}
 $("sendOrder").onclick=async()=>{
   if(!cartItems.length)return showToast("Your cart is empty");
