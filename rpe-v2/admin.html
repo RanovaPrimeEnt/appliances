@@ -60,7 +60,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
     <button data-panel="inventory-control" data-market-role="orders">Inventory control</button>
     <button data-panel="seller-orders" data-market-role="orders">Marketplace orders</button>
     <button data-panel="deliveries" data-market-role="orders">Deliveries</button>
-    <button data-panel="cases" data-market-role="orders">Cases</button>
+    <button data-panel="cases" data-market-role="orders">Cases</button><button data-panel="safety-risk" data-market-role="orders">Safety & risk</button>
     <button data-panel="finance" data-market-role="finance">Finance</button>
   </aside>
   <main>
@@ -232,6 +232,18 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       <div class="card"><div class="card-head"><div><h2>Cancellations & returns</h2><small style="color:var(--rpe-muted)">Cases escalated from buyer/seller after-sales workflows appear here for RANOVA review.</small></div></div><div id="adminAfterSalesList" class="body market-list"></div></div>
       <div class="card"><div class="card-head"><div><h2>Refund requests</h2><small style="color:var(--rpe-muted)">Approve only against the recorded payment. Final refund requires a transaction/reference.</small></div></div><div id="adminRefundsList" class="body market-list"></div></div>
       <div class="card"><div class="card-head"><div><h2>Disputes</h2><small style="color:var(--rpe-muted)">Review the buyer, seller and RANOVA messages before resolving a case.</small></div></div><div id="adminDisputesList" class="body market-list"></div></div>
+    </section>
+
+    <section id="safety-risk" class="panel">
+      <div class="hero"><small>MARKETPLACE SAFETY</small><h1>Review evidence before acting.</h1><p>Automated signals and user reports are triage tools only. A flag does not automatically restrict, suspend or punish an account.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Open risk flags</small><strong id="riskOpen">0</strong></div>
+        <div class="metric"><small>High-severity flags</small><strong id="riskHigh">0</strong></div>
+        <div class="metric"><small>Open user reports</small><strong id="reportsOpen">0</strong></div>
+        <div class="metric"><small>Automatic enforcement</small><strong style="font-size:14px">Disabled</strong></div>
+      </div>
+      <div class="card"><div class="card-head"><div><h2>Risk signals</h2><small style="color:var(--rpe-muted)">Behavior-based indicators. Confirm only after reviewing orders, cases or conversation context.</small></div></div><div id="riskFlagsList" class="body market-list"></div></div>
+      <div class="card"><div class="card-head"><div><h2>User safety reports</h2><small style="color:var(--rpe-muted)">Reports may be valid, mistaken or malicious. Review the reported context before deciding.</small></div></div><div id="safetyReportsList" class="body market-list"></div></div>
     </section>
 
     <section id="finance" class="panel">
