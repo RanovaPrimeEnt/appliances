@@ -52,7 +52,7 @@
 "use strict";
 var URL="https://igaerssbzobutlwvjfwt.supabase.co",KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr",sb=window.supabase.createClient(URL,KEY);
 var QUOTE=URL+"/functions/v1/ranova-cart-quote",ORDER=URL+"/functions/v1/ranova-place-order",COUNTRY=URL+"/functions/v1/ranova-country-service";
-var session=null,cart={},quote=null,profile=null,addresses=[];
+var session=null,cart={},quote=null,profile=null,addresses=[],quoteMap={};
 function el(id){return document.getElementById(id)}function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function money(v){return v==null?"Pending quote":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
 function localLoad(){try{return JSON.parse(localStorage.getItem("ranova_universal_cart")||"{}")}catch(e){return{}}}function localSave(){try{localStorage.setItem("ranova_universal_cart",JSON.stringify(cart))}catch(e){}}
@@ -71,7 +71,7 @@ async function persist(){
  for(const storeId of Object.keys(groups)){if(Object.keys(groups[storeId]).length)await sb.from("ranova_buyer_carts").upsert({user_id:session.user.id,store_id:storeId,items:groups[storeId],updated_at:new Date().toISOString()},{onConflict:"user_id,store_id"})}
 }
 async function getQuote(){
- var items=Object.keys(cart).map(function(id){return{product_id:id,quantity:Number(cart[id]||1)}});
+ var items=Object.keys(cart).map(function(id){return{product_id:id,quantity:Number(cart[id]||1),quote_id:quoteMap[id]||null}});
  var h=await authHeaders(),r=await fetch(QUOTE,{method:"POST",headers:h,body:JSON.stringify({items:items,buyer_country_code:el("country").value||""})}),o=await r.json().catch(function(){return{}});
  if(!r.ok||!o.ok)throw new Error(o.error||"Could not prepare cart.");quote=o;
  var valid={};(o.groups||[]).forEach(g=>(g.items||[]).forEach(x=>valid[x.product_id]=x.quantity));cart=valid;if(!session)localSave();render();
@@ -94,7 +94,7 @@ function render(){
         :'<div class="stockok">Available now: '+esc(x.available_stock)+(Number(x.reserved_quantity||0)>0?' · '+esc(x.reserved_quantity)+' temporarily reserved by other active orders':'')+'</div>';
     return '<div class="item">'+(x.primary_image_url?'<img src="'+esc(x.primary_image_url)+'" alt="">':'<div></div>')+
       '<div><b>'+esc(x.name)+'</b><small>'+esc(x.category||"")+' · MOQ '+esc(x.moq||1)+' · '+esc(String(x.stock_status||"").replace(/_/g," "))+'</small>'+
-      '<small>'+esc(money(x.unit_price))+' per '+esc(x.unit_label||"unit")+' · Line '+esc(money(x.line_total))+'</small>'+availability+
+      '<small>'+esc(money(x.unit_price))+' per '+esc(x.unit_label||"unit")+' · Line '+esc(money(x.line_total))+(x.quote_ref?' · Negotiated '+esc(x.quote_ref):'')+'</small>'+availability+
       '<div class="qty"><button data-minus="'+x.product_id+'">−</button><input data-qty="'+x.product_id+'" min="'+esc(x.moq||1)+'" '+(x.available_stock!=null?'max="'+esc(x.available_stock)+'"':'')+' value="'+esc(x.quantity)+'" type="number"><button data-plus="'+x.product_id+'">+</button></div></div>'+
       '<div><button class="remove" data-remove="'+x.product_id+'">Remove</button></div></div>'
   }).join("")+
@@ -103,28 +103,40 @@ function render(){
  document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=function(){var id=b.dataset.minus,x=find(id),min=Number(x.moq||1);cart[id]=Math.max(min,Number(cart[id]||min)-1);getQuote().then(persist)});
  document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=function(){var id=b.dataset.plus,x=find(id),q=Number(cart[id]||x.moq||1)+1;if(x.available_stock!=null)q=Math.min(q,Number(x.available_stock));cart[id]=q;getQuote().then(persist)});
  document.querySelectorAll("[data-qty]").forEach(i=>i.onchange=function(){var x=find(i.dataset.qty),q=Math.max(Number(x.moq||1),Math.floor(Number(i.value||x.moq||1)));if(x.available_stock!=null)q=Math.min(q,Number(x.available_stock));cart[x.product_id]=q;getQuote().then(persist)});
- document.querySelectorAll("[data-remove]").forEach(b=>b.onclick=function(){delete cart[b.dataset.remove];getQuote().then(persist)});
+ document.querySelectorAll("[data-remove]").forEach(b=>b.onclick=function(){delete quoteMap[b.dataset.remove];delete cart[b.dataset.remove];saveQuoteMap();getQuote().then(persist)});
 }
 function find(id){for(const g of quote.groups||[]){var x=(g.items||[]).find(y=>y.product_id===id);if(x)return x}return{}}
+function loadQuoteMap(){try{quoteMap=JSON.parse(localStorage.getItem("ranova_quote_map")||"{}")}catch(e){quoteMap={}}}
+function saveQuoteMap(){try{localStorage.setItem("ranova_quote_map",JSON.stringify(quoteMap))}catch(e){}}
 async function addFromUrl(){
- var q=new URLSearchParams(location.search),id=q.get("add"),qty=Math.max(1,Number(q.get("qty")||1));if(!id)return;
- cart[id]=Math.max(Number(cart[id]||0),qty);history.replaceState(null,"","./cart.html");await getQuote();await persist();
+ var q=new URLSearchParams(location.search),id=q.get("add"),qty=Math.max(1,Number(q.get("qty")||1)),quoteId=q.get("quote");
+ if(quoteId){
+   if(!session)throw new Error("Sign in before using an accepted negotiated quote.");
+   var rr=await fetch(URL+"/functions/v1/ranova-messaging",{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"list"})});
+   var ro=await rr.json().catch(function(){return{}});
+   if(!rr.ok||!ro.ok)throw new Error(ro.error||"Could not verify quote.");
+   var found=null;
+   for(const c of ro.conversations||[]){if(!c.id)continue;var or=await fetch(URL+"/functions/v1/ranova-messaging",{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"open",conversation_id:c.id})});var oo=await or.json().catch(function(){return{}});if(oo.ok){var qq=(oo.conversation.quotes||[]).find(function(x){return x.id===quoteId&&x.status==="accepted"});if(qq){found=qq;break}}}
+   if(!found)throw new Error("Accepted quote not found.");
+   id=found.product_id;qty=Number(found.requested_quantity);quoteMap[id]=found.id;saveQuoteMap();
+ }
+ if(id){cart[id]=Math.max(Number(cart[id]||0),qty);history.replaceState(null,"","./cart.html");await getQuote();await persist();}
 }
 async function loadCountries(){try{var r=await fetch(COUNTRY,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({action:"countries"})}),o=await r.json();(o.countries||[]).forEach(function(c){var op=document.createElement("option");op.value=c.code;op.textContent=c.name;el("country").appendChild(op)})}catch(e){}}
 function prefill(){if(session){el("email").value=session.user.email||"";if(profile){el("name").value=profile.full_name||"";el("phone").value=profile.phone||"";if(profile.default_country_code)el("country").value=profile.default_country_code}var a=addresses.find(x=>x.is_default)||addresses[0];if(a){el("name").value=el("name").value||a.recipient_name||"";el("phone").value=el("phone").value||a.phone||"";el("address").value=a.address_text||"";if(a.country_code)el("country").value=a.country_code}}}
 el("checkoutBtn").onclick=function(){if(!quote||!quote.groups.length)return;el("checkoutCard").style.display="block";prefill();el("checkoutCard").scrollIntoView({behavior:"smooth",block:"start"});if(el("country").value)getQuote()};
 el("country").onchange=function(){getQuote()};
 el("placeOrder").onclick=async function(){
- var items=Object.keys(cart).map(id=>({seller_product_id:id,quantity:Number(cart[id]||1)})),body={customer_name:el("name").value.trim(),customer_phone:el("phone").value.trim(),customer_email:el("email").value.trim(),delivery_location:el("address").value.trim(),buyer_country_code:el("country").value,buyer_country_name:el("country").selectedOptions[0]?.text||el("country").value,payment_method:el("payment").value,buyer_note:el("note").value.trim(),items:items};
+ var items=Object.keys(cart).map(id=>({seller_product_id:id,quantity:Number(cart[id]||1),quote_id:quoteMap[id]||null})),body={customer_name:el("name").value.trim(),customer_phone:el("phone").value.trim(),customer_email:el("email").value.trim(),delivery_location:el("address").value.trim(),buyer_country_code:el("country").value,buyer_country_name:el("country").selectedOptions[0]?.text||el("country").value,payment_method:el("payment").value,buyer_note:el("note").value.trim(),items:items};
  var m=el("msg");m.style.display="none";if(!body.customer_name||!body.customer_phone||!body.delivery_location||!body.buyer_country_code||!body.payment_method){m.textContent="Complete your name, phone, country, address and payment method.";m.style.display="block";return}
  var b=this;b.disabled=true;b.textContent="Placing order…";
  try{var h=await authHeaders(),r=await fetch(ORDER,{method:"POST",headers:h,body:JSON.stringify(body)}),o=await r.json().catch(function(){return{}});if(!r.ok||!o.ok)throw new Error(o.error||"Could not place order.");
-  cart={};if(session){await sb.from("ranova_buyer_carts").delete().eq("user_id",session.user.id)}else localSave();
+  cart={};quoteMap={};saveQuoteMap();if(session){await sb.from("ranova_buyer_carts").delete().eq("user_id",session.user.id)}else localSave();
   el("checkoutCard").style.display="none";el("success").style.display="block";el("ref").textContent=o.order_ref;el("code").textContent=o.buyer_access_code||"";
   var hold=el("inventoryHold");if(o.inventory_status==="held"&&o.inventory_reservation_expires_at){hold.textContent="Limited stock is reserved for this order until "+new Date(o.inventory_reservation_expires_at).toLocaleString()+". RANOVA must confirm payment before this hold expires.";hold.style.display="block"}else hold.style.display="none";
   el("track").href="./order-status.html?ref="+encodeURIComponent(o.order_ref||"");try{localStorage.setItem("ranova_buyer_code_"+o.order_ref,o.buyer_access_code||"")}catch(e){}quote={groups:[],item_count:0,total_quantity:0,product_total:0};render()
  }catch(e){m.textContent=e.message||"Could not place order.";m.style.display="block"}finally{b.disabled=false;b.textContent="Place marketplace order"}
 };
-(async function(){var gs=await sb.auth.getSession();session=gs.data.session;el("authNote").querySelector("p").innerHTML=session?'Signed in as <b>'+esc(session.user.email||"buyer")+'</b>. This cart syncs across devices.':'Guest cart: stored only on this device. <a href="./account.html" style="font-weight:900;color:var(--g)">Sign in</a> for cross-device cart sync.';await loadCountries();await loadAccountCart();prefill();await addFromUrl();await getQuote()})();
+(async function(){loadQuoteMap();var gs=await sb.auth.getSession();session=gs.data.session;el("authNote").querySelector("p").innerHTML=session?'Signed in as <b>'+esc(session.user.email||"buyer")+'</b>. This cart syncs across devices.':'Guest cart: stored only on this device. <a href="./account.html" style="font-weight:900;color:var(--g)">Sign in</a> for cross-device cart sync.';await loadCountries();await loadAccountCart();prefill();await addFromUrl();await getQuote()})();
 })();
 </script></body></html>
