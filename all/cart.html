@@ -44,7 +44,7 @@
   <div class="field"><label>Note for sellers / RANOVA</label><textarea id="note" rows="2"></textarea></div>
   <button id="placeOrder" class="primary">Place marketplace order</button>
  </div>
- <div id="success" class="card checkout"><h2>Order received</h2><p>Keep this Buyer Security Code private. It protects sensitive guest-order actions.</p><div id="ref" style="font-weight:900;text-align:center;margin:10px"></div><div id="code" class="code"></div><div id="inventoryHold" class="msg good" style="display:none;margin-top:10px"></div><a id="track" class="secondary" style="display:grid;place-items:center" href="#">Track order</a></div>
+ <div id="success" class="card checkout"><h2>Order received</h2><p>Keep this Buyer Security Code private. It protects sensitive guest-order actions.</p><div id="ref" style="font-weight:900;text-align:center;margin:10px"></div><div id="code" class="code"></div><div id="inventoryHold" class="msg good" style="display:none;margin-top:10px"></div><div class="msg good" style="display:block;margin-top:10px">Do not send money directly to a supplier. Payment opens in Order Tracking only after every supplier confirms the final product and delivery amount. RANOVA then keeps supplier payout pending until buyer-protection checks pass.</div><a id="track" class="secondary" style="display:grid;place-items:center" href="#">Track order / pay securely</a></div>
 </aside>
 </div></main>
 <script>
@@ -133,7 +133,7 @@ el("placeOrder").onclick=async function(){
   cart={};quoteMap={};saveQuoteMap();if(session){await sb.from("ranova_buyer_carts").delete().eq("user_id",session.user.id)}else localSave();
   el("checkoutCard").style.display="none";el("success").style.display="block";el("ref").textContent=o.order_ref;el("code").textContent=o.buyer_access_code||"";
   var hold=el("inventoryHold");if(o.inventory_status==="held"&&o.inventory_reservation_expires_at){hold.textContent="Limited stock is reserved for this order until "+new Date(o.inventory_reservation_expires_at).toLocaleString()+". RANOVA must confirm payment before this hold expires.";hold.style.display="block"}else hold.style.display="none";
-  el("track").href="./order-status.html?ref="+encodeURIComponent(o.order_ref||"");try{localStorage.setItem("ranova_buyer_code_"+o.order_ref,o.buyer_access_code||"")}catch(e){}quote={groups:[],item_count:0,total_quantity:0,product_total:0};render()
+  el("track").href="./order-status.html?ref="+encodeURIComponent(o.order_ref||"");try{localStorage.setItem("ranova_buyer_code_"+o.order_ref,o.buyer_access_code||"");localStorage.setItem("ranova_buyer_phone_"+o.order_ref,el("phone").value.trim())}catch(e){}quote={groups:[],item_count:0,total_quantity:0,product_total:0};render()
  }catch(e){m.textContent=e.message||"Could not place order.";m.style.display="block"}finally{b.disabled=false;b.textContent="Place marketplace order"}
 };
 (async function(){loadQuoteMap();var gs=await sb.auth.getSession();session=gs.data.session;el("authNote").querySelector("p").innerHTML=session?'Signed in as <b>'+esc(session.user.email||"buyer")+'</b>. This cart syncs across devices.':'Guest cart: stored only on this device. <a href="./account.html" style="font-weight:900;color:var(--g)">Sign in</a> for cross-device cart sync.';await loadCountries();await loadAccountCart();prefill();await addFromUrl();await getQuote()})();
