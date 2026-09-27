@@ -11,11 +11,20 @@ function headers(origin:string|null){
   return {
     "Content-Type":"application/json",
     "Access-Control-Allow-Origin":allow||ALLOWED_ORIGIN,
-    "Access-Control-Allow-Headers":"content-type,x-ranova-client",
+    "Access-Control-Allow-Headers":"content-type,x-ranova-client,authorization,apikey",
     "Access-Control-Allow-Methods":"POST,OPTIONS"
   };
 }
 function clean(v:any,max=180){return String(v??"").trim().slice(0,max)}
+async function sha256(v:string){const bytes=new TextEncoder().encode(v);const digest=await crypto.subtle.digest("SHA-256",bytes);return Array.from(new Uint8Array(digest)).map(x=>x.toString(16).padStart(2,"0")).join("");}
+async function optionalUser(req:Request){
+  const auth=req.headers.get("authorization")||"";
+  if(!auth.startsWith("Bearer "))return null;
+  const token=auth.slice(7);
+  const {data,error}=await admin.auth.getUser(token);
+  return error?null:data.user;
+}
+function buyerCode(){return crypto.randomUUID().replace(/-/g,"").slice(0,10).toUpperCase()}
 function refCode(){
   const d=new Date(),y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,"0"),day=String(d.getUTCDate()).padStart(2,"0");
   const token=crypto.randomUUID().replace(/-/g,"").slice(0,6).toUpperCase();
@@ -60,7 +69,7 @@ async function resolveItems(raw:any[]){
 
   if(ids.length){
     const {data:products,error}=await admin.from("ranova_seller_products")
-      .select("id,seller_id,store_id,name,sku,category,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,product_status")
+      .select("id,seller_id,store_id,name,sku,category,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,pricing_tiers,product_status")
       .in("id",ids);
     if(error)throw error;
     const productMap=new Map((products||[]).map((p:any)=>[p.id,p]));
@@ -71,6 +80,7 @@ async function resolveItems(raw:any[]){
     if(storeError)throw storeError;
     const storeMap=new Map((stores||[]).map((s:any)=>[s.id,s]));
     const sellerApproval=new Map<string,boolean>();
+    const enforcementMap=new Map<string,string>();
 
     for(const r of sellerRaw){
       const p:any=productMap.get(r.seller_product_id);
@@ -79,11 +89,23 @@ async function resolveItems(raw:any[]){
       if(!store||store.store_status!=="active")throw new Error("One of the selected seller stores is not currently active.");
       if(!sellerApproval.has(p.seller_id))sellerApproval.set(p.seller_id,await approvedSeller(p.seller_id));
       if(!sellerApproval.get(p.seller_id))throw new Error("One of the selected sellers is not currently approved.");
+      if(!enforcementMap.has(p.store_id)){
+        const {data:enf}=await admin.from("ranova_seller_enforcement").select("enforcement_status,ends_at").eq("store_id",p.store_id).maybeSingle();
+        let status=String(enf?.enforcement_status||"good_standing");
+        if(enf?.ends_at&&new Date(enf.ends_at).getTime()<=Date.now())status="good_standing";
+        enforcementMap.set(p.store_id,status);
+      }
+      const enforcement=enforcementMap.get(p.store_id);
+      if(enforcement==="restricted"||enforcement==="suspended")throw new Error("This seller store is temporarily not accepting new marketplace orders.");
       if(p.stock_status==="out_of_stock")throw new Error(p.name+" is currently out of stock.");
       if(r.quantity<Number(p.moq||1))throw new Error(p.name+" has a minimum order quantity of "+Number(p.moq||1)+".");
       if(p.stock_quantity!==null&&r.quantity>Number(p.stock_quantity))throw new Error("Requested quantity for "+p.name+" is above the seller's listed stock.");
 
-      const unitPrice=p.price===null?null:Number(p.price);
+      let unitPrice=p.price===null?null:Number(p.price);
+      const tiers=Array.isArray(p.pricing_tiers)?p.pricing_tiers.slice().sort((a:any,b:any)=>Number(a.min_qty)-Number(b.min_qty)):[];
+      for(const tier of tiers){
+        if(r.quantity>=Number(tier?.min_qty||0)&&Number.isFinite(Number(tier?.unit_price)))unitPrice=Number(tier.unit_price);
+      }
       resolved.push({
         kind:"seller",
         seller_product_id:p.id,
@@ -144,8 +166,10 @@ Deno.serve(async(req:Request)=>{
   if(req.headers.get("x-ranova-client")!=="ranova-site-v1")return new Response(JSON.stringify({ok:false,error:"Invalid client"}),{status:403,headers:h});
 
   let masterId:string|null=null;
+  let reservationOrderRef:string|null=null;
   try{
     const b=await req.json();
+    const buyerUser=await optionalUser(req);
     const customer_name=clean(b.customer_name,100);
     const customer_phone=clean(b.customer_phone,40);
     const customer_email=clean(b.customer_email,180);
@@ -176,10 +200,20 @@ Deno.serve(async(req:Request)=>{
     const product_name=items.length===1?items[0].product_name:`${items.length} products`;
     const product_id=items.length===1?items[0].product_id:null;
     const order_ref=refCode();
+    const buyer_access_code=buyerCode();
+    const buyer_access_code_hash=await sha256(buyer_access_code);
     const sellerItems=items.filter(x=>x.kind==="seller");
     const ownItems=items.filter(x=>x.kind==="ranova");
     const storeIds=[...new Set(sellerItems.map(x=>x.store_id))];
     const order_source=sellerItems.length&&ownItems.length?"mixed_marketplace":sellerItems.length?"seller_store":"ranova_catalogue";
+    let inventoryReservation:any={reserved_lines:0,expires_at:null};
+    if(sellerItems.length){
+      const reservePayload=sellerItems.map((x:any)=>({product_id:x.seller_product_id,quantity:x.quantity}));
+      const {data:reserved,error:reserveError}=await admin.rpc("ranova_reserve_order_inventory",{p_order_ref:order_ref,p_items:reservePayload,p_minutes:null});
+      if(reserveError)throw reserveError;
+      inventoryReservation=reserved||inventoryReservation;
+      reservationOrderRef=order_ref;
+    }
 
     const customerItems=items.map(x=>({
       source:x.kind==="seller"?"seller_store":"ranova_catalogue",
@@ -195,6 +229,8 @@ Deno.serve(async(req:Request)=>{
 
     const {data:master,error:masterError}=await admin.from("ranova_customer_orders").insert({
       order_ref,
+      buyer_access_code_hash,
+      buyer_user_id:buyerUser?.id||null,
       customer_name,
       customer_phone,
       customer_email:customer_email||null,
@@ -216,7 +252,9 @@ Deno.serve(async(req:Request)=>{
       payment_status:"not_started",
       buyer_note:buyer_note||null,
       order_source,
-      seller_order_count:storeIds.length
+      seller_order_count:storeIds.length,
+      inventory_status:Number(inventoryReservation.reserved_lines||0)>0?"held":"not_required",
+      inventory_reservation_expires_at:inventoryReservation.expires_at||null
     }).select("id").single();
     if(masterError||!master)throw masterError||new Error("Could not create order.");
     masterId=master.id;
@@ -274,13 +312,19 @@ Deno.serve(async(req:Request)=>{
     }
 
     if(childOrders.length){
-      const {error:childError}=await admin.from("ranova_seller_orders").insert(childOrders);
+      const {data:insertedChildren,error:childError}=await admin.from("ranova_seller_orders").insert(childOrders).select("id,store_id");
       if(childError){
         await admin.from("ranova_seller_orders").delete().eq("parent_order_id",master.id);
         await admin.from("ranova_customer_orders").delete().eq("id",master.id);
         masterId=null;
         throw childError;
       }
+      for(const child of insertedChildren||[]){
+        await admin.from("ranova_inventory_reservations").update({customer_order_id:master.id,seller_order_id:child.id,updated_at:new Date().toISOString()})
+          .eq("order_ref",order_ref).eq("store_id",child.store_id).eq("status","held");
+      }
+      await admin.from("ranova_inventory_reservations").update({customer_order_id:master.id,updated_at:new Date().toISOString()})
+        .eq("order_ref",order_ref).is("customer_order_id",null);
       const rules=childOrders.map((x:any)=>x.country_rule_id).filter(Boolean);
       const processingRates=childOrders.map((x:any)=>Number(x.payment_processing_rate_snapshot||0));
       const requiredPercents=childOrders.map((x:any)=>Number(x.required_payment_percent_snapshot==null?100:x.required_payment_percent_snapshot));
@@ -291,9 +335,46 @@ Deno.serve(async(req:Request)=>{
       }).eq("id",master.id);
     }
 
+    try{
+      let buyerEmailRequested=!!customer_email;
+      if(buyerUser?.id){
+        const {data:pref}=await admin.from("ranova_buyer_preferences").select("email_order_updates").eq("user_id",buyerUser.id).maybeSingle();
+        if(pref?.email_order_updates===false)buyerEmailRequested=false;
+      }
+      await admin.from("ranova_marketplace_notifications").insert({
+        recipient_type:"buyer",recipient_user_id:buyerUser?.id||null,recipient_email:customer_email||null,customer_order_id:master.id,
+        notification_type:"order_placed",notification_category:"transactional",
+        title:"RANOVA order received",
+        message:"Your marketplace order "+order_ref+" has been received. "+(Number(inventoryReservation.reserved_lines||0)>0?"Limited stock is temporarily reserved while the order proceeds. ":"")+"Payment instructions are provided only through the protected RANOVA order flow.",
+        metadata:{order_ref,item_count:items.length,seller_order_count:childOrders.length,inventory_expires_at:inventoryReservation.expires_at||null},
+        in_app_visible:true,email_requested:buyerEmailRequested,email_status:buyerEmailRequested?"queued":"not_requested",
+        action_url:"/appliances/all/order-status.html?ref="+encodeURIComponent(order_ref),
+        dedupe_key:"order-placed:"+master.id
+      });
+      if(childOrders.length){
+        const sellerIds=[...new Set(childOrders.map((x:any)=>x.seller_id))];
+        const {data:sellerUsers}=await admin.auth.admin.listUsers({page:1,perPage:1000});
+        const emailMap=new Map((sellerUsers?.users||[]).filter((u:any)=>sellerIds.includes(u.id)).map((u:any)=>[u.id,u.email||null]));
+        for(const child of childOrders){
+          const sellerEmail=emailMap.get(child.seller_id)||null;
+          await admin.from("ranova_marketplace_notifications").insert({
+            recipient_type:"seller",recipient_user_id:child.seller_id,recipient_email:sellerEmail,
+            customer_order_id:master.id,notification_type:"seller_new_order",notification_category:"transactional",
+            title:"New RANOVA marketplace order",
+            message:"A new seller order "+child.order_ref+" is waiting in your Seller Dashboard. Review the products, delivery and order amount before confirming.",
+            metadata:{platform_order_ref:order_ref,seller_order_ref:child.order_ref,store_id:child.store_id},
+            in_app_visible:true,email_requested:!!sellerEmail,email_status:sellerEmail?"queued":"not_requested",
+            action_url:"/appliances/all/seller-dashboard.html",
+            dedupe_key:"seller-new-order:"+child.order_ref
+          });
+        }
+      }
+    }catch(notificationError){console.error("Notification queue error",notificationError)}
+
     return new Response(JSON.stringify({
       ok:true,
       order_ref,
+      buyer_access_code,
       item_count:items.length,
       quantity,
       product_total,
@@ -301,7 +382,11 @@ Deno.serve(async(req:Request)=>{
       order_source,
       status:"awaiting_confirmation",
       payment_status:"not_started",
-      message:"Order placed successfully. Payment instructions will only be provided after order confirmation."
+      inventory_status:Number(inventoryReservation.reserved_lines||0)>0?"held":"not_required",
+      inventory_reservation_expires_at:inventoryReservation.expires_at||null,
+      message:Number(inventoryReservation.reserved_lines||0)>0
+        ?"Order placed successfully. Limited stock is temporarily reserved until "+new Date(inventoryReservation.expires_at).toLocaleString()+". Payment must be confirmed before the reservation expires."
+        :"Order placed successfully. Payment instructions will only be provided after order confirmation."
     }),{status:200,headers:h});
   }catch(e){
     console.error(e);
@@ -310,6 +395,9 @@ Deno.serve(async(req:Request)=>{
         await admin.from("ranova_seller_orders").delete().eq("parent_order_id",masterId);
         await admin.from("ranova_customer_orders").delete().eq("id",masterId);
       }catch{}
+    }
+    if(reservationOrderRef){
+      try{await admin.rpc("ranova_release_order_inventory",{p_order_ref:reservationOrderRef,p_seller_order_id:null,p_reason:"Order creation failed; temporary inventory hold released.",p_restore_committed:false,p_actor_type:"system",p_actor_user_id:null})}catch{}
     }
     const message=e instanceof Error&&e.message?e.message:"Could not place the order. Please try again.";
     return new Response(JSON.stringify({ok:false,error:message}),{status:400,headers:h});
