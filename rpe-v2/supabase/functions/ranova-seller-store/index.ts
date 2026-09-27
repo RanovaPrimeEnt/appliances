@@ -134,7 +134,7 @@ async function loadDashboard(userId:string,seller:any){
   const stores=await serviceGet("ranova_seller_stores",{select:"*",seller_id:"eq."+userId,limit:"1"});
   const store=stores[0]||null;
   const products=store?await serviceGet("ranova_seller_products",{
-    select:"id,name,slug,sku,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,product_status,moderation_note,created_at,updated_at",
+    select:"id,name,slug,sku,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,specifications,pricing_tiers,product_status,moderation_note,created_at,updated_at",
     seller_id:"eq."+userId,
     order:"created_at.desc"
   }):[];
@@ -151,8 +151,16 @@ async function loadDashboard(userId:string,seller:any){
     orders:orders.length,
     open_orders:orders.filter((o:any)=>!["delivered","cancelled","returned"].includes(o.order_status)).length
   };
-  let finance_profile=null,payouts=[],finance_settings=null,notifications=[],refunds=[],disputes=[],delivery_zones=[],deliveries=[],delivery_events=[],delivery_proofs=[];
+  let finance_profile=null,payouts=[],finance_settings=null,notifications=[],refunds=[],disputes=[],delivery_zones=[],deliveries=[],delivery_events=[],delivery_proofs=[],reviews=[],trust_metrics=null,performance=null,enforcement=null,enforcement_events=[],appeals=[],inventory_reservations=[],inventory_events=[];
   if(store){
+    inventory_reservations=await serviceGet("ranova_inventory_reservations",{
+      select:"id,order_ref,customer_order_id,seller_order_id,product_id,store_id,quantity,status,reserved_at,expires_at,committed_at,released_at,release_reason,updated_at",
+      store_id:"eq."+store.id,order:"reserved_at.desc",limit:"200"
+    });
+    inventory_events=await serviceGet("ranova_inventory_events",{
+      select:"id,reservation_id,product_id,store_id,order_ref,seller_order_id,event_type,quantity,stock_before,stock_after,note,actor_type,created_at",
+      store_id:"eq."+store.id,order:"created_at.desc",limit:"300"
+    });
     const profiles=await serviceGet("ranova_seller_finance_profiles",{select:"seller_id,store_id,payout_method,provider_name,account_name,account_reference,commission_rate_override,updated_at",seller_id:"eq."+userId,limit:"1"});
     finance_profile=profiles[0]||null;
     payouts=await serviceGet("ranova_seller_payouts",{
@@ -191,6 +199,37 @@ async function loadDashboard(userId:string,seller:any){
         limit:"500"
       });
     }
+
+    reviews=await serviceGet("ranova_marketplace_reviews",{
+      select:"id,review_ref,seller_order_id,buyer_display_name,overall_rating,product_rating,service_rating,delivery_rating,review_title,review_text,recommend,verified_purchase,moderation_status,moderation_note,submitted_at,published_at,seller_response,seller_responded_at",
+      store_id:"eq."+store.id,
+      order:"submitted_at.desc",
+      limit:"200"
+    });
+    const tm=await serviceGet("ranova_seller_trust_metrics",{
+      select:"store_id,published_review_count,overall_rating,product_rating,service_rating,delivery_rating,completed_orders,confirmed_deliveries,complaint_orders,dispute_orders,refund_orders,complaint_order_rate,delivery_confirmation_rate,updated_at",
+      store_id:"eq."+store.id,
+      limit:"1"
+    });
+    trust_metrics=tm[0]||null;
+    const perf=await serviceGet("ranova_seller_performance",{
+      select:"store_id,total_orders,completed_orders,cancelled_orders,returned_orders,cancellation_rate,return_rate,deliveries_with_eta,late_deliveries,late_delivery_rate,confirmed_deliveries,complaint_orders,complaint_order_rate,published_review_count,overall_rating,fulfillment_score,service_score,performance_level,trusted_badge,automated_reasons,calculated_at",
+      store_id:"eq."+store.id,limit:"1"
+    });
+    performance=perf[0]||null;
+    const enf=await serviceGet("ranova_seller_enforcement",{
+      select:"store_id,enforcement_status,reason_code,reason_detail,starts_at,ends_at,imposed_at,lifted_at,lift_reason,updated_at",
+      store_id:"eq."+store.id,limit:"1"
+    });
+    enforcement=enf[0]||null;
+    enforcement_events=await serviceGet("ranova_seller_enforcement_events",{
+      select:"id,action,reason_code,reason_detail,previous_status,new_status,actor_type,created_at",
+      store_id:"eq."+store.id,order:"created_at.desc",limit:"100"
+    });
+    appeals=await serviceGet("ranova_seller_appeals",{
+      select:"id,appeal_ref,enforcement_event_id,subject,appeal_text,status,admin_note,submitted_at,reviewed_at,updated_at",
+      store_id:"eq."+store.id,order:"submitted_at.desc",limit:"100"
+    });
 
     notifications=await serviceGet("ranova_marketplace_notifications",{
       select:"id,customer_order_id,seller_order_id,notification_type,title,message,metadata,read_at,created_at",
@@ -231,10 +270,30 @@ async function loadDashboard(userId:string,seller:any){
     disputes.filter((d:any)=>!["resolved","closed"].includes(d.status)).length;
   counts.active_deliveries=deliveries.filter((d:any)=>!["delivered_confirmed","returned","cancelled"].includes(d.delivery_status)).length;
   counts.awaiting_delivery_confirmation=deliveries.filter((d:any)=>d.delivery_status==="delivered_pending_confirmation").length;
-  return {ok:true,linked:true,approved:seller.approved,application:seller.application,store,products,orders,counts,finance_profile,payouts,finance_settings,notifications,refunds,disputes,delivery_zones,deliveries,delivery_events,delivery_proofs};
+  counts.published_reviews=reviews.filter((r:any)=>r.moderation_status==="published").length;
+  counts.pending_reviews=reviews.filter((r:any)=>r.moderation_status==="pending").length;
+  return {ok:true,linked:true,approved:seller.approved,application:seller.application,store,products,orders,counts,finance_profile,payouts,finance_settings,notifications,refunds,disputes,delivery_zones,deliveries,delivery_events,delivery_proofs,reviews,trust_metrics,performance,enforcement,enforcement_events,appeals,inventory_reservations,inventory_events};
 }
 function response(h:Record<string,string>,status:number,payload:any){
   return new Response(JSON.stringify(payload),{status,headers:h});
+}
+async function queueBuyerOrderNotice(order:any,type:string,title:string,message:string,metadata:any={}){
+  const {data:parent}=await admin.from("ranova_customer_orders")
+    .select("id,order_ref,buyer_user_id,customer_email").eq("id",order.parent_order_id).maybeSingle();
+  if(!parent)return;
+  let emailRequested=!!parent.customer_email;
+  if(parent.buyer_user_id){
+    const {data:pref}=await admin.from("ranova_buyer_preferences").select("email_order_updates").eq("user_id",parent.buyer_user_id).maybeSingle();
+    if(pref?.email_order_updates===false)emailRequested=false;
+  }
+  const {error}=await admin.from("ranova_marketplace_notifications").insert({
+    recipient_type:"buyer",recipient_user_id:parent.buyer_user_id||null,recipient_email:parent.customer_email||null,
+    customer_order_id:parent.id,seller_order_id:order.id,notification_type:type,notification_category:"transactional",
+    title,message,metadata,in_app_visible:true,email_requested:emailRequested,email_status:emailRequested?"queued":"not_requested",
+    action_url:"/appliances/all/order-status.html?ref="+encodeURIComponent(parent.order_ref),
+    dedupe_key:type+":"+order.id+":"+String(metadata.status||metadata.delivery_status||"")
+  });
+  if(error&&String(error.code||"")!=="23505")throw error;
 }
 
 Deno.serve(async(req:Request)=>{
@@ -256,6 +315,14 @@ Deno.serve(async(req:Request)=>{
     if(action==="dashboard"){
       return response(h,200,await loadDashboard(user.id,seller));
     }
+    if(action==="mark_notifications_read"){
+      const id=clean(b.id,80),now=new Date().toISOString();
+      let q=admin.from("ranova_marketplace_notifications").update({read_at:now})
+        .eq("recipient_user_id",user.id).eq("recipient_type","seller");
+      if(id)q=q.eq("id",id);else q=q.is("read_at",null);
+      const {error}=await q;if(error)throw error;
+      return response(h,200,{ok:true});
+    }
 
     if(!seller.approved){
       return response(h,403,{ok:false,error:"Store management unlocks after RANOVA approves your seller verification."});
@@ -273,6 +340,13 @@ Deno.serve(async(req:Request)=>{
 
       const requestedStatus=clean(b.store_status,20);
       const store_status=["draft","active","paused"].includes(requestedStatus)?requestedStatus:(existing?.store_status||"draft");
+      if(store_status==="active"&&existing){
+        const enf=await serviceGet("ranova_seller_enforcement",{select:"enforcement_status,ends_at",store_id:"eq."+existing.id,limit:"1"});
+        const e=enf[0];
+        if(e&&e.enforcement_status==="suspended"&&(!e.ends_at||new Date(e.ends_at).getTime()>Date.now())){
+          return response(h,403,{ok:false,error:"This store is suspended by RANOVA and cannot be republished until the enforcement action is lifted or expires."});
+        }
+      }
       const public_phone=clean(b.public_phone,40)||clean(seller.application.phone,40);
       const public_email=clean(b.public_email,180)||clean(seller.application.email,180);
       const business_location=clean(b.business_location,180)||clean(seller.application.business_location,180);
@@ -556,21 +630,31 @@ Deno.serve(async(req:Request)=>{
         ["assigned","picked_up","in_transit","out_for_delivery","delivered_pending_confirmation"].includes(next)?"dispatched":
         next==="returned"?"returned":next==="cancelled"?"cancelled":order.order_status;
       if(sellerStatus!==order.order_status){
+        if(next==="cancelled"){
+          const {error:releaseErr}=await admin.rpc("ranova_release_order_inventory",{
+            p_order_ref:order.platform_order_ref,p_seller_order_id:order.id,
+            p_reason:note||"Delivery cancelled before completion.",p_restore_committed:false,
+            p_actor_type:"seller",p_actor_user_id:user.id
+          });
+          if(releaseErr)throw releaseErr;
+        }
+        if(next==="returned"){
+          const {error:restoreErr}=await admin.rpc("ranova_release_order_inventory",{
+            p_order_ref:order.platform_order_ref,p_seller_order_id:order.id,
+            p_reason:note||"Returned goods restored to seller inventory.",p_restore_committed:true,
+            p_actor_type:"seller",p_actor_user_id:user.id
+          });
+          if(restoreErr)throw restoreErr;
+        }
         await admin.from("ranova_seller_orders").update({order_status:sellerStatus,updated_at:now}).eq("id",order.id);
         await syncParentOrder(order.parent_order_id||null);
       }
       await admin.from("ranova_delivery_events").insert({
         delivery_id:delivery.id,seller_order_id:order.id,status:next,actor_type:"seller",actor_user_id:user.id,note:note||null
       });
-      if(order.buyer_email){
-        await admin.from("ranova_marketplace_notifications").insert({
-          recipient_type:"buyer",recipient_email:order.buyer_email,customer_order_id:order.parent_order_id,seller_order_id:order.id,
-          notification_type:"delivery_status",title:"RANOVA delivery update",
-          message:"Delivery for seller order "+order.order_ref+" is now "+next.replace(/_/g," ")+".",
-          metadata:{seller_order_ref:order.order_ref,delivery_status:next},
-          email_requested:true,email_status:"queued"
-        });
-      }
+      await queueBuyerOrderNotice(order,"delivery_status","RANOVA delivery update",
+        "Delivery for seller order "+order.order_ref+" is now "+next.replace(/_/g," ")+(note?". "+note:""),
+        {seller_order_ref:order.order_ref,delivery_status:next});
       return response(h,200,{ok:true});
     }
 
@@ -617,6 +701,12 @@ Deno.serve(async(req:Request)=>{
       if(!slug)slug="product";
       if(!existing)slug=(slug+"-"+Date.now().toString(36)).slice(0,100);
 
+      const nextStock=int(b.stock_quantity,0,1000000);
+      if(existing&&nextStock!==null){
+        const {data:holds}=await admin.from("ranova_inventory_reservations").select("quantity").eq("product_id",existing.id).eq("status","held").gt("expires_at",new Date().toISOString());
+        const reserved=(holds||[]).reduce((n:number,x:any)=>n+Number(x.quantity||0),0);
+        if(nextStock<reserved)return response(h,409,{ok:false,error:"Stock cannot be lowered below "+reserved+" unit(s) currently reserved by active buyer orders."});
+      }
       const payload:any={
         seller_id:user.id,
         store_id:store.id,
@@ -629,11 +719,28 @@ Deno.serve(async(req:Request)=>{
         price:num(b.price),
         currency:"GHS",
         moq:int(b.moq,1,100000)||1,
-        stock_quantity:int(b.stock_quantity,0,1000000),
+        stock_quantity:nextStock,
         stock_status:["in_stock","low_stock","out_of_stock","preorder","confirm_on_enquiry"].includes(clean(b.stock_status,30))?clean(b.stock_status,30):"confirm_on_enquiry",
         unit_label:clean(b.unit_label,60)||null,
         primary_image_url:safeAssetUrl(b.primary_image_url)||null,
         image_urls:safeAssetUrls(b.image_urls),
+        specifications:(()=>{
+          const out:any={};
+          const raw=b.specifications;
+          if(raw&&typeof raw==="object"&&!Array.isArray(raw)){
+            Object.entries(raw).slice(0,30).forEach(([k,v])=>{
+              const key=clean(k,80),val=clean(v,300);if(key&&val)out[key]=val;
+            });
+          }
+          return out;
+        })(),
+        pricing_tiers:(()=>{
+          if(!Array.isArray(b.pricing_tiers))return [];
+          const rows=b.pricing_tiers.slice(0,20).map((x:any)=>({min_qty:int(x?.min_qty,1,100000)||1,unit_price:num(x?.unit_price)}))
+            .filter((x:any)=>x.unit_price!==null&&x.unit_price>=0).sort((a:any,b:any)=>a.min_qty-b.min_qty);
+          const seen=new Set<number>();
+          return rows.filter((x:any)=>{if(seen.has(x.min_qty))return false;seen.add(x.min_qty);return true});
+        })(),
         updated_at:new Date().toISOString()
       };
       if(existing){
@@ -736,6 +843,9 @@ Deno.serve(async(req:Request)=>{
         });
       }
       await syncParentOrder(order.parent_order_id||null);
+      await queueBuyerOrderNotice(order,"seller_order_status","RANOVA seller order update",
+        "Seller order "+order.order_ref+" is now "+next.replace(/_/g," ")+(note?". "+note:""),
+        {seller_order_ref:order.order_ref,status:next});
       return response(h,200,{ok:true,order:out[0]});
     }
 
@@ -762,9 +872,29 @@ Deno.serve(async(req:Request)=>{
       if(next==="confirmed"&&order.total===null){
         return response(h,400,{ok:false,error:"Set the final product subtotal and delivery fee before confirming this order."});
       }
+      const note=clean(b.seller_note,1000);
+      if(next==="cancelled"&&String(order.payment_status)==="paid"){
+        return response(h,409,{ok:false,error:"A paid order cannot be cancelled by the seller. Use the refund/dispute process so stock, buyer money and seller payout stay auditable."});
+      }
+      if(next==="cancelled"){
+        const {error:releaseErr}=await admin.rpc("ranova_release_order_inventory",{
+          p_order_ref:order.platform_order_ref,p_seller_order_id:order.id,
+          p_reason:note||"Seller cancelled unpaid order.",p_restore_committed:false,
+          p_actor_type:"seller",p_actor_user_id:user.id
+        });
+        if(releaseErr)throw releaseErr;
+      }
+      if(next==="returned"){
+        if(!note)return response(h,400,{ok:false,error:"Add a return note confirming the goods were actually received back before stock is restored."});
+        const {error:restoreErr}=await admin.rpc("ranova_release_order_inventory",{
+          p_order_ref:order.platform_order_ref,p_seller_order_id:order.id,
+          p_reason:note,p_restore_committed:true,
+          p_actor_type:"seller",p_actor_user_id:user.id
+        });
+        if(restoreErr)throw restoreErr;
+      }
       const patch:any={order_status:next,updated_at:new Date().toISOString()};
       if(next==="confirmed")patch.payment_status="pending";
-      const note=clean(b.seller_note,1000);
       if(note)patch.seller_note=note;
       const r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_orders?id=eq."+encodeURIComponent(id)+"&seller_id=eq."+encodeURIComponent(user.id),{
         method:"PATCH",
@@ -816,16 +946,61 @@ Deno.serve(async(req:Request)=>{
         body:JSON.stringify({status:"under_review",updated_at:new Date().toISOString()})
       });
 
-      const buyerEmail=sellerOrders.find((x:any)=>x.buyer_email)?.buyer_email||null;
-      await fetch(SUPABASE_URL+"/rest/v1/ranova_marketplace_notifications",{
+      await queueBuyerOrderNotice(sellerOrders[0],"dispute_message","Seller replied to your RANOVA dispute",
+        "The seller added a message to dispute "+disputeRef+". Open order tracking to review it.",
+        {dispute_ref:disputeRef,status:"reply"});
+      return response(h,200,{ok:true});
+    }
+
+    if(action==="submit_enforcement_appeal"){
+      const stores=await serviceGet("ranova_seller_stores",{select:"id",seller_id:"eq."+user.id,limit:"1"});
+      const store=stores[0];
+      if(!store)return response(h,404,{ok:false,error:"Create your seller store before filing an appeal."});
+      const enforcementRows=await serviceGet("ranova_seller_enforcement",{select:"enforcement_status",store_id:"eq."+store.id,limit:"1"});
+      const enforcement=enforcementRows[0];
+      if(!enforcement||enforcement.enforcement_status==="good_standing")return response(h,409,{ok:false,error:"There is no active enforcement action to appeal."});
+      const subject=clean(b.subject,180),appeal_text=clean(b.appeal_text,3000);
+      if(subject.length<5||appeal_text.length<20)return response(h,400,{ok:false,error:"Add a clear appeal subject and explanation."});
+      const active=await serviceGet("ranova_seller_appeals",{
+        select:"id,appeal_ref,status",store_id:"eq."+store.id,status:"in.(submitted,under_review)",limit:"1"
+      });
+      if(active.length)return response(h,409,{ok:false,error:"An appeal is already being reviewed.",appeal_ref:active[0].appeal_ref});
+      const events=await serviceGet("ranova_seller_enforcement_events",{
+        select:"id",store_id:"eq."+store.id,order:"created_at.desc",limit:"1"
+      });
+      const appeal_ref="APL-"+Date.now().toString(36).toUpperCase()+"-"+crypto.randomUUID().slice(0,5).toUpperCase();
+      const r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_appeals",{
+        method:"POST",headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json",Prefer:"return=representation"},
+        body:JSON.stringify({appeal_ref,store_id:store.id,seller_id:user.id,enforcement_event_id:events[0]?.id||null,subject,appeal_text,status:"submitted"})
+      });
+      if(!r.ok)throw new Error("Could not submit appeal.");
+      return response(h,200,{ok:true,appeal_ref});
+    }
+
+    if(action==="respond_to_review"){
+      const reviewId=clean(b.id,80),reply=clean(b.response,1800);
+      if(reply.length<2)return response(h,400,{ok:false,error:"Write a seller response before publishing it."});
+      const rows=await serviceGet("ranova_marketplace_reviews",{
+        select:"id,store_id,seller_id,moderation_status",
+        id:"eq."+reviewId,
+        seller_id:"eq."+user.id,
+        limit:"1"
+      });
+      const review=rows[0];
+      if(!review)return response(h,404,{ok:false,error:"Review not found for this seller."});
+      if(review.moderation_status!=="published")return response(h,409,{ok:false,error:"You can respond only to a published review."});
+      const now=new Date().toISOString();
+      const r=await fetch(SUPABASE_URL+"/rest/v1/ranova_marketplace_reviews?id=eq."+encodeURIComponent(reviewId)+"&seller_id=eq."+encodeURIComponent(user.id),{
+        method:"PATCH",
+        headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json",Prefer:"return=representation"},
+        body:JSON.stringify({seller_response:reply,seller_responded_at:now,updated_at:now})
+      });
+      const changed=await r.json().catch(()=>[]);
+      if(!r.ok||!changed.length)throw new Error("Could not save seller response.");
+      await fetch(SUPABASE_URL+"/rest/v1/ranova_review_moderation_events",{
         method:"POST",
         headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json"},
-        body:JSON.stringify({
-          recipient_type:"buyer",recipient_email:buyerEmail,customer_order_id:dispute.customer_order_id,
-          notification_type:"dispute_message",title:"Seller replied to your RANOVA dispute",
-          message:"The seller added a message to dispute "+disputeRef+". Open order tracking to review it.",
-          metadata:{dispute_ref:disputeRef},email_requested:!!buyerEmail,email_status:buyerEmail?"queued":"not_requested"
-        })
+        body:JSON.stringify({review_id:reviewId,actor_type:"seller",actor_user_id:user.id,action:"seller_response",reason:"Seller posted a public response."})
       });
       return response(h,200,{ok:true});
     }
