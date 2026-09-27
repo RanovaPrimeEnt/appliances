@@ -947,11 +947,31 @@ function openStoreRegistryDetail(ref){
   const reviews=store?(market.reviews||[]).filter(x=>x.store_id===store.id):[];
   const enforcement=store?(market.enforcement||[]).find(x=>x.store_id===store.id):null;
   const performance=store?(market.performance||[]).find(x=>x.store_id===store.id):null;
+  const evidence=reports.flatMap(r=>(market.report_evidence||[]).filter(e=>e.report_id===r.id).map(e=>({...e,report_ref:r.report_ref})));
+  const cases=store?(market.store_cases||[]).filter(x=>x.store_id===store.id):[];
+  const thread=store?(market.admin_seller_threads||[]).find(x=>x.store_id===store.id):null;
+  const officialMessages=thread?(market.admin_seller_messages||[]).filter(x=>x.thread_id===thread.id):[];
   const modal=ensureStoreRegistryModal(),card=document.getElementById("storeRegistryCard");
   const storeStatus=store?.store_status||"not_created";
   const sellerStatus=app?appStatus(app):"unknown";
   const docRows=docs.length?docs.map(d=>'<div style="padding:9px 0;border-bottom:1px solid #edf1ef"><b>'+esc(label(d.document_type))+'</b><div style="color:#708079;font-size:12px">'+esc(d.original_filename||"Document")+' · '+esc(label(d.review_status))+(d.review_note?' · '+esc(d.review_note):'')+'</div></div>').join(""):'<div style="color:#7a8983">No verification files.</div>';
   const productRows=products.length?products.slice(0,8).map(p=>'<div style="padding:8px 0;border-bottom:1px solid #edf1ef"><b>'+esc(p.name)+'</b><div style="font-size:12px;color:#708079">'+esc(label(p.product_status))+' · '+esc(p.stock_status||"")+(p.price!=null?' · GHS '+Number(p.price).toFixed(2):'')+'</div></div>').join(""):'<div style="color:#7a8983">No products yet.</div>';
+  const reportRows=reports.length?reports.map(r=>{
+    const ev=(market.report_evidence||[]).filter(e=>e.report_id===r.id);
+    const evButtons=ev.length?ev.map(e=>'<button data-report-evidence="'+e.id+'" style="margin:5px 5px 0 0;border:1px solid #d8e3df;background:#fff;border-radius:9px;padding:6px 8px;font-weight:800">View '+esc(e.original_filename||"evidence")+'</button>').join(""):'<span style="display:block;margin-top:5px;color:#87938e">No evidence uploaded</span>';
+    return '<div style="padding:12px;border:1px solid #e2e9e6;border-radius:12px;margin-bottom:9px">'+
+      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:start"><div><b>'+esc(r.report_ref)+' · '+esc(label(r.category))+'</b><small style="display:block;color:#718078">'+new Date(r.created_at).toLocaleString()+' · '+esc(label(r.severity||"medium"))+'</small></div><span class="chip '+statusClass(r.status)+'">'+esc(label(r.status))+'</span></div>'+
+      '<p style="font-size:13px;line-height:1.55;margin:8px 0">'+esc(r.description||"")+'</p>'+
+      '<div>'+evButtons+'</div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px">'+
+        '<button data-report-status="under_review" data-report-id="'+r.id+'">Investigate</button>'+
+        '<button data-report-status="awaiting_seller" data-report-id="'+r.id+'">Request seller response</button>'+
+        '<button data-report-status="awaiting_customer" data-report-id="'+r.id+'">Request customer info</button>'+
+        '<button data-report-status="resolved" data-report-id="'+r.id+'">Resolve</button>'+
+        '<button data-report-status="dismissed" data-report-id="'+r.id+'">Dismiss</button>'+
+      '</div></div>';
+  }).join(""):'<div style="color:#7a8983">No customer reports for this store.</div>';
+  const messageRows=officialMessages.length?officialMessages.map(m=>'<div style="padding:9px 11px;border-radius:12px;margin:7px 0;background:'+(m.sender_role==="admin"?"#edf7f3":"#fff2ec")+'"><b>'+(m.sender_role==="admin"?"RANOVA Admin":"Seller")+'</b><div style="margin-top:3px">'+esc(m.body)+'</div><small style="color:#718078">'+new Date(m.created_at).toLocaleString()+'</small></div>').join(""):'<div style="color:#7a8983">No official Admin ↔ Seller messages yet.</div>';
   card.innerHTML=
     '<div style="padding:20px 22px;background:#123d34;color:#fff;display:flex;justify-content:space-between;gap:12px;align-items:flex-start">'+
       '<div><div style="font-size:12px;opacity:.75">SELLER DATABASE RECORD</div><h2 style="margin:4px 0 5px;font-size:25px">'+esc(store?.store_name||app?.business_name||"Seller")+'</h2><div style="font-size:13px;opacity:.86">'+esc(ref||"")+'</div></div>'+
@@ -1001,7 +1021,11 @@ function openStoreRegistryDetail(ref){
           '<b>Enforcement:</b> '+esc(label(enforcement?.enforcement_status||"good_standing"))+'<br>'+
           '<b>Reason:</b> '+esc(enforcement?.reason_detail||store?.moderation_note||"—")+
         '</div></div>'+
-        '<div class="card" style="box-shadow:none;margin:0"><div class="card-head"><h2>Control meaning</h2></div><div class="body" style="font-size:13px;line-height:1.65">'+
+        '<div class="card" style="box-shadow:none;margin:0;grid-column:1/-1"><div class="card-head"><h2>Customer reports & evidence</h2></div><div class="body">'+reportRows+'</div></div>'+
+        '<div class="card" style="box-shadow:none;margin:0;grid-column:1/-1"><div class="card-head"><h2>Official Admin ↔ Seller messages</h2></div><div class="body">'+messageRows+
+          (store?'<textarea id="adminSellerMessage" class="review-note" style="margin-top:12px" placeholder="Write an official message to this seller…"></textarea><button id="sendAdminSellerMessage" class="primary" style="margin-top:8px;border:0;border-radius:10px;padding:10px 13px">Send official message</button>':'<div class="empty">Store must be created before official messaging is available.</div>')+
+        '</div></div>'+
+        '<div class=\"card\" style=\"box-shadow:none;margin:0\"><div class=\"card-head\"><h2>Control meaning</h2></div><div class=\"body\" style=\"font-size:13px;line-height:1.65\">'+
           '<b style="color:#c3262e">Red · Terminated</b><br>Removes the store and its products from customer-facing marketplace views. Records remain for audit and possible restoration.<br><br>'+
           '<b style="color:#9a7200">Yellow · Under investigation</b><br>Temporarily removes the store from customers while RANOVA investigates. Seller cannot republish it.<br><br>'+
           '<b style="color:#0d7a45">Green · Approved / Active</b><br>Restores selling and makes eligible active products visible to customers again.'+
@@ -1009,6 +1033,30 @@ function openStoreRegistryDetail(ref){
       '</div>'+
     '</div>';
   modal.style.display="block";
+  card.querySelectorAll("[data-report-evidence]").forEach(b=>b.onclick=async()=>{
+    const win=window.open("about:blank","_blank");
+    try{const out=await marketApi({action:"report_evidence_url",id:b.dataset.reportEvidence});if(win)win.location.href=out.url;else location.href=out.url}
+    catch(err){if(win)win.close();alert(err.message)}
+  });
+  card.querySelectorAll("[data-report-status]").forEach(b=>b.onclick=async()=>{
+    const status=b.dataset.reportStatus;
+    let note="";
+    if(["awaiting_seller","awaiting_customer","resolved","dismissed"].includes(status)){
+      note=prompt("Add the review note that will be kept with this report:","")||"";
+      if(!note.trim())return;
+    }
+    b.disabled=true;
+    try{await marketApi({action:"set_store_report_status",id:b.dataset.reportId,status,note});await reloadMarketplace();openStoreRegistryDetail(ref)}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+  const sendOfficial=document.getElementById("sendAdminSellerMessage");
+  if(sendOfficial)sendOfficial.onclick=async()=>{
+    const box=document.getElementById("adminSellerMessage"),body=box.value.trim();
+    if(body.length<2)return alert("Write a message first.");
+    sendOfficial.disabled=true;
+    try{await marketApi({action:"message_seller",store_id:store.id,body});await reloadMarketplace();openStoreRegistryDetail(ref)}
+    catch(err){alert(err.message)}finally{sendOfficial.disabled=false}
+  };
   document.getElementById("closeStoreRegistryModal").onclick=()=>modal.style.display="none";
 }
 function renderSellerStores(){
