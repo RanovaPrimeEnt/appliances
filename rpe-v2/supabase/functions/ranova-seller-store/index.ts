@@ -686,6 +686,29 @@ Deno.serve(async(req:Request)=>{
       return response(h,200,{ok:true,finance_profile:out[0]||payload});
     }
 
+    if(action==="update_product_price"){
+      const id=clean(b.id,80);
+      if(!id)return response(h,400,{ok:false,error:"Product ID is required."});
+      const rows=await serviceGet("ranova_seller_products",{select:"id,name,price,product_status",id:"eq."+id,seller_id:"eq."+user.id,limit:"1"});
+      const existing=rows[0]||null;
+      if(!existing)return response(h,404,{ok:false,error:"Product not found."});
+
+      const rawPrice=b.price;
+      const nextPrice=(rawPrice===null||rawPrice===undefined||String(rawPrice).trim()==="")?null:num(rawPrice);
+      if(nextPrice!==null&&(!Number.isFinite(nextPrice)||nextPrice<0)){
+        return response(h,400,{ok:false,error:"Enter a valid product price of 0 or more."});
+      }
+
+      const r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_products?id=eq."+encodeURIComponent(id)+"&seller_id=eq."+encodeURIComponent(user.id),{
+        method:"PATCH",
+        headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json",Prefer:"return=representation"},
+        body:JSON.stringify({price:nextPrice,updated_at:new Date().toISOString()})
+      });
+      const updated=await r.json().catch(()=>[]);
+      if(!r.ok)return response(h,400,{ok:false,error:"Could not update the product price."});
+      return response(h,200,{ok:true,product:updated[0]||null});
+    }
+
     if(action==="save_product"){
       const id=clean(b.id,80);
       let existing:any=null;
