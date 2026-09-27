@@ -6,26 +6,33 @@
   "start_url": "/appliances/rpe-v2/?source=installed",
   "scope": "/appliances/rpe-v2/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "background_color": "#F6F6F6",
   "theme_color": "#FF7A00",
   "orientation": "any",
-  "categories": ["shopping", "business"],
+  "categories": [
+    "shopping",
+    "business"
+  ],
   "icons": [
     {
-      "src": "./customer-icon-192.svg",
+      "src": "./customer-icon-v2.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "./customer-icon-512.svg",
+      "src": "./customer-icon-v2.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "./customer-icon-maskable.svg",
+      "src": "./customer-icon-v2.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
