@@ -914,32 +914,173 @@ function renderCountryRules(){
 function clearPaymentAccountForm(){
   $("payAccountId").value="";$("payAccountMethod").value="Mobile Money";$("payAccountProvider").value="";$("payAccountName").value="";$("payAccountReference").value="";$("payAccountInstructions").value="";
 }
+
+function storeControlButton(store,status,labelText,color,current,disabled=false){
+  const active=store&&store.store_status===status;
+  const opacity=active?1:.32;
+  const shadow=active?"0 0 0 4px "+color+"26,0 6px 16px "+color+"45":"none";
+  const cursor=disabled?"not-allowed":"pointer";
+  const title=status==="suspended"?"Terminate / remove from customer marketplace":status==="paused"?"Temporary stop / investigation":"Approved / active selling";
+  return '<button type="button" data-store-control="'+status+'" data-store-id="'+(store?.id||"")+'" title="'+title+'" '+(disabled?"disabled":"")+' style="min-height:40px;border:0;border-radius:12px;padding:8px 10px;background:'+color+';color:#fff;font-weight:950;font-size:11px;opacity:'+opacity+';box-shadow:'+shadow+';cursor:'+cursor+'">'+labelText+'</button>';
+}
+function ensureStoreRegistryModal(){
+  let modal=document.getElementById("storeRegistryModal");
+  if(modal)return modal;
+  modal=document.createElement("div");
+  modal.id="storeRegistryModal";
+  modal.style.cssText="display:none;position:fixed;inset:0;z-index:250;background:rgba(4,20,17,.68);padding:18px;overflow:auto";
+  modal.innerHTML='<div id="storeRegistryCard" style="width:min(980px,100%);margin:30px auto;background:#fff;border-radius:22px;box-shadow:0 24px 80px rgba(0,0,0,.28);overflow:hidden"></div>';
+  modal.addEventListener("click",e=>{if(e.target===modal)modal.style.display="none"});
+  document.body.appendChild(modal);
+  return modal;
+}
+function openStoreRegistryDetail(ref){
+  const app=(market.applications||[]).find(a=>a.application_ref===ref);
+  const store=(market.stores||[]).find(x=>x.application_ref===ref);
+  if(!app&&!store)return;
+  const sellerId=store?.seller_id||app?.linked_user_id||null;
+  const docs=(market.files||[]).filter(x=>x.application_ref===ref);
+  const products=store?(market.products||[]).filter(x=>x.store_id===store.id):[];
+  const orders=store?(market.seller_orders||[]).filter(x=>x.store_id===store.id):[];
+  const reports=store?(market.safety_reports||[]).filter(x=>x.store_id===store.id):[];
+  const flags=store?(market.risk_flags||[]).filter(x=>x.store_id===store.id):[];
+  const reviews=store?(market.reviews||[]).filter(x=>x.store_id===store.id):[];
+  const enforcement=store?(market.enforcement||[]).find(x=>x.store_id===store.id):null;
+  const performance=store?(market.performance||[]).find(x=>x.store_id===store.id):null;
+  const modal=ensureStoreRegistryModal(),card=document.getElementById("storeRegistryCard");
+  const storeStatus=store?.store_status||"not_created";
+  const sellerStatus=app?appStatus(app):"unknown";
+  const docRows=docs.length?docs.map(d=>'<div style="padding:9px 0;border-bottom:1px solid #edf1ef"><b>'+esc(label(d.document_type))+'</b><div style="color:#708079;font-size:12px">'+esc(d.original_filename||"Document")+' · '+esc(label(d.review_status))+(d.review_note?' · '+esc(d.review_note):'')+'</div></div>').join(""):'<div style="color:#7a8983">No verification files.</div>';
+  const productRows=products.length?products.slice(0,8).map(p=>'<div style="padding:8px 0;border-bottom:1px solid #edf1ef"><b>'+esc(p.name)+'</b><div style="font-size:12px;color:#708079">'+esc(label(p.product_status))+' · '+esc(p.stock_status||"")+(p.price!=null?' · GHS '+Number(p.price).toFixed(2):'')+'</div></div>').join(""):'<div style="color:#7a8983">No products yet.</div>';
+  card.innerHTML=
+    '<div style="padding:20px 22px;background:#123d34;color:#fff;display:flex;justify-content:space-between;gap:12px;align-items:flex-start">'+
+      '<div><div style="font-size:12px;opacity:.75">SELLER DATABASE RECORD</div><h2 style="margin:4px 0 5px;font-size:25px">'+esc(store?.store_name||app?.business_name||"Seller")+'</h2><div style="font-size:13px;opacity:.86">'+esc(ref||"")+'</div></div>'+
+      '<button id="closeStoreRegistryModal" style="border:0;background:#ffffff22;color:#fff;border-radius:50%;width:38px;height:38px;font-size:22px;cursor:pointer">×</button>'+
+    '</div>'+
+    '<div style="padding:20px 22px">'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px">'+
+        '<div class="detail-copy"><small>Store status</small><br><b>'+esc(label(storeStatus))+'</b></div>'+
+        '<div class="detail-copy"><small>Seller verification</small><br><b>'+esc(label(sellerStatus))+'</b></div>'+
+        '<div class="detail-copy"><small>Reports / risk</small><br><b>'+reports.length+' report(s) · '+flags.length+' risk flag(s)</b></div>'+
+        '<div class="detail-copy"><small>Products / orders</small><br><b>'+products.length+' product(s) · '+orders.length+' order(s)</b></div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px">'+
+        '<div class="card" style="box-shadow:none;margin:0"><div class="card-head"><h2>Application & business</h2></div><div class="body" style="font-size:13px;line-height:1.65">'+
+          '<b>Business name:</b> '+esc(app?.business_name||store?.store_name||"—")+'<br>'+
+          '<b>Location:</b> '+esc(store?.business_location||app?.business_location||"—")+'<br>'+
+          '<b>Seller type:</b> '+esc(app?.supplier_type||"—")+'<br>'+
+          '<b>Contact:</b> '+esc(app?.contact_person||"—")+'<br>'+
+          '<b>Phone:</b> '+esc(app?.phone||store?.public_phone||"—")+'<br>'+
+          '<b>Email:</b> '+esc(app?.email||store?.public_email||"—")+'<br>'+
+          '<b>Categories:</b> '+esc(app?.categories||"—")+'<br>'+
+          '<b>Years in business:</b> '+esc(app?.years_in_business==null?"—":app.years_in_business)+'<br>'+
+          '<b>Registered:</b> '+(app?.has_business_registration?"Yes":"No / not declared")+'<br>'+
+          '<b>Registration no.:</b> '+esc(app?.registration_number||"—")+'<br>'+
+          '<b>Preferred fulfilment:</b> '+esc(app?.preferred_fulfilment||"—")+'<br>'+
+          '<b>Business details:</b><br>'+esc(app?.business_details||store?.description||"—")+
+        '</div></div>'+
+        '<div class="card" style="box-shadow:none;margin:0"><div class="card-head"><h2>Store profile</h2></div><div class="body" style="font-size:13px;line-height:1.65">'+
+          '<b>Store name:</b> '+esc(store?.store_name||"Not created yet")+'<br>'+
+          '<b>Country:</b> '+esc(store?.country_name||store?.country_code||"—")+'<br>'+
+          '<b>Public phone:</b> '+esc(store?.public_phone||"—")+'<br>'+
+          '<b>Public email:</b> '+esc(store?.public_email||"—")+'<br>'+
+          '<b>Tagline:</b> '+esc(store?.tagline||"—")+'<br>'+
+          '<b>Fulfilment:</b> '+esc(store?.fulfilment_summary||"—")+'<br>'+
+          '<b>Returns:</b> '+esc(store?.return_policy_summary||"—")+'<br>'+
+          '<b>Minimum order:</b> '+esc(store?.minimum_order_note||"—")+'<br>'+
+          '<b>Admin note:</b> '+esc(store?.moderation_note||"—")+
+        '</div></div>'+
+        '<div class="card" style="box-shadow:none;margin:0"><div class="card-head"><h2>Verification files</h2></div><div class="body">'+docRows+'</div></div>'+
+        '<div class="card" style="box-shadow:none;margin:0"><div class="card-head"><h2>Products</h2></div><div class="body">'+productRows+(products.length>8?'<div style="padding-top:8px;color:#718078;font-size:12px">+'+(products.length-8)+' more product(s)</div>':'')+'</div></div>'+
+        '<div class="card" style="box-shadow:none;margin:0"><div class="card-head"><h2>Trust & reports</h2></div><div class="body" style="font-size:13px;line-height:1.65">'+
+          '<b>Published reviews:</b> '+reviews.filter(r=>r.moderation_status==="published").length+'<br>'+
+          '<b>Performance level:</b> '+esc(label(performance?.performance_level||"not_available"))+'<br>'+
+          '<b>Fulfilment score:</b> '+esc(performance?.fulfillment_score==null?"—":Number(performance.fulfillment_score).toFixed(0)+"/100")+'<br>'+
+          '<b>Open safety reports:</b> '+reports.filter(r=>["open","under_review"].includes(r.status)).length+'<br>'+
+          '<b>Open risk flags:</b> '+flags.filter(r=>["open","under_review"].includes(r.status)).length+'<br>'+
+          '<b>Enforcement:</b> '+esc(label(enforcement?.enforcement_status||"good_standing"))+'<br>'+
+          '<b>Reason:</b> '+esc(enforcement?.reason_detail||store?.moderation_note||"—")+
+        '</div></div>'+
+        '<div class="card" style="box-shadow:none;margin:0"><div class="card-head"><h2>Control meaning</h2></div><div class="body" style="font-size:13px;line-height:1.65">'+
+          '<b style="color:#c3262e">Red · Terminated</b><br>Removes the store and its products from customer-facing marketplace views. Records remain for audit and possible restoration.<br><br>'+
+          '<b style="color:#9a7200">Yellow · Under investigation</b><br>Temporarily removes the store from customers while RANOVA investigates. Seller cannot republish it.<br><br>'+
+          '<b style="color:#0d7a45">Green · Approved / Active</b><br>Restores selling and makes eligible active products visible to customers again.'+
+        '</div></div>'+
+      '</div>'+
+    '</div>';
+  modal.style.display="block";
+  document.getElementById("closeStoreRegistryModal").onclick=()=>modal.style.display="none";
+}
 function renderSellerStores(){
   const host=$("sellerStoresList");if(!host)return;
   if(!canSellerReview()){host.innerHTML='<div class="empty">Your admin role does not include seller store management.</div>';return}
-  const apps=new Map((market.applications||[]).map(a=>[a.application_ref,a]));
-  const list=market.stores||[];
-  host.innerHTML=list.length?list.map(s=>{
-    const appRow=apps.get(s.application_ref),sellerSt=appRow?appStatus(appRow):"unknown",actions=[];
-    if(s.store_status==="active"){
-      actions.push('<button data-store-status="paused" data-store-id="'+s.id+'">Pause</button>');
-      actions.push('<button data-store-status="suspended" data-store-id="'+s.id+'">Suspend</button>');
-      actions.push('<button data-store-view="'+esc(s.slug)+'" class="primary">View store</button>');
-    }else if(["paused","suspended"].includes(s.store_status)&&sellerSt==="approved"){
-      actions.push('<button data-store-status="active" data-store-id="'+s.id+'" class="primary">Activate</button>');
+
+  const storesByRef=new Map((market.stores||[]).map(s=>[s.application_ref,s]));
+  const storeOnly=(market.stores||[]).filter(s=>!(market.applications||[]).some(a=>a.application_ref===s.application_ref)).map(s=>({application_ref:s.application_ref,business_name:s.store_name,business_location:s.business_location,verification_status:"unknown"}));
+  const records=[...(market.applications||[]),...storeOnly];
+  const reportsByStore=new Map();
+  (market.safety_reports||[]).forEach(r=>{if(r.store_id)reportsByStore.set(r.store_id,(reportsByStore.get(r.store_id)||0)+1)});
+  const riskByStore=new Map();
+  (market.risk_flags||[]).forEach(r=>{if(r.store_id&&["open","under_review"].includes(r.status))riskByStore.set(r.store_id,(riskByStore.get(r.store_id)||0)+1)});
+
+  if(!records.length){host.innerHTML='<div class="empty">No seller applications or stores yet.</div>';return}
+  host.innerHTML=
+    '<div style="overflow:auto;border:1px solid #e1e8e5;border-radius:16px">'+
+      '<div style="min-width:850px">'+
+        '<div style="display:grid;grid-template-columns:1.3fr 1fr .55fr 1.7fr;gap:10px;padding:11px 13px;background:#f4f7f6;border-bottom:1px solid #e1e8e5;font-size:11px;font-weight:950;text-transform:uppercase;color:#667871">'+
+          '<div>Name</div><div>Location</div><div>Reports</div><div>Store control</div>'+
+        '</div>'+
+        records.map(a=>{
+          const store=storesByRef.get(a.application_ref);
+          const st=store?.store_status||"not_created";
+          const approved=appStatus(a)==="approved";
+          const reportCount=store?(reportsByStore.get(store.id)||0):0;
+          const riskCount=store?(riskByStore.get(store.id)||0):0;
+          const disabled=!store||(!approved&&st!=="active");
+          return '<div data-store-record="'+esc(a.application_ref)+'" style="display:grid;grid-template-columns:1.3fr 1fr .55fr 1.7fr;gap:10px;align-items:center;padding:13px;border-bottom:1px solid #edf1ef;cursor:pointer;background:#fff">'+
+            '<div><b style="font-size:14px">'+esc(store?.store_name||a.business_name||"Seller")+'</b><small style="display:block;margin-top:4px;color:#708079">'+esc(a.application_ref||"")+' · '+esc(label(st))+'</small></div>'+
+            '<div><b>'+esc(store?.business_location||a.business_location||"—")+'</b><small style="display:block;margin-top:4px;color:#708079">'+esc(store?.country_name||store?.country_code||"")+'</small></div>'+
+            '<div><b>'+reportCount+'</b><small style="display:block;color:#708079">'+riskCount+' risk</small></div>'+
+            '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">'+
+              storeControlButton(store,"suspended","Red","#c62828",st==="suspended",!store)+
+              storeControlButton(store,"paused","Yellow","#d19a00",st==="paused",!store)+
+              storeControlButton(store,"active","Green","#16824b",st==="active",disabled)+
+            '</div>'+
+          '</div>';
+        }).join("")+
+      '</div>'+
+    '</div>'+
+    '<div style="margin-top:10px;color:#708079;font-size:12px">Click any seller row to open the complete database record. Status controls are audit logged; seller/application data is preserved even when a store is removed from customer view.</div>';
+
+  host.querySelectorAll("[data-store-record]").forEach(row=>row.onclick=e=>{
+    if(e.target.closest("[data-store-control]"))return;
+    openStoreRegistryDetail(row.dataset.storeRecord);
+  });
+  host.querySelectorAll("[data-store-control]").forEach(b=>b.onclick=async e=>{
+    e.stopPropagation();
+    if(b.disabled||!b.dataset.storeId)return;
+    const status=b.dataset.storeControl;
+    let note="";
+    if(status==="paused"){
+      note=prompt("Reason for temporary investigation / yellow status:","")||"";
+      if(!note.trim())return;
+      if(!confirm("Place this store under investigation? It will disappear from the customer marketplace until Green is selected."))return;
+    }else if(status==="suspended"){
+      note=prompt("Reason for terminating / red status:","")||"";
+      if(!note.trim())return;
+      if(!confirm("Terminate this store from the customer marketplace? Its database, order history and products will be preserved for audit and possible restoration."))return;
+    }else{
+      note=prompt("Optional restoration/approval note:","Restored to approved selling status by RANOVA Admin.")||"Restored to approved selling status by RANOVA Admin.";
+      if(!confirm("Approve / restore this store? Eligible active products will become visible to customers again."))return;
     }
-    return `<div class="market-row"><div><b>${esc(s.store_name)}</b><small>${esc(s.application_ref)} • /${esc(s.slug)}${s.moderation_note?" • "+esc(s.moderation_note):""}</small></div><span class="chip ${statusClass(s.store_status)}">${esc(label(s.store_status))}</span><div><small>Seller verification</small><b>${esc(label(sellerSt))}</b></div><div class="actions">${actions.join("")}</div></div>`;
-  }).join(""):'<div class="empty">No seller stores have been created yet.</div>';
-  host.querySelectorAll("[data-store-view]").forEach(b=>b.onclick=()=>window.open("../all/seller-store.html?store="+encodeURIComponent(b.dataset.storeView),"_blank"));
-  host.querySelectorAll("[data-store-status]").forEach(b=>b.onclick=async()=>{
-    const status=b.dataset.storeStatus;let note="";
-    if(status==="suspended"){note=prompt("Why is this store being suspended?","")||"";if(!note)return}
-    if(!confirm("Change this store status to "+label(status)+"?"))return;
     b.disabled=true;
-    try{await marketApi({action:"set_store_status",id:b.dataset.storeId,status,note});await reloadMarketplace()}
-    catch(err){alert(err.message)}finally{b.disabled=false}
+    try{
+      await marketApi({action:"set_store_status",id:b.dataset.storeId,status,note});
+      await reloadMarketplace();
+    }catch(err){alert(err.message)}finally{b.disabled=false}
   });
 }
+
 
 
 $("saveCountryRule").onclick=async()=>{
