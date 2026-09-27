@@ -171,6 +171,14 @@ function totalQty(){return cartItems().reduce(function(s,x){return s+x.quantity}
 function knownTotal(){var items=cartItems();if(!items.length||items.some(function(x){return x.product.price==null}))return null;return items.reduce(function(s,x){return s+(Number(x.product.price)*x.quantity)},0)}
 function saveCart(){
   try{sessionStorage.setItem("ranova_store_cart_"+(store?store.id:""),JSON.stringify(cart))}catch(e){}
+  try{
+    var universal=JSON.parse(localStorage.getItem("ranova_universal_cart")||"{}");
+    if(store){
+      products.forEach(function(p){delete universal[p.id]});
+      Object.keys(cart||{}).forEach(function(id){if(cart[id]>0)universal[id]=cart[id]});
+      localStorage.setItem("ranova_universal_cart",JSON.stringify(universal));
+    }
+  }catch(e){}
   if(buyerSession&&store){
     if(Object.keys(cart).length)sb.from("ranova_buyer_carts").upsert({user_id:buyerSession.user.id,store_id:store.id,items:cart,updated_at:new Date().toISOString()},{onConflict:"user_id,store_id"});
     else sb.from("ranova_buyer_carts").delete().eq("user_id",buyerSession.user.id).eq("store_id",store.id);
