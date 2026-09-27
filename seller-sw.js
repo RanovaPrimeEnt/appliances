@@ -1,4 +1,4 @@
-const CACHE="ranova-seller-shell-v5";
+const CACHE="ranova-seller-shell-v6";
 const CORE=[
   "./all/seller-center.html",
   "./all/seller-dashboard.html",
