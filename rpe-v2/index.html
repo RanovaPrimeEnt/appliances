@@ -3,8 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#176B61">
-<title>My RPE | Ranova Prime Enterprise</title>
+<meta name="theme-color" content="#FF7A00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="RANOVA">
+<link rel="manifest" href="./customer-app.webmanifest">
+<link rel="icon" href="./customer-icon.svg" type="image/svg+xml">
+<title>RANOVA | Marketplace</title>
 <meta name="description" content="Your simple Ranova Prime Enterprise shopping account for saved products, cart, orders, delivery addresses and live order updates.">
 <style>
 :root{--green:#183330;--green2:#176B61;--gold:#A894F4;--cream:#F8F7FC;--ink:#243936;--muted:#6E7E7A;--line:#E0E8E4;--white:#fff;--danger:#a2473d}
@@ -148,7 +153,7 @@ body{background:var(--r-page);color:var(--r-text)}
 <section id="addressPanel" class="panel card"><div class="section-head"><h2>Delivery Addresses</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><div id="addressList" class="list"></div><button id="addAddress" class="btn primary" style="margin-top:12px">Add address</button></div></section>
 <section id="notifPanel" class="panel card"><div class="section-head"><h2>Notifications</h2><button data-panel="homePanel">Back</button></div><div id="notifList" class="panel-body list"></div></section>
 <section id="helpPanel" class="panel card"><div class="section-head"><h2>Help Centre</h2><button data-panel="homePanel">Back</button></div><div class="panel-body list"><div class="list-row"><div><b>Ordering</b><small>Add products to your cart and send one order request.</small></div></div><div class="list-row"><div><b>Prices & availability</b><small>Until RPE publishes confirmed prices and stock, your order is sent as a quote request first.</small></div></div><div class="list-row"><div><b>Order updates</b><small>Your order status updates here automatically when RPE changes it.</small></div></div><div class="list-row"><div><b>Need a person?</b><small>WhatsApp or call RPE directly.</small></div><button id="helpContact" class="btn primary">Contact RPE</button></div></div></section>
-<section id="profilePanel" class="panel card"><div class="section-head"><h2>My Details</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><label style="font-size:10px;font-weight:800">First name</label><input id="profileFirst" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Last name</label><input id="profileLast" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Phone</label><input id="profilePhone" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><button id="saveProfile" class="btn primary">Save details</button><div class="profile-actions"><a class="btn soft" href="../all/messages.html">Messages</a><a class="btn soft" href="../all/documents.html">Documents</a><a class="btn soft" href="../all/after-sales.html">Returns & Refunds</a><button id="signOut" class="btn outline" type="button">Sign out</button></div></div></section>
+<section id="profilePanel" class="panel card"><div class="section-head"><h2>My Details</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><label style="font-size:10px;font-weight:800">First name</label><input id="profileFirst" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Last name</label><input id="profileLast" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Phone</label><input id="profilePhone" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><button id="saveProfile" class="btn primary">Save details</button><div class="profile-actions"><button id="installCustomerApp" class="btn soft hide" type="button">Install RANOVA App</button><a class="btn soft" href="../all/messages.html">Messages</a><a class="btn soft" href="../all/documents.html">Documents</a><a class="btn soft" href="../all/after-sales.html">Returns & Refunds</a><button id="signOut" class="btn outline" type="button">Sign out</button></div><div id="customerUpdateNote" class="notice hide" style="margin-top:10px"></div></div></section>
 </main>
 
 <nav class="bottom" aria-label="Main navigation">
@@ -167,5 +172,6 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js"></script>
+<script src="./app.js?v=20260927-06"></script>
+<script src="./customer-pwa.js?v=20260927-01"></script>
 </body></html>
