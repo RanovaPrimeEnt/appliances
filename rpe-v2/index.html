@@ -86,7 +86,7 @@ body{background:var(--r-page);color:var(--r-text)}
     <form id="marketSearchForm" class="market-search"><input id="marketSearch" type="search" placeholder="Search products or stores" aria-label="Search products or stores"><button type="submit">Search</button></form>
     <div id="marketCategories" class="market-categories" aria-label="Product categories"></div>
     <section id="marketStoreView" class="market-store-view hide"></section>
-    <section id="marketFeedView"><div class="market-title"><div><h1 id="marketHeading">Discover products</h1><p>Explore products from RANOVA stores</p></div><button id="marketRefresh" type="button" aria-label="Refresh products">↻ Refresh</button></div><div id="marketGrid" class="market-grid" aria-live="polite"><p class="market-state">Loading products…</p></div><button id="marketMore" class="market-more hide" type="button">Show more products</button></section>
+    <section id="marketFeedView"><div class="market-title"><div><h1 id="marketHeading">Discover products</h1><p>Explore products from approved RANOVA stores</p></div><button id="marketRefresh" type="button" aria-label="Refresh products">↻ Refresh</button></div><div id="marketGrid" class="market-grid" aria-live="polite"><p class="market-state">Loading products…</p></div><button id="marketMore" class="market-more hide" type="button">Show more products</button></section>
   </main>
   <nav class="market-nav" aria-label="Customer app navigation"><button id="marketHome" class="selected" type="button" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></button><button id="marketMessage" type="button" aria-label="Message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span></button><button id="marketCart" type="button" aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart <b id="marketCartCount"></b></span></button><button id="marketMe" type="button" aria-label="Me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></button></nav>
 </div>
@@ -194,7 +194,7 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./marketplace.js?v=20260927-5"></script>
+<script src="./marketplace.js?v=20260927-6"></script>
 <script src="./app.js?v=20260927-09"></script>
 <script src="./customer-pwa.js?v=20260927-01"></script>
 </body></html>
