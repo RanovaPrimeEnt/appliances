@@ -7,7 +7,7 @@ const marketEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-admin-marketplace";
 const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
 const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
-let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
+let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -28,7 +28,7 @@ const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
 const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
 const canFinance=()=>role==="owner"||role==="manager";
 const isOwner=()=>role==="owner";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],counts:{}});
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -204,7 +204,7 @@ function renderMarketplaceSummary(){
   $("mSellerProductsPending").textContent=canProductReview()?(c.products_pending||0):"—";
   $("mSellerOrdersOpen").textContent=canOrderReview()?(c.seller_orders_open||0):"—";
   $("mRefundsOpen").textContent=canOrderReview()?(c.refunds_open||0):"—";
-  $("mDisputesOpen").textContent=canOrderReview()?(c.disputes_open||0):"—";
+  $("mDisputesOpen").textContent=canOrderReview()?(c.disputes_open||0):"—";if($("mAfterSalesOpen"))$("mAfterSalesOpen").textContent=canOrderReview()?(c.after_sales_open||0):"—";
 }
 function appStatus(a){return String(a.verification_status||a.status||"submitted").toLowerCase()}
 function filesFor(ref){return (market.files||[]).filter(f=>f.application_ref===ref)}
@@ -566,12 +566,33 @@ function renderDeliveries(){
 }
 
 function renderCases(){
-  const refunds=market.refunds||[],disputes=market.disputes||[],messages=market.dispute_messages||[];
+  const refunds=market.refunds||[],disputes=market.disputes||[],messages=market.dispute_messages||[],afterSales=market.after_sales_cases||[];
   const rOpen=refunds.filter(r=>!["refunded","rejected","cancelled"].includes(r.status)).length;
   const dOpen=disputes.filter(d=>!["resolved","closed"].includes(d.status)).length;
   const closed=refunds.filter(r=>["refunded","rejected","cancelled"].includes(r.status)).length+
     disputes.filter(d=>["resolved","closed"].includes(d.status)).length;
-  $("cRefundsOpen").textContent=rOpen;$("cDisputesOpen").textContent=dOpen;$("cCasesClosed").textContent=closed;
+  $("cRefundsOpen").textContent=rOpen;$("cDisputesOpen").textContent=dOpen;if($("cAfterSalesOpen"))$("cAfterSalesOpen").textContent=afterSales.filter(x=>!["resolved","closed","declined"].includes(x.status)).length;$("cCasesClosed").textContent=closed;
+
+  const aHost=$("adminAfterSalesList");
+  if(aHost){
+    aHost.innerHTML=afterSales.length?afterSales.map(c=>{
+      const actions=[];
+      if(!["resolved","closed","declined"].includes(c.status)){
+        actions.push('<button data-after-action="under_review" data-after-id="'+c.id+'">Under review</button>');
+        actions.push('<button data-after-action="accepted" data-after-id="'+c.id+'">Accept</button>');
+        actions.push('<button data-after-action="declined" data-after-id="'+c.id+'">Decline</button>');
+        actions.push('<button class="primary" data-after-action="resolved" data-after-id="'+c.id+'">Resolve</button>');
+      }else if(c.status==="resolved")actions.push('<button data-after-action="closed" data-after-id="'+c.id+'">Close</button>');
+      return '<div class="market-row"><div><b>'+esc(c.case_ref)+' • '+esc(pretty(c.case_type))+'</b><small>'+esc(pretty(c.reason_category))+' • '+esc(c.description)+'</small>'+(c.seller_response?'<small>Seller: '+esc(c.seller_response)+'</small>':'')+(c.resolution_note?'<small>RANOVA: '+esc(c.resolution_note)+'</small>':'')+'</div><span class="chip '+statusClass(c.status)+'">'+esc(label(c.status))+'</span><div><small>Seller order</small><b>'+esc(c.seller_order_id)+'</b><small>'+new Date(c.created_at).toLocaleString()+'</small></div><div class="actions">'+actions.join("")+'</div></div>';
+    }).join(""):'<div class="empty">No cancellation or return cases yet.</div>';
+    aHost.querySelectorAll("[data-after-action]").forEach(b=>b.onclick=async()=>{
+      const decision=b.dataset.afterAction,note=prompt("Add the RANOVA review/resolution note.","")||"";
+      if(["declined","resolved","closed"].includes(decision)&&!note)return;
+      b.disabled=true;
+      try{await marketApi({action:"review_after_sales",id:b.dataset.afterId,decision,note});await reloadMarketplace()}
+      catch(err){alert(err.message)}finally{b.disabled=false}
+    });
+  }
 
   const rHost=$("adminRefundsList");
   rHost.innerHTML=refunds.length?refunds.map(r=>{
