@@ -1082,13 +1082,15 @@ function renderSellerStores(){
           const store=storesByRef.get(a.application_ref);
           const st=store?.store_status||"not_created";
           const approved=appStatus(a)==="approved";
-          const reportCount=store?(reportsByStore.get(store.id)||0):0;
+          const storeReports=store?(market.safety_reports||[]).filter(r=>r.store_id===store.id):[];
+          const reportCount=storeReports.length;
+          const reportKinds=[...new Set(storeReports.map(r=>label(r.category)))].slice(0,2);
           const riskCount=store?(riskByStore.get(store.id)||0):0;
           const disabled=!store||(!approved&&st!=="active");
           return '<div data-store-record="'+esc(a.application_ref)+'" style="display:grid;grid-template-columns:1.3fr 1fr .55fr 1.7fr;gap:10px;align-items:center;padding:13px;border-bottom:1px solid #edf1ef;cursor:pointer;background:#fff">'+
             '<div><b style="font-size:14px">'+esc(store?.store_name||a.business_name||"Seller")+'</b><small style="display:block;margin-top:4px;color:#708079">'+esc(a.application_ref||"")+' · '+esc(label(st))+'</small></div>'+
             '<div><b>'+esc(store?.business_location||a.business_location||"—")+'</b><small style="display:block;margin-top:4px;color:#708079">'+esc(store?.country_name||store?.country_code||"")+'</small></div>'+
-            '<div><b>'+reportCount+'</b><small style="display:block;color:#708079">'+riskCount+' risk</small></div>'+
+            '<div><b>'+reportCount+' report'+(reportCount===1?"":"s")+'</b><small style="display:block;color:#708079">'+(reportKinds.length?esc(reportKinds.join(", ")):"No reports")+(riskCount?" · "+riskCount+" risk":"")+'</small></div>'+
             '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">'+
               storeControlButton(store,"suspended","Red","#c62828",st==="suspended",!store)+
               storeControlButton(store,"paused","Yellow","#d19a00",st==="paused",!store)+
