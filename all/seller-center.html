@@ -85,28 +85,31 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
       <section>
         <div class="card">
           <h2>Verification workspace</h2>
-          <p>Upload the requested documents. Each submission remains pending until RANOVA reviews it.</p>
+          <p>Upload clear, genuine verification documents. Required documents move to <b>Under review</b> immediately after submission and remain private until RANOVA Admin reviews them.</p>
+          <div style="margin-top:12px;padding:12px 14px;border:1px solid #dce8e3;border-radius:13px;background:#f8fbf9;font-size:10px;line-height:1.6;color:#61736c">
+            <b style="color:#15342e">Before uploading:</b> use clear PDF/JPG/PNG/WEBP files, make sure names/numbers are readable, do not crop important details, and only submit documents that genuinely belong to the business or its authorized representative. Maximum file size: 10 MB each.
+          </div>
           <div id="verifyMsg" class="msg"></div>
 
           <div class="verify-grid">
             <div class="verify-card">
-              <b>Business registration document</b>
-              <p>Certificate, business registration or equivalent supporting document.</p>
+              <b>Business registration / legal business proof <span style="color:#d85a28">• REQUIRED</span></b>
+              <p>Upload the official business registration certificate or another legitimate document showing the business name and registration details. If the business is not formally registered, upload the strongest equivalent business proof available and RANOVA Admin will review it.</p>
               <div class="upload"><input id="businessDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="business_registration" data-input="businessDoc">Upload business document</button></div>
             </div>
             <div class="verify-card">
-              <b>Authorized representative ID</b>
-              <p>Government-issued identification for the person responsible for the seller account.</p>
+              <b>Authorized representative ID <span style="color:#d85a28">• REQUIRED</span></b>
+              <p>Upload a valid government-issued ID for the person responsible for this seller account. The name and image/details must be clear enough for RANOVA Admin to verify.</p>
               <div class="upload"><input id="identityDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="identity_document" data-input="identityDoc">Upload identity document</button></div>
             </div>
             <div class="verify-card">
-              <b>Business address / location proof</b>
-              <p>Optional supporting evidence for business or warehouse location.</p>
+              <b>Business address / location proof <span style="color:#718078">• SUPPORTING</span></b>
+              <p>Upload a utility bill, tenancy/lease document, shop or warehouse evidence, or another legitimate document that supports the stated business location.</p>
               <div class="upload"><input id="locationDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="location_proof" data-input="locationDoc">Upload location proof</button></div>
             </div>
             <div class="verify-card">
-              <b>Fulfilment evidence</b>
-              <p>Optional warehouse, stock or delivery evidence to help assess order readiness.</p>
+              <b>Fulfilment readiness evidence <span style="color:#d85a28">• REQUIRED</span></b>
+              <p>Upload genuine evidence that the business can fulfil orders: stock/warehouse photos, inventory or supplier evidence, delivery/courier arrangement, or another clear proof of order-handling capability.</p>
               <div class="upload"><input id="fulfilmentDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="fulfilment_evidence" data-input="fulfilmentDoc">Upload fulfilment evidence</button></div>
             </div>
           </div>
@@ -268,7 +271,9 @@ async function loadWorkspace(){
         review_status:"submitted"
       });
       if(ins.error)throw ins.error;
-      showMsg(msg,"Document uploaded securely and submitted for review.");
+      var sync=await api(WORKSPACE_ENDPOINT,{action:"document_submitted",document_type:type});
+      if(!sync.ok)throw new Error(sync.error||"Document uploaded but verification status could not be synchronized.");
+      showMsg(msg,type==="location_proof"?"Supporting document uploaded securely.":"Document uploaded securely. This verification stage is now under RANOVA Admin review.");
       await loadWorkspace();
       input.value="";
     }catch(err){showMsg(msg,err.message||"Could not upload document.")}
