@@ -7,7 +7,7 @@ const marketEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-admin-marketplace";
 const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
 const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
-let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
+let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],risk_flags:[],safety_reports:[],risk_review_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -28,7 +28,7 @@ const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
 const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
 const canFinance=()=>role==="owner"||role==="manager";
 const isOwner=()=>role==="owner";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],counts:{}});
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],risk_flags:[],safety_reports:[],risk_review_events:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -189,6 +189,7 @@ function renderMarketplaceAll(){
   renderSellerOrders();
   renderDeliveries();
   renderCases();
+  renderSafetyRisk();
   renderFinance();
   if(selectedApplicationRef)renderSellerDetail(selectedApplicationRef);
 }
@@ -670,6 +671,37 @@ function renderCases(){
     b.disabled=true;
     try{await marketApi({action:"review_dispute",id:d.id,status:action,resolution,note});await reloadMarketplace()}
     catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+}
+
+function renderSafetyRisk(){
+  const flags=market.risk_flags||[],reports=market.safety_reports||[],c=market.counts||{};
+  if(!$("riskFlagsList"))return;
+  $("riskOpen").textContent=c.risk_flags_open||0;$("riskHigh").textContent=c.risk_high_open||0;$("reportsOpen").textContent=c.safety_reports_open||0;
+  $("riskFlagsList").innerHTML=flags.length?flags.map(f=>{
+    const actions=[];
+    if(["open","under_review"].includes(f.status)){
+      if(f.status==="open")actions.push('<button data-risk-action="under_review" data-risk-id="'+f.id+'">Review</button>');
+      actions.push('<button data-risk-action="confirmed" data-risk-id="'+f.id+'">Confirm signal</button>');
+      actions.push('<button data-risk-action="dismissed" data-risk-id="'+f.id+'">Dismiss</button>');
+    }else if(f.status==="confirmed")actions.push('<button data-risk-action="resolved" data-risk-id="'+f.id+'">Resolve</button>');
+    return '<div class="market-row"><div><b>'+esc(f.flag_ref)+' • '+esc(f.title)+'</b><small>'+esc(f.explanation)+'</small><small>Signal: '+esc(pretty(f.signal_code))+' • Source: '+esc(pretty(f.source))+'</small><small>Evidence: '+esc(JSON.stringify(f.evidence||{}))+'</small>'+(f.review_note?'<small>Review: '+esc(f.review_note)+'</small>':'')+'</div><span class="chip '+statusClass(f.severity)+'">'+esc(pretty(f.severity))+'</span><div><small>Subject</small><b>'+esc(pretty(f.subject_type))+'</b><small>'+new Date(f.created_at).toLocaleString()+'</small></div><div class="actions">'+actions.join("")+'</div></div>';
+  }).join(""):'<div class="empty">No risk flags yet.</div>';
+  $("riskFlagsList").querySelectorAll("[data-risk-action]").forEach(b=>b.onclick=async()=>{
+    const status=b.dataset.riskAction,note=prompt(status==="dismissed"?"Why is this signal being dismissed?":"Add the evidence/review note.","")||"";
+    if(["confirmed","dismissed","resolved"].includes(status)&&note.trim().length<5)return;
+    b.disabled=true;try{await marketApi({action:"review_risk_flag",id:b.dataset.riskId,status,note});await reloadMarketplace()}catch(err){alert(err.message)}finally{b.disabled=false}
+  });
+  $("safetyReportsList").innerHTML=reports.length?reports.map(r=>{
+    const actions=[];
+    if(r.status==="open")actions.push('<button data-report-action="under_review" data-report-id="'+r.id+'">Review</button>');
+    if(["open","under_review"].includes(r.status)){actions.push('<button data-report-action="resolved" data-report-id="'+r.id+'">Resolve</button>');actions.push('<button data-report-action="dismissed" data-report-id="'+r.id+'">Dismiss</button>')}
+    return '<div class="market-row"><div><b>'+esc(r.report_ref)+' • '+esc(pretty(r.category))+'</b><small>'+esc(r.description)+'</small>'+(r.admin_note?'<small>Admin: '+esc(r.admin_note)+'</small>':'')+'</div><span class="chip '+statusClass(r.status)+'">'+esc(label(r.status))+'</span><div><small>Message / conversation</small><b>'+esc(r.message_id||"—")+'</b><small>'+new Date(r.created_at).toLocaleString()+'</small></div><div class="actions">'+actions.join("")+'</div></div>';
+  }).join(""):'<div class="empty">No user safety reports yet.</div>';
+  $("safetyReportsList").querySelectorAll("[data-report-action]").forEach(b=>b.onclick=async()=>{
+    const status=b.dataset.reportAction,note=prompt(status==="dismissed"?"Why is this report being dismissed?":"Add the safety review note.","")||"";
+    if(["resolved","dismissed"].includes(status)&&note.trim().length<5)return;
+    b.disabled=true;try{await marketApi({action:"review_safety_report",id:b.dataset.reportId,status,note});await reloadMarketplace()}catch(err){alert(err.message)}finally{b.disabled=false}
   });
 }
 
