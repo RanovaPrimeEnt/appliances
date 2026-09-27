@@ -1,4 +1,4 @@
-const CACHE="rpe-shell-v23";
+const CACHE="rpe-shell-v24";
 const SHELL=[
   "./",
   "./site.html",
@@ -18,7 +18,7 @@ const SHELL=[
   "./akwaaba-translator.js?v=20260926-18",
   "./friendly-upgrades.js?v=20260926-10",
   "./marketplace-v1.css?v=20260926-3",
-  "./marketplace-v1.js?v=20260926-3",
+  "./marketplace-v1.js?v=20260926-3",\n  "./customer-home.js?v=20260927-1",
   "./rfq.html",
   "./supplier.html"
 ];
