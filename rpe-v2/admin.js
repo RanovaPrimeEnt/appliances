@@ -604,13 +604,20 @@ function renderCases(){
       actions.push('<button data-refund-action="rejected" data-refund-id="'+r.id+'">Reject</button>');
     }
     if(r.status==="approved"&&canFinance()){
-      actions.push('<button data-refund-action="processing" data-refund-id="'+r.id+'">Start refund</button>');
-      actions.push('<button class="primary" data-refund-action="refunded" data-refund-id="'+r.id+'">Mark refunded</button>');
+      if((market.payment_provider||{}).configured)actions.push('<button class="primary" data-provider-refund="'+r.id+'">Refund through Paystack</button>');
+      else actions.push('<button class="primary" data-refund-action="refunded" data-refund-id="'+r.id+'">Record verified manual refund</button>');
     }
-    if(r.status==="processing"&&canFinance())actions.push('<button class="primary" data-refund-action="refunded" data-refund-id="'+r.id+'">Mark refunded</button>');
+    if(r.status==="processing"&&canFinance()&&!(r.provider==="paystack"))actions.push('<button class="primary" data-refund-action="refunded" data-refund-id="'+r.id+'">Record refunded</button>');
     return '<div class="market-row"><div><b>'+esc(r.refund_ref)+'</b><small>'+esc(pretty(r.reason_category))+' • '+esc(r.reason_detail)+'</small>'+(r.admin_note?'<small>RANOVA: '+esc(r.admin_note)+'</small>':'')+'</div><span class="chip '+statusClass(r.status)+'">'+esc(label(r.status))+'</span><div><small>Requested</small><b>'+fmtMoney(r.requested_amount)+'</b><small>'+(r.approved_amount!=null?'Approved '+fmtMoney(r.approved_amount):'Not approved yet')+'</small></div><div><small>Requested</small><b>'+new Date(r.requested_at).toLocaleString()+'</b>'+(r.refund_reference?'<small>Refund ref '+esc(r.refund_reference)+'</small>':'')+'</div><div class="actions">'+actions.join("")+'</div></div>';
   }).join(""):'<div class="empty">No marketplace refund cases yet.</div>';
 
+  rHost.querySelectorAll("[data-provider-refund]").forEach(b=>b.onclick=async()=>{
+    const r=refunds.find(x=>x.id===b.dataset.providerRefund);if(!r)return;
+    if(!confirm("Send the approved refund "+fmtMoney(r.approved_amount??r.requested_amount)+" back through the original Paystack transaction?"))return;
+    b.disabled=true;
+    try{await marketApi({action:"process_provider_refund",id:r.id});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
   rHost.querySelectorAll("[data-refund-action]").forEach(b=>b.onclick=async()=>{
     const action=b.dataset.refundAction,r=refunds.find(x=>x.id===b.dataset.refundId);if(!r)return;
     let approved_amount="",refund_reference="",note="";
@@ -715,6 +722,12 @@ function renderFinance(){
   $("fPayoutsPending").textContent=c.payouts_pending||0;
   $("fCommissionTotal").textContent=fmtMoney(c.commission_total||0);
   $("fPayoutsPaid").textContent=fmtMoney(c.payouts_paid_total||0);
+  const provider=market.payment_provider||{configured:false,mode:"not_configured",name:"Paystack"};
+  $("fProviderStatus").textContent=provider.configured?(provider.name+" · "+pretty(provider.mode)):"Not configured";
+  $("fProviderStatus").style.color=provider.configured?"var(--rpe-green-700)":"#9a5c14";
+  $("providerFinanceNotice").querySelector(".notice").innerHTML=provider.configured
+    ?'<b>Protected settlement active:</b> '+esc(provider.name)+' is connected in '+esc(pretty(provider.mode))+' mode. Online customer payments are verified server-side; supplier payout remains pending until all release conditions pass.'
+    :'<b>Protected settlement ready, provider not connected:</b> live online payment and automated supplier transfer are disabled until the Paystack secret is added to Supabase. Manual corporate-account confirmation remains auditable.';
 
   $("financeCommission").value=settings.default_commission_rate??0;
   $("financeHoldDays").value=settings.payout_hold_days??0;
@@ -771,20 +784,27 @@ function renderFinance(){
   $("financePayoutsList").innerHTML=payouts.length?payouts.map(p=>{
     const st=stores.get(p.store_id),actions=[];
     if(isOwner()){
-      if(["pending","held"].includes(p.payout_status))actions.push('<button data-payout-status="eligible" data-payout-id="'+p.id+'">Mark eligible</button>');
-      if(p.payout_status==="eligible")actions.push('<button data-payout-status="processing" data-payout-id="'+p.id+'">Start payout</button>');
-      if(["eligible","processing"].includes(p.payout_status))actions.push('<button class="primary" data-payout-status="paid" data-payout-id="'+p.id+'">Mark paid</button>');
-      if(!["paid","cancelled"].includes(p.payout_status))actions.push('<button data-payout-status="held" data-payout-id="'+p.id+'">Hold</button>');
+      if(p.payout_status==="eligible"&&provider.configured)actions.push('<button class="primary" data-provider-payout="'+p.id+'">Pay seller securely</button>');
+      if(p.payout_status==="eligible"&&!provider.configured)actions.push('<button class="primary" data-payout-status="paid" data-payout-id="'+p.id+'">Record verified manual payout</button>');
+      if(!["paid","cancelled","processing"].includes(p.payout_status))actions.push('<button data-payout-status="held" data-payout-id="'+p.id+'">Hold</button>');
     }
-    return '<div class="market-row"><div><b>'+esc(st?.store_name||p.seller_order_ref)+'</b><small>'+esc(p.platform_order_ref||p.seller_order_ref)+' • '+new Date(p.created_at).toLocaleString()+'</small></div><span class="chip '+statusClass(p.payout_status)+'">'+esc(label(p.payout_status))+'</span><div><small>Gross / commission</small><b>'+fmtMoney(p.gross_product_amount)+' / '+Number(p.commission_rate||0).toFixed(2)+'%</b><small>Commission '+fmtMoney(p.commission_amount)+'</small></div><div><small>Seller payout</small><b class="finance-money">'+fmtMoney(p.payout_amount)+'</b><small>'+(p.payout_reference?'Ref '+esc(p.payout_reference):'No payout reference yet')+'</small></div><div class="actions">'+actions.join("")+'</div></div>';
+    const providerLine=p.provider?'<small>'+esc(pretty(p.provider))+(p.provider_status?' · '+esc(pretty(p.provider_status)):'')+(p.provider_transfer_code?' · transfer '+esc(p.provider_transfer_code):'')+'</small>':'';
+    return '<div class="market-row"><div><b>'+esc(st?.store_name||p.seller_order_ref)+'</b><small>'+esc(p.platform_order_ref||p.seller_order_ref)+' • '+new Date(p.created_at).toLocaleString()+'</small></div><span class="chip '+statusClass(p.payout_status)+'">'+esc(label(p.payout_status))+'</span><div><small>Gross / commission</small><b>'+fmtMoney(p.gross_product_amount)+' / '+Number(p.commission_rate||0).toFixed(2)+'%</b><small>Commission '+fmtMoney(p.commission_amount)+'</small></div><div><small>Seller payout</small><b class="finance-money">'+fmtMoney(p.payout_amount)+'</b><small>'+(p.payout_reference?'Ref '+esc(p.payout_reference):'Awaiting payout')+'</small>'+providerLine+'</div><div class="actions">'+actions.join("")+'</div></div>';
   }).join(""):'<div class="empty">No seller payouts have been created yet. Payouts are created when a customer payment is confirmed.</div>';
 
+  $("financePayoutsList").querySelectorAll("[data-provider-payout]").forEach(b=>b.onclick=async()=>{
+    const p=payouts.find(x=>x.id===b.dataset.providerPayout);if(!p)return;
+    if(!confirm("Release "+fmtMoney(p.payout_amount)+" to this verified seller payout destination? RANOVA will re-check all buyer-protection conditions before sending."))return;
+    b.disabled=true;
+    try{await marketApi({action:"initiate_provider_payout",id:p.id});await reloadMarketplace()}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  });
   $("financePayoutsList").querySelectorAll("[data-payout-status]").forEach(b=>b.onclick=async()=>{
     const status=b.dataset.payoutStatus;let payout_reference="",note="";
     if(status==="paid"){
-      payout_reference=prompt("Enter the seller payout transaction/reference.","")||"";
+      payout_reference=prompt("Enter the independently verified corporate-bank payout transaction/reference.","")||"";
       if(!payout_reference)return;
-      if(!confirm("Confirm this seller payout has actually been sent?"))return;
+      if(!confirm("Confirm this eligible seller payout has actually been sent from the approved RANOVA account?"))return;
     }else if(status==="held"){
       note=prompt("Why is this payout being held?","")||"";if(!note)return;
     }
