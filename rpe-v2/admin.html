@@ -254,7 +254,10 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
         <div class="metric"><small>Payouts awaiting action</small><strong id="fPayoutsPending">0</strong></div>
         <div class="metric"><small>Commission recorded</small><strong id="fCommissionTotal">GHS 0.00</strong></div>
         <div class="metric"><small>Seller payouts paid</small><strong id="fPayoutsPaid">GHS 0.00</strong></div>
+        <div class="metric"><small>Payment provider</small><strong id="fProviderStatus" style="font-size:14px">Not configured</strong></div>
       </div>
+
+      <div id="providerFinanceNotice" class="card"><div class="body"><div class="notice" style="margin-top:0"><b>Protected settlement:</b> customer payment and supplier payout are separate. Provider-backed seller transfers can only start after the payout becomes automatically eligible. Until Paystack is configured, live online payment and automated transfers remain disabled.</div></div></div>
 
       <div class="card">
         <div class="card-head"><div><h2>Fairness guardrails</h2><small style="color:var(--rpe-muted)">These rules are built into the marketplace finance flow.</small></div><span class="chip status-approved">No hidden deductions</span></div>
@@ -321,12 +324,12 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h2>Customer payment confirmation</h2><small style="color:var(--rpe-muted)">Confirm payment only after checking the transaction independently.</small></div></div>
+        <div class="card-head"><div><h2>Customer payments</h2><small style="color:var(--rpe-muted)">Paystack payments verify automatically. Use manual confirmation only for money independently verified in an approved RANOVA corporate payment account.</small></div></div>
         <div id="financePaymentsList" class="body market-list"></div>
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h2>Seller payout ledger</h2><small style="color:var(--rpe-muted)">Commission is snapshotted when customer payment is confirmed. Only the Owner can mark a seller payout as paid.</small></div></div>
+        <div class="card-head"><div><h2>Seller payout ledger</h2><small style="color:var(--rpe-muted)">Eligibility is automatic. When Paystack is connected, only the Owner can initiate the protected provider transfer.</small></div></div>
         <div id="financePayoutsList" class="body market-list"></div>
       </div>
     </section>
@@ -335,5 +338,5 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./admin.js?v=20260927-02"></script>
+<script src="./admin.js?v=20260927-03"></script>
 </body></html>
