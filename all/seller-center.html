@@ -162,10 +162,24 @@ var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
 var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 var LINK_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-link";
 var WORKSPACE_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-workspace";
-var mode="login",currentSession=null,currentApplication=null;
+var mode="login",currentSession=null,currentApplication=null,currentFiles=[];
+var savedRef="",savedPhone="",savedEmail="";
+try{
+  savedRef=sessionStorage.getItem("ranovaSellerApplicationRef")||"";
+  savedPhone=sessionStorage.getItem("ranovaSellerApplicationPhone")||"";
+  savedEmail=sessionStorage.getItem("ranovaSellerApplicationEmail")||"";
+}catch(e){}
+try{
+  var qs=new URLSearchParams(location.search);
+  if(qs.get("ref"))savedRef=qs.get("ref").trim();
+}catch(e){}
+
 
 var authPanel=document.getElementById("authPanel"),linkPanel=document.getElementById("linkPanel"),workspace=document.getElementById("workspace"),signOut=document.getElementById("signOut");
 var loginTab=document.getElementById("loginTab"),signupTab=document.getElementById("signupTab"),authSubmit=document.getElementById("authSubmit"),authMsg=document.getElementById("authMsg");
+if(savedEmail)document.getElementById("email").value=savedEmail;
+if(savedRef)document.getElementById("applicationRef").value=savedRef;
+if(savedPhone)document.getElementById("applicationPhone").value=savedPhone;
 
 function showMsg(el,text){el.textContent=text;el.style.display="block"}
 function hideMsg(el){el.style.display="none"}
@@ -224,7 +238,7 @@ document.getElementById("linkForm").addEventListener("submit",async function(e){
     await api(LINK_ENDPOINT,{application_ref:document.getElementById("applicationRef").value.trim(),phone:document.getElementById("applicationPhone").value.trim()});
     await loadWorkspace();
   }catch(err){showMsg(msg,err.message||"Could not link application.")}
-  finally{btn.disabled=false;btn.textContent="Link application"}
+  finally{btn.disabled=false;btn.textContent="Connect & continue"}
 });
 
 function setStage(id,status){
@@ -235,15 +249,68 @@ function setStage(id,status){
   else if(s==="locked")el.classList.add("locked");
   var em=el.querySelector("em");if(em)em.textContent=pretty(s);
 }
+function latestFile(files,type){
+  return (files||[]).filter(function(f){return f.document_type===type}).sort(function(a,b){return new Date(b.created_at||0)-new Date(a.created_at||0)})[0]||null;
+}
+function setDocStatus(id,file,optional){
+  var el=document.getElementById(id);if(!el)return;
+  el.classList.remove("done","review");
+  if(!file){el.textContent=optional?"Optional":"Not uploaded";return}
+  var st=String(file.review_status||"submitted").toLowerCase();
+  el.textContent=pretty(st);
+  if(st==="approved")el.classList.add("done");
+  else el.classList.add("review");
+}
+function stageComplete(v){return ["complete","approved","verified"].includes(String(v||"").toLowerCase())}
+function renderProgress(files){
+  currentFiles=files||[];
+  var app=currentApplication||{};
+  var businessDone=stageComplete(app.business_info_status);
+  var businessFile=latestFile(files,"business_registration");
+  var identityFile=latestFile(files,"identity_document");
+  var fulfilmentFile=latestFile(files,"fulfilment_evidence");
+  var locationFile=latestFile(files,"location_proof");
+  setDocStatus("businessDocStatus",businessFile,false);
+  setDocStatus("identityDocStatus",identityFile,false);
+  setDocStatus("fulfilmentDocStatus",fulfilmentFile,false);
+  setDocStatus("locationDocStatus",locationFile,true);
+
+  var required=[businessDone,!!businessFile,!!identityFile,!!fulfilmentFile];
+  var done=required.filter(Boolean).length;
+  var percent=Math.round(done/required.length*100);
+  var fill=document.getElementById("progressFill"),txt=document.getElementById("progressText"),next=document.getElementById("nextAction");
+  if(fill)fill.style.width=percent+"%";
+  if(txt)txt.textContent=done+" of 4 required registration steps completed.";
+  if(next){
+    if(!businessDone)next.innerHTML="Next: complete or correct your business information.";
+    else if(!businessFile)next.innerHTML='Next: upload your <b>business proof</b> below.';
+    else if(!identityFile)next.innerHTML='Next: upload the <b>ID of the person responsible for the seller account</b>.';
+    else if(!fulfilmentFile)next.innerHTML='Next: upload your <b>orders & delivery proof</b>.';
+    else next.innerHTML='All required items are present. Review your uploads, then tap <b>Submit for RANOVA Review</b>.';
+  }
+  var submit=document.getElementById("submitForReview"),help=document.getElementById("submitReviewHelp");
+  var ready=businessDone&&!!businessFile&&!!identityFile&&!!fulfilmentFile;
+  if(submit)submit.disabled=!ready;
+  if(help)help.textContent=ready?"Everything required is present. Submit when you are ready for RANOVA Admin to review it.":"Complete the missing required steps above first.";
+}
 function renderFiles(files){
   var host=document.getElementById("files");
-  if(!files||!files.length){host.innerHTML='<div class="locked-box">No documents submitted yet.</div>';return}
-  host.innerHTML=files.map(function(f){return '<div class="file"><div><b>'+pretty(f.document_type)+'</b><span>'+String(f.original_filename||"Document")+(f.review_note?'<br><em style="display:block;margin-top:4px;color:#9a542e;font-style:normal">'+String(f.review_note)+'</em>':'')+'</span></div><strong>'+pretty(f.review_status)+'</strong></div>'}).join("");
+  if(!files||!files.length){host.innerHTML='<div class="locked-box">No documents uploaded yet.</div>';renderProgress([]);return}
+  host.innerHTML=files.map(function(f){
+    var name=({business_registration:"Business proof",identity_document:"Identity ID",location_proof:"Location proof",fulfilment_evidence:"Orders & delivery proof"})[f.document_type]||pretty(f.document_type);
+    return '<div class="file"><div><b>'+name+'</b><span>'+String(f.original_filename||"Document")+' · '+pretty(f.review_status)+(f.review_note?'<br><em style="display:block;margin-top:4px;color:#9a542e;font-style:normal">'+String(f.review_note)+'</em>':'')+'</span></div><strong>'+pretty(f.review_status)+'</strong></div>'
+  }).join("");
+  renderProgress(files);
 }
 async function loadWorkspace(){
   try{
     var out=await api(WORKSPACE_ENDPOINT,{});
-    if(!out.linked){linkPanel.style.display="block";workspace.style.display="none";return}
+    if(!out.linked){
+      linkPanel.style.display="block";workspace.style.display="none";
+      if(savedRef&&!document.getElementById("applicationRef").value)document.getElementById("applicationRef").value=savedRef;
+      if(savedPhone&&!document.getElementById("applicationPhone").value)document.getElementById("applicationPhone").value=savedPhone;
+      return
+    }
     linkPanel.style.display="none";workspace.style.display="block";
     currentApplication=out.application;
     document.getElementById("businessName").textContent=currentApplication.business_name||"Seller";
@@ -267,13 +334,31 @@ async function loadWorkspace(){
       storeBox.style.background="#f0faf5";
     }else{
       dashboardLink.style.display="none";
-      storeBox.innerHTML='<b>Locked until seller verification is approved.</b><br>After approval, this area unlocks the Store Builder where you add your logo, banner, business profile, products, wholesale prices, stock and delivery settings.';
+      storeBox.innerHTML='<b>Available after RANOVA approval.</b><br>Nothing is required here yet. Finish Steps 1–4 and submit them for review. After approval, this section becomes your Store Builder.';
     }
+    try{
+      sessionStorage.setItem("ranovaSellerApplicationRef",currentApplication.application_ref||"");
+      if(document.getElementById("applicationPhone").value)sessionStorage.setItem("ranovaSellerApplicationPhone",document.getElementById("applicationPhone").value);
+    }catch(e){}
     renderFiles(out.files||[]);
   }catch(err){
     showMsg(authMsg,err.message||"Could not load Seller Center.");authPanel.style.display="block";workspace.style.display="none";
   }
 }
+
+document.getElementById("submitForReview").addEventListener("click",async function(){
+  var btn=this,msg=document.getElementById("verifyMsg");hideMsg(msg);
+  if(btn.disabled)return;
+  if(!confirm("Submit your completed seller verification to RANOVA Admin for review?"))return;
+  btn.disabled=true;var old=btn.textContent;btn.textContent="Submitting…";
+  try{
+    await api(WORKSPACE_ENDPOINT,{action:"submit_for_review"});
+    showMsg(msg,"Seller registration submitted successfully. RANOVA Admin can now review your business, identity and fulfilment documents.");
+    await loadWorkspace();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }catch(err){showMsg(msg,err.message||"Could not submit for review.")}
+  finally{btn.textContent=old}
+});
 
 [].slice.call(document.querySelectorAll("[data-upload]")).forEach(function(btn){
   btn.addEventListener("click",async function(){
@@ -300,7 +385,7 @@ async function loadWorkspace(){
       if(ins.error)throw ins.error;
       var sync=await api(WORKSPACE_ENDPOINT,{action:"document_submitted",document_type:type});
       if(!sync.ok)throw new Error(sync.error||"Document uploaded but verification status could not be synchronized.");
-      showMsg(msg,type==="location_proof"?"Supporting document uploaded securely.":"Document uploaded securely. This verification stage is now under RANOVA Admin review.");
+      showMsg(msg,type==="location_proof"?"Supporting location proof uploaded securely.":"Upload complete. This step is now ready for RANOVA Admin review.");
       await loadWorkspace();
       input.value="";
     }catch(err){showMsg(msg,err.message||"Could not upload document.")}
