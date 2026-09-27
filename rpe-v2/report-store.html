@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Report a Store | RANOVA</title><meta name="theme-color" content="#116a52">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#f5f7f6;color:#173a32;font-size:16px;line-height:1.55}
+.wrap{width:min(760px,calc(100% - 24px));margin:auto}.top{background:#103f34;color:#fff;padding:15px 0}.top a{color:#fff;text-decoration:none}.hero{padding:30px 0 18px;background:linear-gradient(135deg,#eaf8f2,#fff7ee)}.hero h1{margin:5px 0;font-size:clamp(30px,7vw,46px)}.hero p{color:#64766f}
+.card{background:#fff;border:1px solid #dfe8e4;border-radius:20px;padding:18px;margin:18px 0;box-shadow:0 10px 30px rgba(0,0,0,.04)}
+label{display:block;font-weight:850;font-size:14px;margin:12px 0 5px}input,select,textarea{width:100%;padding:12px;border:1px solid #d6e1dc;border-radius:12px;font:inherit}textarea{min-height:130px;resize:vertical}
+button{border:0;border-radius:999px;background:#ff6a34;color:#fff;padding:13px 18px;font-weight:900;font-size:15px;cursor:pointer}button[disabled]{opacity:.5}.note{padding:12px;border-radius:12px;background:#f0f7f4;color:#526b62;font-size:13px}.msg{display:none;margin-top:12px;padding:12px;border-radius:12px;background:#fff1eb;color:#8b431f}.success{background:#eaf8f2;color:#135c43}.files{margin-top:7px;border:1px dashed #ccd8d3;border-radius:12px;padding:10px;background:#fafcfb}
+.report-row{padding:12px;border:1px solid #e5ebe8;border-radius:12px;margin-top:8px}.report-row small{display:block;color:#75857f;margin-top:4px}
+</style></head><body>
+<div class="top"><div class="wrap"><b>RANOVA CUSTOMER APP</b> <span style="float:right"><a href="./">My RANOVA</a></span></div></div>
+<section class="hero"><div class="wrap"><div style="font-size:12px;font-weight:900;color:#116a52">CUSTOMER PROTECTION</div><h1>Report a store</h1><p>Tell RANOVA what happened and attach genuine evidence. A report does not automatically punish a seller; RANOVA Admin reviews the evidence before taking action.</p></div></section>
+<main class="wrap">
+<div id="authCard" class="card"><h2>Sign in required</h2><p>Sign in with your RANOVA customer account before submitting a report.</p><label>Email</label><input id="email" type="email"><label>Password</label><input id="password" type="password"><button id="login" style="margin-top:14px">Sign in</button><div id="authMsg" class="msg"></div></div>
+<div id="reportCard" class="card" style="display:none">
+<h2>Report details</h2><div class="note">Only submit information you believe is true. Screenshots, photos and documents help RANOVA investigate fairly.</div>
+<label>Store *</label><select id="store"><option value="">Choose store</option></select>
+<label>Reason *</label><select id="category">
+<option value="">Choose a reason</option><option value="counterfeit">Fake / counterfeit product</option><option value="product_not_as_described">Product not as described</option><option value="payment_outside_ranova">Asked to pay outside RANOVA</option><option value="suspected_fraud">Fraud / scam concern</option><option value="threats_harassment">Threatening or abusive communication</option><option value="non_delivery">Non-delivery</option><option value="repeated_cancellation">Repeated cancellation</option><option value="misleading_price">Misleading price</option><option value="prohibited_product">Prohibited product</option><option value="fake_business_information">Fake business information</option><option value="intellectual_property">Intellectual-property complaint</option><option value="other">Other</option></select>
+<label>Explain what happened *</label><textarea id="description" placeholder="Include dates, order details, what the seller said, and why you are reporting the store."></textarea>
+<label>Evidence (optional but recommended)</label><div class="files"><input id="evidence" type="file" multiple accept=".pdf,image/jpeg,image/png,image/webp"><small>Up to 10 MB per file. PDF, JPG, PNG or WEBP.</small></div>
+<button id="submit" style="margin-top:16px">Submit report to RANOVA</button><div id="msg" class="msg"></div>
+</div>
+<div id="historyCard" class="card" style="display:none"><h2>My reports</h2><div id="history"></div></div>
+</main>
+<script>
+(function(){
+const URL="https://igaerssbzobutlwvjfwt.supabase.co",KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
+const sb=supabase.createClient(URL,KEY),ENDPOINT=URL+"/functions/v1/ranova-trust-center";
+let session=null;
+const $=id=>document.getElementById(id);
+function show(id,text,good){const e=$(id);e.textContent=text;e.className="msg"+(good?" success":"");e.style.display="block"}
+async function api(body){const r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":KEY,"x-ranova-client":"ranova-site-v1"},body:JSON.stringify(body)});const o=await r.json().catch(()=>({}));if(!r.ok||!o.ok)throw new Error(o.error||"Request failed.");return o}
+async function loadStores(){const r=await sb.from("ranova_seller_stores").select("id,store_name,slug,business_location").eq("store_status","active").order("store_name");const list=r.data||[];$("store").innerHTML='<option value="">Choose store</option>'+list.map(x=>'<option value="'+x.id+'">'+x.store_name+(x.business_location?" · "+x.business_location:"")+'</option>').join("");const q=new URLSearchParams(location.search);const wanted=q.get("store");if(wanted){const found=list.find(x=>x.id===wanted||x.slug===wanted);if(found)$("store").value=found.id}}
+async function loadHistory(){const o=await api({action:"my_reports"});$("history").innerHTML=o.reports.length?o.reports.map(r=>'<div class="report-row"><b>'+r.report_ref+' · '+String(r.category).replace(/_/g," ")+'</b><small>'+String(r.status).replace(/_/g," ")+' · '+new Date(r.created_at).toLocaleString()+' · '+r.evidence_count+' evidence file(s)</small></div>').join(""):'<div class="note">No reports submitted from this account.</div>';$("historyCard").style.display="block"}
+async function boot(){const g=await sb.auth.getSession();session=g.data.session;if(!session){$("authCard").style.display="block";return}$("authCard").style.display="none";$("reportCard").style.display="block";await loadStores();await loadHistory()}
+$("login").onclick=async()=>{const b=$("login");b.disabled=true;try{const r=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(r.error)throw r.error;session=r.data.session;await boot()}catch(e){show("authMsg",e.message||"Could not sign in.")}finally{b.disabled=false}}
+$("submit").onclick=async()=>{const b=$("submit");b.disabled=true;$("msg").style.display="none";try{
+ const store_id=$("store").value,category=$("category").value,description=$("description").value.trim();if(!store_id||!category||description.length<20)throw new Error("Choose a store and reason, then give a clear explanation of at least 20 characters.");
+ const o=await api({action:"submit_report",store_id,category,description});const report=o.report,files=[...$("evidence").files];
+ for(const file of files){if(file.size>10*1024*1024)throw new Error(file.name+" is larger than 10 MB.");const safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,"_"),path=session.user.id+"/"+report.id+"/"+Date.now()+"_"+safe;const up=await sb.storage.from("report-evidence").upload(path,file,{upsert:false,contentType:file.type||undefined});if(up.error)throw up.error;await api({action:"add_evidence",report_id:report.id,storage_path:path,original_filename:file.name,mime_type:file.type,file_size:file.size})}
+ show("msg","Report "+report.report_ref+" submitted successfully. RANOVA Admin will review it.",true);$("description").value="";$("evidence").value="";await loadHistory();
+}catch(e){show("msg",e.message||"Could not submit report.")}finally{b.disabled=false}}
+boot();
+})();
+</script><script src="./customer-pwa.js?v=20260927-01"></script></body></html>
