@@ -43,6 +43,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
       <button class="navbtn active" data-panel="overview">Overview</button>
       <button class="navbtn" data-panel="store">Store Builder</button>
       <button class="navbtn" data-panel="products">Products</button>
+      <button class="navbtn" data-panel="inventory">Inventory</button>
       <button class="navbtn" data-panel="orders">Orders</button>
       <button id="deliveryNav" class="navbtn" data-panel="delivery">Delivery</button>
       <button id="trustNav" class="navbtn" data-panel="trust">Reviews & Trust</button>
@@ -117,6 +118,20 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             </div>
             <div class="actions"><button id="saveProduct" class="btn green" type="button">Save product</button><button id="cancelProduct" class="btn" type="button">Cancel</button></div>
           </div>
+        </div>
+      </div>
+
+      <div id="panel-inventory" class="panel">
+        <div class="card">
+          <h2>Inventory activity</h2>
+          <p>RANOVA temporarily reserves limited stock when buyers place orders. Stock is deducted only after RANOVA confirms payment. Expired or cancelled unpaid holds release automatically.</p>
+          <div class="metrics" style="margin-top:14px">
+            <div class="metric"><small>Active reservations</small><strong id="mInventoryHeld">0</strong></div>
+            <div class="metric"><small>Committed lines</small><strong id="mInventoryCommitted">0</strong></div>
+            <div class="metric"><small>Restored lines</small><strong id="mInventoryRestored">0</strong></div>
+            <div class="metric"><small>Inventory events</small><strong id="mInventoryEvents">0</strong></div>
+          </div>
+          <div id="inventoryList" class="order-list"><div class="empty">No inventory activity yet.</div></div>
         </div>
       </div>
 
@@ -346,7 +361,7 @@ async function refresh(){
     el("dashboard").classList.add("hide");return;
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
-  renderOverview();fillStore();renderProducts();renderOrders();renderDelivery();renderTrust();renderFinance();renderSupport();
+  renderOverview();fillStore();renderProducts();renderInventory();renderOrders();renderDelivery();renderTrust();renderFinance();renderSupport();
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
@@ -495,6 +510,20 @@ async function changeOrderStatus(o,status,button){
   }catch(err){msg(el("orderMsg"),err.message)}
   finally{button.disabled=false}
 }
+function renderInventory(){
+  var reservations=state.inventory_reservations||[],events=state.inventory_events||[],products=state.products||[],now=Date.now();
+  var held=reservations.filter(function(r){return r.status==="held"&&(!r.expires_at||new Date(r.expires_at).getTime()>now)});
+  el("mInventoryHeld").textContent=held.length;
+  el("mInventoryCommitted").textContent=reservations.filter(function(r){return r.status==="committed"}).length;
+  el("mInventoryRestored").textContent=reservations.filter(function(r){return r.status==="restored"}).length;
+  el("mInventoryEvents").textContent=events.length;
+  var host=el("inventoryList");
+  host.innerHTML=events.length?events.map(function(e){
+    var p=products.find(function(x){return x.id===e.product_id}),movement=e.event_type==="committed"?"−"+e.quantity:e.event_type==="restored"?("+"+e.quantity):String(e.quantity);
+    return '<div class="order-row"><div><b>'+esc(p?p.name:"Product")+'</b><small>'+esc(e.order_ref||"No order reference")+' · '+esc(pretty(e.event_type))+'</small><small>'+esc(e.note||"")+'</small></div><div><span class="status">'+esc(movement)+' unit(s)</span><small>'+esc(pretty(e.actor_type||"system"))+'</small></div><div><b>'+(e.stock_after==null?"Untracked":esc(e.stock_after)+" in stock")+'</b><small>'+esc(new Date(e.created_at).toLocaleString())+'</small></div></div>';
+  }).join(""):'<div class="empty">No inventory reservations or stock movements yet.</div>';
+}
+
 function renderOrders(){
   var host=el("orderList"),orders=state.orders||[];
   if(!orders.length){host.innerHTML='<div class="empty">No marketplace orders have been routed to this store yet.</div>';return}
