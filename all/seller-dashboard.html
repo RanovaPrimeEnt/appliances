@@ -107,7 +107,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 
       <div id="panel-products" class="panel">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products</h2><p>Add products manually or import an existing catalogue and let RANOVA prepare the product cards for you.</p></div><button id="newProduct" class="btn green" type="button">+ Add product manually</button></div>
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products & Price Manager</h2><p>All of your products are listed here. Add products, import a catalogue, or change any product price manually at any time with the Save price button.</p></div><button id="newProduct" class="btn green" type="button">+ Add product manually</button></div>
           <div id="productMsg" class="msg" style="margin-top:12px"></div>
 
           <div class="catalogue-import">
@@ -444,11 +444,13 @@ function statusChip(status){return '<span class="chip '+esc(status)+'">'+esc(pre
 function renderProducts(){
   var list=el("productList"),ps=state.products||[];
   if(!ps.length){list.innerHTML='<div class="empty">No seller products yet. Use “Add product” to create your first listing.</div>';return}
-  list.innerHTML=ps.filter(function(p){return p.product_status!=="archived"}).map(function(p){
+  list.innerHTML=ps.map(function(p){
     var img=p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="">':'<img alt="">';
     var submit=(p.product_status==="draft"||p.product_status==="paused"||p.product_status==="rejected")?'<button data-action="submit" data-id="'+p.id+'">Submit for review</button>':'';
     var pause=p.product_status==="active"?'<button data-action="pause" data-id="'+p.id+'">Pause</button>':'';
-    return '<div class="product-row">'+img+'<div><b>'+esc(p.name)+'</b><small>'+esc(p.category)+' · '+esc(money(p.price))+' · MOQ '+esc(p.moq)+' · '+esc(pretty(p.stock_status))+'</small>'+statusChip(p.product_status)+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':'')+'</div><div class="row-actions"><button data-action="edit" data-id="'+p.id+'">Edit</button>'+submit+pause+'<button data-action="archive" data-id="'+p.id+'">Archive</button></div></div>'
+    var priceValue=p.price==null?"":String(p.price);
+    var priceControl='<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:7px"><span style="font-size:12px;font-weight:900">GHS</span><input data-price-input="'+esc(p.id)+'" type="number" min="0" step="0.01" value="'+esc(priceValue)+'" placeholder="Enquiry" style="width:105px;border:1px solid #d8e3df;border-radius:9px;padding:7px 8px"><button data-action="price" data-id="'+esc(p.id)+'" style="background:var(--orange);color:#fff;border-color:var(--orange)">Save price</button></div>';
+    return '<div class="product-row">'+img+'<div><b>'+esc(p.name)+'</b><small>'+esc(p.category)+' · '+esc(money(p.price))+' · MOQ '+esc(p.moq)+' · '+esc(pretty(p.stock_status))+'</small>'+statusChip(p.product_status)+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':'')+'</div><div class="row-actions">'+priceControl+'<button data-action="edit" data-id="'+p.id+'">Edit</button>'+submit+pause+'<button data-action="archive" data-id="'+p.id+'">Archive</button></div></div>'
   }).join("")||'<div class="empty">No current products.</div>';
 }
 function resetProduct(){
@@ -469,6 +471,16 @@ el("newProduct").onclick=function(){openEditor(null)};el("cancelProduct").onclic
 el("productList").onclick=async function(e){
   var b=e.target.closest("button[data-action]");if(!b)return;var p=(state.products||[]).find(function(x){return x.id===b.dataset.id});if(!p)return;
   if(b.dataset.action==="edit"){openEditor(p);return}
+  if(b.dataset.action==="price"){
+    var input=el("productList").querySelector('[data-price-input="'+p.id+'"]');
+    var raw=input?String(input.value||"").trim():"";
+    if(raw!==""&&(!Number.isFinite(Number(raw))||Number(raw)<0)){msg(el("productMsg"),"Enter a valid price of 0 or more.");return}
+    b.disabled=true;
+    try{await api({action:"update_product_price",id:p.id,price:raw});msg(el("productMsg"),raw===""?"Price changed to enquiry pricing.":"Product price updated.",true);await refresh();setPanel("products")}
+    catch(err){msg(el("productMsg"),err.message)}
+    finally{b.disabled=false}
+    return;
+  }
   var action=b.dataset.action==="submit"?"submit_product":b.dataset.action==="pause"?"pause_product":"archive_product";
   b.disabled=true;
   try{await api({action:action,id:p.id});msg(el("productMsg"),action==="submit_product"?"Product submitted for RANOVA review.":"Product updated.",true);await refresh();setPanel("products")}
