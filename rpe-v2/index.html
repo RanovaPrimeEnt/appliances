@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RANOVA">
 <link rel="manifest" href="./customer-app.webmanifest?v=20260927-04">
 <link rel="icon" href="./customer-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./marketplace.css?v=20260927-3">
+<link rel="stylesheet" href="./marketplace.css?v=20260927-4">
 <title>RANOVA | Marketplace</title>
 <meta name="description" content="Shop products from RANOVA Prime Enterprise and approved marketplace stores in the RANOVA customer app.">
 <style>
@@ -85,13 +85,10 @@ body{background:var(--r-page);color:var(--r-text)}
   <main class="market-main">
     <form id="marketSearchForm" class="market-search"><input id="marketSearch" type="search" placeholder="Search products or stores" aria-label="Search products or stores"><button type="submit">Search</button></form>
     <div id="marketCategories" class="market-categories" aria-label="Product categories"></div>
-    <div class="market-filters" aria-label="Product filters"><label>Sort products<select id="marketSort"><option value="recommended">Mix of stores</option><option value="newest">Newest listings</option><option value="price">Lowest confirmed price</option></select></label><label>Minimum order<select id="marketMinimum"><option value="">Any quantity</option><option value="1">1 item</option><option value="5">Up to 5 items</option><option value="10">Up to 10 items</option></select></label><label class="market-filter-check"><input id="marketPriced" type="checkbox"> Show products with a confirmed price</label></div>
-    <p class="market-filter-help">Filters narrow the products below. Products without a confirmed price remain visible unless you select the price filter; price sorting puts them last and groups different currencies. Compare up to 3 products to check their seller, price, and order quantity.</p>
     <section id="marketStoreView" class="market-store-view hide"></section>
     <section id="marketFeedView"><div class="market-title"><div><h1 id="marketHeading">Discover products</h1><p>Explore products from RANOVA stores</p></div><button id="marketRefresh" type="button" aria-label="Refresh products">↻ Refresh</button></div><div id="marketGrid" class="market-grid" aria-live="polite"><p class="market-state">Loading products…</p></div><button id="marketMore" class="market-more hide" type="button">Show more products</button></section>
-    <div id="marketCompareTray" class="market-compare-tray hide" role="status"></div>
   </main>
-  <nav class="market-nav" aria-label="Customer app navigation"><button id="marketHome" class="selected" type="button">⌂<span>Home</span></button><button id="marketBrowse" type="button">▦<span>Categories</span></button><button id="marketCart" type="button">♧<span>Cart <b id="marketCartCount"></b></span></button><button id="marketMe" type="button">○<span>Me</span></button></nav>
+  <nav class="market-nav" aria-label="Customer app navigation"><button id="marketHome" class="selected" type="button" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></button><button id="marketMessage" type="button" aria-label="Message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span></button><button id="marketCart" type="button" aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart <b id="marketCartCount"></b></span></button><button id="marketMe" type="button" aria-label="Me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></button></nav>
 </div>
 <div id="marketOverlay" class="market-overlay hide" role="dialog" aria-modal="true" aria-label="Product or cart details"></div>
 <div id="setup" class="loading hide">Preparing My RPE…</div>
@@ -183,7 +180,7 @@ body{background:var(--r-page);color:var(--r-text)}
 
 <nav class="bottom" aria-label="Main navigation">
 <button id="returnMarket" type="button" aria-label="Marketplace Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></button>
-<a href="../all/messages.html" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span></a>
+<button id="bottomMessage" type="button" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span></button>
 <button id="bottomCart" aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart</span><span id="bottomCartCount" class="bubble hide">0</span></button>
 <button class="active" data-panel="homePanel" aria-label="My account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></button>
 </nav>
@@ -197,7 +194,7 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./marketplace.js?v=20260927-4"></script>
-<script src="./app.js?v=20260927-08"></script>
+<script src="./marketplace.js?v=20260927-5"></script>
+<script src="./app.js?v=20260927-09"></script>
 <script src="./customer-pwa.js?v=20260927-01"></script>
 </body></html>
