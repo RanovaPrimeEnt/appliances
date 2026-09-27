@@ -124,6 +124,7 @@ function renderInventoryReservation(o){
   var box=el("inventoryReservationBox");
   function draw(){
     var status=String(o.inventory_status||"not_required");
+    box.style.display="";
     box.className="inventory-reservation";
     if(status==="held"&&o.inventory_reservation_expires_at){
       var expiry=new Date(o.inventory_reservation_expires_at),ms=expiry.getTime()-Date.now();
