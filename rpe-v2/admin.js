@@ -1156,6 +1156,12 @@ $("refreshMarketplace").onclick=async()=>{
   try{await reloadMarketplace()}catch(err){alert(err.message)}
   finally{$("refreshMarketplace").disabled=false}
 };
+const refreshStoreRegistry=$("refreshStoreRegistry");
+if(refreshStoreRegistry)refreshStoreRegistry.onclick=async()=>{
+  refreshStoreRegistry.disabled=true;
+  try{await reloadMarketplace()}catch(err){alert(err.message)}
+  finally{refreshStoreRegistry.disabled=false}
+};
 
 (async()=>{
   const {data:{session:initial}}=await sb.auth.getSession();
