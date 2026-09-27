@@ -140,7 +140,7 @@ textarea{min-height:112px;resize:vertical}
         <div>If the application is eligible, the next stage will request verification details and store setup.</div>
         <div>You are not shown publicly as a verified seller until approval is complete.</div>
       </div>
-      <p style="margin-top:18px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><a class="back" style="color:#116a52;border-color:#b9d8cd" href="./seller-status.html">Check application status</a><a class="back" style="color:#116a52;border-color:#b9d8cd" href="./">Return to marketplace</a></p>
+      <p style="margin-top:18px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><a id="continueSeller" class="back" style="background:#116a52;color:#fff;border-color:#116a52" href="./seller-center.html">Create seller account & continue verification</a><a class="back" style="color:#116a52;border-color:#b9d8cd" href="./seller-status.html">Check application status</a><a class="back" style="color:#116a52;border-color:#b9d8cd" href="./">Return to marketplace</a></p>
     </div>
   </section>
 </main>
@@ -184,6 +184,13 @@ form.addEventListener("submit",async function(e){
     if(!res.ok||!out.ok)throw new Error(out.error||"Could not submit application.");
     document.getElementById("formArea").style.display="none";
     document.getElementById("applicationRef").textContent=out.application_ref||"Application received";
+    try{
+      sessionStorage.setItem("ranovaSellerApplicationRef",out.application_ref||"");
+      sessionStorage.setItem("ranovaSellerApplicationPhone",val("phone"));
+      sessionStorage.setItem("ranovaSellerApplicationEmail",val("email"));
+    }catch(e){}
+    var continueLink=document.getElementById("continueSeller");
+    if(continueLink&&out.application_ref)continueLink.href="./seller-center.html?ref="+encodeURIComponent(out.application_ref);
     document.getElementById("success").style.display="block";
     window.scrollTo({top:0,behavior:"smooth"});
   }catch(err){
