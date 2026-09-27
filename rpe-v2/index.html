@@ -9,8 +9,9 @@
 <meta name="apple-mobile-web-app-title" content="RANOVA">
 <link rel="manifest" href="./customer-app.webmanifest?v=20260927-04">
 <link rel="icon" href="./customer-icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./marketplace.css?v=20260927-1">
 <title>RANOVA | Marketplace</title>
-<meta name="description" content="Your simple Ranova Prime Enterprise shopping account for saved products, cart, orders, delivery addresses and live order updates.">
+<meta name="description" content="Shop products from RANOVA Prime Enterprise and approved marketplace stores in the RANOVA customer app.">
 <style>
 :root{--green:#183330;--green2:#176B61;--gold:#A894F4;--cream:#F8F7FC;--ink:#243936;--muted:#6E7E7A;--line:#E0E8E4;--white:#fff;--danger:#a2473d}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:none!important}
@@ -79,9 +80,21 @@ body{background:var(--r-page);color:var(--r-text)}
     <div data-install-body style="margin-top:12px;font-size:13px;line-height:1.75;color:#555"></div>
   </div>
 </div>
-<div id="setup" class="loading">Preparing My RPE…</div>
+<div id="marketApp" class="market-app">
+  <header class="market-header"><div class="market-brand"><span class="market-mark">R</span><span><strong>RANOVA</strong><small>Marketplace</small></span></div><div class="market-header-actions"><button id="marketTrack" type="button">Track order</button><button id="marketAccount" type="button">Me / Sign in</button></div></header>
+  <main class="market-main">
+    <form id="marketSearchForm" class="market-search"><input id="marketSearch" type="search" placeholder="Search products or stores" aria-label="Search products or stores"><button type="submit">Search</button></form>
+    <div id="marketCategories" class="market-categories" aria-label="Product categories"></div>
+    <section id="marketStoreView" class="market-store-view hide"></section>
+    <section id="marketFeedView"><div class="market-title"><div><h1 id="marketHeading">Discover products</h1><p>Explore products from RANOVA stores</p></div><button id="marketRefresh" type="button" aria-label="Refresh products">↻ Refresh</button></div><div id="marketGrid" class="market-grid" aria-live="polite"><p class="market-state">Loading products…</p></div><button id="marketMore" class="market-more hide" type="button">Show more products</button></section>
+  </main>
+  <nav class="market-nav" aria-label="Customer app navigation"><button id="marketHome" class="selected" type="button">⌂<span>Home</span></button><button id="marketBrowse" type="button">▦<span>Categories</span></button><button id="marketCart" type="button">♧<span>Cart <b id="marketCartCount"></b></span></button><button id="marketMe" type="button">○<span>Me</span></button></nav>
+</div>
+<div id="marketOverlay" class="market-overlay hide" role="dialog" aria-modal="true" aria-label="Product or cart details"></div>
+<div id="setup" class="loading hide">Preparing My RPE…</div>
 
 <section id="auth" class="auth hide">
+  <button id="authBackMarket" type="button" class="btn soft" style="margin-bottom:14px">← Back to marketplace</button>
   <div class="brand"><span class="mark">RPE</span><span><b>Ranova Prime Enterprise</b><small>My RPE</small></span></div>
   <div class="auth-tabs" role="tablist" aria-label="Account options">
     <button id="signInTab" class="auth-tab active" type="button">Sign in</button>
@@ -166,7 +179,7 @@ body{background:var(--r-page);color:var(--r-text)}
 </main>
 
 <nav class="bottom" aria-label="Main navigation">
-<a href="../all/" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></a>
+<button id="returnMarket" type="button" aria-label="Marketplace Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></button>
 <a href="../all/messages.html" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span></a>
 <button id="bottomCart" aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart</span><span id="bottomCartCount" class="bubble hide">0</span></button>
 <button class="active" data-panel="homePanel" aria-label="My account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></button>
@@ -181,6 +194,7 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20260927-06"></script>
+<script src="./marketplace.js?v=20260927-1"></script>
+<script src="./app.js?v=20260927-07"></script>
 <script src="./customer-pwa.js?v=20260927-01"></script>
 </body></html>
