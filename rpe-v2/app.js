@@ -12,7 +12,7 @@ if (!cfg.supabaseUrl || !cfg.supabasePublishableKey || !window.supabase) {
   return;
 }
 
-const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabasePublishableKey);
+const sb = window.RPE_SUPABASE || window.supabase.createClient(cfg.supabaseUrl, cfg.supabasePublishableKey);
 let user = null;
 let profile = null;
 let products = [];
@@ -28,8 +28,17 @@ let orderFilter = null;
 let signUpMode = false;
 let incomingCartHandled = false;
 let realtimeChannels = [];
+let accountRequested = false;
+window.RPE_ACCOUNT_OPEN = () => {
+  accountRequested = true;
+  document.getElementById('marketApp').classList.add('hide');
+  if(user){authBox.classList.add('hide');appBox.classList.remove('hide');showPanel('homePanel')}
+  else{appBox.classList.add('hide');authBox.classList.remove('hide');authUI()}
+};
 
 const $ = (id) => document.getElementById(id);
+if($('returnMarket'))$('returnMarket').onclick=()=>{accountRequested=false;window.RPE_OPEN_MARKET()};
+if($('authBackMarket'))$('authBackMarket').onclick=()=>{accountRequested=false;window.RPE_OPEN_MARKET()};
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money = (n,c='GHS') => n == null ? "Ask for price" : new Intl.NumberFormat("en-GH",{style:"currency",currency:c}).format(Number(n));
 const imageFor = (p) => {
@@ -130,12 +139,14 @@ async function applySession(session){
   cleanupRealtime();
   user=session?.user||null;
   if(!user){
-    setup.classList.add("hide");appBox.classList.add("hide");authBox.classList.remove("hide");authUI();return;
+    setup.classList.add("hide");appBox.classList.add("hide");authBox.classList.toggle("hide",!accountRequested);authUI();
+    if(!accountRequested)window.RPE_OPEN_MARKET();return;
   }
   authBox.classList.add("hide");setup.classList.remove("hide");setup.textContent="Loading your RPE account…";
   try{
     await loadAll();
-    setup.classList.add("hide");appBox.classList.remove("hide");subscribeRealtime();
+    setup.classList.add("hide");appBox.classList.toggle("hide",!accountRequested);subscribeRealtime();
+    if(!accountRequested)window.RPE_OPEN_MARKET();
     await handleIncomingCartLink();
   }catch(e){
     console.error(e);
