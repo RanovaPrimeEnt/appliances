@@ -183,6 +183,7 @@ function renderMarketplaceAll(){
   renderSellerApplications();
   renderSellerProducts();
   renderSellerStores();
+  renderSellerMessageCentre();
   renderMarketplaceTrust();
   renderMarketplaceDiscovery();
   renderInventoryControl();
@@ -1059,6 +1060,39 @@ function openStoreRegistryDetail(ref){
   };
   document.getElementById("closeStoreRegistryModal").onclick=()=>modal.style.display="none";
 }
+function renderSellerMessageCentre(){
+  const host=$("sellerMessageCentre");if(!host)return;
+  if(!canSellerReview()){host.innerHTML='<div class="empty">Your admin role does not include seller messaging.</div>';return}
+  const stores=market.stores||[];
+  if(!stores.length){host.innerHTML='<div class="empty">No seller stores available yet.</div>';return}
+  host.innerHTML='<div style="display:grid;gap:10px">'+stores.map(store=>{
+    const thread=(market.admin_seller_threads||[]).find(t=>t.store_id===store.id);
+    const messages=thread?(market.admin_seller_messages||[]).filter(m=>m.thread_id===thread.id):[];
+    const last=messages[messages.length-1];
+    return '<div style="border:1px solid #e1e8e5;border-radius:14px;padding:13px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center">'+
+      '<div><b>'+esc(store.store_name)+'</b><small style="display:block;color:#718078;margin-top:4px">'+esc(store.business_location||"Location not provided")+' · '+esc(label(store.store_status))+'</small>'+
+      '<small style="display:block;color:#718078;margin-top:4px">'+(last?'Last: '+esc(last.sender_role==="admin"?"Admin":"Seller")+' · '+esc(last.body.slice(0,90)):'No official messages yet')+'</small></div>'+
+      '<button data-open-seller-chat="'+store.id+'" class="primary" style="border:0;border-radius:10px;padding:10px 12px">Open conversation</button>'+
+    '</div>';
+  }).join("")+'</div><div id="sellerChatDetail" style="margin-top:14px"></div>';
+  host.querySelectorAll("[data-open-seller-chat]").forEach(b=>b.onclick=()=>renderSellerChatDetail(b.dataset.openSellerChat));
+}
+function renderSellerChatDetail(storeId){
+  const box=$("sellerChatDetail");if(!box)return;
+  const store=(market.stores||[]).find(s=>s.id===storeId);if(!store)return;
+  const thread=(market.admin_seller_threads||[]).find(t=>t.store_id===store.id);
+  const messages=thread?(market.admin_seller_messages||[]).filter(m=>m.thread_id===thread.id):[];
+  box.innerHTML='<div class="card" style="box-shadow:none;margin:0"><div class="card-head"><div><h2>'+esc(store.store_name)+'</h2><small style="color:var(--rpe-muted)">Official RANOVA Admin ↔ Seller conversation</small></div></div><div class="body">'+
+    (messages.length?messages.map(m=>'<div style="max-width:85%;margin:7px '+(m.sender_role==="admin"?"auto 7px 0":"0 0 7px auto")+';padding:10px 12px;border-radius:13px;background:'+(m.sender_role==="admin"?"#edf7f3":"#fff2ec")+'"><b>'+esc(m.sender_role==="admin"?"RANOVA Admin":"Seller")+'</b><div style="margin-top:4px">'+esc(m.body)+'</div><small style="display:block;color:#718078;margin-top:4px">'+new Date(m.created_at).toLocaleString()+'</small></div>').join(""):'<div class="empty">No messages yet.</div>')+
+    '<textarea id="sellerChatInput" class="review-note" style="margin-top:12px" placeholder="Write an official message to '+esc(store.store_name)+'…"></textarea><button id="sellerChatSend" class="primary" style="margin-top:8px;border:0;border-radius:10px;padding:10px 14px">Send message</button></div></div>';
+  $("sellerChatSend").onclick=async()=>{
+    const body=$("sellerChatInput").value.trim();if(body.length<2)return alert("Write a message first.");
+    const b=$("sellerChatSend");b.disabled=true;
+    try{await marketApi({action:"message_seller",store_id:store.id,body});await reloadMarketplace();renderSellerMessageCentre();renderSellerChatDetail(store.id)}
+    catch(err){alert(err.message)}finally{b.disabled=false}
+  };
+}
+
 function renderSellerStores(){
   const host=$("sellerStoresList");if(!host)return;
   if(!canSellerReview()){host.innerHTML='<div class="empty">Your admin role does not include seller store management.</div>';return}
