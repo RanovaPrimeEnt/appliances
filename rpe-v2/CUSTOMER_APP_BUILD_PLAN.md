@@ -7,7 +7,7 @@
 - Native marketplace home opens without requiring sign-in. It shows approved seller products and remaining core RANOVA products from the live catalogue; cards rotate by device and time with store variety.
 - Mobile product grid, category and text search, store view, product gallery, price and stock status, minimum quantity, and available quantity price tiers.
 - One local cart can hold products from multiple sellers. Seller lines are checked with the live marketplace quote function, which returns current availability, tier prices, grouped store subtotals, and published delivery options. Checkout repeats that check before placing an order.
-- In-app order request and basic order tracking; RANOVA only shows payment instructions through the order lookup when they are available. Buyer account, saved products, and existing order history remain available in the account area.
+- In-app order request and basic order tracking; RANOVA only shows payment instructions through the order lookup when they are available. Buyer account, saved products, and existing order history remain available in the account area. Account product actions feed the marketplace cart; existing saved legacy carts remain accessible until used.
 
 ## Next product slices
 
