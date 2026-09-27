@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>RANOVA Seller Dashboard</title>
 <meta name="theme-color" content="#116a52">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="RANOVA Seller">
+<link rel="manifest" href="./seller-app.webmanifest">
+<link rel="icon" href="./seller-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./seller-icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
@@ -32,6 +38,13 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 </style>
 </head>
 <body>
+<button data-install-seller type="button" style="position:fixed;right:12px;bottom:14px;z-index:100;border:0;border-radius:999px;background:#ff5a2d;color:#fff;padding:11px 14px;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.16);display:inline-flex;align-items:center;gap:7px">Install RANOVA Seller</button>
+<div id="sellerInstallHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:140;place-items:center;padding:18px">
+  <div style="width:min(100%,430px);background:#fff;border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.24);color:#15342e">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 data-title style="margin:0;font-size:20px">Install RANOVA Seller</h2><button id="closeSellerInstallHelp" type="button" style="border:0;background:#f2f2f2;border-radius:50%;width:34px;height:34px;font-size:20px">×</button></div>
+    <div data-body style="margin-top:12px;font-size:13px;line-height:1.75;color:#555"></div>
+  </div>
+</div>
 <div class="top"><div class="wrap"><div class="brand">RANOVA SELLER DASHBOARD</div><div class="topnav"><a href="./seller-center.html">Verification</a><a href="./messages.html">Messages</a><a href="./documents.html">Documents</a><a href="./after-sales.html">After-sales</a><a href="./">Marketplace</a><button id="signOut">Sign out</button></div></div></div>
 <section class="hero"><div class="wrap"><div class="kicker">STORE MANAGEMENT</div><h1>Build and manage your RANOVA store.</h1><p>Set up your public storefront, add products, control wholesale pricing and stock, and keep track of marketplace orders from one workspace.</p></div></section>
 
@@ -852,5 +865,6 @@ sb.auth.onAuthStateChange(function(_event,newSession){session=newSession;if(!ses
 boot();
 })();
 </script>
+<script src="./seller-pwa.js?v=20260927-01"></script>
 </body>
 </html>
