@@ -39,7 +39,7 @@ if(installBtn){
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./admin-sw.js",{scope:"./"});
+      const reg=await navigator.serviceWorker.register("./rpe-v2-sw.js",{scope:"./"});
       reg.update().catch(()=>{});
       setInterval(()=>reg.update().catch(()=>{}),5*60*1000);
 
