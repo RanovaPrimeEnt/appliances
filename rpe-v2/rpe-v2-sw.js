@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v6";
+const CACHE="ranova-rpe-v2-shell-v7";
 const CORE=[
   "./",
   "./index.html",
@@ -13,6 +13,7 @@ const CORE=[
   "./customer-app.webmanifest",
   "./customer-pwa.js",
   "./report-store.html",
+  "./ranova-prime-store.html",
   "./admin.html",
   "./admin.js",
   "./admin-icon.svg",
