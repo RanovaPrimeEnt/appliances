@@ -28,7 +28,7 @@
   <div class="sumrow"><span>Products</span><b id="sumItems">0</b></div>
   <div class="sumrow"><span>Total quantity</span><b id="sumQty">0</b></div>
   <div class="sumrow"><span>Sellers</span><b id="sumSellers">0</b></div>
-  <div class="sumrow total"><span>Product total</span><b id="sumTotal">GHS 0.00</b></div>
+  <div class="sumrow total"><span>Known total</span><b id="sumTotal">GHS 0.00</b></div>
   <p>Delivery is calculated separately for each seller. No payment should be made until RANOVA shows the confirmed final amount.</p>
   <button id="checkoutBtn" class="primary">Continue to one checkout</button>
   <a class="secondary" style="display:grid;place-items:center" href="./marketplace.html">Add more products</a>
@@ -77,12 +77,13 @@ async function getQuote(){
  var valid={};(o.groups||[]).forEach(g=>(g.items||[]).forEach(x=>valid[x.product_id]=x.quantity));cart=valid;if(!session)localSave();render();
 }
 function deliveryText(g){
+ if(g.has_negotiated_delivery)return "Negotiated delivery: "+money(g.quoted_delivery_total)+" recorded in the accepted seller quote.";
  var z=g.delivery_options||[];if(!el("country").value)return "Choose a delivery country at checkout to see published seller delivery options.";
  if(!z.length)return "No published zone for this country yet — seller delivery will be quoted before payment.";
  return z.map(function(x){var fee=x.pricing_type==="free"?"Free delivery":x.pricing_type==="fixed"?money(x.fixed_fee):"Delivery quoted per order";var eta=(x.eta_min_days!=null||x.eta_max_days!=null)?" · "+(x.eta_min_days??x.eta_max_days)+"–"+(x.eta_max_days??x.eta_min_days)+" days":"";return esc(x.zone_name+" · "+fee+eta)}).join("<br>");
 }
 function render(){
- var groups=quote?quote.groups||[]:[];el("sumItems").textContent=quote?quote.item_count:0;el("sumQty").textContent=quote?quote.total_quantity:0;el("sumSellers").textContent=groups.length;el("sumTotal").textContent=quote&&quote.product_total!=null?money(quote.product_total):"Final quotes required";
+ var groups=quote?quote.groups||[]:[];el("sumItems").textContent=quote?quote.item_count:0;el("sumQty").textContent=quote?quote.total_quantity:0;el("sumSellers").textContent=groups.length;var base=quote&&quote.product_total!=null?Number(quote.product_total):null,neg=Number(quote?.negotiated_delivery_total||0);el("sumTotal").textContent=base!=null?money(base+neg):"Final quotes required";
  el("checkoutBtn").disabled=!groups.length||groups.some(g=>["restricted","suspended"].includes(g.enforcement_status)||g.items.some(x=>!x.available));
  el("cartHost").innerHTML=groups.length?groups.map(function(g){
   return '<section class="seller"><div class="seller-head"><div><b>'+esc(g.store_name)+'</b><small>'+esc(g.country_name||g.country_code||"")+' · '+g.items.length+' product(s)</small></div><a href="./seller-store.html?store='+encodeURIComponent(g.store_slug)+'" style="font-size:8px;font-weight:900;color:var(--g)">Seller store</a></div>'+
