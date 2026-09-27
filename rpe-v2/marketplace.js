@@ -7,7 +7,7 @@ const db=cfg.supabaseUrl&&cfg.supabasePublishableKey&&window.supabase?window.sup
 const catalogueDb=db?window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,storageKey:'ranova_public_catalogue'}}):null;
 window.RPE_SUPABASE=db;
 const KEY='ranova_market_cart_v2',DEVICE='ranova_market_device_v1',BATCH=24,CATALOGUE_PAGE=500;
-let quoteSequence=0,lastOrderPhone='',items=[],stores=new Map(),cart={},shown=BATCH,category='',query='',storeId='',nonce=0,loading=false,session=null;
+let quoteSequence=0,lastOrderPhone='',items=[],stores=new Map(),cart={},shown=BATCH,category='',query='',storeId='',primeStoreId='ranova-prime',nonce=0,loading=false,session=null;
 try{cart=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch{cart={}}
 let device='';try{device=localStorage.getItem(DEVICE)||crypto.randomUUID();localStorage.setItem(DEVICE,device)}catch{device=String(Math.random())}
 const money=(v,c='GHS')=>v==null?'Ask for price':new Intl.NumberFormat('en-GH',{style:'currency',currency:c||'GHS'}).format(Number(v));
@@ -29,9 +29,9 @@ async function load(){if(!db){note('The product catalogue is temporarily unavail
  publicRows('ranova_seller_products','id,store_id,name,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,pricing_tiers,created_at',q=>q.eq('product_status','active').order('created_at',{ascending:false}).order('id')),
  publicRows('products','id,name,sku,legacy_id,short_description,description,price,currency,stock_quantity,stock_status,specifications,product_images(image_url,is_primary,sort_order),categories(name)',q=>q.eq('active',true).order('id'))
  ]);
- stores=new Map(sellers.map(s=>[s.id,s]));const prime={id:'ranova-prime',store_name:'Ranova Prime Enterprise',description:'Official RANOVA Prime catalogue',business_location:'Ghana'};stores.set(prime.id,prime);
+ stores=new Map(sellers.map(s=>[s.id,s]));const prime=sellers.find(s=>norm(s.store_name)==='ranova prime enterprise'||s.slug==='ranova-prime-enterprise')||{id:'ranova-prime',store_name:'Ranova Prime Enterprise',description:'Official RANOVA Prime catalogue',business_location:'Ghana'};primeStoreId=prime.id;stores.set(prime.id,prime);
  const seller=sp.filter(p=>stores.has(p.store_id)&&p.stock_status!=='out_of_stock').map(p=>({...p,kind:'seller',image:p.primary_image_url||p.image_urls?.[0]||'',store_name:stores.get(p.store_id).store_name,images:[p.primary_image_url,...(p.image_urls||[])].filter(Boolean)}));
- const known=new Set(seller.filter(p=>/ranova prime/i.test(p.store_name)).map(p=>norm(p.name)));
+ const known=new Set(seller.filter(p=>p.store_id===primeStoreId).map(p=>norm(p.name)));
  const legacy=core.filter(p=>p.stock_status!=='out_of_stock'&&!known.has(norm(p.name))).map(p=>{let images=(p.product_images||[]).slice().sort((a,b)=>Number(b.is_primary)-Number(a.is_primary)||(a.sort_order||0)-(b.sort_order||0)).map(x=>x.image_url);return {...p,store_id:prime.id,store_name:prime.store_name,kind:'prime',category:p.categories?.name||'Other',moq:1,image:images[0]||'',images}});
  items=canonical([...seller,...legacy]);if(!items.length)note('No approved products are available yet. Check again shortly.');else render();
  }catch(e){note(e.message||'Could not load products. Tap Refresh to retry.')}finally{loading=false}}
@@ -45,6 +45,7 @@ function add(id){let p=items.find(x=>x.id===id);if(!p||!available(p))return;cart
 function cartLines(){let valid=Object.entries(cart).map(([id,q])=>({p:items.find(x=>x.id===id),q:Number(q)})).filter(x=>x.p&&x.q>0);return valid}
 function showCart(){let a=cartLines();openSheet('Your cart',a.length?a.map(({p,q})=>'<div class="market-cart-row">'+(p.image?'<img src="'+safe(p.image)+'" alt="">':'<span></span>')+'<div><b>'+safe(p.name)+'</b><small>'+safe(p.store_name)+' · '+safe(money(tierPrice(p,q),p.currency))+' each'+(p.price==null&&!p.pricing_tiers?.length?' · quote needed':'')+'</small><div class="market-qty"><button data-quantity="'+safe(p.id)+'" data-step="-1" aria-label="Decrease quantity">−</button><span>'+q+'</span><button data-quantity="'+safe(p.id)+'" data-step="1" aria-label="Increase quantity">+</button></div></div><button class="market-remove" data-remove="'+safe(p.id)+'">Remove</button></div>').join('')+'<div id="marketCartQuote" class="market-quote">Checking current prices and availability…</div><p class="market-note">Delivery is calculated per store. Unconfirmed prices are quoted before payment.</p><button class="market-primary" data-checkout disabled>Place order</button>':'<p class="market-note">Your cart is empty. Browse products and add the ones you want.</p>');if(a.length)updateQuote('GH','marketCartQuote')}
 window.RPE_MARKET_CART=()=>{window.RPE_OPEN_MARKET();showCart()};
+window.RPE_MARKET_STORE=async()=>{window.RPE_OPEN_MARKET();if(!items.length&&!loading)await load();storeId=primeStoreId;category='';query='';shown=BATCH;$('marketSearch').value='';render();window.scrollTo(0,0)};
 window.RPE_MARKET_ADD=(id,name)=>{const p=items.find(x=>x.id===id)||items.find(x=>/ranova prime/i.test(x.store_name)&&norm(x.name)===norm(name));if(!p){window.RPE_OPEN_MARKET();$('marketSearch').value=name||'';query=name||'';render();return false}window.RPE_OPEN_MARKET();add(p.id);return true};
 async function getQuote(country){
  const lines=cartLines().filter(({p})=>p.kind==='seller');
