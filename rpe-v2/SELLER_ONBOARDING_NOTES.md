@@ -1,13 +1,39 @@
-# Seller onboarding reference implementation
+# Seller onboarding implementation and verification
 
-The customer account's Switch to Seller link now opens seller-start.html.
+Switch to Seller opens seller-start.html. The two screens retain the supplied mobile references, translated to English with orange branding. The eight benefit categories explain what is available and what is planned. No unavailable rewards or third-party certifications are promised.
 
-Screen 1 follows the supplied seller welcome reference: orange header, profile registration action, information strip, three registration steps, Register now action, and bottom navigation. Register now opens screen 2 using a URL hash, so browser back works.
+## Registration behavior
 
-Screen 2 includes a short English registration form and the eight benefit categories supplied in images 3 and 4 (which are duplicates). The source's 1688-specific cash reward, map provider, Sesame Credit service, AI employee and source endorsement are not offered as RANOVA promises. Unavailable services are labelled Planned; each tile explains its status.
+- Existing customer sessions are reused. A signed-in buyer confirms business contact details and consent without another OTP.
+- New users verify by email code or magic link. Phone SMS stays disabled unless the project's public Auth settings explicitly enable it.
+- Signed-in sellers are checked through the authenticated seller workspace before a new application is submitted. Linked sellers resume their existing workspace without relinking or resetting verification stages.
+- Invalid codes, expired callbacks, changed email addresses, session changes, service errors, blocked storage, and malformed saved data produce recoverable states.
+- After a successful application response, its reference is preserved in memory and browser session storage. Retrying a failed link reuses that reference.
+- Approval and document verification still happen in the existing Seller Center. No approval rules are bypassed.
+- Supabase browser SDK is pinned to 2.117.2.
 
-The integrated page uses existing Supabase Auth OTP methods. Email verification may use a code or magic link depending on project email templates. Phone OTP needs an SMS provider. Successful authentication is followed by the three required business fields (location, seller type, products). These are submitted to the existing seller-apply function, linked to the authenticated account, then passed to the existing document verification workspace. Store approval is not bypassed.
+## Verification on 2026-09-27
 
-seller-design-preview.html is a self-contained visual preview. It does not load Supabase or make registration requests. Open it in a browser and click Register now to inspect both screens.
+16 Chromium browser scenarios passed in tests/seller-onboarding.cjs. Network requests were intercepted, so no emails, SMS messages, accounts or real applications were created.
 
-Validation: JavaScript syntax, HTML IDs, static links, and diff checks. Browser visual verification was blocked because the environment's Chromium download returned an invalid archive. Real OTP delivery, allowed email redirect URL, and authenticated application linking still require a staging account check before release. Do not merge as a completed production registration rollout until these pass.
+Covered: navigation and eight dialogs; widths 320/390/768 without horizontal overflow; required consent; unavailable SMS; successful email OTP/application/link sequence; invalid OTP; changed email; delivery errors; signed-in buyers; existing sellers; failed link retry without another create call; malformed/blocked storage; failed workspace lookup; expired sign-in links; enabled SMS behavior; expired sessions; authenticated callback; and initialization with the actual pinned Supabase SDK.
+
+Screenshots were visually inspected. JS syntax, duplicate HTML IDs, local assets/navigation destinations, and git whitespace checks passed. agent-browser daemon could not start in this environment; browser verification used Playwright with Chromium instead.
+
+Read-only live check: Supabase Auth settings returned HTTP 200 with email enabled, signups enabled, and phone disabled. This is why SMS is unavailable in the current interface.
+
+Run with Playwright installed:
+
+```sh
+CHROMIUM_PATH=/path/to/chromium node tests/seller-onboarding.cjs
+```
+
+Set SUPABASE_SDK_PATH to the downloaded 2.117.2 UMD JavaScript file to include the sixteenth real-SDK initialization scenario. SCREENSHOT_DIR optionally records the two screens. Tests intercept all requests, including calls to the production hostname.
+
+## Remaining release checks
+
+A real test email and the user's access to its verification message are required to verify delivery, the email template, the redirect allowlist, authenticated application creation/linking, and the handoff into the actual Seller Center. The mocked tests do not establish that these production services work together.
+
+The existing public application endpoint has no server-side idempotency key. If a response is lost after the server creates the application, the client cannot recover the reference automatically. Reference-preserving retries cover successful create responses followed by link failures, not this ambiguous network failure or simultaneous submissions in different tabs.
+
+This remains an unpublished draft. No live database records were deleted or modified during verification. seller-design-preview.html is a self-contained visual preview with registration disabled.
