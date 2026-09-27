@@ -115,7 +115,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <p>Upload one catalogue and RANOVA will read the product names, prices, descriptions and available images, then prepare normal RANOVA product cards. You can check and correct everything before creating the products.</p>
             <div class="catalogue-drop">
               <b>Catalogue file</b>
-              <div style="font-size:12px;color:var(--muted);margin:4px 0 9px">Supported: PDF, Word (.docx), Excel (.xlsx), CSV and TXT. Maximum 25 MB.</div>
+              <div style="font-size:12px;color:var(--muted);margin:4px 0 9px">Supported: PDF, Word (.docx), Excel (.xlsx), CSV and TXT. Maximum 35 MB.</div>
               <input id="catalogueFile" type="file" accept=".pdf,.docx,.xlsx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain">
               <div class="catalogue-actions">
                 <button id="readCatalogue" class="btn green" type="button">Read catalogue</button>
@@ -593,7 +593,7 @@ async function uploadCatalogueOriginal(file){
 }
 el("readCatalogue").onclick=async function(){
   var file=el("catalogueFile").files[0],b=this;if(!file){updateCatalogueStatus("Choose a catalogue file first.",true);return}
-  if(file.size>25*1024*1024){updateCatalogueStatus("Catalogue is larger than 25 MB.",true);return}
+  if(file.size>35*1024*1024){updateCatalogueStatus("Catalogue is larger than 35 MB.",true);return}
   b.disabled=true;var old=b.textContent;b.textContent="Reading catalogue…";catalogueDrafts=[];renderCatalogueDrafts();
   try{
     await uploadCatalogueOriginal(file);
