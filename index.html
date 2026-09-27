@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#176B61">
+<title>RPE Admin | Ranova Prime Enterprise</title>
+<meta name="description" content="Ranova Prime Enterprise administration dashboard for orders, products and stock.">
+<link rel="stylesheet" href="./design-system.css">
+<style>
+body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe-ink);font-family:var(--font-ui)}
+.hide{display:none!important}.admin-shell{min-height:100vh}.admin-top{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--rpe-line)}
+.admin-top-in{width:min(1180px,calc(100% - 28px));height:72px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--rpe-green-950)}.brand .mark{width:44px;height:44px;border-radius:13px;background:var(--rpe-green-950);color:var(--rpe-gold);display:grid;place-items:center;font-weight:900}
+.brand b{display:block}.brand small{display:block;color:var(--rpe-muted)}.admin-wrap{width:min(1180px,calc(100% - 28px));margin:22px auto 60px;display:grid;grid-template-columns:220px 1fr;gap:18px}
+.side{background:#fff;border:1px solid var(--rpe-line);border-radius:20px;padding:12px;align-self:start;position:sticky;top:94px}.side button{width:100%;border:0;background:transparent;color:var(--rpe-ink);border-radius:12px;padding:12px;text-align:left;font-weight:800;font-size:var(--text-sm)}.side button.active{background:var(--rpe-green-100);color:var(--rpe-green-950)}
+.panel{display:none}.panel.active{display:block}.hero{background:linear-gradient(135deg,var(--rpe-green-950),var(--rpe-green-800));color:#fff;border-radius:22px;padding:24px}.hero h1{font-size:var(--text-2xl);margin:4px 0 8px}.hero p{margin:0;color:#c7d9d3;font-size:var(--text-sm)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.metric{background:#fff;border:1px solid var(--rpe-line);border-radius:18px;padding:18px}.metric small{color:var(--rpe-muted)}.metric strong{display:block;font-size:1.8rem;margin-top:5px}
+.card{background:#fff;border:1px solid var(--rpe-line);border-radius:20px;margin-top:14px}.card-head{padding:18px 18px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}.card-head h2{margin:0;font-size:var(--text-xl)}.body{padding:12px 18px 18px}.list{display:grid;gap:10px}.row{display:grid;grid-template-columns:1.3fr .9fr .8fr auto;gap:12px;align-items:center;border:1px solid var(--rpe-line);border-radius:14px;padding:13px}.row b{font-size:var(--text-sm)}.row small{color:var(--rpe-muted);display:block}.chip{font-size:var(--text-xs);font-weight:900;padding:6px 9px;border-radius:999px;background:var(--rpe-green-100);color:var(--rpe-green-700);white-space:nowrap}.actions{display:flex;gap:6px;flex-wrap:wrap}.actions button,.actions select{border:1px solid var(--rpe-line);background:#fff;border-radius:10px;padding:8px 10px;font-size:var(--text-xs);font-weight:800}.actions .primary{background:var(--rpe-green-700);color:#fff;border-color:var(--rpe-green-700)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field label{display:block;font-size:var(--text-xs);font-weight:800;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--rpe-line);border-radius:11px;padding:11px 12px;background:#fff}.field.full{grid-column:1/-1}.empty{padding:34px;text-align:center;color:var(--rpe-muted)}.auth{width:min(430px,calc(100% - 30px));margin:70px auto;background:#fff;border:1px solid var(--rpe-line);border-radius:22px;padding:24px}.auth h1{margin:0 0 6px}.auth label{display:block;font-size:var(--text-xs);font-weight:800;margin:13px 0 5px}.auth input{width:100%;border:1px solid var(--rpe-line);border-radius:11px;padding:12px}.auth button{width:100%;margin-top:14px;border:0;border-radius:12px;background:var(--rpe-green-700);color:#fff;padding:12px;font-weight:900}.notice{margin-top:12px;padding:12px;border-radius:12px;background:var(--rpe-cream);color:var(--rpe-muted);font-size:var(--text-sm)}
+.market-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.market-metrics button{border:1px solid var(--rpe-line);border-radius:15px;background:linear-gradient(145deg,#f7fbf9,#faf8ff);padding:14px;text-align:left;color:var(--rpe-ink)}.market-metrics small{display:block;color:var(--rpe-muted);font-weight:700}.market-metrics strong{display:block;font-size:1.6rem;margin-top:5px}.market-list{display:grid;gap:10px}.market-row{display:grid;grid-template-columns:minmax(0,1.35fr) .8fr .75fr auto;gap:12px;align-items:center;border:1px solid var(--rpe-line);border-radius:14px;padding:13px}.market-row b{font-size:var(--text-sm)}.market-row small{display:block;color:var(--rpe-muted);line-height:1.45}.market-product{grid-template-columns:64px minmax(0,1.2fr) .75fr .65fr auto}.market-product img{width:64px;height:64px;object-fit:contain;border-radius:11px;background:#f5f8f6;border:1px solid var(--rpe-line)}.review-head{padding:18px;border-bottom:1px solid var(--rpe-line);display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.review-head h2{margin:0}.review-head p{margin:5px 0 0;color:var(--rpe-muted);font-size:var(--text-sm)}.review-body{padding:18px}.review-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.review-meta div,.stage-card,.doc-row{border:1px solid var(--rpe-line);border-radius:13px;padding:11px;background:#fff}.review-meta span,.stage-card small,.doc-row small{display:block;color:var(--rpe-muted);font-size:var(--text-xs)}.review-meta b{display:block;margin-top:3px;font-size:var(--text-sm)}.stage-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stage-card b{display:block;font-size:var(--text-xs);margin-bottom:7px}.stage-card select{width:100%;border:1px solid var(--rpe-line);border-radius:9px;padding:8px;font-size:var(--text-xs);background:#fff}.stage-card button{width:100%;margin-top:6px;border:0;border-radius:9px;background:var(--rpe-green-100);color:var(--rpe-green-800);padding:8px;font-size:var(--text-xs);font-weight:800}.docs{display:grid;gap:8px;margin-top:10px}.doc-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}.review-note{width:100%;min-height:88px;border:1px solid var(--rpe-line);border-radius:11px;padding:10px;margin-top:8px;resize:vertical}.decision-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.decision-actions button{border:1px solid var(--rpe-line);background:#fff;border-radius:10px;padding:9px 11px;font-size:var(--text-xs);font-weight:900}.decision-actions .approve{background:#e8f7ef;color:#0b6a45;border-color:#b9dfcb}.decision-actions .warn{background:#fff7e9;color:#8a5c18;border-color:#f0d39e}.decision-actions .danger{background:#fff0ee;color:#a0443b;border-color:#efc5c0}.product-review-gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}.product-review-gallery a{display:block;aspect-ratio:1/1;border:1px solid var(--rpe-line);border-radius:11px;overflow:hidden;background:#f5f8f6}.product-review-gallery img{width:100%;height:100%;object-fit:contain}.detail-copy{padding:12px;border:1px solid var(--rpe-line);border-radius:12px;background:#fafcfb;color:var(--rpe-muted);font-size:var(--text-sm);line-height:1.6}.status-approved{background:#e8f7ef!important;color:#0b6a45!important}.status-rejected,.status-suspended{background:#fff0ee!important;color:#a0443b!important}.status-needs_information,.status-under_review,.status-pending_review,.status-submitted{background:#fff5e8!important;color:#8d5c17!important}.finance-ref{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:var(--text-xs)}.finance-money{font-weight:900}.finance-row-note{margin-top:4px;color:var(--rpe-muted);font-size:var(--text-xs)}
+@media(max-width:900px){.admin-wrap{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto}.side button{min-width:max-content}.metrics{grid-template-columns:repeat(2,1fr)}.stage-grid{grid-template-columns:repeat(2,1fr)}.review-meta{grid-template-columns:1fr 1fr}.market-metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.metrics{grid-template-columns:1fr 1fr}.row,.market-row,.market-product{grid-template-columns:1fr}.market-product img{width:72px;height:72px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.stage-grid,.review-meta,.market-metrics{grid-template-columns:1fr}.doc-row{grid-template-columns:1fr}.actions{justify-content:flex-start}.product-review-gallery{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div id="loading" class="empty">Loading RPE Admin…</div>
+<section id="auth" class="auth hide">
+  <div class="brand"><span class="mark">RPE</span><span><b>Ranova Prime Enterprise</b><small>Admin</small></span></div>
+  <h1>Admin sign in</h1>
+  <p style="color:var(--rpe-muted);font-size:var(--text-sm)">Use your authorized RPE account.</p>
+  <label>Email</label><input id="email" type="email" autocomplete="email">
+  <label>Password</label><input id="password" type="password" autocomplete="current-password">
+  <button id="login">Sign in</button><div id="authMsg" class="notice hide"></div>
+</section>
+
+<div id="denied" class="auth hide">
+  <div class="brand"><span class="mark">RPE</span><span><b>Ranova Prime Enterprise</b><small>Admin</small></span></div>
+  <h1>Admin access required</h1>
+  <p style="color:var(--rpe-muted);font-size:var(--text-sm)">This account can use My RPE, but it has not been approved for administration.</p>
+  <button id="deniedSignOut">Sign out</button>
+</div>
+
+<div id="app" class="admin-shell hide">
+<header class="admin-top"><div class="admin-top-in">
+  <a class="brand" href="./admin.html"><span class="mark">RPE</span><span><b>Ranova Prime</b><small>Admin Console</small></span></a>
+  <button id="signOut" style="border:1px solid var(--rpe-line);background:#fff;border-radius:999px;padding:9px 14px;font-weight:800">Sign out</button>
+</div></header>
+<div class="admin-wrap">
+  <aside class="side">
+    <button class="active" data-panel="today">Today</button>
+    <button data-panel="orders">Orders</button>
+    <button data-panel="products">Products</button>
+    <button data-panel="stock">Stock</button>
+    <button data-panel="seller-reviews" data-market-role="seller">Seller reviews</button>
+    <button data-panel="seller-products" data-market-role="product">Seller products</button>
+    <button data-panel="seller-stores" data-market-role="seller">Seller stores</button>
+    <button data-panel="marketplace-trust" data-market-role="seller">Marketplace trust</button>
+    <button data-panel="marketplace-discovery" data-market-role="seller">Discovery & sponsored</button>
+    <button data-panel="inventory-control" data-market-role="orders">Inventory control</button>
+    <button data-panel="seller-orders" data-market-role="orders">Marketplace orders</button>
+    <button data-panel="deliveries" data-market-role="orders">Deliveries</button>
+    <button data-panel="cases" data-market-role="orders">Cases</button><button data-panel="safety-risk" data-market-role="orders">Safety & risk</button>
+    <button data-panel="finance" data-market-role="finance">Finance</button>
+  </aside>
+  <main>
+    <section id="today" class="panel active">
+      <div class="hero"><small>RPE OPERATIONS</small><h1>Keep the business moving.</h1><p>Only the actions that need attention are shown here.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>New / quote pending</small><strong id="mNew">0</strong></div>
+        <div class="metric"><small>Preparing</small><strong id="mPrep">0</strong></div>
+        <div class="metric"><small>To dispatch</small><strong id="mDispatch">0</strong></div>
+        <div class="metric"><small>Products</small><strong id="mProducts">0</strong></div>
+      </div>
+      <div class="card"><div class="card-head"><h2>Needs attention</h2></div><div id="attention" class="body list"></div></div>
+      <div id="marketplaceSummary" class="card hide"><div class="card-head"><h2>Marketplace moderation</h2></div><div class="body"><div class="market-metrics"><button data-panel="seller-reviews"><small>Seller applications pending</small><strong id="mSellerPending">0</strong></button><button data-panel="seller-reviews"><small>Documents pending</small><strong id="mDocsPending">0</strong></button><button data-panel="seller-products"><small>Seller products pending</small><strong id="mSellerProductsPending">0</strong></button><button data-panel="seller-orders"><small>Open seller orders</small><strong id="mSellerOrdersOpen">0</strong></button><button data-panel="cases"><small>Open refunds</small><strong id="mRefundsOpen">0</strong></button><button data-panel="cases"><small>Open disputes</small><strong id="mDisputesOpen">0</strong></button><button data-panel="cases"><small>Open after-sales</small><strong id="mAfterSalesOpen">0</strong></button></div></div></div>
+    </section>
+
+    <section id="orders" class="panel">
+      <div class="card"><div class="card-head"><h2>Orders</h2><button id="refreshOrders" class="primary" style="border:0;border-radius:10px;background:var(--rpe-green-700);color:#fff;padding:9px 12px;font-weight:800">Refresh</button></div><div id="ordersList" class="body list"></div></div>
+    </section>
+
+    <section id="products" class="panel">
+      <div class="card"><div class="card-head"><h2>Add product</h2></div><div class="body">
+        <div class="form-grid">
+          <div class="field"><label>Product name</label><input id="pName"></div>
+          <div class="field"><label>SKU / model</label><input id="pSku"></div>
+          <div class="field"><label>Brand</label><input id="pBrand"></div>
+          <div class="field"><label>Category</label><select id="pCategory"><option value="">No category</option></select></div>
+          <div class="field"><label>Price (GHS)</label><input id="pPrice" type="number" min="0" step="0.01" placeholder="Leave blank if unconfirmed"></div>
+          <div class="field"><label>Stock status</label><select id="pStock"><option value="confirm_on_enquiry">Confirm on enquiry</option><option value="in_stock">In stock</option><option value="low_stock">Low stock</option><option value="out_of_stock">Out of stock</option><option value="preorder">Pre-order</option></select></div>
+          <div class="field full"><label>Short description</label><textarea id="pDesc" rows="3"></textarea></div>
+        </div>
+        <button id="addProduct" style="margin-top:12px;border:0;border-radius:12px;background:var(--rpe-green-700);color:#fff;padding:11px 15px;font-weight:900">Add product</button>
+      </div></div>
+      <div class="card"><div class="card-head"><h2>Product catalogue</h2></div><div id="productsList" class="body list"></div></div>
+    </section>
+
+    <section id="stock" class="panel">
+      <div class="card"><div class="card-head"><h2>Stock overview</h2></div><div id="stockList" class="body list"></div></div>
+    </section>
+    <section id="seller-reviews" class="panel">
+      <div class="card">
+        <div class="card-head"><div><h2>Seller reviews</h2><small style="color:var(--rpe-muted)">Review applications, verification stages and private documents before approving a marketplace seller.</small></div><button id="refreshMarketplace" class="primary" style="border:0;border-radius:10px;background:var(--rpe-green-700);color:#fff;padding:9px 12px;font-weight:800">Refresh</button></div>
+        <div id="sellerApplicationsList" class="body list"></div>
+      </div>
+      <div id="sellerReviewDetail" class="card hide"></div>
+    </section>
+
+    <section id="seller-products" class="panel">
+      <div class="card">
+        <div class="card-head"><div><h2>Seller products</h2><small style="color:var(--rpe-muted)">Approve only listings with clear information and genuine product images.</small></div></div>
+        <div id="sellerProductsList" class="body market-list"></div>
+      </div>
+      <div id="sellerProductDetail" class="card hide"></div>
+    </section>
+
+    <section id="seller-stores" class="panel">
+      <div class="card">
+        <div class="card-head"><div><h2>Seller stores</h2><small style="color:var(--rpe-muted)">Monitor published stores and pause or suspend them when necessary.</small></div></div>
+        <div id="sellerStoresList" class="body market-list"></div>
+      </div>
+    </section>
+    <section id="marketplace-trust" class="panel">
+      <div class="hero"><small>MARKETPLACE TRUST</small><h1>Verified reviews with transparent seller performance.</h1><p>Only completed purchases with confirmed delivery can create ratings. Moderation changes visibility, never the buyer's original stars.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Pending review checks</small><strong id="tReviewsPending">0</strong></div>
+        <div class="metric"><small>Published reviews</small><strong id="tReviewsPublished">0</strong></div>
+        <div class="metric"><small>Hidden reviews</small><strong id="tReviewsHidden">0</strong></div>
+        <div class="metric"><small>Trust rule</small><strong style="font-size:15px">Verified purchases</strong></div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><small>Watchlist sellers</small><strong id="tWatchlist">0</strong></div>
+        <div class="metric"><small>Trusted sellers</small><strong id="tTrusted">0</strong></div>
+        <div class="metric"><small>Restricted / suspended</small><strong id="tEnforced">0</strong></div>
+        <div class="metric"><small>Open appeals</small><strong id="tAppeals">0</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Review moderation</h2><small style="color:var(--rpe-muted)">Publish legitimate reviews; hide or reject only with a recorded reason. Seller responses do not change rating values.</small></div></div>
+        <div id="adminReviewsList" class="body market-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Seller performance indicators</h2><small style="color:var(--rpe-muted)">Automatic levels are evidence signals, not punishments. RANOVA enforcement requires a separate recorded decision.</small></div></div>
+        <div id="adminTrustMetricsList" class="body market-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Enforcement desk</h2><small style="color:var(--rpe-muted)">Warnings, restrictions and suspensions require a written reason. Restrictions/suspensions block new marketplace orders; existing customer obligations remain visible.</small></div></div>
+        <div id="adminEnforcementList" class="body market-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Seller appeals</h2><small style="color:var(--rpe-muted)">Review the original action, seller explanation and evidence before deciding. Overturning an appeal restores good standing but does not silently republish a suspended store.</small></div></div>
+        <div id="adminAppealsList" class="body market-list"></div>
+      </div>
+    </section>
+
+    <section id="marketplace-discovery" class="panel">
+      <div class="hero"><small>MARKETPLACE DISCOVERY</small><h1>Search stays organic. Sponsorship stays visible.</h1><p>Paid placement never changes the organic score. Any sponsored product must run in its own clearly labeled lane.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Active sponsored placements</small><strong id="dSponsoredActive">0</strong></div>
+        <div class="metric"><small>Organic ranking</small><strong style="font-size:15px">Not for sale</strong></div>
+        <div class="metric"><small>Sponsored label</small><strong style="font-size:15px">Required</strong></div>
+        <div class="metric"><small>Search privacy</small><strong style="font-size:15px">Hashed session</strong></div>
+      </div>
+      <div class="card"><div class="card-head"><div><h2>Create sponsored placement</h2><small style="color:var(--rpe-muted)">Only approved active seller products can be promoted. The product remains separate from organic search ranking.</small></div></div>
+        <div class="body">
+          <div class="form-grid">
+            <div class="field"><label>Seller product</label><select id="spProduct"><option value="">Choose active seller product</option></select></div>
+            <div class="field"><label>Optional category target</label><input id="spCategory" placeholder="Leave blank for all categories"></div>
+            <div class="field"><label>Optional buyer country code</label><input id="spCountry" maxlength="2" placeholder="GH"></div>
+            <div class="field"><label>Priority (0–10)</label><input id="spPriority" type="number" min="0" max="10" value="0"></div>
+            <div class="field"><label>Starts</label><input id="spStart" type="datetime-local"></div>
+            <div class="field"><label>Ends</label><input id="spEnd" type="datetime-local"></div>
+            <div class="field full"><label>Disclosure</label><input id="spDisclosure" value="Paid placement. Organic ranking is calculated separately."></div>
+          </div>
+          <button id="saveSponsored" class="primary" style="margin-top:12px;border:0;border-radius:10px;background:var(--rpe-green-700);color:#fff;padding:10px 14px;font-weight:900">Activate sponsored placement</button>
+        </div>
+      </div>
+      <div class="card"><div class="card-head"><h2>Sponsored placement history</h2></div><div id="sponsoredPlacementsList" class="body market-list"></div></div>
+    </section>
+
+    <section id="inventory-control" class="panel">
+      <div class="hero"><small>INVENTORY PROTECTION</small><h1>Reserve limited stock without overselling it.</h1><p>Checkout creates a temporary hold, not a sale. Physical stock is deducted only after RANOVA confirms payment. Unpaid holds expire automatically and returned goods are restored only through the recorded return flow.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Active stock holds</small><strong id="iActiveHolds">0</strong></div>
+        <div class="metric"><small>Expiring within 30 min</small><strong id="iExpiringSoon">0</strong></div>
+        <div class="metric"><small>Committed lines</small><strong id="iCommitted">0</strong></div>
+        <div class="metric"><small>Restored lines</small><strong id="iRestored">0</strong></div>
+      </div>
+      <div class="card"><div class="card-head"><div><h2>Reservation safety settings</h2><small style="color:var(--rpe-muted)">Automatic expiry is permanently enabled to prevent abandoned carts from locking stock.</small></div><span class="chip status-approved">Auto-expiry on</span></div><div class="body">
+        <div class="review-meta">
+          <div><span>Reservation window</span><b id="iWindow">120 minutes</b><span>Owner-controlled, between 15 minutes and 24 hours.</span></div>
+          <div><span>Stock deduction</span><b>Payment confirmation only</b><span>A temporary hold does not reduce physical stock.</span></div>
+          <div><span>Expiry scan</span><b>Every 5 minutes</b><span>Expired unpaid orders are cancelled and their holds become available again.</span></div>
+        </div>
+        <div class="form-grid" style="margin-top:12px"><div class="field"><label>Reservation duration (minutes)</label><input id="inventoryMinutes" type="number" min="15" max="1440" value="120"></div></div>
+        <div class="actions"><button id="saveInventorySettings" class="primary">Save reservation window</button><button id="runInventoryExpiry">Run expiry check now</button></div>
+      </div></div>
+      <div class="card"><div class="card-head"><div><h2>Active and historical reservations</h2><small style="color:var(--rpe-muted)">Each hold is linked to an order and seller product.</small></div></div><div id="inventoryReservationsList" class="body market-list"></div></div>
+      <div class="card"><div class="card-head"><div><h2>Inventory audit trail</h2><small style="color:var(--rpe-muted)">Reserved, committed, released, expired and restored movements remain traceable.</small></div></div><div id="inventoryAdminList" class="body market-list"></div></div>
+    </section>
+
+    <section id="seller-orders" class="panel">
+      <div class="card">
+        <div class="card-head"><div><h2>Marketplace orders</h2><small style="color:var(--rpe-muted)">Orders automatically routed from buyer checkout to verified seller stores.</small></div></div>
+        <div id="sellerOrdersList" class="body market-list"></div>
+      </div>
+    </section>
+
+    <section id="deliveries" class="panel">
+      <div class="hero"><small>DELIVERY OPERATIONS</small><h1>Track handover without letting one side declare victory alone.</h1><p>Seller delivery claims remain provisional. Review courier details and private proof; final confirmation comes from the buyer or an authorized RANOVA review.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Active deliveries</small><strong id="dActive">0</strong></div>
+        <div class="metric"><small>Awaiting confirmation</small><strong id="dWaiting">0</strong></div>
+        <div class="metric"><small>Proofs submitted</small><strong id="dProofs">0</strong></div>
+        <div class="metric"><small>Proofs needing review</small><strong id="dProofReview">0</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Delivery review desk</h2><small style="color:var(--rpe-muted)">Private proof links expire after 10 minutes. Reject unclear evidence; use admin delivery confirmation only after reviewing the record and writing a reason.</small></div></div>
+        <div id="adminDeliveriesList" class="body market-list"></div>
+      </div>
+    </section>
+
+    <section id="cases" class="panel">
+      <div class="hero"><small>MARKETPLACE SUPPORT</small><h1>Refunds and disputes with a complete trail.</h1><p>Cases are linked to the original order. Opening a case can hold unpaid seller funds, but money is moved only through an explicit finance action with a recorded reference.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Open refunds</small><strong id="cRefundsOpen">0</strong></div>
+        <div class="metric"><small>Open disputes</small><strong id="cDisputesOpen">0</strong></div>
+        <div class="metric"><small>Open after-sales</small><strong id="cAfterSalesOpen">0</strong></div>
+        <div class="metric"><small>Resolved / refunded</small><strong id="cCasesClosed">0</strong></div>
+        <div class="metric"><small>Buyer protection</small><strong style="font-size:16px">Payout hold</strong></div>
+      </div>
+      <div class="card"><div class="card-head"><div><h2>Cancellations & returns</h2><small style="color:var(--rpe-muted)">Cases escalated from buyer/seller after-sales workflows appear here for RANOVA review.</small></div></div><div id="adminAfterSalesList" class="body market-list"></div></div>
+      <div class="card"><div class="card-head"><div><h2>Refund requests</h2><small style="color:var(--rpe-muted)">Approve only against the recorded payment. Final refund requires a transaction/reference.</small></div></div><div id="adminRefundsList" class="body market-list"></div></div>
+      <div class="card"><div class="card-head"><div><h2>Disputes</h2><small style="color:var(--rpe-muted)">Review the buyer, seller and RANOVA messages before resolving a case.</small></div></div><div id="adminDisputesList" class="body market-list"></div></div>
+    </section>
+
+    <section id="safety-risk" class="panel">
+      <div class="hero"><small>MARKETPLACE SAFETY</small><h1>Review evidence before acting.</h1><p>Automated signals and user reports are triage tools only. A flag does not automatically restrict, suspend or punish an account.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Open risk flags</small><strong id="riskOpen">0</strong></div>
+        <div class="metric"><small>High-severity flags</small><strong id="riskHigh">0</strong></div>
+        <div class="metric"><small>Open user reports</small><strong id="reportsOpen">0</strong></div>
+        <div class="metric"><small>Automatic enforcement</small><strong style="font-size:14px">Disabled</strong></div>
+      </div>
+      <div class="card"><div class="card-head"><div><h2>Risk signals</h2><small style="color:var(--rpe-muted)">Behavior-based indicators. Confirm only after reviewing orders, cases or conversation context.</small></div></div><div id="riskFlagsList" class="body market-list"></div></div>
+      <div class="card"><div class="card-head"><div><h2>User safety reports</h2><small style="color:var(--rpe-muted)">Reports may be valid, mistaken or malicious. Review the reported context before deciding.</small></div></div><div id="safetyReportsList" class="body market-list"></div></div>
+    </section>
+
+    <section id="finance" class="panel">
+      <div class="hero"><small>MARKETPLACE FINANCE</small><h1>Fair payments, clear commission and traceable payouts.</h1><p>Every charge has one purpose, one payer and one audit trail. Delivery is never commissioned, buyer fees are disclosed, seller deductions are shown, and old orders keep the rate they started with.</p></div>
+
+      <div class="metrics">
+        <div class="metric"><small>Payments due</small><strong id="fPaymentsDue">0</strong></div>
+        <div class="metric"><small>Payouts awaiting action</small><strong id="fPayoutsPending">0</strong></div>
+        <div class="metric"><small>Commission recorded</small><strong id="fCommissionTotal">GHS 0.00</strong></div>
+        <div class="metric"><small>Seller payouts paid</small><strong id="fPayoutsPaid">GHS 0.00</strong></div>
+        <div class="metric"><small>Payment provider</small><strong id="fProviderStatus" style="font-size:14px">Not configured</strong></div>
+      </div>
+
+      <div id="providerFinanceNotice" class="card"><div class="body"><div class="notice" style="margin-top:0"><b>Protected settlement:</b> customer payment and supplier payout are separate. Provider-backed seller transfers can only start after the payout becomes automatically eligible. Until Paystack is configured, live online payment and automated transfers remain disabled.</div></div></div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Financial reconciliation</h2><small style="color:var(--rpe-muted)">Independent checks compare orders, payments, payouts, refunds and ledger entries. Mismatches create review alerts; the checker never changes money balances automatically.</small></div><button id="runFinanceReconciliation" class="primary">Run check now</button></div>
+        <div class="body">
+          <div class="review-meta">
+            <div><span>Latest run</span><b id="reconLatestStatus">Not run</b><span id="reconLatestTime">—</span></div>
+            <div><span>Open issues</span><b id="reconOpenIssues">0</b><span>Critical mismatches require finance review.</span></div>
+            <div><span>Daily snapshot</span><b id="reconSnapshotDate">—</b><span id="reconSnapshotTotal">GHS 0.00 confirmed</span></div>
+          </div>
+          <div id="reconciliationIssuesList" class="market-list" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Fairness guardrails</h2><small style="color:var(--rpe-muted)">These rules are built into the marketplace finance flow.</small></div><span class="chip status-approved">No hidden deductions</span></div>
+        <div class="body">
+          <div class="review-meta">
+            <div><span>Buyer pays</span><b>Products + delivery + only fees assigned to buyer</b><span>Seller commission is never silently added to the buyer price.</span></div>
+            <div><span>Seller receives</span><b>Products − commission − seller-paid provider fee + delivery</b><span>Delivery fee is not part of the commission calculation.</span></div>
+            <div><span>Rate changes</span><b>Future orders only</b><span>Each order keeps a snapshot of the finance rule that applied when it was placed.</span></div>
+          </div>
+          <div class="detail-copy"><b style="color:var(--rpe-ink)">Accountability built in</b><br>Every manual rule change needs a reason and creates a new version. Historical versions cannot be rewritten. External auto-updates can change official provider processing fees only; they cannot alter RANOVA commission or decide who pays a fee. Refunds hold unpaid seller payouts for review.</div>
+        </div>
+      </div>
+
+      <div id="financeOwnerSettings" class="card">
+        <div class="card-head"><div><h2>Marketplace finance settings</h2><small style="color:var(--rpe-muted)">Owner-controlled settings. Changes apply to future payout calculations only.</small></div></div>
+        <div class="body">
+          <div class="form-grid">
+            <div class="field"><label>Fallback seller commission (%)</label><input id="financeCommission" type="number" min="0" max="100" step="0.01" value="0"><small>Used only when no more specific store/country rule matches.</small></div>
+            <div class="field"><label>Payout hold period (days)</label><input id="financeHoldDays" type="number" min="0" max="90" step="1" value="0"><small>Waiting period before a paid order becomes payout-eligible.</small></div><div class="field full"><label>Reason if changing fallback commission</label><input id="financeChangeReason" maxlength="700" placeholder="Example: New RANOVA seller pricing policy effective this month"></div>
+          </div>
+          <button id="saveFinanceSettings" class="primary" style="margin-top:12px;border:0;border-radius:11px;background:var(--rpe-green-700);color:#fff;padding:10px 14px;font-weight:900">Save finance settings</button>
+        </div>
+      </div>
+
+      <div id="countryRulesCard" class="card">
+        <div class="card-head"><div><h2>Store & country finance rules</h2><small style="color:var(--rpe-muted)">Rules are matched by specific store, seller country, buyer country and payment method. More specific rules override general ones.</small></div><span id="googleCountryStatus" class="chip">Country service</span></div>
+        <div class="body">
+          <div class="notice" style="margin-top:0">Google Maps is used only to identify/validate countries when a Google Maps API key is connected. Commission is a RANOVA policy; payment-processing rates should use an official payment-provider source, not Google Search. Auto-update sources must be official HTTPS JSON/API feeds that return supported rate fields.</div>
+          <div class="form-grid" style="margin-top:12px">
+            <input id="countryRuleId" type="hidden">
+            <div class="field"><label>Seller store</label><select id="ruleStore"><option value="">Any store</option></select></div>
+            <div class="field"><label>Payment method</label><select id="rulePaymentMethod"><option value="">Any method</option><option>Mobile Money</option><option>Bank Transfer</option></select></div>
+            <div class="field"><label>Seller country</label><select id="ruleSellerCountry"><option value="">Any country</option></select></div>
+            <div class="field"><label>Buyer country</label><select id="ruleBuyerCountry"><option value="">Any country</option></select></div>
+            <div class="field"><label>Seller commission to RANOVA (%)</label><input id="ruleCommission" type="number" min="0" max="100" step="0.01" value="0"><small>Calculated from product subtotal only. Delivery is excluded.</small></div>
+            <div class="field"><label>Official payment-provider fee (%)</label><input id="rulePaymentRate" type="number" min="0" max="100" step="0.01" value="0"><small>Keep separate from RANOVA commission.</small></div>
+            <div class="field"><label>Fixed payment fee (GHS)</label><input id="ruleFixedFee" type="number" min="0" step="0.01" value="0"></div>
+            <div class="field"><label>Who absorbs the provider fee?</label><select id="ruleFeePayer"><option value="platform">RANOVA platform</option><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
+            <div class="field"><label>Rate source type</label><select id="ruleSourceKind"><option value="owner_policy">RANOVA owner policy</option><option value="payment_provider">Official payment provider</option><option value="tax_authority">Official tax authority</option><option value="other_official">Other official source</option></select></div>
+            <div class="field"><label>Source name</label><input id="ruleSourceName" placeholder="Example: Provider pricing API"></div>
+            <div class="field full"><label>Official source URL</label><input id="ruleSourceUrl" type="url" placeholder="Official provider/API URL"></div>
+            <div class="field"><label><input id="ruleAutoUpdate" type="checkbox" style="width:auto;margin-right:7px"> Auto-update from official source</label></div>
+            <div class="field"><label><input id="ruleActive" type="checkbox" checked style="width:auto;margin-right:7px"> Rule active</label></div><div class="field full"><label>Reason for this rule / change</label><textarea id="ruleChangeReason" rows="2" maxlength="700" placeholder="Explain why this rate is fair and why it is being introduced or changed."></textarea></div>
+          </div>
+          <div class="actions"><button id="saveCountryRule" class="primary">Save country rule</button><button id="clearCountryRule">Clear form</button><button id="syncCountryRules">Sync auto-update rules now</button></div>
+          <div id="countryRulesList" class="market-list" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div id="paymentAccountsCard" class="card">
+        <div class="card-head"><div><h2>Customer payment destinations</h2><small style="color:var(--rpe-muted)">These details stay private until a confirmed order reaches the payment stage.</small></div></div>
+        <div class="body">
+          <div id="paymentAccountEditor" class="form-grid">
+            <input id="payAccountId" type="hidden">
+            <div class="field"><label>Payment method</label><select id="payAccountMethod"><option>Mobile Money</option><option>Bank Transfer</option></select></div>
+            <div class="field"><label>Provider / bank</label><input id="payAccountProvider" placeholder="MTN MoMo, Telecel Cash, Bank name"></div>
+            <div class="field"><label>Account name</label><input id="payAccountName"></div>
+            <div class="field"><label>Account / MoMo number</label><input id="payAccountReference"></div>
+            <div class="field full"><label>Customer instructions</label><textarea id="payAccountInstructions" rows="3" placeholder="Example: Use the RANOVA order reference as your payment reference."></textarea></div>
+          </div>
+          <div class="actions"><button id="savePaymentAccount" class="primary">Save payment destination</button><button id="clearPaymentAccount">Clear form</button></div>
+          <div id="paymentAccountsList" class="market-list" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Customer payments</h2><small style="color:var(--rpe-muted)">Paystack payments verify automatically. Use manual confirmation only for money independently verified in an approved RANOVA corporate payment account.</small></div></div>
+        <div id="financePaymentsList" class="body market-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h2>Seller payout ledger</h2><small style="color:var(--rpe-muted)">Eligibility is automatic. When Paystack is connected, only the Owner can initiate the protected provider transfer.</small></div></div>
+        <div id="financePayoutsList" class="body market-list"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+<script src="./admin.js?v=20260927-04"></script>
+</body></html>
