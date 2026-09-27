@@ -16,7 +16,7 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="topin"><a class="brand" href="./">RANOVA</a><nav class="nav"><a href="./marketplace.html">Marketplace</a><a href="./account.html">Buyer account</a><a href="./order-status.html">Track order</a><a href="./sell.html">Sell on RANOVA</a></nav></div></header>
+<header class="top"><div class="topin"><a class="brand" href="./">RANOVA</a><nav class="nav"><a href="./marketplace.html">Marketplace</a><a href="./messages.html">Messages</a><a href="./account.html">Buyer account</a><a href="./order-status.html">Track order</a><a href="./sell.html">Sell on RANOVA</a></nav></div></header>
 <main class="wrap">
 <div class="crumbs"><a href="./marketplace.html">Marketplace</a> → <span id="crumb">Product</span></div>
 <div id="loading" class="empty">Loading product details…</div>
@@ -27,7 +27,7 @@
     <div id="category" class="eyebrow"></div><h1 id="name"></h1><p id="short" class="desc"></p>
     <div id="chips" class="chips"></div><div id="price" class="price"></div>
     <div class="qtyrow"><div class="field"><label>Quantity</label><input id="qty" type="number" min="1" value="1"></div><div id="tierHint" class="notice" style="margin:0">Quantity pricing will appear here when available.</div></div>
-    <div class="cta"><a id="buyNow" class="buy" href="#">Add to order</a><button id="saveBtn" class="save" type="button">♡ Save product</button></div><div class="cta" style="grid-template-columns:1fr"><button id="shareBtn" class="save" type="button">Share product</button></div>
+    <div class="cta"><a id="buyNow" class="buy" href="#">Add to order</a><button id="saveBtn" class="save" type="button">♡ Save product</button></div><div class="cta"><a id="messageSeller" class="save" href="#">Message seller / Request quote</a><button id="shareBtn" class="save" type="button">Share product</button></div>
     <div id="buyerProtect" class="notice">RANOVA payment and delivery protections remain in force. Final payment and delivery confirmation happen through the protected order flow.</div>
   </div>
 </section>
@@ -80,7 +80,7 @@ function render(out){
  el("sellerTitle").textContent=s.store_name+(pf.trusted_badge?" ✓":"");
  el("trustgrid").innerHTML=[["Seller level",String(pf.performance_level||"probation").replace(/_/g," ")],["Rating",t.overall_rating==null?"—":Number(t.overall_rating).toFixed(2)+"/5"],["Fulfilment",Number(pf.fulfillment_score==null?100:pf.fulfillment_score).toFixed(0)+"/100"],["Complaint rate",Number(pf.complaint_order_rate||0).toFixed(2)+"%"]].map(function(x){return '<div class="metric"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>'}).join("");
  el("storeInfo").textContent=(s.tagline||s.description||"")+" "+(s.business_location?"Location: "+s.business_location+". ":"")+(s.fulfilment_summary||"");
- el("storeLink").href="./seller-store.html?store="+encodeURIComponent(s.slug);
+ el("storeLink").href="./seller-store.html?store="+encodeURIComponent(s.slug);el("messageSeller").href="./messages.html?product="+encodeURIComponent(p.id)+"&store="+encodeURIComponent(s.id);
  el("buyNow").href="./cart.html?add="+encodeURIComponent(p.id)+"&qty="+encodeURIComponent(el("qty").value);
  el("reviewScope").textContent=out.review_scope_note||"";
  var rev=out.reviews||[];el("reviews").innerHTML=rev.length?rev.map(function(r){return '<div class="review"><b>'+esc(r.buyer_display_name||"Verified buyer")+' · '+esc(stars(r.overall_rating))+'</b><small>Verified purchase'+(r.published_at?" · "+new Date(r.published_at).toLocaleDateString():"")+'</small>'+(r.review_title?'<p><b>'+esc(r.review_title)+'</b></p>':'')+(r.review_text?'<p>'+esc(r.review_text)+'</p>':'')+(r.seller_response?'<div class="sellerreply"><b>Seller response:</b> '+esc(r.seller_response)+'</div>':'')+'</div>'}).join(""):'<div class="empty">No published verified seller/order reviews yet.</div>';
