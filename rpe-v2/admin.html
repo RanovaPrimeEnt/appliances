@@ -57,6 +57,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
     <button data-panel="seller-stores" data-market-role="seller">Seller stores</button>
     <button data-panel="marketplace-trust" data-market-role="seller">Marketplace trust</button>
     <button data-panel="marketplace-discovery" data-market-role="seller">Discovery & sponsored</button>
+    <button data-panel="inventory-control" data-market-role="orders">Inventory control</button>
     <button data-panel="seller-orders" data-market-role="orders">Marketplace orders</button>
     <button data-panel="deliveries" data-market-role="orders">Deliveries</button>
     <button data-panel="cases" data-market-role="orders">Cases</button>
@@ -175,6 +176,22 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
         </div>
       </div>
       <div class="card"><div class="card-head"><h2>Sponsored placement history</h2></div><div id="sponsoredPlacementsList" class="body market-list"></div></div>
+    </section>
+
+    <section id="inventory-control" class="panel">
+      <div class="hero"><small>INVENTORY CONTROL</small><h1>Prevent overselling before it happens.</h1><p>Temporary reservations protect limited stock until payment is confirmed or the hold expires.</p></div>
+      <div class="metrics">
+        <div class="metric"><small>Active stock holds</small><strong id="iActiveHolds">0</strong></div>
+        <div class="metric"><small>Committed lines</small><strong id="iCommitted">0</strong></div>
+        <div class="metric"><small>Reservation window</small><strong id="iWindow">120m</strong></div>
+        <div class="metric"><small>Inventory events</small><strong id="iEvents">0</strong></div>
+      </div>
+      <div class="card"><div class="card-head"><h2>Reservation settings</h2></div><div class="body">
+        <div class="form-grid"><div class="field"><label>Reservation duration (minutes)</label><input id="inventoryMinutes" type="number" min="15" max="1440" value="120"></div>
+        <div class="field"><label>Expire unpaid orders automatically</label><select id="inventoryExpireOrders"><option value="true">Yes</option><option value="false">No</option></select></div></div>
+        <button id="saveInventorySettings" class="primary" style="margin-top:12px;border:0;border-radius:10px;background:var(--rpe-green-700);color:#fff;padding:10px 14px;font-weight:900">Save inventory settings</button>
+      </div></div>
+      <div class="card"><div class="card-head"><h2>Recent inventory activity</h2></div><div id="inventoryAdminList" class="body market-list"></div></div>
     </section>
 
     <section id="seller-orders" class="panel">
@@ -299,5 +316,5 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./admin.js?v=20260926-11"></script>
+<script src="./admin.js?v=20260927-01"></script>
 </body></html>
