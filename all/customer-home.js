@@ -269,6 +269,7 @@ function buildShell(d){
     '</div>'+
     '<div class="rch-head"><div><h2>Recommended for you</h2><p>Products rotate by customer and over time.</p></div><span class="rch-live">Live marketplace</span></div>'+
     '<div class="rch-sponsored" id="rchSponsored"><div class="rch-sponsored-title">Sponsored — paid placements are clearly labelled</div><div class="rch-sponsored-row" id="rchSponsoredRow"></div></div>'+
+    '<section class="rch-store-section" id="rchStoreSection" style="display:none"><div class="rch-head"><div><h2>Stores to discover</h2><p>A rotating mix of approved sellers.</p></div><span class="rch-live">Seller rotation</span></div><div class="rch-store-row" id="rchStoreRow"></div></section>'+
     '<div class="rch-grid" id="rchGrid"></div>'+
     '<div class="rch-status" id="rchStatus">Loading products from RANOVA stores…</div>'+
     '<div class="rch-sentinel" id="rchSentinel">Scroll for more products</div>'+
@@ -330,6 +331,29 @@ function setupObserver(d){
     if(entries.some(function(x){return x.isIntersecting}))loadMore();
   },{rootMargin:"600px 0px"});
   state.observer.observe(s);
+}
+
+function renderStores(){
+  var d=state.doc;if(!d)return;
+  var sec=d.getElementById("rchStoreSection"),row=d.getElementById("rchStoreRow");
+  if(!sec||!row)return;
+  var groups={};
+  state.products.forEach(function(p){
+    var k=sellerKey(p);
+    if(!groups[k])groups[k]={key:k,name:p.store_name||"RANOVA seller",slug:p.store_slug||"",trusted:!!p.trusted_badge,rating:p.overall_rating,items:[]};
+    groups[k].items.push(p);
+  });
+  var stores=shuffle(Object.keys(groups).map(function(k){return groups[k]}),seed()+"-stores").slice(0,10);
+  if(!stores.length){sec.style.display="none";row.innerHTML="";return}
+  row.innerHTML=stores.map(function(s){
+    var imgs=shuffle(s.items,seed()+"-store-"+s.key).filter(function(p){return !!p.primary_image_url}).slice(0,4);
+    var collage=imgs.map(function(p){return '<img src="'+esc(p.primary_image_url)+'" alt="" loading="lazy">'}).join("");
+    while((collage.match(/<img/g)||[]).length<4)collage+='<span style="background:#f4f6f5"></span>';
+    var href="./seller-store.html?store="+encodeURIComponent(s.slug||s.key);
+    var rating=s.rating!=null&&isFinite(Number(s.rating))?"★ "+Number(s.rating).toFixed(1):"";
+    return '<a class="rch-store-card" href="'+href+'" target="_top"><div class="rch-store-collage">'+collage+'</div><div class="rch-store-copy"><b>'+esc(s.name)+'</b><small>'+s.items.length+' product'+(s.items.length===1?"":"s")+' currently in this marketplace selection</small><div class="rch-store-tags">'+(s.trusted?'<span>✓ Trusted</span>':'<span>Marketplace seller</span>')+(rating?'<span>'+esc(rating)+'</span>':'')+'<span>Visit store →</span></div></div></a>';
+  }).join("");
+  sec.style.display="block";
 }
 function renderSponsored(){
   var d=state.doc;if(!d)return;
@@ -404,7 +428,7 @@ async function rotate(manual){
         if(state.exhausted)break;
       }
     }
-    rebuildQueue();renderSponsored();renderNext();
+    rebuildQueue();renderSponsored();renderStores();renderNext();
     if(state.doc)state.doc.getElementById("ranovaCustomerHome").scrollIntoView({behavior:manual?"smooth":"auto",block:"start"});
   }catch(e){
     var d=state.doc;if(d){
