@@ -135,7 +135,9 @@ function render(out){
     box.style.display="none";
     el("copyPayRef").dataset.value="";
   }
-  el("refText").textContent=o.order_ref||"";el("summaryText").textContent=(o.item_count||0)+" product(s) • placed "+(o.created_at?new Date(o.created_at).toLocaleString():"");
+  el("refText").textContent=o.order_ref||"";
+  var inventoryNote=(o.inventory_status==="held"&&o.inventory_reservation_expires_at)?" • stock reserved until "+new Date(o.inventory_reservation_expires_at).toLocaleString():o.inventory_status==="committed"?" • inventory committed":o.inventory_status==="expired"?" • inventory hold expired":"";
+  el("summaryText").textContent=(o.item_count||0)+" product(s) • placed "+(o.created_at?new Date(o.created_at).toLocaleString():"")+inventoryNote;
   el("customer").textContent=o.customer_name||"—";el("delivery").textContent=(o.delivery_location||"—")+(o.buyer_country_name?" • "+o.buyer_country_name:"");el("method").textContent=o.payment_method||"—";el("masterTotal").textContent=money(o.total_payment);
   el("sellerOrders").innerHTML=children.length?children.map(function(x){
     var items=Array.isArray(x.items)?x.items:[];
