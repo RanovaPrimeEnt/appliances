@@ -3,8 +3,10 @@
 const cfg=window.RPE_CONFIG||{},root=document.getElementById('marketApp'),overlay=document.getElementById('marketOverlay');
 const $=id=>document.getElementById(id),safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const db=cfg.supabaseUrl&&cfg.supabasePublishableKey&&window.supabase?window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey):null;
+// The public feed must use public read policies even when a seller is signed in on this device.
+const catalogueDb=db?window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,storageKey:'ranova_public_catalogue'}}):null;
 window.RPE_SUPABASE=db;
-const KEY='ranova_market_cart_v2',DEVICE='ranova_market_device_v1',BATCH=24;
+const KEY='ranova_market_cart_v2',DEVICE='ranova_market_device_v1',BATCH=24,CATALOGUE_PAGE=500;
 let quoteSequence=0,lastOrderPhone='',items=[],stores=new Map(),cart={},shown=BATCH,category='',query='',storeId='',nonce=0,loading=false,session=null;
 try{cart=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch{cart={}}
 let device='';try{device=localStorage.getItem(DEVICE)||crypto.randomUUID();localStorage.setItem(DEVICE,device)}catch{device=String(Math.random())}
@@ -20,17 +22,17 @@ function persist(){try{localStorage.setItem(KEY,JSON.stringify(cart))}catch{}upd
 function updateCount(){let n=Object.values(cart).reduce((s,q)=>s+Number(q||0),0);$('marketCartCount').textContent=n||''}
 function note(t){$('marketGrid').innerHTML='<p class="market-state">'+safe(t)+'</p>'}
 function canonical(rows){const seen=new Set();return rows.filter(p=>{let key=p.store_id+'|'+norm(p.name);if(seen.has(key))return false;seen.add(key);return true})}
+async function publicRows(table,columns,build){let rows=[],offset=0;for(;;){let request=build(catalogueDb.from(table).select(columns)).range(offset,offset+CATALOGUE_PAGE-1);const {data,error}=await request;if(error)throw error;rows.push(...(data||[]));if(!data||data.length<CATALOGUE_PAGE)return rows;offset+=CATALOGUE_PAGE}}
 async function load(){if(!db){note('The product catalogue is temporarily unavailable.');return}loading=true;note('Loading products from RANOVA stores…');try{
  const [sellers,sp,core]=await Promise.all([
- db.from('ranova_seller_stores').select('id,store_name,slug,tagline,description,logo_url,business_location,fulfilment_summary,return_policy_summary').eq('store_status','active').limit(500),
- db.from('ranova_seller_products').select('id,store_id,name,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,pricing_tiers,created_at').eq('product_status','active').order('created_at',{ascending:false}).limit(1000),
- db.from('products').select('id,name,sku,legacy_id,short_description,description,price,currency,stock_quantity,stock_status,specifications,product_images(image_url,is_primary,sort_order),categories(name)').eq('active',true).limit(1000)
+ publicRows('ranova_seller_stores','id,store_name,slug,tagline,description,logo_url,business_location,fulfilment_summary,return_policy_summary',q=>q.eq('store_status','active').order('id')),
+ publicRows('ranova_seller_products','id,store_id,name,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,pricing_tiers,created_at',q=>q.eq('product_status','active').order('created_at',{ascending:false}).order('id')),
+ publicRows('products','id,name,sku,legacy_id,short_description,description,price,currency,stock_quantity,stock_status,specifications,product_images(image_url,is_primary,sort_order),categories(name)',q=>q.eq('active',true).order('id'))
  ]);
- if(sellers.error||sp.error||core.error)throw new Error('Could not load the catalogue. Tap Refresh to try again.');
- stores=new Map((sellers.data||[]).map(s=>[s.id,s]));const prime={id:'ranova-prime',store_name:'Ranova Prime Enterprise',description:'Official RANOVA Prime catalogue',business_location:'Ghana'};stores.set(prime.id,prime);
- const seller=(sp.data||[]).filter(p=>stores.has(p.store_id)&&p.stock_status!=='out_of_stock').map(p=>({...p,kind:'seller',image:p.primary_image_url||p.image_urls?.[0]||'',store_name:stores.get(p.store_id).store_name,images:[p.primary_image_url,...(p.image_urls||[])].filter(Boolean)}));
+ stores=new Map(sellers.map(s=>[s.id,s]));const prime={id:'ranova-prime',store_name:'Ranova Prime Enterprise',description:'Official RANOVA Prime catalogue',business_location:'Ghana'};stores.set(prime.id,prime);
+ const seller=sp.filter(p=>stores.has(p.store_id)&&p.stock_status!=='out_of_stock').map(p=>({...p,kind:'seller',image:p.primary_image_url||p.image_urls?.[0]||'',store_name:stores.get(p.store_id).store_name,images:[p.primary_image_url,...(p.image_urls||[])].filter(Boolean)}));
  const known=new Set(seller.filter(p=>/ranova prime/i.test(p.store_name)).map(p=>norm(p.name)));
- const legacy=(core.data||[]).filter(p=>p.stock_status!=='out_of_stock'&&!known.has(norm(p.name))).map(p=>{let images=(p.product_images||[]).slice().sort((a,b)=>Number(b.is_primary)-Number(a.is_primary)||(a.sort_order||0)-(b.sort_order||0)).map(x=>x.image_url);return {...p,store_id:prime.id,store_name:prime.store_name,kind:'prime',category:p.categories?.name||'Other',moq:1,image:images[0]||'',images}});
+ const legacy=core.filter(p=>p.stock_status!=='out_of_stock'&&!known.has(norm(p.name))).map(p=>{let images=(p.product_images||[]).slice().sort((a,b)=>Number(b.is_primary)-Number(a.is_primary)||(a.sort_order||0)-(b.sort_order||0)).map(x=>x.image_url);return {...p,store_id:prime.id,store_name:prime.store_name,kind:'prime',category:p.categories?.name||'Other',moq:1,image:images[0]||'',images}});
  items=canonical([...seller,...legacy]);if(!items.length)note('No approved products are available yet. Check again shortly.');else render();
  }catch(e){note(e.message||'Could not load products. Tap Refresh to retry.')}finally{loading=false}}
 function filtered(){let a=items;if(storeId)a=a.filter(p=>p.store_id===storeId);if(category)a=a.filter(p=>p.category===category);if(query){const q=norm(query);a=a.filter(p=>norm([p.name,p.category,p.description,p.short_description,p.store_name].join(' ')).includes(q))}return query||category||storeId?a:fairOrder(a)}
