@@ -73,7 +73,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
         <div class="metric"><small>Products</small><strong id="mProducts">0</strong></div>
       </div>
       <div class="card"><div class="card-head"><h2>Needs attention</h2></div><div id="attention" class="body list"></div></div>
-      <div id="marketplaceSummary" class="card hide"><div class="card-head"><h2>Marketplace moderation</h2></div><div class="body"><div class="market-metrics"><button data-panel="seller-reviews"><small>Seller applications pending</small><strong id="mSellerPending">0</strong></button><button data-panel="seller-reviews"><small>Documents pending</small><strong id="mDocsPending">0</strong></button><button data-panel="seller-products"><small>Seller products pending</small><strong id="mSellerProductsPending">0</strong></button><button data-panel="seller-orders"><small>Open seller orders</small><strong id="mSellerOrdersOpen">0</strong></button><button data-panel="cases"><small>Open refunds</small><strong id="mRefundsOpen">0</strong></button><button data-panel="cases"><small>Open disputes</small><strong id="mDisputesOpen">0</strong></button></div></div></div>
+      <div id="marketplaceSummary" class="card hide"><div class="card-head"><h2>Marketplace moderation</h2></div><div class="body"><div class="market-metrics"><button data-panel="seller-reviews"><small>Seller applications pending</small><strong id="mSellerPending">0</strong></button><button data-panel="seller-reviews"><small>Documents pending</small><strong id="mDocsPending">0</strong></button><button data-panel="seller-products"><small>Seller products pending</small><strong id="mSellerProductsPending">0</strong></button><button data-panel="seller-orders"><small>Open seller orders</small><strong id="mSellerOrdersOpen">0</strong></button><button data-panel="cases"><small>Open refunds</small><strong id="mRefundsOpen">0</strong></button><button data-panel="cases"><small>Open disputes</small><strong id="mDisputesOpen">0</strong></button><button data-panel="cases"><small>Open after-sales</small><strong id="mAfterSalesOpen">0</strong></button></div></div></div>
     </section>
 
     <section id="orders" class="panel">
@@ -225,9 +225,11 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       <div class="metrics">
         <div class="metric"><small>Open refunds</small><strong id="cRefundsOpen">0</strong></div>
         <div class="metric"><small>Open disputes</small><strong id="cDisputesOpen">0</strong></div>
+        <div class="metric"><small>Open after-sales</small><strong id="cAfterSalesOpen">0</strong></div>
         <div class="metric"><small>Resolved / refunded</small><strong id="cCasesClosed">0</strong></div>
         <div class="metric"><small>Buyer protection</small><strong style="font-size:16px">Payout hold</strong></div>
       </div>
+      <div class="card"><div class="card-head"><div><h2>Cancellations & returns</h2><small style="color:var(--rpe-muted)">Cases escalated from buyer/seller after-sales workflows appear here for RANOVA review.</small></div></div><div id="adminAfterSalesList" class="body market-list"></div></div>
       <div class="card"><div class="card-head"><div><h2>Refund requests</h2><small style="color:var(--rpe-muted)">Approve only against the recorded payment. Final refund requires a transaction/reference.</small></div></div><div id="adminRefundsList" class="body market-list"></div></div>
       <div class="card"><div class="card-head"><div><h2>Disputes</h2><small style="color:var(--rpe-muted)">Review the buyer, seller and RANOVA messages before resolving a case.</small></div></div><div id="adminDisputesList" class="body market-list"></div></div>
     </section>
