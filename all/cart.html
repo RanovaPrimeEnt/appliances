@@ -112,12 +112,10 @@ async function addFromUrl(){
  var q=new URLSearchParams(location.search),id=q.get("add"),qty=Math.max(1,Number(q.get("qty")||1)),quoteId=q.get("quote");
  if(quoteId){
    if(!session)throw new Error("Sign in before using an accepted negotiated quote.");
-   var rr=await fetch(URL+"/functions/v1/ranova-messaging",{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"list"})});
+   var rr=await fetch(URL+"/functions/v1/ranova-messaging",{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"get_quote",quote_id:quoteId})});
    var ro=await rr.json().catch(function(){return{}});
    if(!rr.ok||!ro.ok)throw new Error(ro.error||"Could not verify quote.");
-   var found=null;
-   for(const c of ro.conversations||[]){if(!c.id)continue;var or=await fetch(URL+"/functions/v1/ranova-messaging",{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"open",conversation_id:c.id})});var oo=await or.json().catch(function(){return{}});if(oo.ok){var qq=(oo.conversation.quotes||[]).find(function(x){return x.id===quoteId&&x.status==="accepted"});if(qq){found=qq;break}}}
-   if(!found)throw new Error("Accepted quote not found.");
+   var found=ro.quote;
    id=found.product_id;qty=Number(found.requested_quantity);quoteMap[id]=found.id;saveQuoteMap();
  }
  if(id){cart[id]=Math.max(Number(cart[id]||0),qty);history.replaceState(null,"","./cart.html");await getQuote();await persist();}
