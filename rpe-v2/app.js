@@ -39,6 +39,7 @@ window.RPE_ACCOUNT_OPEN = () => {
 const $ = (id) => document.getElementById(id);
 if($('returnMarket'))$('returnMarket').onclick=()=>{accountRequested=false;window.RPE_OPEN_MARKET()};
 if($('authBackMarket'))$('authBackMarket').onclick=()=>{accountRequested=false;window.RPE_OPEN_MARKET()};
+if($('bottomMessage'))$('bottomMessage').onclick=()=>window.RPE_MARKET_MESSAGES?.();
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money = (n,c='GHS') => n == null ? "Ask for price" : new Intl.NumberFormat("en-GH",{style:"currency",currency:c}).format(Number(n));
 const imageFor = (p) => {
