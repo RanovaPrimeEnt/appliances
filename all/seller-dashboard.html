@@ -277,7 +277,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 
       <div id="panel-support" class="panel">
         <div class="card"><h2>Support & disputes</h2><p>Refund and dispute cases are tied to the original RANOVA order. Payouts may be held while a case is reviewed so neither buyer nor seller is disadvantaged before a decision is made.</p><div id="supportMsg" class="msg"></div></div>
-        <div class="card"><h2>Notifications</h2><div id="sellerNotifications" class="order-list"><div class="empty">No support notifications yet.</div></div></div>
+        <div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Notifications</h2><p>Operational marketplace updates for your seller account.</p></div><button id="sellerMarkAllRead" class="btn" type="button">Mark all read</button></div><div id="sellerNotifications" class="order-list"><div class="empty">No notifications yet.</div></div></div>
         <div class="card"><h2>Refund requests</h2><div id="sellerRefunds" class="order-list"><div class="empty">No refund requests linked to your orders.</div></div></div>
         <div class="card"><h2>Disputes</h2><div id="sellerDisputes" class="order-list"><div class="empty">No disputes linked to your orders.</div></div></div>
       </div>
@@ -367,7 +367,9 @@ function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
   el("welcomeName").textContent=store.store_name||app.business_name||"Seller Dashboard";
   el("welcomeText").textContent=store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your seller account is approved. Finish the Store Builder and prepare products for review.";
-  el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mOrders").textContent=c.open_orders||0;el("supportNav").textContent=(c.open_support_cases||0)>0?"Support ("+(c.open_support_cases||0)+")":"Support";el("deliveryNav").textContent=(c.awaiting_delivery_confirmation||0)>0?"Delivery ("+(c.awaiting_delivery_confirmation||0)+")":"Delivery";
+  el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mOrders").textContent=c.open_orders||0;
+  var unreadNotes=(state.notifications||[]).filter(function(n){return !n.read_at}).length,attention=(c.open_support_cases||0)+unreadNotes;
+  el("supportNav").textContent=attention>0?"Support ("+attention+")":"Support";el("deliveryNav").textContent=(c.awaiting_delivery_confirmation||0)>0?"Delivery ("+(c.awaiting_delivery_confirmation||0)+")":"Delivery";
   if(store.slug&&store.store_status==="active"){el("previewStore").href="./seller-store.html?store="+encodeURIComponent(store.slug);el("previewStore").style.display="inline-flex"}else el("previewStore").style.display="none";
 }
 function fillStore(){
@@ -793,8 +795,9 @@ function renderSupport(){
   var notes=state.notifications||[],refunds=state.refunds||[],disputes=state.disputes||[];
   var nHost=el("sellerNotifications");
   nHost.innerHTML=notes.length?notes.map(function(n){
-    return '<div class="order-row"><div><b>'+esc(n.title)+'</b><small>'+esc(n.message)+'</small></div><div><span class="status">'+esc(pretty(n.notification_type))+'</span></div><div><small>'+new Date(n.created_at).toLocaleString()+'</small></div></div>';
-  }).join(""):'<div class="empty">No support notifications yet.</div>';
+    return '<div class="order-row" style="'+(!n.read_at?'background:#f7fbf9':'')+'"><div><b>'+esc(n.title)+'</b><small>'+esc(n.message)+'</small></div><div><span class="status">'+esc(pretty(n.notification_type))+'</span></div><div><small>'+new Date(n.created_at).toLocaleString()+'</small>'+(!n.read_at?'<div class="order-actions"><button data-seller-note-read="'+n.id+'">Mark read</button></div>':'')+'</div></div>';
+  }).join(""):'<div class="empty">No notifications yet.</div>';
+  nHost.querySelectorAll("[data-seller-note-read]").forEach(function(b){b.onclick=async function(){await api({action:"mark_notifications_read",id:b.dataset.sellerNoteRead});await refresh();setPanel("support")}});
 
   var rHost=el("sellerRefunds");
   rHost.innerHTML=refunds.length?refunds.map(function(r){
@@ -818,6 +821,7 @@ function renderSupport(){
   }});
 }
 
+el("sellerMarkAllRead").onclick=async function(){await api({action:"mark_notifications_read"});await refresh();setPanel("support")};
 el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./seller-center.html"};
 async function boot(){
   var gs=await sb.auth.getSession();session=gs.data.session;
