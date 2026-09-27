@@ -260,6 +260,18 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       <div id="providerFinanceNotice" class="card"><div class="body"><div class="notice" style="margin-top:0"><b>Protected settlement:</b> customer payment and supplier payout are separate. Provider-backed seller transfers can only start after the payout becomes automatically eligible. Until Paystack is configured, live online payment and automated transfers remain disabled.</div></div></div>
 
       <div class="card">
+        <div class="card-head"><div><h2>Financial reconciliation</h2><small style="color:var(--rpe-muted)">Independent checks compare orders, payments, payouts, refunds and ledger entries. Mismatches create review alerts; the checker never changes money balances automatically.</small></div><button id="runFinanceReconciliation" class="primary">Run check now</button></div>
+        <div class="body">
+          <div class="review-meta">
+            <div><span>Latest run</span><b id="reconLatestStatus">Not run</b><span id="reconLatestTime">—</span></div>
+            <div><span>Open issues</span><b id="reconOpenIssues">0</b><span>Critical mismatches require finance review.</span></div>
+            <div><span>Daily snapshot</span><b id="reconSnapshotDate">—</b><span id="reconSnapshotTotal">GHS 0.00 confirmed</span></div>
+          </div>
+          <div id="reconciliationIssuesList" class="market-list" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-head"><div><h2>Fairness guardrails</h2><small style="color:var(--rpe-muted)">These rules are built into the marketplace finance flow.</small></div><span class="chip status-approved">No hidden deductions</span></div>
         <div class="body">
           <div class="review-meta">
@@ -338,5 +350,5 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./admin.js?v=20260927-03"></script>
+<script src="./admin.js?v=20260927-04"></script>
 </body></html>
