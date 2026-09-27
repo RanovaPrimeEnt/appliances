@@ -4,7 +4,7 @@
 
 ## Working now in the review branch
 
-- Native marketplace home opens without requiring sign-in. It shows approved seller products and remaining core RANOVA products from the live catalogue; cards rotate by device and time with store variety.
+- Native marketplace home opens without requiring sign-in. It shows products from every approved seller whose store and listing are active, plus remaining core RANOVA Prime catalogue products. Today this may look like the RANOVA Prime store, but newly approved stores enter the same feed automatically. The feed uses public read policies for every buyer, reads catalogue pages without a fixed store limit, and rotates products by device and time with store variety.
 - Mobile product grid, category and text search, store view, product gallery, price and stock status, minimum quantity, and available quantity price tiers.
 - The app uses the same Home, Message, Cart, and Me navigation shown in the supplied RANOVA Me screen. Buyer messages open inside the customer app, using the existing seller conversation service; a seller product has a Message seller action. The mobile website and its separate routes are not the reference for the app Home screen.
 - One local cart can hold products from multiple sellers. Seller lines are checked with the live marketplace quote function, which returns current availability, tier prices, grouped store subtotals, and published delivery options. Checkout repeats that check before placing an order.
