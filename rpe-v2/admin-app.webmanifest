@@ -1,0 +1,20 @@
+{
+  "name": "RANOVA Admin Console",
+  "short_name": "RANOVA Admin",
+  "description": "Central administration console for the RANOVA marketplace.",
+  "id": "/appliances/rpe-v2/admin.html",
+  "start_url": "/appliances/rpe-v2/admin.html",
+  "scope": "/appliances/rpe-v2/",
+  "display": "standalone",
+  "background_color": "#F8FAF9",
+  "theme_color": "#176B61",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./admin-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
