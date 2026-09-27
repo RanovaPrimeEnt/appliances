@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#116a52">
 <meta name="description" content="Shop products from a verified RANOVA marketplace seller.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./catalogue-lighting.js?v=20260927-1"></script>
+<script src="./ranova-catalogue.js?v=20260927-1"></script>
 <style>
 *{box-sizing:border-box}:root{--green:#103f34;--green2:#116a52;--orange:#ff5a2d;--ink:#15342e;--muted:#687a74;--line:#dfe8e4;--soft:#f5f8f6}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#f7f9f8;color:var(--ink)}body.no-scroll{overflow:hidden}a{color:inherit}button,input,select,textarea{font:inherit}.wrap{width:min(1160px,calc(100% - 28px));margin:auto}
@@ -15,6 +17,7 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
 .about{padding:16px 0 6px}.about-grid{display:grid;grid-template-columns:1.5fr .7fr .8fr;gap:12px}.info{background:#fff;border:1px solid var(--line);border-radius:17px;padding:15px}.info b{display:block;font-size:10px}.info span,.info p{display:block;margin:5px 0 0;color:var(--muted);font-size:9px;line-height:1.5}.trust{padding:12px 0}.trust-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px}.trust-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.trust-head h2{margin:0;font-size:19px}.trust-head p{margin:4px 0 0;color:var(--muted);font-size:9px}.trust-score{font-size:25px;font-weight:950}.trust-metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}.trust-metric{padding:10px;border-radius:12px;background:#f6faf8}.trust-metric span{display:block;color:var(--muted);font-size:7px}.trust-metric b{display:block;margin-top:4px;font-size:10px}.review-list{display:grid;gap:8px;margin-top:12px}.review-item{padding:11px;border:1px solid var(--line);border-radius:12px;background:#fbfcfb}.review-item b{font-size:10px}.review-item small{display:block;margin-top:3px;color:var(--muted);font-size:8px}.review-item p{margin:7px 0 0;font-size:9px;line-height:1.5}.review-stars{font-weight:950;color:#876610}.seller-response{margin-top:8px;padding:8px;border-left:3px solid #c2ded4;background:#f5faf8;border-radius:0 8px 8px 0;font-size:8px}
 .products{padding:30px 0 90px}.head{display:flex;justify-content:space-between;gap:14px;align-items:end;margin-bottom:15px}.head h2{margin:0;font-size:27px}.head p{margin:4px 0 0;color:var(--muted);font-size:10px}.search{width:min(320px,100%);height:42px;border:1px solid #d7e3de;border-radius:999px;background:#fff;padding:0 14px;outline:none}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.product{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}.img{height:190px;background:#f4f7f5;display:grid;place-items:center;overflow:hidden}.img img{width:100%;height:100%;object-fit:contain}.copy{padding:13px;display:flex;flex-direction:column;flex:1}.copy small{color:#74857f;font-size:8px}.copy h3{margin:5px 0 6px;font-size:13px;line-height:1.3}.copy p{margin:0;color:var(--muted);font-size:9px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.chip{padding:5px 7px;border-radius:999px;background:#eff7f3;color:#245a49;font-size:7px;font-weight:900}.price{margin-top:auto;padding-top:12px;font-weight:950;font-size:13px}.price small{display:block;margin-top:3px;font-weight:600}.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.buy,.contact-btn{min-height:39px;border:0;border-radius:11px;text-decoration:none;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:950}.buy{background:var(--orange);color:#fff}.buy.in-cart{background:var(--green2)}.contact-btn{background:#f1f7f4;color:var(--green);border:1px solid #d8e5df}.buy[disabled]{opacity:.45;cursor:not-allowed}.store-category-nav{display:flex;gap:8px;overflow:auto;padding:4px 0 14px;scrollbar-width:none}.store-category-nav::-webkit-scrollbar{display:none}.store-category-btn{flex:0 0 auto;border:1px solid #dce6e2;background:#fff;color:#405850;border-radius:999px;padding:9px 12px;font-size:11px;font-weight:900;cursor:pointer}.store-category-btn.active{background:#103f34;color:#fff;border-color:#103f34}.category-divider{grid-column:1/-1;display:flex;align-items:end;justify-content:space-between;gap:10px;padding:18px 2px 4px;border-bottom:1px solid #e3e9e6}.category-divider h3{margin:0;color:#173d32;font-size:20px}.category-divider span{color:#788780;font-size:10px;font-weight:800}.empty{grid-column:1/-1;padding:38px;border:1px dashed #ccd9d4;border-radius:18px;text-align:center;background:#fff;color:#71827b;font-size:11px}
 .footer{padding:28px 0;background:#103f34;color:#cadbd5;font-size:9px}.footer a{color:#fff}
+.product .img{position:relative;width:100%;border:0;padding:0;cursor:pointer}.product .img img{display:block;padding:8px}.product .copy h3{font-size:14px}.product .copy p{font-size:12px}.product .copy small,.product .meta .chip,.product .price small{font-size:11px}.product .buy,.product .contact-btn{font-size:11px}.product-tools{display:flex;gap:7px;margin-top:10px}.product-tools button{border:1px solid #d8e5df;background:#fff;border-radius:9px;color:var(--green);padding:8px 10px;cursor:pointer;font-size:11px;font-weight:800}.product-tools .details{flex:1;background:#eef7f3}.product-tools .saved{color:#ad3838;border-color:#e7b9b9}.detail-dialog{position:fixed;inset:0;z-index:115;background:rgba(5,27,21,.65);display:none;align-items:center;justify-content:center;padding:12px}.detail-dialog.open{display:flex}.detail-card{width:min(870px,100%);max-height:94dvh;overflow:auto;background:#fff;border-radius:20px}.detail-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}.detail-top h2{margin:0;font-size:18px}.detail-content{padding:18px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}.detail-main-image{width:100%;height:min(48vh,390px);object-fit:contain;background:#f6f8f7;border-radius:14px}.detail-gallery{display:flex;gap:7px;overflow-x:auto;padding:8px 0}.detail-gallery button{flex:none;width:62px;height:62px;border:2px solid transparent;border-radius:9px;background:#f6f8f7;padding:3px}.detail-gallery button.selected{border-color:var(--green2)}.detail-gallery img{width:100%;height:100%;object-fit:contain}.detail-content h3{margin:0 0 10px;font-size:23px}.detail-content p{line-height:1.6;font-size:14px;color:#4c635b}.detail-facts{margin:14px 0;border-top:1px solid var(--line)}.detail-facts div{display:grid;grid-template-columns:minmax(100px,35%) 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}.detail-facts dt{font-weight:800}.detail-facts dd{margin:0;overflow-wrap:anywhere}.detail-note{background:#f5f8f6;border-radius:10px;padding:10px}.detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.detail-actions button,.detail-actions a{border:0;border-radius:10px;padding:11px 15px;text-decoration:none;background:#eef7f3;color:var(--green);font-size:13px;font-weight:800}.detail-actions .buy{background:var(--orange);color:#fff}.detail-actions .buy:disabled{opacity:.5}.detail-dialog button{cursor:pointer}@media(max-width:620px){.detail-content{grid-template-columns:1fr}.detail-main-image{height:290px}.detail-card{max-height:96dvh}.product .copy{padding:10px}.product .card-actions{grid-template-columns:1fr}.product .img{height:160px}}
 .cart-fab{position:fixed;right:18px;bottom:18px;z-index:80;min-height:50px;border:0;border-radius:999px;padding:0 18px;background:linear-gradient(135deg,var(--green2),#248b72);color:#fff;box-shadow:0 15px 36px rgba(9,69,52,.25);font-size:10px;font-weight:950;display:none;align-items:center;gap:8px}.cart-fab.show{display:inline-flex}.cart-fab span{min-width:22px;height:22px;border-radius:999px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:8px}
 .backdrop{position:fixed;inset:0;background:rgba(6,28,22,.52);z-index:100;display:none}.backdrop.open{display:block}.drawer{position:fixed;right:0;top:0;bottom:0;z-index:101;width:min(440px,100%);background:#fff;box-shadow:-20px 0 55px rgba(3,31,23,.2);transform:translateX(102%);transition:.22s ease;display:flex;flex-direction:column}.drawer.open{transform:none}.drawer-head{padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.drawer-head h2{margin:0;font-size:19px}.close{width:40px;height:40px;border:0;border-radius:50%;background:#eef5f2;color:var(--ink);font-size:22px}.drawer-body{padding:14px 18px;overflow:auto;flex:1}.cart-lines{display:grid;gap:9px}.cart-line{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:13px}.cart-line img{width:58px;height:58px;object-fit:contain;background:#f5f8f6;border-radius:10px}.cart-line b{display:block;font-size:10px}.cart-line small{display:block;color:var(--muted);font-size:8px;margin-top:3px}.qty{display:flex;align-items:center;gap:5px;margin-top:7px}.qty button{width:29px;height:29px;border:1px solid #d8e3de;border-radius:9px;background:#fff;font-weight:900}.qty input{width:55px;height:29px;border:1px solid #d8e3de;border-radius:8px;text-align:center;font-size:9px}.remove{border:0;background:transparent;color:#9a4a40;font-size:8px;font-weight:900}.summary{margin-top:12px;padding:12px;border-radius:13px;background:#f6faf8}.summary-row{display:flex;justify-content:space-between;gap:12px;font-size:9px;margin:5px 0}.summary-row.total{font-size:12px;font-weight:950}.drawer-foot{padding:14px 18px;border-top:1px solid var(--line)}.checkout-btn{width:100%;min-height:46px;border:0;border-radius:12px;background:var(--orange);color:#fff;font-size:10px;font-weight:950}.checkout-btn:disabled{opacity:.5}
 .modal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(5,27,21,.58)}.modal.open{display:flex}.modal-card{width:min(650px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 28px 80px rgba(0,0,0,.22)}.modal-head{padding:18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.modal-head h2{margin:0;font-size:20px}.modal-body{padding:18px}.checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:9px;font-weight:900}.field input,.field select,.field textarea{width:100%;border:1px solid #d7e3de;border-radius:10px;padding:10px;outline:none}.field input,.field select{height:42px}.field textarea{min-height:78px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#309178;box-shadow:0 0 0 3px #e5f5ef}.pay-note{margin:12px 0 0;padding:11px;border-radius:11px;background:#fff8e8;color:#6e6045;font-size:9px;line-height:1.5}.checkout-actions{display:flex;gap:8px;margin-top:14px}.checkout-actions button{min-height:43px;border-radius:11px;padding:0 14px;font-size:9px;font-weight:950}.place{flex:1;border:0;background:var(--green2);color:#fff}.cancel{border:1px solid var(--line);background:#fff;color:var(--ink)}.checkout-msg{display:none;margin:0 0 12px;padding:11px;border-radius:11px;background:#fff0ed;color:#96483d;font-size:9px;line-height:1.5}.checkout-msg.good{background:#e9f7ef;color:#126342}.success{padding:24px;text-align:center}.success .tick{width:58px;height:58px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;background:#e6f7ee;color:#0d714a;font-size:28px}.success h3{margin:0 0 7px}.success p{margin:0;color:var(--muted);font-size:10px;line-height:1.6}.order-ref{margin:12px auto;padding:11px;border-radius:11px;background:#f2f7f5;font-weight:950;letter-spacing:.04em;max-width:330px}.success button{margin-top:14px;min-height:41px;border:0;border-radius:999px;background:var(--green2);color:#fff;padding:0 16px;font-size:9px;font-weight:900}
@@ -50,6 +53,9 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
 </div>
 
 <button id="cartFab" class="cart-fab" type="button">Review order <span id="cartFabCount">0</span></button>
+<div id="productDetail" class="detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detailName" aria-hidden="true">
+  <div class="detail-card"><div class="detail-top"><h2>Product details</h2><button id="closeDetail" class="close" type="button" aria-label="Close product details">×</button></div><div id="detailContent" class="detail-content"></div></div>
+</div>
 <div id="cartBackdrop" class="backdrop"></div>
 <aside id="cartDrawer" class="drawer" aria-label="Order selection">
   <div class="drawer-head"><div><small style="color:var(--muted);font-size:8px">YOUR SELECTION</small><h2>Order from <span id="drawerStoreName">seller</span></h2></div><button id="closeCart" class="close" type="button" aria-label="Close">×</button></div>
@@ -87,7 +93,7 @@ var ORDER_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-place-order";
 var COUNTRY_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-country-service";
 var FINANCE_QUOTE_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-finance-quote";
 var TRUST_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-marketplace-trust";
-var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[],cart={},countryMap={},marketplaceTrust={performance:{},enforcement:{enforcement_status:"good_standing"}},buyerSession=null,buyerProfile=null,buyerAddresses=[],buyerStoreSaved=false,activeCategory="All";
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[],cart={},countryMap={},marketplaceTrust={performance:{},enforcement:{enforcement_status:"good_standing"}},buyerSession=null,buyerProfile=null,buyerAddresses=[],buyerStoreSaved=false,activeCategory="All",detailProductId=null,savedProducts=new Set();
 var CATEGORY_ORDER=["Kitchen Appliances","Household Plasticware","Furniture","Solar Street Lights","Lighting & Fans","Rechargeable Lights"];
 
 function el(id){return document.getElementById(id)}
@@ -95,6 +101,52 @@ function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){retur
 function phoneDigits(v){var d=String(v||"").replace(/\D/g,"");if(d.startsWith("0"))d="233"+d.slice(1);return d}
 function money(v){return v==null?"Ask seller for price":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
 function stars(n){n=Number(n||0);return "★".repeat(Math.max(0,Math.min(5,Math.round(n))))+"☆".repeat(Math.max(0,5-Math.min(5,Math.round(n))))}
+function websiteProduct(p){
+  var list=(window.RPE_WEBSITE_PRODUCTS||[]).concat(window.RPE_LIGHTING_PRODUCTS||[]);
+  var sku=String(p.sku||"").trim(),name=String(p.name||"").trim().toLowerCase();
+  return list.find(function(x){return (sku&&sku===String(x.id))||(name&&name===String(x.name).trim().toLowerCase()&&(!p.category||p.category===x.category))})||null;
+}
+function productPhoto(p){
+  if(p.primary_image_url)return p.primary_image_url;
+  var match=websiteProduct(p);
+  return match?match.image:"";
+}
+function productDescription(p){return p.description||p.short_description||(websiteProduct(p)||{}).description||"Contact the seller for product details."}
+function productPhotos(p){
+  var images=[productPhoto(p)].concat(Array.isArray(p.image_urls)?p.image_urls:[]);
+  return images.filter(function(url,i){return typeof url==="string"&&url.trim()&&images.indexOf(url)===i});
+}
+function saveProductList(){try{localStorage.setItem("ranova_saved_store_"+store.id,JSON.stringify(Array.from(savedProducts)))}catch(e){}}
+function toggleSaved(id){
+  if(savedProducts.has(id))savedProducts.delete(id);else savedProducts.add(id);
+  saveProductList();render();if(detailProductId===id)openProductDetail(id);
+}
+function shareProduct(id){
+  var p=products.find(function(x){return x.id===id});if(!p)return;
+  var url=new URL(location.href);url.searchParams.set("product",id);url.searchParams.delete("qty");
+  if(navigator.share)navigator.share({title:p.name,url:url.href}).catch(function(){});
+  else if(navigator.clipboard)navigator.clipboard.writeText(url.href).then(function(){alert("Product link copied.")}).catch(function(){prompt("Copy this product link",url.href)});
+  else prompt("Copy this product link",url.href);
+}
+function openProductDetail(id){
+  var p=products.find(function(x){return x.id===id});if(!p)return;
+  detailProductId=id;
+  var photos=productPhotos(p),specs=p.specifications&&typeof p.specifications==="object"?p.specifications:{},facts=[];
+  if(p.sku)facts.push(["Model / SKU",p.sku]);
+  facts.push(["Category",p.category||"General"],["Availability",String(p.stock_status||"confirm_on_enquiry").replace(/_/g," ")],["Minimum order",String(p.moq||1)+(p.unit_label?" "+p.unit_label:"")]);
+  Object.keys(specs).forEach(function(k){var value=specs[k];if(value!=null&&value!==""&&typeof value!=="object")facts.push([k.replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase()}),String(value)])});
+  var unavailable=p.stock_status==="out_of_stock"||["restricted","suspended"].includes(String((marketplaceTrust.enforcement||{}).enforcement_status||""));
+  el("detailContent").innerHTML='<div>'+ (photos.length?'<img class="detail-main-image" id="detailMainImage" src="'+esc(photos[0])+'" alt="'+esc(p.name)+'">':'<div class="detail-main-image empty">Image available on enquiry</div>')+(photos.length>1?'<div class="detail-gallery" aria-label="Product images">'+photos.map(function(src,i){return '<button type="button" class="'+(i===0?'selected':'')+'" data-detail-photo="'+i+'" aria-label="Show image '+(i+1)+'"><img src="'+esc(src)+'" alt=""></button>'}).join("")+'</div>':"")+'</div><div><small>'+esc(p.category||"Product")+'</small><h3 id="detailName">'+esc(p.name)+'</h3><strong>'+esc(money(p.price))+'</strong><p>'+esc(productDescription(p))+'</p><dl class="detail-facts">'+facts.map(function(row){return '<div><dt>'+esc(row[0])+'</dt><dd>'+esc(row[1])+'</dd></div>'}).join("")+'</dl><p class="detail-note">Confirm price, stock, important specifications, delivery and applicable warranty before payment.</p><div class="detail-actions"><button type="button" class="buy" data-detail-add="'+esc(id)+'" '+(unavailable?'disabled':'')+'>'+(unavailable?'Ordering paused':'Add to order')+'</button><button type="button" data-detail-save="'+esc(id)+'">'+(savedProducts.has(id)?'♥ Saved':'♡ Save')+'</button><button type="button" data-detail-share="'+esc(id)+'">Share</button><a href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div>';
+  var dialog=el("productDetail");dialog.classList.add("open");dialog.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");el("closeDetail").focus();
+  dialog.querySelectorAll("[data-detail-photo]").forEach(function(b){b.onclick=function(){el("detailMainImage").src=photos[Number(b.dataset.detailPhoto)];dialog.querySelectorAll("[data-detail-photo]").forEach(function(x){x.classList.toggle("selected",x===b)})}});
+  dialog.querySelector("[data-detail-add]").onclick=function(){closeProductDetail();addProduct(id)};
+  dialog.querySelector("[data-detail-save]").onclick=function(){toggleSaved(id)};
+  dialog.querySelector("[data-detail-share]").onclick=function(){shareProduct(id)};
+}
+function closeProductDetail(){detailProductId=null;el("productDetail").classList.remove("open");el("productDetail").setAttribute("aria-hidden","true");document.body.classList.remove("no-scroll")}
+el("closeDetail").onclick=closeProductDetail;
+el("productDetail").onclick=function(e){if(e.target===this)closeProductDetail()};
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&detailProductId)closeProductDetail()});
 async function loadTrust(){
   try{
     var r=await fetch(TRUST_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify({store_slug:store.slug})});
@@ -230,7 +282,8 @@ function sanitizeCart(){
 }
 function productCard(p){
   var inCart=cart[p.id]!=null,enforcement=String((marketplaceTrust.enforcement||{}).enforcement_status||"good_standing"),disabled=p.stock_status==="out_of_stock"||enforcement==="restricted"||enforcement==="suspended";
-  return '<article class="product"><div class="img">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'" loading="lazy">':'')+'</div><div class="copy"><small>'+esc(p.category)+'</small><h3>'+esc(p.name)+'</h3><p>'+esc(p.short_description||p.description||"Contact the seller for product details.")+'</p><div class="meta"><span class="chip">MOQ '+esc(p.moq||1)+'</span><span class="chip">'+esc(String(p.stock_status||"confirm_on_enquiry").replace(/_/g," "))+'</span></div><div class="price">'+esc(money(p.price))+(p.price==null?'<small>Final amount confirmed before payment</small>':'')+'</div><div class="card-actions"><button class="buy'+(inCart?' in-cart':'')+'" data-add="'+p.id+'" '+(disabled?'disabled':'')+'>'+(p.stock_status==="out_of_stock"?'Out of stock':disabled?'Ordering paused':inCart?'✓ Added to order':'Add to order')+'</button><a class="contact-btn" href="./messages.html?product='+encodeURIComponent(p.id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div></article>'
+  var photo=productPhoto(p);
+  return '<article class="product"><button type="button" class="img" data-open="'+esc(p.id)+'" aria-label="View '+esc(p.name)+' details">'+(photo?'<img src="'+esc(photo)+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<span>Image available on enquiry</span>')+'</button><div class="copy"><small>'+esc(p.category||"Product")+'</small><h3>'+esc(p.name)+'</h3><p>'+esc(p.short_description||productDescription(p))+'</p><div class="meta"><span class="chip">MOQ '+esc(p.moq||1)+'</span><span class="chip">'+esc(String(p.stock_status||"confirm_on_enquiry").replace(/_/g," "))+'</span></div><div class="price">'+esc(money(p.price))+(p.price==null?'<small>Final amount confirmed before payment</small>':'')+'</div><div class="product-tools"><button type="button" class="details" data-open="'+esc(p.id)+'">View details</button><button type="button" data-save="'+esc(p.id)+'" aria-label="'+(savedProducts.has(p.id)?'Remove saved ':'Save ')+esc(p.name)+'">'+(savedProducts.has(p.id)?'♥':'♡')+'</button><button type="button" data-share="'+esc(p.id)+'" aria-label="Share '+esc(p.name)+'">Share</button></div><div class="card-actions"><button class="buy'+(inCart?' in-cart':'')+'" data-add="'+esc(p.id)+'" '+(disabled?'disabled':'')+'>'+(p.stock_status==="out_of_stock"?'Out of stock':disabled?'Ordering paused':inCart?'✓ Added to order':'Add to order')+'</button><a class="contact-btn" href="./messages.html?product='+encodeURIComponent(p.id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div></article>'
 }
 function renderCategoryNav(){
   var cats=CATEGORY_ORDER.filter(function(c){return products.some(function(p){return p.category===c})});
@@ -254,6 +307,9 @@ function render(){
   });
   el("grid").innerHTML=html||'<div class="empty">No matching published products in this store yet.</div>';
   el("grid").querySelectorAll("[data-add]").forEach(function(b){b.onclick=function(){addProduct(this.dataset.add)}});
+  el("grid").querySelectorAll("[data-open]").forEach(function(b){b.onclick=function(){openProductDetail(this.dataset.open)}});
+  el("grid").querySelectorAll("[data-save]").forEach(function(b){b.onclick=function(){toggleSaved(this.dataset.save)}});
+  el("grid").querySelectorAll("[data-share]").forEach(function(b){b.onclick=function(){shareProduct(this.dataset.share)}});
   renderCategoryNav()
 }
 function addProduct(id){
@@ -329,7 +385,9 @@ async function boot(){
   if(sr.error||!sr.data){el("loading").textContent="This RANOVA store is not available.";return}
   store=sr.data;
   var pr=await sb.from("ranova_seller_products").select("*").eq("store_id",store.id).eq("product_status","active").order("category",{ascending:true}).order("name",{ascending:true});
-  products=pr.data||[];await loadCountries();loadCart();await hydrateBuyerAccount();await loadTrust();
+  products=pr.data||[];
+  try{savedProducts=new Set(JSON.parse(localStorage.getItem("ranova_saved_store_"+store.id)||"[]"))}catch(e){savedProducts=new Set()}
+  await loadCountries();loadCart();await hydrateBuyerAccount();await loadTrust();
   el("storeName").textContent=store.store_name;el("tagline").textContent=store.tagline||"Verified seller on RANOVA";el("drawerStoreName").textContent=store.store_name;
   el("description").textContent=store.description||"Contact this seller for business information.";
   el("location").textContent=store.business_location||"Confirm with seller";el("minimum").textContent=store.minimum_order_note||"Varies by product";
@@ -356,14 +414,14 @@ async function boot(){
   };
   el("loading").style.display="none";el("page").style.display="block";render();renderCart();
   var qp=new URLSearchParams(location.search),deepProduct=qp.get("product"),deepQty=Number(qp.get("qty")||0);
-  if(deepProduct){
+  if(deepProduct&&deepQty>0){
     var dp=products.find(function(x){return x.id===deepProduct});
     if(dp&&dp.stock_status!=="out_of_stock"){
       var min=Number(dp.moq||1),q=Number.isFinite(deepQty)&&deepQty>0?Math.max(min,Math.floor(deepQty)):min;
       if(dp.stock_quantity!=null)q=Math.min(q,Number(dp.stock_quantity));
       if(q>=min){cart[dp.id]=q;saveCart();render();renderCart();openCart()}
     }
-  }
+  }else if(deepProduct){openProductDetail(deepProduct)}
 }
 el("search").addEventListener("input",render);el("buyerCountry").addEventListener("change",loadFeePreview);el("paymentMethod").addEventListener("change",loadFeePreview);
 el("topCart").onclick=el("cartFab").onclick=openCart;el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
