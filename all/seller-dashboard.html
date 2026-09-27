@@ -11,6 +11,10 @@
 <link rel="manifest" href="./seller-app.webmanifest?v=20260927-04">
 <link rel="icon" href="./seller-icon.svg" type="image/svg+xml">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box}
 :root{--green:#103f34;--green2:#116a52;--orange:#ff5a2d;--ink:#15342e;--muted:#687a74;--line:#dfe8e4;--soft:#f5f8f6;--cream:#fff9ed;--lav:#f4efff;--blue:#edf5ff}
@@ -29,11 +33,11 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 .msg{display:none;margin:0 0 12px;padding:11px 12px;border-radius:11px;background:#fff1ec;color:#89451f;font-size:14px;font-weight:750}.msg.good{background:#eaf8f2;color:#176047}
 .assets{display:grid;grid-template-columns:1fr 1fr;gap:12px}.asset{border:1px solid var(--line);border-radius:14px;padding:12px}.asset b{font-size:14px}.asset small{display:block;color:var(--muted);font-size:16px;margin:3px 0 8px}.asset-preview{width:100%;height:120px;border-radius:12px;background:#f4f7f5;display:grid;place-items:center;overflow:hidden;margin-bottom:8px;color:#82908b;font-size:13px}.asset-preview img{width:100%;height:100%;object-fit:cover}.asset.logo .asset-preview{height:120px}.asset.logo .asset-preview img{object-fit:contain;padding:10px}
 .locked{padding:22px;border:1px dashed #cbd9d3;border-radius:16px;background:#fafcfb;text-align:center;color:#6e7f79;font-size:15px;line-height:1.55}.locked b{display:block;color:var(--ink);font-size:13px;margin-bottom:5px}
-.product-list,.order-list{display:grid;gap:9px;margin-top:13px}.product-row,.order-row{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid #e4ebe8;border-radius:13px}.product-row img{width:60px;height:60px;border-radius:10px;object-fit:contain;background:#f5f8f6}.product-row b,.order-row b{font-size:15px}.product-row small,.order-row small{display:block;margin-top:3px;color:var(--muted);font-size:16px;line-height:1.4}.row-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.row-actions button{min-height:33px;padding:0 9px;border:1px solid #d8e3df;background:#fff;border-radius:999px;font-size:16px;font-weight:900}.chip{display:inline-flex;margin-top:5px;padding:5px 7px;border-radius:999px;background:#eef6f3;color:#27594b;font-size:16px;font-weight:900}.chip.pending_review{background:#fff5e8;color:#915d18}.chip.active{background:#e8f7ef;color:#0c6d47}.chip.rejected{background:#fff0ee;color:#a0473e}.chip.paused{background:#f0f0f0;color:#666}
+.catalogue-import{border:1px solid #d9e5e0;border-radius:18px;padding:16px;background:linear-gradient(135deg,#f7fbf9,#fffaf1);margin:14px 0 18px}.catalogue-import h3{font-size:19px;margin:0 0 5px}.catalogue-import p{margin:0;color:var(--muted);font-size:14px}.catalogue-drop{margin-top:12px;padding:16px;border:2px dashed #bfd4cb;border-radius:15px;background:#fff}.catalogue-drop input{width:100%}.catalogue-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}.catalogue-preview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.catalogue-card{border:1px solid #dfe8e4;border-radius:15px;background:#fff;overflow:hidden}.catalogue-card img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#f4f7f5}.catalogue-card .body{padding:11px}.catalogue-card input,.catalogue-card textarea{width:100%;border:1px solid #d8e3de;border-radius:9px;padding:8px;font:inherit;margin-top:5px}.catalogue-card textarea{min-height:76px;resize:vertical}.catalogue-card label{display:block;font-size:12px;font-weight:900;margin-top:7px}.catalogue-card .price-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}.catalogue-summary{margin-top:10px;padding:10px 12px;border-radius:11px;background:#eef7f3;color:#315f52;font-size:13px}.catalogue-warning{background:#fff1e9;color:#8b4a2d}.product-list,.order-list{display:grid;gap:9px;margin-top:13px}.product-row,.order-row{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px;border:1px solid #e4ebe8;border-radius:13px}.product-row img{width:60px;height:60px;border-radius:10px;object-fit:contain;background:#f5f8f6}.product-row b,.order-row b{font-size:15px}.product-row small,.order-row small{display:block;margin-top:3px;color:var(--muted);font-size:16px;line-height:1.4}.row-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.row-actions button{min-height:33px;padding:0 9px;border:1px solid #d8e3df;background:#fff;border-radius:999px;font-size:16px;font-weight:900}.chip{display:inline-flex;margin-top:5px;padding:5px 7px;border-radius:999px;background:#eef6f3;color:#27594b;font-size:16px;font-weight:900}.chip.pending_review{background:#fff5e8;color:#915d18}.chip.active{background:#e8f7ef;color:#0c6d47}.chip.rejected{background:#fff0ee;color:#a0473e}.chip.paused{background:#f0f0f0;color:#666}
 .product-editor{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:15px}.product-editor.open{display:block}.image-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hint{font-size:16px;color:#788983;line-height:1.5}.empty{padding:22px;text-align:center;color:#7b8a84;font-size:14px;background:#fafcfb;border:1px dashed #d4ded9;border-radius:13px}
 .order-row{grid-template-columns:minmax(0,1.3fr) .8fr .8fr}.status{font-size:16px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eef6f3;color:#28604f;justify-self:start}.order-items-mini{margin-top:6px;display:grid;gap:3px}.order-items-mini span{font-size:16px;color:var(--muted)}.order-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.order-actions button{min-height:32px;border:1px solid #d8e3df;border-radius:999px;background:#fff;padding:0 9px;font-size:16px;font-weight:900}.order-actions .primary{background:var(--green2);color:#fff;border-color:var(--green2)}.order-actions .danger{color:#9a453d;background:#fff1ef;border-color:#efc9c4}.payout-breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:7px}.payout-breakdown span{padding:7px;border-radius:9px;background:#f7f9f8;color:var(--muted);font-size:7px}.payout-breakdown b{display:block;color:var(--ink);font-size:13px;margin-top:2px}.delivery-timeline{display:grid;gap:5px;margin-top:8px}.delivery-event{padding:7px 8px;border-left:3px solid #dbe8e2;background:#f8faf9;border-radius:0 9px 9px 0}.delivery-event b{font-size:16px}.delivery-event small{display:block;margin-top:2px;color:var(--muted);font-size:7px}.delivery-editor{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:15px}.delivery-editor.open{display:block}.delivery-proof-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px;border:1px solid var(--line);border-radius:10px;margin-top:6px}.delivery-proof-row span{font-size:16px}.delivery-proof-row button{min-height:30px;border:1px solid var(--line);border-radius:999px;background:#fff;padding:0 9px;font-size:16px;font-weight:900}
 @media(max-width:900px){.shell{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto}.side button{width:auto;white-space:nowrap}.metrics{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:620px){.payout-breakdown{grid-template-columns:1fr 1fr}.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
+@media(max-width:620px){.catalogue-preview{grid-template-columns:1fr}.payout-breakdown{grid-template-columns:1fr 1fr}.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
 </style>
 </head>
 <body>
@@ -103,8 +107,28 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 
       <div id="panel-products" class="panel">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products</h2><p>Add products with clear names, genuine images, wholesale pricing or enquiry pricing, MOQ and stock status.</p></div><button id="newProduct" class="btn green" type="button">+ Add product</button></div>
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products</h2><p>Add products manually or import an existing catalogue and let RANOVA prepare the product cards for you.</p></div><button id="newProduct" class="btn green" type="button">+ Add product manually</button></div>
           <div id="productMsg" class="msg" style="margin-top:12px"></div>
+
+          <div class="catalogue-import">
+            <h3>Upload your product catalogue</h3>
+            <p>Upload one catalogue and RANOVA will read the product names, prices, descriptions and available images, then prepare normal RANOVA product cards. You can check and correct everything before creating the products.</p>
+            <div class="catalogue-drop">
+              <b>Catalogue file</b>
+              <div style="font-size:12px;color:var(--muted);margin:4px 0 9px">Supported: PDF, Word (.docx), Excel (.xlsx), CSV and TXT. Maximum 25 MB.</div>
+              <input id="catalogueFile" type="file" accept=".pdf,.docx,.xlsx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain">
+              <div class="catalogue-actions">
+                <button id="readCatalogue" class="btn green" type="button">Read catalogue</button>
+                <button id="clearCatalogue" class="btn" type="button">Clear</button>
+              </div>
+            </div>
+            <div id="catalogueStatus" class="catalogue-summary" style="display:none"></div>
+            <div id="cataloguePreview" class="catalogue-preview"></div>
+            <div id="catalogueCreateActions" class="catalogue-actions" style="display:none">
+              <button id="createCatalogueProducts" class="btn primary" type="button">Create all product cards</button>
+            </div>
+          </div>
+
           <div id="productList" class="product-list"><div class="empty">No seller products yet.</div></div>
 
           <div id="productEditor" class="product-editor">
@@ -304,6 +328,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 <script>
 (function(){
 "use strict";
+var pdfjsPromise=import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs").then(function(m){m.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";return m});
 var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co";
 var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
 var ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-store";
@@ -463,6 +488,142 @@ el("saveProduct").onclick=async function(){
     await api({action:"save_product",id:el("productId").value,name:el("productName").value,sku:el("productSku").value,category:el("productCategory").value,unit_label:el("productUnit").value,price:el("productPrice").value,moq:el("productMoq").value,stock_quantity:el("productStockQty").value,stock_status:el("productStockStatus").value,short_description:el("productShort").value,description:el("productDescription").value,specifications:specifications,pricing_tiers:pricing_tiers,primary_image_url:productMainUrl,image_urls:productGalleryUrls});
     msg(el("productMsg"),"Product saved. Submit it for review when the information and images are ready.",true);el("productEditor").classList.remove("open");resetProduct();await refresh();setPanel("products");
   }catch(e){msg(el("productMsg"),e.message)}
+  finally{b.disabled=false;b.textContent=old}
+};
+
+
+function catalogueExt(name){return String(name||"").split(".").pop().toLowerCase()}
+function cataloguePrice(line){
+  var m=String(line||"").match(/(?:GHS|GH₵|GH¢|₵|\bprice\b\s*[:\-]?)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i);
+  if(!m)return null;var n=Number(m[1].replace(/,/g,""));return Number.isFinite(n)?n:null
+}
+function catalogueNameFrom(lines,idx){
+  for(var i=idx-1;i>=Math.max(0,idx-4);i--){var x=String(lines[i]||"").trim();if(x&&x.length>2&&!cataloguePrice(x)&&!/^sku|code|model|price|ghs/i.test(x))return x.slice(0,180)}
+  return "Imported product";
+}
+function parseCatalogueText(text,category){
+  var lines=String(text||"").split(/\r?\n/).map(function(x){return x.trim()}).filter(Boolean),out=[],used={};
+  lines.forEach(function(line,i){
+    var price=cataloguePrice(line);if(price===null)return;
+    var name=catalogueNameFrom(lines,i);var key=(name+"|"+price).toLowerCase();if(used[key])return;used[key]=1;
+    var next=lines.slice(i+1,i+5).filter(function(x){return cataloguePrice(x)===null&&!/^page\s+\d+/i.test(x)});
+    var prev=lines.slice(Math.max(0,i-2),i).filter(function(x){return x!==name&&cataloguePrice(x)===null});
+    var desc=(prev.concat(next)).join(" · ").slice(0,800);
+    out.push({name:name,price:price,category:category||"General",description:desc||name,short_description:(desc||name).slice(0,250),sku:"",unit_label:"piece",moq:1,stock_status:"confirm_on_enquiry",imageFile:null,imageUrl:""});
+  });
+  if(!out.length&&lines.length){
+    var title=lines[0].slice(0,180),desc=lines.slice(1,8).join(" · ").slice(0,800);
+    out.push({name:title||"Imported product",price:null,category:category||"General",description:desc||title,short_description:(desc||title).slice(0,250),sku:"",unit_label:"piece",moq:1,stock_status:"confirm_on_enquiry",imageFile:null,imageUrl:""});
+  }
+  return out.slice(0,100);
+}
+async function renderPdfPageFile(page,index){
+  var viewport=page.getViewport({scale:1.25}),canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
+  canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+  await page.render({canvasContext:ctx,viewport:viewport}).promise;
+  var blob=await new Promise(function(resolve){canvas.toBlob(resolve,"image/jpeg",.88)});
+  return blob?new File([blob],"catalogue-page-"+index+".jpg",{type:"image/jpeg"}):null;
+}
+async function parsePdfCatalogue(file){
+  var pdfjs=await pdfjsPromise,buf=await file.arrayBuffer(),pdf=await pdfjs.getDocument({data:buf}).promise,out=[];
+  for(var p=1;p<=Math.min(pdf.numPages,60);p++){
+    var page=await pdf.getPage(p),tc=await page.getTextContent(),text=tc.items.map(function(x){return x.str}).join("\n");
+    var drafts=parseCatalogueText(text,"General"),pageImage=null;
+    try{pageImage=await renderPdfPageFile(page,p)}catch(e){}
+    drafts.forEach(function(d){d.imageFile=pageImage;d.source_page=p});
+    out=out.concat(drafts);
+  }
+  return out.slice(0,150);
+}
+async function parseDocxCatalogue(file){
+  var buf=await file.arrayBuffer(),raw=await mammoth.extractRawText({arrayBuffer:buf}),drafts=parseCatalogueText(raw.value,"General");
+  try{
+    var zip=await JSZip.loadAsync(buf),names=Object.keys(zip.files).filter(function(n){return /^word\/media\//.test(n)&&!zip.files[n].dir});
+    var imgs=[];
+    for(var i=0;i<Math.min(names.length,150);i++){
+      var n=names[i],extn=catalogueExt(n),mime=extn==="png"?"image/png":extn==="webp"?"image/webp":"image/jpeg";
+      var blob=await zip.files[n].async("blob");imgs.push(new File([blob],"catalogue-image-"+(i+1)+"."+extn,{type:mime}));
+    }
+    drafts.forEach(function(d,i){if(imgs[i])d.imageFile=imgs[i]});
+  }catch(e){}
+  return drafts;
+}
+function findRowValue(row,names){
+  var keys=Object.keys(row||{});for(var i=0;i<names.length;i++){var want=names[i];var k=keys.find(function(x){return x.toLowerCase().replace(/[^a-z0-9]/g,"").includes(want)});if(k&&row[k]!==undefined&&row[k]!==null&&String(row[k]).trim()!=="")return row[k]}return "";
+}
+async function parseSheetCatalogue(file){
+  var wb=XLSX.read(await file.arrayBuffer(),{type:"array"}),sheet=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(sheet,{defval:""});
+  return rows.slice(0,200).map(function(r,i){
+    var name=String(findRowValue(r,["productname","name","product","item","description"])||"Imported product "+(i+1)).trim();
+    var rawPrice=findRowValue(r,["unitprice","sellingprice","price","amount"]),price=Number(String(rawPrice).replace(/[^0-9.]/g,""));
+    return{name:name.slice(0,180),sku:String(findRowValue(r,["sku","code","model"])||"").slice(0,100),category:String(findRowValue(r,["category","department"])||"General").slice(0,100),unit_label:String(findRowValue(r,["unit","uom"])||"piece").slice(0,60),price:Number.isFinite(price)?price:null,moq:Number(findRowValue(r,["moq","minimumorder","minqty"])||1)||1,stock_status:"confirm_on_enquiry",short_description:String(findRowValue(r,["shortdescription","summary","description"])||name).slice(0,250),description:String(findRowValue(r,["description","details","information","specification"])||name).slice(0,1200),imageFile:null,imageUrl:""};
+  }).filter(function(x){return x.name&&x.name!=="Imported product"});
+}
+async function parseCatalogueFile(file){
+  var extn=catalogueExt(file.name);
+  if(extn==="pdf")return parsePdfCatalogue(file);
+  if(extn==="docx")return parseDocxCatalogue(file);
+  if(extn==="xlsx"||extn==="csv")return parseSheetCatalogue(file);
+  if(extn==="txt")return parseCatalogueText(await file.text(),"General");
+  throw new Error("Use PDF, DOCX, XLSX, CSV or TXT.");
+}
+function renderCatalogueDrafts(){
+  var host=el("cataloguePreview"),actions=el("catalogueCreateActions");
+  if(!catalogueDrafts.length){host.innerHTML="";actions.style.display="none";return}
+  host.innerHTML=catalogueDrafts.map(function(d,i){
+    var img=d.imageUrl?'<img src="'+esc(d.imageUrl)+'" alt="">':d.imageFile?'<div style="aspect-ratio:1/1;display:grid;place-items:center;background:#f1f6f3;color:#48685e;padding:12px;text-align:center">Image found in catalogue</div>':'<div style="aspect-ratio:1/1;display:grid;place-items:center;background:#f6f6f6;color:#87938e;padding:12px;text-align:center">No product image detected — add one later before review</div>';
+    return '<div class="catalogue-card">'+img+'<div class="body"><b>Product '+(i+1)+'</b>'+
+      '<label>Name<input data-cat-field="name" data-cat-index="'+i+'" value="'+esc(d.name||"")+'"></label>'+
+      '<div class="price-row"><label>Price (GHS)<input data-cat-field="price" data-cat-index="'+i+'" type="number" min="0" step="0.01" value="'+(d.price==null?"":esc(d.price))+'"></label><label>Category<input data-cat-field="category" data-cat-index="'+i+'" value="'+esc(d.category||"General")+'"></label></div>'+
+      '<label>Description<textarea data-cat-field="description" data-cat-index="'+i+'">'+esc(d.description||"")+'</textarea></label>'+
+      '<button data-remove-cat="'+i+'" class="btn" style="margin-top:9px" type="button">Remove</button></div></div>';
+  }).join("");
+  host.querySelectorAll("[data-cat-field]").forEach(function(x){x.oninput=function(){var i=Number(this.dataset.catIndex),f=this.dataset.catField;if(f==="price")catalogueDrafts[i][f]=this.value===""?null:Number(this.value);else catalogueDrafts[i][f]=this.value}});
+  host.querySelectorAll("[data-remove-cat]").forEach(function(b){b.onclick=function(){catalogueDrafts.splice(Number(this.dataset.removeCat),1);renderCatalogueDrafts();updateCatalogueStatus()}});
+  actions.style.display="flex";
+}
+function updateCatalogueStatus(text,warn){
+  var box=el("catalogueStatus");box.style.display="block";box.classList.toggle("catalogue-warning",!!warn);
+  box.textContent=text||("RANOVA found "+catalogueDrafts.length+" product"+(catalogueDrafts.length===1?"":"s")+". Check the cards below, correct anything necessary, then create them.");
+}
+async function uploadCatalogueOriginal(file){
+  var safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,"_"),path=session.user.id+"/"+Date.now()+"_"+safe;
+  var up=await sb.storage.from("seller-catalogues").upload(path,file,{upsert:false,contentType:file.type||undefined});if(up.error)throw up.error;
+  cataloguePath=path;return path;
+}
+el("readCatalogue").onclick=async function(){
+  var file=el("catalogueFile").files[0],b=this;if(!file){updateCatalogueStatus("Choose a catalogue file first.",true);return}
+  if(file.size>25*1024*1024){updateCatalogueStatus("Catalogue is larger than 25 MB.",true);return}
+  b.disabled=true;var old=b.textContent;b.textContent="Reading catalogue…";catalogueDrafts=[];renderCatalogueDrafts();
+  try{
+    await uploadCatalogueOriginal(file);
+    catalogueDrafts=await parseCatalogueFile(file);
+    if(!catalogueDrafts.length)throw new Error("No products could be detected. You can still add products manually.");
+    updateCatalogueStatus();renderCatalogueDrafts();
+    await api({action:"record_catalogue_import",original_filename:file.name,storage_path:cataloguePath,file_type:file.type,detected_products:catalogueDrafts.length,created_products:0,import_status:"parsed"});
+  }catch(e){updateCatalogueStatus(e.message||"Could not read this catalogue.",true)}
+  finally{b.disabled=false;b.textContent=old}
+};
+el("clearCatalogue").onclick=function(){catalogueDrafts=[];cataloguePath="";el("catalogueFile").value="";el("cataloguePreview").innerHTML="";el("catalogueCreateActions").style.display="none";el("catalogueStatus").style.display="none"};
+el("createCatalogueProducts").onclick=async function(){
+  if(!catalogueDrafts.length)return;var b=this,old=b.textContent;b.disabled=true;b.textContent="Creating product cards…";
+  var created=0,submitted=0,needsImage=0,errors=[];
+  try{
+    for(var i=0;i<catalogueDrafts.length;i++){
+      var d=catalogueDrafts[i],imageUrl=d.imageUrl||"";
+      try{
+        if(!imageUrl&&d.imageFile)imageUrl=await uploadAsset(d.imageFile,"products");
+        var saved=await api({action:"save_product",name:d.name,sku:d.sku||"",category:d.category||"General",unit_label:d.unit_label||"piece",price:d.price==null?"":d.price,moq:d.moq||1,stock_quantity:"",stock_status:d.stock_status||"confirm_on_enquiry",short_description:(d.short_description||d.description||d.name).slice(0,300),description:d.description||d.name,specifications:{},pricing_tiers:[],primary_image_url:imageUrl,image_urls:[]});
+        created++;
+        if(saved.product&&imageUrl&&d.description){try{await api({action:"submit_product",id:saved.product.id});submitted++}catch(e){}}
+        else needsImage++;
+      }catch(e){errors.push((d.name||"Product")+" — "+(e.message||"could not create"))}
+    }
+    var f=el("catalogueFile").files[0];
+    if(f)await api({action:"record_catalogue_import",original_filename:f.name,storage_path:cataloguePath,file_type:f.type,detected_products:catalogueDrafts.length,created_products:created,import_status:errors.length?(created?"partial":"failed"):"imported",note:errors.slice(0,8).join(" | ")});
+    msg(el("productMsg"),created+" product card(s) created. "+submitted+" were complete enough to go straight to RANOVA product review."+((needsImage||errors.length)?" "+(needsImage+errors.length)+" need attention before review.":""),true);
+    catalogueDrafts=[];renderCatalogueDrafts();await refresh();setPanel("products");
+  }catch(e){msg(el("productMsg"),e.message||"Catalogue import failed.")}
   finally{b.disabled=false;b.textContent=old}
 };
 
