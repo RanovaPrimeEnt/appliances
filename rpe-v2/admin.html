@@ -131,9 +131,10 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
     </section>
 
     <section id="seller-stores" class="panel">
+      <div class="hero"><small>SELLER DATABASE & CONTROL</small><h1>Every seller record in one place.</h1><p>Application details, verification, store information, products, reports and enforcement status remain attached to the seller record. Click a store row to inspect the complete record.</p></div>
       <div class="card">
-        <div class="card-head"><div><h2>Seller stores</h2><small style="color:var(--rpe-muted)">Monitor published stores and pause or suspend them when necessary.</small></div></div>
-        <div id="sellerStoresList" class="body market-list"></div>
+        <div class="card-head"><div><h2>Seller Store Control Registry</h2><small style="color:var(--rpe-muted)">Red removes the store from customers, Yellow places it under investigation, and Green approves/restores selling. The bright button is the store's current control state.</small></div><button id="refreshStoreRegistry" class="primary" style="border:0;border-radius:10px;background:var(--rpe-green-700);color:#fff;padding:9px 12px;font-weight:800">Refresh</button></div>
+        <div id="sellerStoresList" class="body"></div>
       </div>
     </section>
     <section id="marketplace-trust" class="panel">
