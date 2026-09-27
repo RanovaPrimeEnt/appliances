@@ -1,8 +1,10 @@
-const CACHE="ranova-rpe-v2-shell-v7";
+const CACHE="ranova-rpe-v2-shell-v8";
 const CORE=[
   "./",
   "./index.html",
   "./app.js",
+  "./marketplace.js",
+  "./marketplace.css",
   "./config.js",
   "./design-system.css",
   "./customer-icon.svg",
