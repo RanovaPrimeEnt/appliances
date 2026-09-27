@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v8";
+const CACHE="ranova-rpe-v2-shell-v9";
 const CORE=[
   "./",
   "./index.html",
