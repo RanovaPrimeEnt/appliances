@@ -254,22 +254,26 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 
       <div id="panel-payouts" class="panel">
         <div class="card">
-          <h2>Seller payouts</h2><p>Save where RANOVA should send your marketplace payouts. These details are private and are not shown on your public store.</p>
+          <h2>Seller wallet & payouts</h2><p>Your sales money moves through protected stages. A customer payment does not become withdrawable until RANOVA's delivery, hold, refund, dispute, after-sales and safety checks pass.</p>
           <div id="payoutMsg" class="msg"></div>
           <div class="metrics" style="margin-top:14px">
-            <div class="metric"><small>Commission policy</small><strong id="sellerCommission">By country</strong></div>
-            <div class="metric"><small>Eligible / processing</small><strong id="sellerPayoutOpen">GHS 0.00</strong></div>
+            <div class="metric"><small>Pending</small><strong id="sellerWalletPending">GHS 0.00</strong></div>
+            <div class="metric"><small>Available</small><strong id="sellerWalletAvailable">GHS 0.00</strong></div>
+            <div class="metric"><small>Held</small><strong id="sellerWalletHeld">GHS 0.00</strong></div>
+            <div class="metric"><small>Processing</small><strong id="sellerWalletProcessing">GHS 0.00</strong></div>
             <div class="metric"><small>Paid out</small><strong id="sellerPayoutPaid">GHS 0.00</strong></div>
             <div class="metric"><small>Payout hold</small><strong id="sellerHoldDays">0 days</strong></div>
           </div>
+          <div class="hint" style="margin:9px 0 14px">Pending = customer paid but protection conditions are not finished. Available = eligible for Owner-controlled payout. Held = refund/dispute/after-sales/safety review. Processing = transfer sent to provider. Paid = provider confirmed transfer success.</div>
           <div class="form-grid">
             <div class="field"><label>Payout method</label><select id="payoutMethod"><option>Mobile Money</option><option>Bank Transfer</option></select></div>
-            <div class="field"><label>Provider / bank</label><input id="payoutProvider" placeholder="MTN MoMo, Telecel Cash, Bank name"></div>
-            <div class="field"><label>Account name</label><input id="payoutAccountName"></div>
-            <div class="field"><label>Account / MoMo number</label><input id="payoutAccountReference"></div>
+            <div class="field"><label>Provider / bank</label><select id="payoutProvider"><option value="">Choose provider</option></select></div>
+            <div class="field"><label>Account name</label><input id="payoutAccountName" placeholder="Registered account name"></div>
+            <div class="field"><label>Account / MoMo number</label><input id="payoutAccountReference" autocomplete="off" placeholder="Entered securely for verification"></div>
           </div>
-          <div class="actions"><button id="savePayoutProfile" class="btn green" type="button">Save payout details</button></div>
-          <div class="hint" style="margin-top:9px">Commission is calculated on the product subtotal. Delivery fees are added without commission. Payout eligibility also requires confirmed delivery, the payout hold period to finish, and no open refund or dispute.</div>
+          <div class="actions"><button id="savePayoutProfile" class="btn green" type="button">Verify payout destination</button></div>
+          <div id="payoutVerified" class="hint" style="margin-top:9px"></div>
+          <div class="hint" style="margin-top:9px">RANOVA stores the payment-provider recipient code and only a masked destination, not the full bank/MoMo number. Commission is calculated on product subtotal; delivery is excluded from commission.</div>
         </div>
 
         <div class="card"><h2>Payout history</h2><p>Each payout is linked to a seller order and shows the commission calculation used for that order.</p><div id="payoutList" class="order-list"><div class="empty">No payouts yet.</div></div></div>
@@ -293,7 +297,7 @@ var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
 var ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-store";
 var COUNTRY_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-country-service";
 var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-var session=null,state=null,logoUrl="",bannerUrl="",productMainUrl="",productGalleryUrls=[],countryMap={},storeCountryName="",storeGooglePlaceId="",storeCountrySource="";
+var session=null,state=null,logoUrl="",bannerUrl="",productMainUrl="",productGalleryUrls=[],countryMap={},storeCountryName="",storeGooglePlaceId="",storeCountrySource="",payoutChannels={banks:[],mobile_money:[],provider_configured:false};
 
 function el(id){return document.getElementById(id)}
 function clean(v){return String(v==null?"":v)}
@@ -361,6 +365,7 @@ async function refresh(){
     el("dashboard").classList.add("hide");return;
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
+  try{payoutChannels=await api({action:"payout_channels"})}catch(e){payoutChannels={banks:[],mobile_money:[],provider_configured:false}}
   renderOverview();fillStore();renderProducts();renderInventory();renderOrders();renderDelivery();renderTrust();renderFinance();renderSupport();
 }
 function renderOverview(){
@@ -753,18 +758,27 @@ el("submitAppeal").onclick=async function(){
   finally{b.disabled=false}
 };
 
+function setPayoutProviders(){
+  var method=el("payoutMethod").value,rows=method==="Bank Transfer"?(payoutChannels.banks||[]):(payoutChannels.mobile_money||[]);
+  var current=el("payoutProvider").value;
+  el("payoutProvider").innerHTML='<option value="">Choose provider</option>'+rows.map(function(x){return '<option value="'+esc(x.code)+'">'+esc(x.name)+'</option>'}).join("");
+  if(rows.some(function(x){return x.code===current}))el("payoutProvider").value=current;
+}
 function renderFinance(){
-  var profile=state.finance_profile||{},settings=state.finance_settings||{},payouts=state.payouts||[];
-  el("sellerCommission").textContent=profile.commission_rate_override==null?"By country":Number(profile.commission_rate_override||0).toFixed(2)+"% override";
+  var profile=state.finance_profile||{},settings=state.finance_settings||{},payouts=state.payouts||[],wallet=state.wallet_summary||{};
   el("sellerHoldDays").textContent=Number(settings.payout_hold_days||0)+" day"+(Number(settings.payout_hold_days||0)===1?"":"s");
-  var open=payouts.filter(function(p){return["eligible","processing"].includes(p.payout_status)}).reduce(function(sum,p){return sum+Number(p.payout_amount||0)},0);
-  var paid=payouts.filter(function(p){return p.payout_status==="paid"}).reduce(function(sum,p){return sum+Number(p.payout_amount||0)},0);
-  el("sellerPayoutOpen").textContent=money(open);
-  el("sellerPayoutPaid").textContent=money(paid);
+  el("sellerWalletPending").textContent=money(wallet.pending||0);
+  el("sellerWalletAvailable").textContent=money(wallet.available||0);
+  el("sellerWalletHeld").textContent=money(wallet.held||0);
+  el("sellerWalletProcessing").textContent=money(wallet.processing||0);
+  el("sellerPayoutPaid").textContent=money(wallet.paid||0);
   el("payoutMethod").value=profile.payout_method||"Mobile Money";
-  el("payoutProvider").value=profile.provider_name||"";
+  setPayoutProviders();
   el("payoutAccountName").value=profile.account_name||"";
-  el("payoutAccountReference").value=profile.account_reference||"";
+  el("payoutAccountReference").value="";
+  el("payoutVerified").textContent=profile.payout_account_verified
+    ?"Verified payout destination: "+(profile.provider_name||"Provider")+" · "+(profile.payout_account_masked||profile.account_reference||"masked")
+    :(payoutChannels.provider_configured?"No verified payout destination yet.":"Paystack payout setup is not configured yet.");
 
   var host=el("payoutList");
   if(!payouts.length){host.innerHTML='<div class="empty">No payouts have been created yet. Payouts are created after RANOVA confirms customer payment.</div>';return}
@@ -773,20 +787,26 @@ function renderFinance(){
     return '<div class="order-row"><div><b>'+esc(p.platform_order_ref||p.seller_order_ref)+'</b><small>'+esc(p.seller_order_ref)+' · '+(p.created_at?new Date(p.created_at).toLocaleString():"")+'</small><div class="payout-breakdown"><span>Products<b>'+esc(money(p.gross_product_amount))+'</b></span><span>Commission '+Number(p.commission_rate||0).toFixed(2)+'%<b>- '+esc(money(p.commission_amount))+'</b></span><span>Delivery<b>'+esc(money(p.delivery_fee))+'</b></span><span>Your payout<b>'+esc(money(p.payout_amount))+'</b></span></div>'+feeText+'</div><div><span class="status">'+esc(pretty(p.payout_status))+'</span><small>'+(p.eligible_at?'Eligible '+new Date(p.eligible_at).toLocaleDateString():'Eligibility pending')+'</small></div><div><b>'+esc(money(p.payout_amount))+'</b><small>'+(p.payout_reference?'Payout ref: '+esc(p.payout_reference):'No payout reference yet')+'</small>'+(p.payout_note?'<small>'+esc(p.payout_note)+'</small>':'')+'</div></div>';
   }).join("");
 }
+el("payoutMethod").onchange=setPayoutProviders;
 el("savePayoutProfile").onclick=async function(){
   clearMsg(el("payoutMsg"));
   if(!state.store){msg(el("payoutMsg"),"Create your store profile before adding payout details.");return}
-  var b=this,old=b.textContent;b.disabled=true;b.textContent="Saving…";
+  if(!payoutChannels.provider_configured){msg(el("payoutMsg"),"RANOVA must connect Paystack before payout destinations can be verified.");return}
+  var sel=el("payoutProvider"),providerName=sel.options[sel.selectedIndex]?.text||"",account=el("payoutAccountReference").value.trim();
+  if(!sel.value||!account)return msg(el("payoutMsg"),"Choose the provider and enter the account/MoMo number.");
+  var b=this,old=b.textContent;b.disabled=true;b.textContent="Verifying…";
   try{
     await api({
-      action:"save_finance_profile",
+      action:"save_payout_recipient",
       payout_method:el("payoutMethod").value,
-      provider_name:el("payoutProvider").value,
+      bank_code:sel.value,
+      provider_name:providerName,
       account_name:el("payoutAccountName").value,
-      account_reference:el("payoutAccountReference").value
+      account_number:account
     });
-    msg(el("payoutMsg"),"Payout details saved privately.",true);await refresh();setPanel("payouts");
-  }catch(err){msg(el("payoutMsg"),err.message||"Could not save payout details.")}
+    el("payoutAccountReference").value="";
+    msg(el("payoutMsg"),"Payout destination verified and saved securely.",true);await refresh();setPanel("payouts");
+  }catch(err){msg(el("payoutMsg"),err.message||"Could not verify payout destination.")}
   finally{b.disabled=false;b.textContent=old}
 };
 
