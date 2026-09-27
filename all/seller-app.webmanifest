@@ -1,0 +1,22 @@
+{
+  "name": "RANOVA Seller Center",
+  "short_name": "RANOVA Seller",
+  "description": "RANOVA business seller app for registration, store management, products, orders, messages, delivery, inventory, wallet and payouts.",
+  "id": "/appliances/all/seller-center.html",
+  "start_url": "/appliances/all/seller-center.html?source=installed",
+  "scope": "/appliances/all/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#F5F8F6",
+  "theme_color": "#116A52",
+  "orientation": "any",
+  "categories": ["business", "shopping"],
+  "icons": [
+    {
+      "src": "./seller-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
