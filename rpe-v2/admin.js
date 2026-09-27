@@ -7,7 +7,7 @@ const marketEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-admin-marketplace";
 const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
 const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
-let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],counts:{}},marketError=null,selectedApplicationRef=null;
+let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -28,7 +28,7 @@ const canProductReview=()=>role==="owner"||role==="manager"||role==="catalogue";
 const canOrderReview=()=>role==="owner"||role==="manager"||role==="orders";
 const canFinance=()=>role==="owner"||role==="manager";
 const isOwner=()=>role==="owner";
-const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],counts:{}});
+const marketEmpty=()=>({applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],counts:{}});
 
 function statusClass(v){return "status-"+String(v||"").toLowerCase().replace(/[^a-z0-9_]+/g,"_")}
 function show(id){
@@ -185,6 +185,7 @@ function renderMarketplaceAll(){
   renderSellerStores();
   renderMarketplaceTrust();
   renderMarketplaceDiscovery();
+  renderInventoryControl();
   renderSellerOrders();
   renderDeliveries();
   renderCases();
@@ -446,6 +447,21 @@ if($("saveSponsored"))$("saveSponsored").onclick=async function(){
     $("spProduct").value="";$("spCategory").value="";$("spCountry").value="";$("spPriority").value="0";$("spStart").value="";$("spEnd").value="";
     await reloadMarketplace();
   }catch(err){alert(err.message||"Could not create sponsored placement.")}finally{this.disabled=false}
+};
+
+function renderInventoryControl(){
+  const host=$("inventoryAdminList");if(!host)return;
+  const settings=market.inventory_settings||{reservation_minutes:120,expire_unpaid_orders:true},events=market.inventory_events||[],products=market.products||[],stores=market.stores||[],c=market.counts||{};
+  $("iActiveHolds").textContent=c.inventory_holds||0;$("iCommitted").textContent=c.inventory_committed||0;$("iWindow").textContent=(settings.reservation_minutes||120)+"m";$("iEvents").textContent=events.length;
+  $("inventoryMinutes").value=settings.reservation_minutes||120;$("inventoryExpireOrders").value=settings.expire_unpaid_orders===false?"false":"true";
+  host.innerHTML=events.length?events.slice(0,100).map(e=>{
+    const p=products.find(x=>x.id===e.product_id),s=stores.find(x=>x.id===e.store_id);
+    return '<div class="market-row"><div><b>'+esc(p?.name||"Seller product")+'</b><small>'+esc(s?.store_name||"Seller store")+' · '+esc(e.order_ref||"No order")+'</small></div><span class="chip '+statusClass(e.event_type)+'">'+esc(pretty(e.event_type))+'</span><div><b>'+esc(e.quantity)+' unit(s)</b><small>Stock '+esc(e.stock_before==null?"untracked":e.stock_before)+' → '+esc(e.stock_after==null?"untracked":e.stock_after)+'</small></div><div><small>'+esc(new Date(e.created_at).toLocaleString())+'</small></div></div>'
+  }).join(""):'<div class="empty">No inventory activity yet.</div>';
+}
+if($("saveInventorySettings"))$("saveInventorySettings").onclick=async function(){
+  if(!isOwner())return alert("Only the Owner can change inventory settings.");
+  this.disabled=true;try{await marketApi({action:"save_inventory_settings",reservation_minutes:$("inventoryMinutes").value,expire_unpaid_orders:$("inventoryExpireOrders").value==="true"});await reloadMarketplace()}catch(err){alert(err.message||"Could not save inventory settings.")}finally{this.disabled=false}
 };
 
 function renderSellerOrders(){
