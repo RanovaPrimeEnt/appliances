@@ -62,7 +62,7 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
       <div id="notes" class="note">RANOVA is reviewing your seller application. Sensitive documents will only be requested through the secure verification stage.</div>
 
       <div class="actions">
-        <a class="primary" href="./seller-center.html">Continue verification / Upload documents</a>
+        <a id="continueVerification" class="primary" href="./seller-center.html">Continue registration</a>
         <a class="secondary" href="./supplier.html">Update application</a>
         <a class="secondary" href="./">Return to marketplace</a>
       </div>
@@ -106,7 +106,13 @@ btn.addEventListener("click",async function(){
     setStage("stageIdentity",a.identity_status);
     setStage("stageFulfilment",a.fulfilment_status);
     setStage("stageStore",a.store_setup_status);
-    document.getElementById("notes").textContent=a.verification_notes||"RANOVA is reviewing your seller application. Sensitive documents will only be requested through the secure verification stage.";
+    document.getElementById("notes").textContent=a.verification_notes||"Continue the required verification steps below. RANOVA Admin reviews each submitted document securely.";
+    try{
+      sessionStorage.setItem("ranovaSellerApplicationRef",a.application_ref||ref);
+      sessionStorage.setItem("ranovaSellerApplicationPhone",phone);
+    }catch(e){}
+    var c=document.getElementById("continueVerification");
+    if(c)c.href="./seller-center.html?ref="+encodeURIComponent(a.application_ref||ref);
     result.style.display="block";
   }catch(err){
     msg.textContent=err&&err.message?err.message:"Could not load the application status.";
