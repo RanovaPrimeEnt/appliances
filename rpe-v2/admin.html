@@ -70,6 +70,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
     <button data-panel="seller-reviews" data-market-role="seller">Seller reviews</button>
     <button data-panel="seller-products" data-market-role="product">Seller products</button>
     <button data-panel="seller-stores" data-market-role="seller">Seller stores</button>
+    <button data-panel="seller-messages" data-market-role="seller">Seller messages</button>
     <button data-panel="marketplace-trust" data-market-role="seller">Marketplace trust</button>
     <button data-panel="marketplace-discovery" data-market-role="seller">Discovery & sponsored</button>
     <button data-panel="inventory-control" data-market-role="orders">Inventory control</button>
@@ -135,6 +136,13 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       <div class="card">
         <div class="card-head"><div><h2>Seller Store Control Registry</h2><small style="color:var(--rpe-muted)">Red removes the store from customers, Yellow places it under investigation, and Green approves/restores selling. The bright button is the store's current control state.</small></div><button id="refreshStoreRegistry" class="primary" style="border:0;border-radius:10px;background:var(--rpe-green-700);color:#fff;padding:9px 12px;font-weight:800">Refresh</button></div>
         <div id="sellerStoresList" class="body"></div>
+      </div>
+    </section>
+    <section id="seller-messages" class="panel">
+      <div class="hero"><small>OFFICIAL COMMUNICATION</small><h1>Message sellers directly.</h1><p>Keep verification, investigation, enforcement and support communication inside RANOVA with a permanent store-linked history.</p></div>
+      <div class="card">
+        <div class="card-head"><div><h2>Seller message centre</h2><small style="color:var(--rpe-muted)">Choose a store, review the official conversation and send a new message.</small></div></div>
+        <div id="sellerMessageCentre" class="body"></div>
       </div>
     </section>
     <section id="marketplace-trust" class="panel">
