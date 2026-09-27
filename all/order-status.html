@@ -33,7 +33,8 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
       <div class="meta"><span>Order total</span><b id="masterTotal"></b></div>
     </div>
     <div id="inventoryReservationBox" class="inventory-reservation"></div>
-    <div id="paymentBox" class="payment-box"><h3>Payment instructions</h3><p>Use these details only for this confirmed RANOVA order. Your payment will still be verified before the order is marked paid.</p><div class="payment-grid"><div class="payment-cell"><span>Method</span><b id="payMethod"></b></div><div class="payment-cell"><span>Provider</span><b id="payProvider"></b></div><div class="payment-cell"><span>Account name</span><b id="payName"></b></div><div class="payment-cell"><span>Account / number</span><b id="payRef"></b></div></div><div class="payment-cell" style="margin-top:8px"><span>Amount due</span><b id="payAmount"></b></div><div id="payNote" class="payment-note"></div><button id="copyPayRef" class="copy-btn" type="button">Copy account / number</button></div>
+    <div id="securePaymentBox" class="payment-box" style="display:none"><h3>RANOVA Buyer Protection payment</h3><p id="securePaymentText">Pay through RANOVA. Supplier payout remains pending until delivery and protection checks pass.</p><button id="securePayBtn" class="copy-btn" type="button">Pay securely with Paystack</button><div id="securePayMsg" class="payment-note"></div></div>
+    <div id="paymentBox" class="payment-box"><h3>Manual RANOVA payment instructions</h3><p>Use these details only if RANOVA has explicitly enabled this company payment destination. Never pay a supplier's personal account.</p><div class="payment-grid"><div class="payment-cell"><span>Method</span><b id="payMethod"></b></div><div class="payment-cell"><span>Provider</span><b id="payProvider"></b></div><div class="payment-cell"><span>Account name</span><b id="payName"></b></div><div class="payment-cell"><span>Account / number</span><b id="payRef"></b></div></div><div class="payment-cell" style="margin-top:8px"><span>Amount due</span><b id="payAmount"></b></div><div id="payNote" class="payment-note"></div><button id="copyPayRef" class="copy-btn" type="button">Copy account / number</button></div>
     <div id="sellerOrders" class="seller-orders"></div>
     <div id="receiptBox" class="receipt">
       <div class="receipt-head"><div><span class="pill">PAYMENT RECEIPT</span><h3 id="receiptRef"></h3><p id="receiptDate" style="margin:5px 0 0;color:var(--muted);font-size:8px"></p></div><button id="printReceipt" type="button">Print receipt</button></div>
@@ -88,7 +89,8 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
 var SUPABASE_URL="https://igaerssbzobutlwvjfwt.supabase.co",SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr",sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 var ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-order-status";
 var SUPPORT_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-order-support";
-var currentOrder=null,currentSupport=null,buyerSession=null,inventoryTimer=null;
+var PAYMENT_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-payment-gateway";
+var currentOrder=null,currentSupport=null,buyerSession=null,inventoryTimer=null,paymentProvider={configured:false,mode:"not_configured"},paymentReturnHandled=false;
 function el(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function pretty(v){return String(v||"").replace(/_/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
@@ -158,6 +160,14 @@ function renderInventoryReservation(o){
 function render(out){
   var o=out.order||{},children=out.seller_orders||[];
   el("masterStatus").textContent=pretty(o.status||"awaiting_confirmation");el("paymentStatus").textContent="Payment: "+pretty(o.payment_status||"not_started");
+  var secureBox=el("securePaymentBox"),canPay=o.status==="awaiting_payment"&&!["paid","confirmed","refunded","partially_refunded"].includes(String(o.payment_status||"").toLowerCase());
+  secureBox.style.display=canPay?"block":"none";
+  if(canPay){
+    el("securePaymentText").textContent=paymentProvider.configured
+      ?"Pay "+money(o.total_payment)+" through RANOVA Buyer Protection. The supplier does not receive this money merely because you paid; payout remains protected until release conditions pass."
+      :"Secure online payment is not connected yet. Do not send money to a supplier. Use only a RANOVA-approved company payment destination when one is shown.";
+    el("securePayBtn").style.display=paymentProvider.configured?"inline-block":"none";
+  }
   var pi=out.payment_instructions||null,box=el("paymentBox");
   if(pi){
     box.style.display="block";
@@ -184,6 +194,39 @@ function render(out){
   el("sellerOrders").querySelectorAll("[data-submit-review]").forEach(function(b){b.onclick=function(){submitReview(b.dataset.submitReview,b)}});
   currentOrder=o;el("result").style.display="block";
 }
+async function paymentApi(action,extra){
+  var body=Object.assign({action:action,order_ref:el("orderRef").value.trim(),phone:el("phone").value.trim(),buyer_access_code:el("buyerCode").value.trim()},extra||{});
+  var h={"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":SUPABASE_KEY};if(buyerSession)h.Authorization="Bearer "+buyerSession.access_token;
+  var r=await fetch(PAYMENT_ENDPOINT,{method:"POST",headers:h,body:JSON.stringify(body)}),o=await r.json().catch(function(){return{}});
+  if(!r.ok||!o.ok)throw new Error(o.error||"Payment request failed.");
+  return o;
+}
+async function loadPaymentProvider(){
+  try{
+    var r=await fetch(PAYMENT_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":SUPABASE_KEY},body:JSON.stringify({action:"provider_status"})});
+    var o=await r.json().catch(function(){return{}});
+    if(r.ok&&o.ok)paymentProvider=o;
+  }catch(e){}
+}
+async function verifyReturnedPayment(){
+  if(paymentReturnHandled||!currentOrder||new URLSearchParams(location.search).get("payment_return")!=="1")return;
+  paymentReturnHandled=true;
+  var m=el("securePayMsg");m.textContent="Verifying payment with Paystack…";
+  try{
+    var out=await paymentApi("verify");
+    m.textContent=out.status==="success"?"Payment verified. Supplier payout remains protected by RANOVA.":"Payment status: "+pretty(out.status||"pending");
+    history.replaceState(null,"","./order-status.html?ref="+encodeURIComponent(currentOrder.order_ref||""));
+    await check();
+  }catch(e){m.textContent=e.message||"Payment verification failed."}
+}
+el("securePayBtn").onclick=async function(){
+  var b=this,m=el("securePayMsg"),old=b.textContent;b.disabled=true;b.textContent="Opening secure payment…";m.textContent="";
+  try{
+    var out=await paymentApi("initialize");
+    if(!out.authorization_url)throw new Error("Payment provider did not return a checkout link.");
+    location.href=out.authorization_url;
+  }catch(e){m.textContent=e.message||"Could not start secure payment.";b.disabled=false;b.textContent=old}
+};
 async function check(){
   if(inventoryTimer){clearInterval(inventoryTimer);inventoryTimer=null}
   var ref=el("orderRef").value.trim(),phone=el("phone").value.trim(),m=el("msg");m.style.display="none";el("result").style.display="none";
@@ -195,6 +238,7 @@ async function check(){
     var out=await r.json().catch(function(){return{}});
     if(!r.ok||!out.ok)throw new Error(out.error||"Could not load the order.");
     render(out);
+    if(new URLSearchParams(location.search).get("payment_return")==="1")setTimeout(function(){verifyReturnedPayment()},50);
     if(el("buyerCode").value.trim())await loadSupport();
     else showSupportMsg("Basic tracking is available. Enter your private buyer security code to open delivery proof, refunds, disputes and verified-review actions.");
   }catch(e){m.textContent=e.message||"Could not load the order.";m.style.display="block"}
@@ -281,8 +325,8 @@ el("openDispute").onclick=async function(){
 };
 el("printReceipt").onclick=function(){window.print()};
 
-var qp=new URLSearchParams(location.search).get("ref");if(qp){el("orderRef").value=qp;try{el("buyerCode").value=localStorage.getItem("ranova_buyer_code_"+qp)||""}catch(e){}}
-(async function(){try{var gs=await sb.auth.getSession();buyerSession=gs.data.session;if(qp&&buyerSession)check()}catch(e){}})();
+var qp=new URLSearchParams(location.search).get("ref");if(qp){el("orderRef").value=qp;try{el("buyerCode").value=localStorage.getItem("ranova_buyer_code_"+qp)||"";el("phone").value=localStorage.getItem("ranova_buyer_phone_"+qp)||""}catch(e){}}
+(async function(){try{await loadPaymentProvider();var gs=await sb.auth.getSession();buyerSession=gs.data.session;if(qp&&(buyerSession||(el("phone").value&&el("buyerCode").value)))check()}catch(e){}})();
 el("copyPayRef").onclick=async function(){var v=this.dataset.value||"";if(!v)return;try{await navigator.clipboard.writeText(v);var old=this.textContent;this.textContent="Copied";setTimeout(()=>this.textContent=old,1200)}catch(e){}};
 el("check").onclick=check;el("phone").addEventListener("keydown",function(e){if(e.key==="Enter")check()});
 })();
