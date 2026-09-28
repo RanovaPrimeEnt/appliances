@@ -159,7 +159,6 @@ function addStyles(d){
 .rch-brand{display:flex;align-items:center;gap:9px;font-weight:950;color:#0b5c4d;letter-spacing:.01em}
 .rch-brandmark{width:35px;height:35px;border-radius:12px;background:linear-gradient(135deg,#0b5c4d,#18866e);color:#fff;display:grid;place-items:center;font-size:14px;box-shadow:0 8px 20px rgba(11,92,77,.18)}
 .rch-brand small{display:block;color:#76867f;font-size:9px;letter-spacing:0;font-weight:750;margin-top:1px}
-.rch-refresh{border:1px solid #dce6e1;background:#fff;color:#0b5c4d;border-radius:999px;min-height:38px;padding:0 12px;font-size:10px;font-weight:900;display:flex;align-items:center;gap:6px;cursor:pointer}
 .rch-search{display:grid;grid-template-columns:1fr 46px;gap:8px}
 .rch-searchbox{display:flex;align-items:center;gap:9px;background:#fff;border:2px solid #163a32;border-radius:999px;padding:0 14px;min-height:48px;box-shadow:0 8px 24px rgba(24,56,47,.05)}
 .rch-searchbox svg{width:19px;height:19px;flex:0 0 auto;color:#62736d}
@@ -228,7 +227,6 @@ function addStyles(d){
   .rch-top{padding-top:10px}
   .rch-brandrow{margin-bottom:9px}
   .rch-brandmark{width:32px;height:32px;border-radius:10px}
-  .rch-refresh{min-height:34px;padding:0 10px;font-size:9px}
   .rch-search{grid-template-columns:1fr 43px;gap:7px}
   .rch-searchbox{min-height:45px;padding:0 12px}
   .rch-shortcuts{margin-left:-3px;margin-right:-3px}
@@ -270,7 +268,7 @@ function buildShell(d){
   var sec=d.createElement("section");sec.id="ranovaCustomerHome";
   sec.innerHTML='<div class="rch-shell">'+
     '<div class="rch-top">'+
-      '<div class="rch-brandrow"><div class="rch-brand"><span class="rch-brandmark">R</span><div>RANOVA<small>Marketplace</small></div></div><button class="rch-refresh" id="rchRefresh" type="button"><span>↻</span> Refresh feed</button></div>'+
+      '<div class="rch-brandrow"><div class="rch-brand"><span class="rch-brandmark">R</span><div>RANOVA<small>Marketplace</small></div></div></div>'+
       '<form class="rch-search" id="rchSearchForm"><label class="rch-searchbox" aria-label="Search marketplace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="rchSearchInput" type="search" placeholder="Search products and stores…" autocomplete="off"></label><button class="rch-searchgo" type="submit" aria-label="Search">Search</button></form>'+
       '<div class="rch-shortcuts" id="rchShortcuts">'+
         '<button class="rch-shortcut" type="button" data-action="categories"><i>▦</i><span>Categories</span></button>'+
@@ -284,11 +282,11 @@ function buildShell(d){
         '<div class="rch-trustitem"><i>↺</i><span><b>Order tracking</b><small>Follow every order stage</small></span></div>'+
         '<div class="rch-trustitem"><i>☏</i><span><b>Customer support</b><small>Help when an order needs attention</small></span></div>'+
       '</div>'+
-      '<div class="rch-banner"><div><small>DISCOVER FROM RANOVA STORES</small><h2>Different finds, every time you visit.</h2><p>Your home feed rotates approved products across sellers so customers can discover more stores instead of seeing one fixed catalogue.</p></div><div class="rch-banner-side"><span>Approved products</span><span>Seller variety</span><span>Fresh rotation</span></div></div>'+
+      '<div class="rch-banner"><div><small>SHOP RANOVA</small><h2>Find products from trusted stores in one place.</h2><p>Search, compare and order with protected checkout and clear order tracking.</p></div><div class="rch-banner-side"><span>Verified sellers</span><span>Buyer protection</span><span>Order tracking</span></div></div>'+
     '</div>'+
-    '<div class="rch-head"><div><h2>Recommended for you</h2><p>Products rotate by customer and over time.</p></div><span class="rch-live">Live marketplace</span></div>'+
-    '<div class="rch-sponsored" id="rchSponsored"><div class="rch-sponsored-title">Sponsored — paid placements are clearly labelled</div><div class="rch-sponsored-row" id="rchSponsoredRow"></div></div>'+
-    '<section class="rch-store-section" id="rchStoreSection" style="display:none"><div class="rch-head"><div><h2>Stores to discover</h2><p>A rotating mix of approved sellers.</p></div><span class="rch-live">Seller rotation</span></div><div class="rch-store-row" id="rchStoreRow"></div></section>'+
+    '<div class="rch-head"><div><h2>Recommended for you</h2><p>Discover products from RANOVA stores.</p></div><span class="rch-live">Marketplace</span></div>'+
+    '<div class="rch-sponsored" id="rchSponsored"><div class="rch-sponsored-title">Sponsored</div><div class="rch-sponsored-row" id="rchSponsoredRow"></div></div>'+
+    '<section class="rch-store-section" id="rchStoreSection" style="display:none"><div class="rch-head"><div><h2>Stores to discover</h2><p>Explore verified RANOVA sellers.</p></div><span class="rch-live">Stores</span></div><div class="rch-store-row" id="rchStoreRow"></div></section>'+
     '<div class="rch-grid" id="rchGrid"></div>'+
     '<div class="rch-status" id="rchStatus">Loading products from RANOVA stores…</div>'+
     '<div class="rch-sentinel" id="rchSentinel">Scroll for more products</div>'+
@@ -310,7 +308,6 @@ function buildShell(d){
     var q=d.getElementById("rchSearchInput").value.trim();
     if(q)window.top.location.href="./marketplace.html?q="+encodeURIComponent(q);
   });
-  d.getElementById("rchRefresh").addEventListener("click",function(){rotate(true)});
   d.getElementById("rchShortcuts").addEventListener("click",function(e){
     var b=e.target.closest("button");if(!b)return;
     if(b.dataset.url){window.top.location.href=b.dataset.url;return}
