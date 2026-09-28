@@ -324,7 +324,6 @@ el("printReceipt").onclick=function(){window.print()};
 
 var qp=new URLSearchParams(location.search).get("ref");if(qp){el("orderRef").value=qp;try{el("buyerCode").value=localStorage.getItem("ranova_buyer_code_"+qp)||"";el("phone").value=localStorage.getItem("ranova_buyer_phone_"+qp)||""}catch(e){}}
 (async function(){try{await loadPaymentProvider();var gs=await sb.auth.getSession();buyerSession=gs.data.session;if(qp&&(buyerSession||(el("phone").value&&el("buyerCode").value)))check()}catch(e){}})();
-el("copyPayRef").onclick=async function(){var v=this.dataset.value||"";if(!v)return;try{await navigator.clipboard.writeText(v);var old=this.textContent;this.textContent="Copied";setTimeout(()=>this.textContent=old,1200)}catch(e){}};
 el("check").onclick=check;el("phone").addEventListener("keydown",function(e){if(e.key==="Enter")check()});
 })();
 </script>
