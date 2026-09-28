@@ -170,17 +170,23 @@ function addStyles(d){
 .rch-shortcut{flex:0 0 auto;min-width:78px;border:0;background:transparent;padding:0;display:grid;justify-items:center;gap:6px;color:#566a63;font-size:9px;font-weight:800;cursor:pointer;scroll-snap-align:start}
 .rch-shortcut i{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;background:#fff;border:1px solid #e1e9e5;font-style:normal;font-size:20px;box-shadow:0 6px 18px rgba(25,58,49,.06)}
 .rch-shortcut:nth-child(4n+1) i{background:#eef8f4}.rch-shortcut:nth-child(4n+2) i{background:#fff5e8}.rch-shortcut:nth-child(4n+3) i{background:#f2efff}.rch-shortcut:nth-child(4n) i{background:#eef5ff}
+.rch-trustbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 4px}
+.rch-trustitem{display:flex;align-items:center;gap:8px;padding:10px 11px;border:1px solid #e0e8e4;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(20,58,48,.04);min-width:0}
+.rch-trustitem i{width:29px;height:29px;border-radius:10px;background:#eef8f4;color:#0b6a53;display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:950;flex:0 0 auto}
+.rch-trustitem b{display:block;font-size:10px;color:#17352e;line-height:1.2}
+.rch-trustitem small{display:block;margin-top:2px;font-size:8px;color:#7a8983;line-height:1.25}
+.rch-mobile-nav{display:none}
 .rch-banner{margin:14px 0 16px;border-radius:20px;overflow:hidden;background:linear-gradient(120deg,#0a4a3d,#11745e 58%,#f3a82f);color:#fff;padding:18px;display:grid;grid-template-columns:1.25fr .75fr;gap:12px;min-height:132px;position:relative}
 .rch-banner:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-75px;top:-80px;background:#ffffff18}
 .rch-banner h2{margin:4px 0 7px!important;color:#fff!important;font-size:clamp(19px,4vw,29px)!important;line-height:1.08!important}
-.rch-banner p{margin:0!important;color:#dceee8!important;font-size:10px!important;line-height:1.5!important;max-width:570px}
-.rch-banner small{font-size:8px;font-weight:900;letter-spacing:.13em;color:#ffe6bd}
+.rch-banner p{margin:0!important;color:#dceee8!important;font-size:13px!important;line-height:1.5!important;max-width:570px}
+.rch-banner small{font-size:10px;font-weight:900;letter-spacing:.13em;color:#ffe6bd}
 .rch-banner-side{display:grid;align-content:center;gap:7px;position:relative;z-index:1}
 .rch-banner-side span{background:#ffffff17;border:1px solid #ffffff26;border-radius:999px;padding:7px 9px;font-size:8px;font-weight:850;text-align:center}
 .rch-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:16px 0 9px}
 .rch-head h2{margin:0!important;font-size:20px!important;color:#17352e!important}
-.rch-head p{margin:3px 0 0!important;color:#71827b!important;font-size:9px!important}
-.rch-live{display:flex;align-items:center;gap:6px;color:#64766f;font-size:8px;font-weight:850;white-space:nowrap}
+.rch-head p{margin:3px 0 0!important;color:#71827b!important;font-size:12px!important}
+.rch-live{display:flex;align-items:center;gap:6px;color:#64766f;font-size:10px;font-weight:850;white-space:nowrap}
 .rch-live:before{content:"";width:7px;height:7px;border-radius:50%;background:#1dbf73;box-shadow:0 0 0 4px #1dbf7320}
 .rch-sponsored{display:none;margin:8px 0 15px}
 .rch-sponsored.show{display:block}
@@ -209,7 +215,15 @@ function addStyles(d){
 .rch-error{padding:24px 14px;border:1px dashed #ccd8d3;border-radius:15px;background:#fff;text-align:center;color:#6c7d76;font-size:10px;grid-column:1/-1}
 @media(max-width:920px){.rch-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){
-  #ranovaCustomerHome{padding-bottom:88px}
+  #ranovaCustomerHome{padding-bottom:104px}
+  .rch-trustbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .rch-trustitem{padding:9px}
+  .rch-trustitem b{font-size:9px}
+  .rch-trustitem small{font-size:7px}
+  .rch-mobile-nav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:9998;background:#fff;border-top:1px solid #dfe7e3;padding:7px max(8px,env(safe-area-inset-right)) max(7px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));box-shadow:0 -8px 24px rgba(18,52,44,.10)}
+  .rch-mobile-nav a{display:grid;justify-items:center;gap:3px;text-decoration:none;color:#6b7c76;font-size:9px;font-weight:850;padding:5px 2px;border-radius:10px}
+  .rch-mobile-nav a span:first-child{font-size:19px;line-height:1}
+  .rch-mobile-nav a.active{color:#0b5c4d;background:#eef8f4}
   .rch-shell{width:min(100% - 18px,1180px)}
   .rch-top{padding-top:10px}
   .rch-brandrow{margin-bottom:9px}
@@ -264,6 +278,11 @@ function buildShell(d){
         '<button class="rch-shortcut" type="button" data-url="./marketplace.html?trusted=1"><i>✓</i><span>Trusted stores</span></button>'+
         '<button class="rch-shortcut" type="button" data-url="./rfq.html"><i>₵</i><span>Bulk quote</span></button>'+
         '<button class="rch-shortcut" type="button" data-action="camera"><i>⌾</i><span>Image search</span></button>'+
+      '</div>'+      '<div class="rch-trustbar">'+
+        '<div class="rch-trustitem"><i>✓</i><span><b>Verified sellers</b><small>Approved marketplace stores</small></span></div>'+
+        '<div class="rch-trustitem"><i>🛡</i><span><b>Buyer protection</b><small>Secure RANOVA order flow</small></span></div>'+
+        '<div class="rch-trustitem"><i>↺</i><span><b>Order tracking</b><small>Follow every order stage</small></span></div>'+
+        '<div class="rch-trustitem"><i>☏</i><span><b>Customer support</b><small>Help when an order needs attention</small></span></div>'+
       '</div>'+
       '<div class="rch-banner"><div><small>DISCOVER FROM RANOVA STORES</small><h2>Different finds, every time you visit.</h2><p>Your home feed rotates approved products across sellers so customers can discover more stores instead of seeing one fixed catalogue.</p></div><div class="rch-banner-side"><span>Approved products</span><span>Seller variety</span><span>Fresh rotation</span></div></div>'+
     '</div>'+
@@ -273,7 +292,14 @@ function buildShell(d){
     '<div class="rch-grid" id="rchGrid"></div>'+
     '<div class="rch-status" id="rchStatus">Loading products from RANOVA stores…</div>'+
     '<div class="rch-sentinel" id="rchSentinel">Scroll for more products</div>'+
-  '</div>';
+  '</div>'+
+  '<nav class="rch-mobile-nav" aria-label="Main navigation">'+
+    '<a class="active" href="./"><span>⌂</span><span>Home</span></a>'+
+    '<a href="./marketplace.html"><span>▦</span><span>Categories</span></a>'+
+    '<a href="./cart.html"><span>🛒</span><span>Cart</span></a>'+
+    '<a href="./order-status.html"><span>⌖</span><span>Orders</span></a>'+
+    '<a href="./account.html"><span>◉</span><span>Account</span></a>'+
+  '</nav>';
 
   var anchor=d.querySelector(".hero")||d.querySelector("main")||d.body.firstElementChild;
   if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(sec,anchor);else d.body.insertBefore(sec,d.body.firstChild);
