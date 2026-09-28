@@ -1,3 +1,4 @@
+import { assertSettlementCurrency, selectCommissionRule, commissionBreakdown } from "../_shared/commission.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -20,23 +21,10 @@ function clean(v:any,max=180){return String(v??"").trim().slice(0,max)}
 async function resolveRule(storeId:string,sellerCountry:string|null,buyerCountry:string,paymentMethod:string){
   const now=new Date().toISOString();
   const {data:rows,error}=await admin.from("ranova_marketplace_country_rules")
-    .select("id,store_id,seller_country_code,buyer_country_code,payment_method,commission_rate,required_payment_percent,payment_processing_rate,payment_fixed_fee,payment_fee_payer,currency,source_name,source_kind,source_verified_at,effective_from,rule_version,change_reason")
+    .select("*")
     .eq("active",true).is("effective_to",null).lte("effective_from",now).order("effective_from",{ascending:false});
   if(error)throw error;
-  const eligible=(rows||[]).filter((r:any)=>{
-    if(r.store_id&&r.store_id!==storeId)return false;
-    if(r.seller_country_code&&r.seller_country_code!==sellerCountry)return false;
-    if(r.buyer_country_code&&r.buyer_country_code!==buyerCountry)return false;
-    if(r.payment_method&&r.payment_method!==paymentMethod)return false;
-    return true;
-  });
-  eligible.sort((a:any,b:any)=>{
-    const score=(x:any)=>(x.store_id?8:0)+(x.seller_country_code?4:0)+(x.buyer_country_code?2:0)+(x.payment_method?1:0);
-    const d=score(b)-score(a);
-    if(d)return d;
-    return Number(b.rule_version||1)-Number(a.rule_version||1);
-  });
-  return eligible[0]||null;
+  return selectCommissionRule(rows||[],{store_id:storeId,seller_country_code:sellerCountry,buyer_country_code:buyerCountry,payment_method:paymentMethod,currency:"GHS"});
 }
 
 Deno.serve(async(req:Request)=>{
@@ -46,6 +34,7 @@ Deno.serve(async(req:Request)=>{
   if(req.headers.get("x-ranova-client")!=="ranova-site-v1")return response(h,403,{ok:false,error:"Invalid client"});
   let b:any={};try{b=await req.json()}catch{}
   try{
+    assertSettlementCurrency(b.currency||"GHS");
     const storeId=clean(b.store_id,80);
     const buyerCountry=clean(b.buyer_country_code,2).toUpperCase();
     const paymentMethod=clean(b.payment_method,40);
@@ -74,6 +63,8 @@ Deno.serve(async(req:Request)=>{
     return response(h,200,{
       ok:true,
       store:{name:store.store_name,country_code:store.country_code,country_name:store.country_name},
+      currency:"GHS",
+      seller_earnings_estimate:subtotal===null?null:commissionBreakdown(rule,subtotal,0),
       buyer_country_code:buyerCountry,
       payment_method:paymentMethod,
       buyer:{
