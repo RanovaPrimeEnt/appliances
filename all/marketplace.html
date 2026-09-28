@@ -82,6 +82,17 @@ async function api(body){
  var out=await r.json().catch(function(){return{}});if(!r.ok||!out.ok)throw new Error(out.error||"Marketplace search failed.");return out
 }
 function track(type,p){api({action:"event",event_type:type,product_id:p.product_id||null,store_id:p.store_id||null,search_query:el("q").value.trim(),category:el("category").value,buyer_country_code:el("country").value,session_id:sessionId}).catch(function(){})}
+var PRICE_REST="https://igaerssbzobutlwvjfwt.supabase.co/rest/v1/ranova_seller_products",PRICE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
+async function refreshVisiblePrices(){
+ try{
+  var all=lastOrganic.concat([].slice.call(document.querySelectorAll("#sponsoredGrid [data-product]")).map(function(a){return {product_id:a.dataset.product}}));
+  var ids=Array.from(new Set(all.map(function(p){return String(p.product_id||"")}).filter(Boolean))).slice(0,250);if(!ids.length)return;
+  var r=await fetch(PRICE_REST+"?select=id,price,currency&id=in.("+ids.map(encodeURIComponent).join(",")+")",{headers:{apikey:PRICE_KEY,Authorization:"Bearer "+PRICE_KEY},cache:"no-store"});if(!r.ok)return;
+  var rows=await r.json(),by={};(rows||[]).forEach(function(x){by[String(x.id)]=x});
+  lastOrganic.forEach(function(p){var x=by[String(p.product_id)];if(x){p.price=x.price==null?null:Number(x.price);if(x.currency)p.currency=x.currency}});
+  [].slice.call(document.querySelectorAll("[data-product]")).forEach(function(a){var x=by[String(a.dataset.product)];if(!x)return;var article=a.closest(".card"),price=article&&article.querySelector(".price");if(price){var small=price.querySelector("small"),storeText=small?small.outerHTML:"";price.innerHTML=esc(money(x.price,x.currency))+storeText}});
+ }catch(e){}
+}
 function card(p,sponsored){
  var trust=p.trusted_badge?'<span class="chip">✓ Trusted seller</span>':'<span class="chip">'+esc(String(p.performance_level||"probation").replace(/_/g," "))+'</span>';
  var ad=sponsored?'<span class="badge sponsored-label">'+esc(p.label||"Sponsored")+'</span>':(p.trusted_badge?'<span class="badge">Trusted seller</span>':'');
@@ -159,6 +170,13 @@ el("apply").onclick=function(){search(true)};el("sort").onchange=function(){sear
 el("clear").onclick=function(){el("q").value="";el("category").value="";el("country").value="";el("minPrice").value="";el("maxPrice").value="";el("trustedOnly").checked=false;el("sort").value="relevance";search(true)};
 el("more").onclick=function(){offset+=limit;search(false)};
 loadMeta().then(function(){search(true)});
+window.addEventListener("focus",refreshVisiblePrices);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")refreshVisiblePrices()});
+setInterval(function(){if(document.visibilityState!=="hidden")refreshVisiblePrices()},15000);
+try{
+ if("BroadcastChannel" in window){var marketPriceChannel=new BroadcastChannel("ranova-marketplace-updates");marketPriceChannel.addEventListener("message",function(e){if(e.data&&e.data.type==="product_price")refreshVisiblePrices()})}
+ window.addEventListener("storage",function(e){if(e.key==="ranova_price_update_v1")refreshVisiblePrices()});
+}catch(e){}
 })();
 </script>
 </body>
