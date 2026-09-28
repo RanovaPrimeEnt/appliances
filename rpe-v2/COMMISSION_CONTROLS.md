@@ -1,3 +1,7 @@
+## Rate reduction — 2026-09-28
+
+The owner reduced the Ghana-to-Ghana commission to 8.5%, excluding delivery. Version 2 supersedes the 10% policy for new orders; existing order snapshots and all provider fee settings are unchanged.
+
 ## Owner rate approval — 2026-09-28
 
 The owner approved 10% commission for new Ghana-to-Ghana product sales, excluding delivery. An active GH → GH GHS rule was inserted with its approval reason. Existing order snapshots and provider fees were not changed. The global fallback remains 0%. The admin example now uses 10%. Payment-provider setup is still required for automatic collections.
