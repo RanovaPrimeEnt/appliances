@@ -393,10 +393,10 @@ function decorateCard(card,p,w){
   }
 
   if(qtyMinus){
-    qtyMinus.addEventListener("click",function(e){e.preventDefault();stopQtyEvent(e);refreshOrderSummary((parseInt(qtyInput&&qtyInput.value,10)||0)-1)});
+    qtyMinus.addEventListener("click",function(e){e.preventDefault();stopQtyEvent(e);var current=parseInt(qtyInput&&qtyInput.value,10);if(!Number.isFinite(current))current=0;refreshOrderSummary(Math.max(0,current-1))});
   }
   if(qtyPlus){
-    qtyPlus.addEventListener("click",function(e){e.preventDefault();stopQtyEvent(e);refreshOrderSummary((parseInt(qtyInput&&qtyInput.value,10)||0)+1)});
+    qtyPlus.addEventListener("click",function(e){e.preventDefault();stopQtyEvent(e);var current=parseInt(qtyInput&&qtyInput.value,10);if(!Number.isFinite(current))current=0;refreshOrderSummary(current+1)});
   }
 
 
