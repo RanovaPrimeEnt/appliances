@@ -1174,11 +1174,11 @@ $("suggestCommission").onclick=()=>{
   if(!isOwner())return;
   clearCountryRuleForm();
   $("ruleSellerCountry").value="GH";$("ruleBuyerCountry").value="GH";
-  $("ruleCommission").value="10";$("ruleSourceName").value="RANOVA Ghana commission example";
-  $("ruleChangeReason").value="10% product-only Ghana commission approved by the owner on 2026-09-28. This form is an unsaved example.";
+  $("ruleCommission").value="8.5";$("ruleSourceName").value="RANOVA Ghana commission example";
+  $("ruleChangeReason").value="8.5% product-only Ghana commission approved by the owner on 2026-09-28. This form is an unsaved example.";
   $("ruleActive").checked=false;$("commissionMode").value="draft";
   $("commissionSellerCountry").value="GH";$("commissionBuyerCountry").value="GH";
-  $("commissionPreviewStatus").textContent="10% example loaded for preview. The active Ghana policy is already 10%; this form does not change it. Enter a verified provider fee to estimate net earnings.";
+  $("commissionPreviewStatus").textContent="8.5% example loaded for preview. The active Ghana policy is already 8.5%; this form does not change it. Enter a verified provider fee to estimate net earnings.";
   $("commissionPreviewResult").replaceChildren();
 };
 $("previewCommission").onclick=async()=>{
