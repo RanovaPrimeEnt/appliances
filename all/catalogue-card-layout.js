@@ -101,7 +101,7 @@ function installStyle(d){
     #grid .rpe-location-select{display:block!important;min-width:0!important;max-width:122px!important;height:30px!important;border:0!important;background:#f7f8f7!important;color:#485a53!important;border-radius:8px!important;padding:0 24px 0 8px!important;font-size:9px!important;font-weight:750!important;outline:none!important;cursor:pointer!important}
     #grid .rpe-order-now{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:40px!important;margin-top:3px!important;border:0!important;border-radius:999px!important;background:#ff5a2d!important;color:#fff!important;font-size:12px!important;font-weight:950!important;letter-spacing:.01em!important;cursor:pointer!important;box-shadow:0 7px 16px rgba(255,90,45,.18)!important;transition:transform .12s ease,opacity .12s ease!important}
     #grid .rpe-order-now:active{transform:scale(.985)!important}
-    #grid .rpe-order-now[disabled]{opacity:.45!important;cursor:not-allowed!important;box-shadow:none!important}
+    #grid .rpe-order-now[disabled]{opacity:1!important;background:#ff5a2d!important;color:#fff!important;cursor:not-allowed!important;box-shadow:0 7px 16px rgba(255,90,45,.18)!important}
     #grid .rpe-payment-section{display:grid!important;gap:7px!important;margin-top:8px!important;padding-top:8px!important;border-top:1px solid #edf1ef!important}
     #grid .rpe-payment-title{font-size:10px!important;font-weight:900!important;color:#50645c!important}
     #grid .rpe-payment-methods{display:grid!important;gap:6px!important}
