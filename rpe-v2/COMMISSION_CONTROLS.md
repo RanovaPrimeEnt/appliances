@@ -1,3 +1,7 @@
+## Owner rate approval — 2026-09-28
+
+The owner approved 10% commission for new Ghana-to-Ghana product sales, excluding delivery. An active GH → GH GHS rule was inserted with its approval reason. Existing order snapshots and provider fees were not changed. The global fallback remains 0%. The admin example now uses 10%. Payment-provider setup is still required for automatic collections.
+
 # Country commission controls
 
 The owner Finance screen now includes a server-calculated earnings preview. It can resolve the active policy for a store, seller country, buyer country, payment method and settlement currency, or simulate the unsaved form. The 5% Ghana launch button prepares an inactive, unsaved owner-policy proposal. It does not publish rates or charge anyone.
