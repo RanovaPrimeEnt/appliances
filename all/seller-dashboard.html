@@ -107,7 +107,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 
       <div id="panel-products" class="panel">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products & Price Manager</h2><p>All of your products are listed here. Add products, import a catalogue, or change any product price manually at any time with the Save price button.</p></div><button id="newProduct" class="btn green" type="button">+ Add product manually</button></div>
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products & Price Manager</h2><p>This list shows products that still need a price. Once a price is saved successfully, the product leaves this list and the customer-facing price updates automatically.</p></div><button id="newProduct" class="btn green" type="button">+ Add product manually</button></div>
           <div id="productMsg" class="msg" style="margin-top:12px"></div>
 
           <div class="catalogue-import">
@@ -442,8 +442,8 @@ el("uploadBanner").onclick=async function(){var b=this,old=b.textContent;b.disab
 
 function statusChip(status){return '<span class="chip '+esc(status)+'">'+esc(pretty(status))+'</span>'}
 function renderProducts(){
-  var list=el("productList"),ps=state.products||[];
-  if(!ps.length){list.innerHTML='<div class="empty">No seller products yet. Use “Add product” to create your first listing.</div>';return}
+  var list=el("productList"),all=state.products||[],ps=all.filter(function(p){return p.price==null||p.price===""});
+  if(!ps.length){list.innerHTML=all.length?'<div class="empty">All product prices have been saved. New products without a price will appear here.</div>':'<div class="empty">No seller products yet. Use “Add product” to create your first listing.</div>';return}
   list.innerHTML=ps.map(function(p){
     var img=p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="">':'<img alt="">';
     var submit=(p.product_status==="draft"||p.product_status==="paused"||p.product_status==="rejected")?'<button data-action="submit" data-id="'+p.id+'">Submit for review</button>':'';
@@ -480,9 +480,14 @@ el("productList").onclick=async function(e){
       var result=await api({action:"update_product_price",id:p.id,price:raw});
       p.price=raw===""?null:Number(raw);
       b.classList.remove("saving");b.classList.add("saved","has-price");b.textContent="✓ Saved";b.disabled=false;
-      msg(el("productMsg"),raw===""?"Price changed to enquiry pricing.":"Price saved successfully. The new price is now the live product price.",true);
-      setTimeout(function(){if(document.body.contains(b)){b.classList.remove("saved");b.classList.add("has-price");b.textContent="Save price"}},2600);
-      setTimeout(function(){refresh().catch(function(){});},350);
+      msg(el("productMsg"),raw===""?"Price changed to enquiry pricing.":"Price saved successfully. The product has left the pricing list and the new price is now live.",true);
+      if(raw!==""){
+        var row=b.closest(".product-row");
+        setTimeout(function(){if(row&&row.parentNode)row.remove();if(el("productList")&&!el("productList").querySelector(".product-row"))el("productList").innerHTML='<div class="empty">All product prices have been saved. New products without a price will appear here.</div>'},650);
+      }else{
+        setTimeout(function(){if(document.body.contains(b)){b.classList.remove("saved");b.textContent="Save price"}},1600);
+      }
+      setTimeout(function(){refresh().catch(function(){});},900);
     }
     catch(err){b.classList.remove("saving","saved");b.textContent="Save price";b.disabled=false;msg(el("productMsg"),err.message||"Could not save the price. Please try again.")}
     return;
