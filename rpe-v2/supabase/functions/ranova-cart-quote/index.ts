@@ -1,3 +1,4 @@
+import { assertSettlementCurrency } from "../_shared/commission.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -34,8 +35,9 @@ Deno.serve(async(req:Request)=>{
   if(req.headers.get("x-ranova-client")!=="ranova-site-v1")return response(h,403,{ok:false,error:"Invalid client"});
   try{
     const b=await req.json().catch(()=>({})),buyerCountry=clean(b.buyer_country_code,2).toUpperCase();
+    const user=await getUser(req);
     const raw=Array.isArray(b.items)?b.items.slice(0,100):[];
-    const normalized=raw.map((x:any)=>({product_id:clean(x?.product_id||x?.seller_product_id,80),quantity:int(x?.quantity,1)})).filter((x:any)=>x.product_id);
+    const normalized=raw.map((x:any)=>({product_id:clean(x?.product_id||x?.seller_product_id,80),quantity:int(x?.quantity,1),quote_id:clean(x?.quote_id,80)||null})).filter((x:any)=>x.product_id);
     if(!normalized.length)return response(h,200,{ok:true,groups:[],item_count:0,total_quantity:0,product_total:0,all_prices_known:true});
     const ids=[...new Set(normalized.map((x:any)=>x.product_id))];
     const [{data:products},{data:stores},{data:enforcement}]=await Promise.all([
@@ -51,6 +53,7 @@ Deno.serve(async(req:Request)=>{
     for(const item of normalized){
       const p:any=pm.get(item.product_id);
       if(!p||p.product_status!=="active")continue;
+      assertSettlementCurrency(p.currency);
       const s:any=sm.get(p.store_id);
       if(!s||s.store_status!=="active")continue;
       const status=enforcementStatus(em.get(s.id));
@@ -59,24 +62,36 @@ Deno.serve(async(req:Request)=>{
       const availableStock=p.stock_quantity==null?null:Math.max(0,Number(p.stock_quantity)-held);
       const quantity=Math.max(Number(p.moq||1),item.quantity);
       const shortage=availableStock!==null&&quantity>availableStock;
-      const price=tierPrice(p,quantity),lineTotal=price==null?null:Number((price*quantity).toFixed(2));
-      if(!groups.has(s.id))groups.set(s.id,{store_id:s.id,store_name:s.store_name,store_slug:s.slug,logo_url:s.logo_url,country_code:s.country_code,country_name:s.country_name,enforcement_status:status,items:[],subtotal:0,all_prices_known:true,delivery_options:[]});
+      let price=tierPrice(p,quantity),quoteRef=null,quotedDeliveryFee=null;
+      if(item.quote_id){
+        if(!user)return response(h,401,{ok:false,error:"Sign in to use a negotiated quote."});
+        const {data:q}=await admin.from("ranova_quotes").select("*").eq("id",item.quote_id).maybeSingle();
+        if(!q||q.status!=="accepted"||q.buyer_user_id!==user.id||q.product_id!==p.id||q.store_id!==p.store_id||q.seller_user_id!==p.seller_id)
+          return response(h,409,{ok:false,error:"This negotiated quote is not valid for this cart."});
+        if(q.expires_at&&new Date(q.expires_at).getTime()<=Date.now())return response(h,409,{ok:false,error:"This negotiated quote has expired."});
+        if(Number(q.requested_quantity)!==quantity)return response(h,409,{ok:false,error:"This quote is valid only for "+q.requested_quantity+" unit(s)."});
+        assertSettlementCurrency(q.currency||p.currency);
+        price=Number(q.unit_price);quoteRef=q.quote_ref;quotedDeliveryFee=q.delivery_fee==null?null:Number(q.delivery_fee);
+      }
+      const lineTotal=price==null?null:Number((price*quantity).toFixed(2));
+      if(!groups.has(s.id))groups.set(s.id,{store_id:s.id,store_name:s.store_name,store_slug:s.slug,logo_url:s.logo_url,country_code:s.country_code,country_name:s.country_name,enforcement_status:status,items:[],subtotal:0,quoted_delivery_total:0,has_negotiated_delivery:false,all_prices_known:true,delivery_options:[]});
       const g=groups.get(s.id);
-      g.items.push({product_id:p.id,name:p.name,sku:p.sku,category:p.category,quantity,requested_quantity:item.quantity,moq:p.moq,stock_quantity:p.stock_quantity,available_stock:availableStock,reserved_quantity:held,stock_status:p.stock_status,unit_label:p.unit_label,primary_image_url:p.primary_image_url,unit_price:price,line_total:lineTotal,pricing_tiers:p.pricing_tiers||[],stock_shortage:shortage,available:!unavailable&&!shortage&&(availableStock===null||availableStock>=Number(p.moq||1))});
+      g.items.push({product_id:p.id,name:p.name,sku:p.sku,category:p.category,quantity,requested_quantity:item.quantity,moq:p.moq,stock_quantity:p.stock_quantity,available_stock:availableStock,reserved_quantity:held,stock_status:p.stock_status,unit_label:p.unit_label,primary_image_url:p.primary_image_url,unit_price:price,line_total:lineTotal,pricing_tiers:p.pricing_tiers||[],quote_id:item.quote_id||null,quote_ref:quoteRef,quoted_delivery_fee:quotedDeliveryFee,stock_shortage:shortage,available:!unavailable&&!shortage&&(availableStock===null||availableStock>=Number(p.moq||1))});
       if(lineTotal==null)g.all_prices_known=false;else g.subtotal=Number((g.subtotal+lineTotal).toFixed(2));
+      if(quotedDeliveryFee!==null){g.quoted_delivery_total=Number((g.quoted_delivery_total+quotedDeliveryFee).toFixed(2));g.has_negotiated_delivery=true}
     }
     const out=Array.from(groups.values());
     if(buyerCountry&&out.length){
       const {data:zones}=await admin.from("ranova_delivery_zones").select("id,store_id,zone_name,country_code,area_description,fulfilment_method,pricing_type,fixed_fee,currency,eta_min_days,eta_max_days").in("store_id",out.map((x:any)=>x.store_id)).eq("active",true).eq("country_code",buyerCountry);
       out.forEach((g:any)=>g.delivery_options=(zones||[]).filter((z:any)=>z.store_id===g.store_id));
     }
-    const user=await getUser(req);
-    return response(h,200,{ok:true,buyer_authenticated:!!user,groups:out,
+    return response(h,200,{ok:true,currency:"GHS",buyer_authenticated:!!user,groups:out,
       item_count:out.reduce((n:number,g:any)=>n+g.items.length,0),
       total_quantity:out.reduce((n:number,g:any)=>n+g.items.reduce((a:number,x:any)=>a+x.quantity,0),0),
       all_prices_known:out.every((g:any)=>g.all_prices_known),
       product_total:out.every((g:any)=>g.all_prices_known)?Number(out.reduce((n:number,g:any)=>n+g.subtotal,0).toFixed(2)):null,
+      negotiated_delivery_total:out.some((g:any)=>g.has_negotiated_delivery)?Number(out.reduce((n:number,g:any)=>n+Number(g.quoted_delivery_total||0),0).toFixed(2)):0,
       note:"Delivery is calculated per seller. Fixed/free delivery can be shown when a matching published zone exists; quoted delivery is confirmed before payment."
     });
-  }catch(e){console.error(e);return response(h,500,{ok:false,error:"Could not prepare marketplace cart."})}
+  }catch(e){console.error(e);return response(h,500,{ok:false,error:e instanceof Error?e.message:"Could not prepare marketplace cart."})}
 });
