@@ -600,4 +600,14 @@ setTimeout(boot,900);
 setInterval(function(){if(document.visibilityState!=="hidden")syncLiveSellerPrices()},10000);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")syncLiveSellerPrices()});
 window.addEventListener("focus",syncLiveSellerPrices);
+
+// Keep customer-facing catalogue prices synchronized with seller changes.
+try{
+  if("BroadcastChannel" in window){
+    var rpePriceChannel=new BroadcastChannel("ranova-marketplace-updates");
+    rpePriceChannel.addEventListener("message",function(e){if(e.data&&e.data.type==="product_price")syncLiveSellerPrices()});
+  }
+  window.addEventListener("storage",function(e){if(e.key==="ranova_price_update_v1")syncLiveSellerPrices()});
+  window.addEventListener("focus",syncLiveSellerPrices);
+}catch(e){}
 })();
