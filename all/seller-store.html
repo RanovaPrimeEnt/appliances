@@ -427,6 +427,15 @@ async function placeOrder(){
   }catch(err){showCheckoutMsg(err&&err.message?err.message:"Could not place the order.")}
   finally{b.disabled=false;b.textContent=old}
 }
+async function refreshStoreProducts(){
+  if(!store||!store.id)return;
+  try{
+    var pr=await sb.from("ranova_seller_products").select("*").eq("store_id",store.id).eq("product_status","active").order("category",{ascending:true}).order("name",{ascending:true});
+    if(pr.error)return;
+    products=pr.data||[];
+    render();renderCart();
+  }catch(e){}
+}
 async function boot(){
   var slug=new URLSearchParams(location.search).get("store")||"";
   if(!slug){el("loading").textContent="Store link is incomplete.";return}
@@ -478,6 +487,13 @@ el("closeCheckout").onclick=el("cancelCheckout").onclick=closeCheckout;el("place
 el("checkoutModal").addEventListener("click",function(e){if(e.target===this)closeCheckout()});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeCart();closeCheckout()}});
 boot();
+window.addEventListener("focus",refreshStoreProducts);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")refreshStoreProducts()});
+setInterval(function(){if(document.visibilityState!=="hidden")refreshStoreProducts()},15000);
+try{
+ if("BroadcastChannel" in window){var storePriceChannel=new BroadcastChannel("ranova-marketplace-updates");storePriceChannel.addEventListener("message",function(e){if(e.data&&e.data.type==="product_price")refreshStoreProducts()})}
+ window.addEventListener("storage",function(e){if(e.key==="ranova_price_update_v1")refreshStoreProducts()});
+}catch(e){}
 })();
 </script>
 </body>
