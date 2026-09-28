@@ -37,7 +37,7 @@ async function syncLiveSellerPrices(){
     var d=getDoc();if(!d)return;
     [].slice.call(d.querySelectorAll("#grid .product")).forEach(function(card){
       var p=productForCard(card,ps);if(!p)return;
-      var unit=getUnitPrice(p),price=card.querySelector(".rpe-essential-price span"),q=Math.max(0,parseInt(card.dataset.quantity||"0",10)||0);
+      var unit=getUnitPrice(p),price=card.querySelector(".rpe-price-value"),q=Math.max(0,parseInt(card.dataset.quantity||"0",10)||0);
       card.dataset.rpeUnitPrice=String(unit||0);
       if(price)price.textContent=unit>0?money(unit):"GHS ______";
       var total=card.querySelector(".rpe-product-total"),grand=card.querySelector(".rpe-grand-total-value");
