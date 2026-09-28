@@ -8,6 +8,7 @@ const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
 const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
 let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],risk_flags:[],safety_reports:[],risk_review_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
+let selectedSellerChatId=null,sellerChatFilter="";
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -1065,34 +1066,65 @@ function openStoreRegistryDetail(ref){
 function renderSellerMessageCentre(){
   const host=$("sellerMessageCentre");if(!host)return;
   if(!canSellerReview()){host.innerHTML='<div class="empty">Your admin role does not include seller messaging.</div>';return}
-  const stores=market.stores||[];
-  if(!stores.length){host.innerHTML='<div class="empty">No seller stores available yet.</div>';return}
-  host.innerHTML='<div style="display:grid;gap:10px">'+stores.map(store=>{
-    const thread=(market.admin_seller_threads||[]).find(t=>t.store_id===store.id);
-    const messages=thread?(market.admin_seller_messages||[]).filter(m=>m.thread_id===thread.id):[];
-    const last=messages[messages.length-1];
-    return '<div style="border:1px solid #e1e8e5;border-radius:14px;padding:13px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center">'+
-      '<div><b>'+esc(store.store_name)+'</b><small style="display:block;color:#718078;margin-top:4px">'+esc(store.business_location||"Location not provided")+' · '+esc(label(store.store_status))+'</small>'+
-      '<small style="display:block;color:#718078;margin-top:4px">'+(last?'Last: '+esc(last.sender_role==="admin"?"Admin":"Seller")+' · '+esc(last.body.slice(0,90)):'No official messages yet')+'</small></div>'+
-      '<button data-open-seller-chat="'+store.id+'" class="primary" style="border:0;border-radius:10px;padding:10px 12px">Open conversation</button>'+
-    '</div>';
-  }).join("")+'</div><div id="sellerChatDetail" style="margin-top:14px"></div>';
-  host.querySelectorAll("[data-open-seller-chat]").forEach(b=>b.onclick=()=>renderSellerChatDetail(b.dataset.openSellerChat));
+  if(selectedSellerChatId&&!(market.stores||[]).some(s=>s.id===selectedSellerChatId))selectedSellerChatId=null;
+  host.classList.toggle("chat-open",!!selectedSellerChatId);
+  host.innerHTML='<div class="seller-inbox"><div class="seller-inbox-head"><div class="seller-inbox-title"><h1>Seller messages</h1><button id="refreshSellerMessages" class="seller-refresh" type="button">Refresh</button></div><p>Official conversations with RANOVA stores</p><input id="sellerMessageSearch" class="seller-search" type="search" aria-label="Search seller conversations" placeholder="Search stores" value="'+esc(sellerChatFilter)+'"></div><div id="sellerConversationList" class="seller-conversation-list"></div></div><div id="sellerChatDetail" class="seller-chat"></div>';
+  $("sellerMessageSearch").oninput=e=>{sellerChatFilter=e.target.value;renderSellerConversationList()};
+  $("refreshSellerMessages").onclick=async e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Refreshing…";try{await reloadMarketplace()}catch(err){b.textContent="Try again";b.disabled=false;alert(err.message||"Could not refresh messages.")}};
+  renderSellerConversationList();renderSellerChatDetail(selectedSellerChatId);
+}
+function sellerChatMessages(store){
+  const thread=(market.admin_seller_threads||[]).find(t=>t.store_id===store.id);
+  return thread?(market.admin_seller_messages||[]).filter(m=>m.thread_id===thread.id).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)):[];
+}
+function sellerChatTime(value){const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}
+function sellerChatDate(value){const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleDateString([],{year:"numeric",month:"short",day:"numeric"})}
+function sellerChatReadKey(){return "ranova-admin-seller-read-"+(user?.id||"unknown")}
+function sellerChatRead(){try{return JSON.parse(localStorage.getItem(sellerChatReadKey())||"{}")||{}}catch(e){return {}}}
+function markSellerChatRead(storeId,messages){
+  const latest=messages.filter(m=>m.sender_role==="seller").at(-1);if(!latest)return;
+  const read=sellerChatRead(),stamp=Date.parse(latest.created_at)||0;
+  if(stamp>Number(read[storeId]||0)){read[storeId]=stamp;try{localStorage.setItem(sellerChatReadKey(),JSON.stringify(read))}catch(e){}}
+}
+function sellerInitials(name){return String(name||"S").trim().split(/\s+/).slice(0,2).map(x=>x.charAt(0)).join("").toUpperCase()}
+function sellerAvatar(store){
+  const logo=String(store.logo_url||"");let safe="";
+  try{const url=new URL(logo,location.href);if(logo&&["https:","http:"].includes(url.protocol))safe=url.href}catch(e){}
+  return '<span class="seller-avatar" aria-hidden="true">'+esc(sellerInitials(store.store_name))+(safe?'<img src="'+esc(safe)+'" alt="" loading="lazy">':'')+'</span>';
+}
+function renderSellerConversationList(){
+  const list=$("sellerConversationList");if(!list)return;
+  const query=sellerChatFilter.trim().toLowerCase(),read=sellerChatRead();
+  const stores=(market.stores||[]).filter(s=>!query||[s.store_name,s.business_location,s.application_ref].some(x=>String(x||"").toLowerCase().includes(query))).map(store=>{
+    const messages=sellerChatMessages(store),last=messages.at(-1);
+    const unread=messages.filter(m=>m.sender_role==="seller"&&(Date.parse(m.created_at)||0)>Number(read[store.id]||0)).length;
+    return {store,last,unread};
+  }).sort((a,b)=>(Date.parse(b.last?.created_at)||0)-(Date.parse(a.last?.created_at)||0)||String(a.store.store_name).localeCompare(String(b.store.store_name)));
+  list.innerHTML=stores.length?stores.map(({store,last,unread})=>'<button type="button" class="seller-conversation'+(selectedSellerChatId===store.id?' active':'')+'" data-open-seller-chat="'+esc(store.id)+'" aria-label="Open conversation with '+esc(store.store_name)+(unread?', '+unread+' new on this device':'')+'">'+sellerAvatar(store)+'<span class="seller-conversation-main"><span class="seller-conversation-top"><strong>'+esc(store.store_name)+'</strong><time>'+esc(last?sellerChatTime(last.created_at):"")+'</time></span><span class="seller-conversation-bottom"><span>'+esc(last?(last.sender_role==="admin"?"You: ":"")+String(last.body||"").replace(/\s+/g," "):"Start an official conversation")+'</span>'+(unread?'<span class="seller-unread" title="New since opened on this device">'+unread+'</span>':'')+'</span></span></button>').join(""):'<div class="seller-list-empty">'+(query?'No stores match your search.':'No seller stores available yet.')+'</div>';
+  list.querySelectorAll("[data-open-seller-chat]").forEach(b=>b.onclick=()=>{selectedSellerChatId=b.dataset.openSellerChat;renderSellerChatDetail(selectedSellerChatId);renderSellerConversationList();$("sellerMessageCentre").classList.add("chat-open")});
 }
 function renderSellerChatDetail(storeId){
   const box=$("sellerChatDetail");if(!box)return;
-  const store=(market.stores||[]).find(s=>s.id===storeId);if(!store)return;
-  const thread=(market.admin_seller_threads||[]).find(t=>t.store_id===store.id);
-  const messages=thread?(market.admin_seller_messages||[]).filter(m=>m.thread_id===thread.id):[];
-  box.innerHTML='<div class="card" style="box-shadow:none;margin:0"><div class="card-head"><div><h2>'+esc(store.store_name)+'</h2><small style="color:var(--rpe-muted)">Official RANOVA Admin ↔ Seller conversation</small></div></div><div class="body">'+
-    (messages.length?messages.map(m=>'<div style="max-width:85%;margin:7px '+(m.sender_role==="admin"?"auto 7px 0":"0 0 7px auto")+';padding:10px 12px;border-radius:13px;background:'+(m.sender_role==="admin"?"#edf7f3":"#fff2ec")+'"><b>'+esc(m.sender_role==="admin"?"RANOVA Admin":"Seller")+'</b><div style="margin-top:4px">'+esc(m.body)+'</div><small style="display:block;color:#718078;margin-top:4px">'+new Date(m.created_at).toLocaleString()+'</small></div>').join(""):'<div class="empty">No messages yet.</div>')+
-    '<textarea id="sellerChatInput" class="review-note" style="margin-top:12px" placeholder="Write an official message to '+esc(store.store_name)+'…"></textarea><button id="sellerChatSend" class="primary" style="margin-top:8px;border:0;border-radius:10px;padding:10px 14px">Send message</button></div></div>';
-  $("sellerChatSend").onclick=async()=>{
-    const body=$("sellerChatInput").value.trim();if(body.length<2)return alert("Write a message first.");
-    const b=$("sellerChatSend");b.disabled=true;
-    try{await marketApi({action:"message_seller",store_id:store.id,body});await reloadMarketplace();renderSellerMessageCentre();renderSellerChatDetail(store.id)}
-    catch(err){alert(err.message)}finally{b.disabled=false}
+  const store=(market.stores||[]).find(s=>s.id===storeId);
+  if(!store){box.innerHTML='<div class="seller-chat-placeholder">Select a store to read its official conversation.</div>';return}
+  const messages=sellerChatMessages(store);markSellerChatRead(store.id,messages);
+  let previousDay="";
+  const bubbles=messages.map(m=>{
+    const day=sellerChatDate(m.created_at),date=day&&day!==previousDay?'<div class="seller-chat-day">'+esc(day)+'</div>':'';previousDay=day;
+    return date+'<div class="seller-chat-bubble '+(m.sender_role==="admin"?"outgoing":"incoming")+'"><p>'+esc(m.body)+'</p><time datetime="'+esc(m.created_at)+'">'+esc(sellerChatTime(m.created_at))+'</time></div>';
+  }).join("");
+  box.innerHTML='<header class="seller-chat-header"><button id="sellerChatBack" class="seller-chat-back" type="button" aria-label="Back to conversations">‹</button>'+sellerAvatar(store)+'<div class="seller-chat-heading"><strong>'+esc(store.store_name)+'</strong><small>Official RANOVA conversation · '+esc(label(store.store_status))+'</small></div></header><div id="sellerChatMessages" class="seller-chat-messages" aria-label="Messages with '+esc(store.store_name)+'">'+(bubbles||'<div class="seller-chat-intro"><b>No messages yet</b>Send the first official message to this store.</div>')+'</div><div id="sellerChatError" class="seller-chat-error" role="alert"></div><div class="seller-chat-composer"><textarea id="sellerChatInput" rows="1" aria-label="Message '+esc(store.store_name)+'" placeholder="Message '+esc(store.store_name)+'…"></textarea><button id="sellerChatSend" type="button">Send</button></div>';
+  $("sellerChatMessages").scrollTop=$("sellerChatMessages").scrollHeight;
+  $("sellerChatBack").onclick=()=>{selectedSellerChatId=null;$("sellerMessageCentre").classList.remove("chat-open");renderSellerConversationList();$("sellerMessageSearch").focus()};
+  const send=async()=>{
+    const input=$("sellerChatInput"),body=input.value.trim();if(body.length<2){input.focus();return}
+    const button=$("sellerChatSend");button.disabled=true;$("sellerChatError").classList.remove("show");
+    try{await marketApi({action:"message_seller",store_id:store.id,body});await reloadMarketplace()}
+    catch(err){const error=$("sellerChatError");if(error){error.textContent=err.message||"Could not send the message. Please try again.";error.classList.add("show");button.disabled=false}}
   };
+  $("sellerChatSend").onclick=send;
+  $("sellerChatInput").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}};
+  renderSellerConversationList();
 }
 
 function renderSellerStores(){
