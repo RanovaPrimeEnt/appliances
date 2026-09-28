@@ -79,6 +79,24 @@ function money(p){
   return (cur==="GHS"?"GH₵ ":cur+" ")+n.toLocaleString(undefined,{maximumFractionDigits:2});
 }
 function productKey(p){return String(p.product_id||p.id||"")}
+var PRICE_REST="https://igaerssbzobutlwvjfwt.supabase.co/rest/v1/ranova_seller_products";
+var PRICE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
+async function refreshLivePrices(){
+  if(!state.products.length)return;
+  try{
+    var ids=Array.from(new Set(state.products.map(productKey).filter(Boolean))).slice(0,250);
+    if(!ids.length)return;
+    var r=await fetch(PRICE_REST+"?select=id,price,currency&id=in.("+ids.map(encodeURIComponent).join(",")+")",{headers:{apikey:PRICE_KEY,Authorization:"Bearer "+PRICE_KEY},cache:"no-store"});
+    if(!r.ok)return;
+    var rows=await r.json(),by={};(rows||[]).forEach(function(x){by[String(x.id)]=x});
+    state.products.forEach(function(p){var x=by[productKey(p)];if(x){p.price=x.price==null?null:Number(x.price);if(x.currency)p.currency=x.currency}});
+    var d=state.doc;if(!d)return;
+    [].slice.call(d.querySelectorAll(".rch-card[data-product-id]")).forEach(function(card){
+      var p=state.products.find(function(x){return productKey(x)===card.dataset.productId});if(!p)return;
+      var price=card.querySelector(".rch-price");if(price)price.innerHTML=money(p)+"<small>View details</small>";
+    });
+  }catch(e){}
+}
 function sellerKey(p){return String(p.store_id||p.store_slug||p.store_name||"unknown")}
 function dedupe(list){
   var seen=new Set(),out=[];
@@ -497,6 +515,18 @@ setInterval(function(){
   if(b!==state.timeBucket&&document.visibilityState!=="hidden"){rotate(false)}
 },60000);
 document.addEventListener("visibilitychange",function(){
-  if(document.visibilityState==="visible"&&state.doc&&currentBucket()!==state.timeBucket)rotate(false);
+  if(document.visibilityState==="visible"){
+    if(state.doc&&currentBucket()!==state.timeBucket)rotate(false);
+    refreshLivePrices();
+  }
 });
+window.addEventListener("focus",refreshLivePrices);
+setInterval(function(){if(document.visibilityState!=="hidden")refreshLivePrices()},15000);
+try{
+  if("BroadcastChannel" in window){
+    var homePriceChannel=new BroadcastChannel("ranova-marketplace-updates");
+    homePriceChannel.addEventListener("message",function(e){if(e.data&&e.data.type==="product_price")refreshLivePrices()});
+  }
+  window.addEventListener("storage",function(e){if(e.key==="ranova_price_update_v1")refreshLivePrices()});
+}catch(e){}
 })();
