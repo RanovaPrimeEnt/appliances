@@ -2,6 +2,8 @@
 "use strict";
 var frame=document.getElementById("site");
 var ORDER_ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-place-order";
+var SUPABASE_REST="https://igaerssbzobutlwvjfwt.supabase.co/rest/v1/";
+var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
 if(!frame)return;
 
 function esc(v){
@@ -18,6 +20,30 @@ function getWin(){
 function getProducts(){
   var w=getWin();
   try{return w&&Array.isArray(w.PRODUCTS)?w.PRODUCTS:[]}catch(e){return[]}
+}
+function norm(v){return String(v==null?"":v).toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
+async function syncLiveSellerPrices(){
+  try{
+    var r=await fetch(SUPABASE_REST+"ranova_seller_products?select=id,name,sku,price,product_status&product_status=eq.active&limit=1000",{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY},cache:"no-store"});
+    if(!r.ok)return;
+    var rows=await r.json(),byName={},bySku={};
+    (Array.isArray(rows)?rows:[]).forEach(function(x){if(x&&x.name)byName[norm(x.name)]=x;if(x&&x.sku)bySku[norm(x.sku)]=x});
+    var ps=getProducts();
+    ps.forEach(function(p){
+      var sku=norm(p&& (p.rpeSku||p.sku||p.rpeModel||""));
+      var row=(sku&&bySku[sku])||byName[norm(p&&p.name)];
+      if(row)p.price=row.price==null?null:Number(row.price);
+    });
+    var d=getDoc();if(!d)return;
+    [].slice.call(d.querySelectorAll("#grid .product")).forEach(function(card){
+      var p=productForCard(card,ps);if(!p)return;
+      var unit=getUnitPrice(p),price=card.querySelector(".rpe-essential-price span"),q=Math.max(0,parseInt(card.dataset.quantity||"0",10)||0);
+      card.dataset.rpeUnitPrice=String(unit||0);
+      if(price)price.textContent=unit>0?money(unit):"GHS ______";
+      var total=card.querySelector(".rpe-product-total"),grand=card.querySelector(".rpe-grand-total-value");
+      if(total)total.textContent=money(unit*q);if(grand)grand.textContent=money(unit*q);
+    });
+  }catch(e){}
 }
 function productForCard(card,products){
   var title=card.querySelector("h3");
@@ -352,12 +378,14 @@ function decorateCard(card,p,w){
   function stopQtyEvent(e){e.stopPropagation()}
   function refreshOrderSummary(v){
     v=Math.max(0,parseInt(v,10)||0);
+    var currentUnitPrice=getUnitPrice(p);
     if(qtyInput)qtyInput.value=String(v);
     if(selectedCount)selectedCount.textContent=String(v);
-    if(totalEl)totalEl.textContent=money(unitPrice*v);
-    if(grandTotalEl)grandTotalEl.textContent=money(unitPrice*v);
+    if(totalEl)totalEl.textContent=money(currentUnitPrice*v);
+    if(grandTotalEl)grandTotalEl.textContent=money(currentUnitPrice*v);
     if(orderBtn)orderBtn.disabled=(v<1);
     card.dataset.quantity=String(v);
+    card.dataset.rpeUnitPrice=String(currentUnitPrice||0);
     return v;
   }
 
@@ -392,7 +420,7 @@ function decorateCard(card,p,w){
 
   card.dataset.rpeProductId=String(id||"");
   card.dataset.rpeProductName=String(p.name||"Product");
-  card.dataset.rpeUnitPrice=String(unitPrice||0);
+  card.dataset.rpeUnitPrice=String(getUnitPrice(p)||0);
 
   if(orderBtn){
     orderBtn.addEventListener("click",function(e){
@@ -472,11 +500,14 @@ function apply(){
 function boot(){
   var tries=0;
   function run(){
-    if(apply())return;
+    if(apply()){syncLiveSellerPrices();return}
     if(++tries<60)setTimeout(run,250);
   }
   run();
 }
 frame.addEventListener("load",function(){setTimeout(boot,500)});
 setTimeout(boot,900);
+setInterval(function(){if(document.visibilityState!=="hidden")syncLiveSellerPrices()},10000);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")syncLiveSellerPrices()});
+window.addEventListener("focus",syncLiveSellerPrices);
 })();
