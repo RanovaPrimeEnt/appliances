@@ -179,6 +179,7 @@ Deno.serve(async(req:Request)=>{
     const buyer_google_place_id=clean(b.buyer_google_place_id,180);
     const payment_method=clean(b.payment_method,40);
     const payment_network=clean(b.payment_network,40).toLowerCase();
+    const payment_phone=clean(b.payment_phone,40);
     const buyer_note=clean(b.buyer_note,1000);
     const raw=normalizeRawItems(b.items);
 
@@ -191,6 +192,9 @@ Deno.serve(async(req:Request)=>{
     }
     if(payment_method==="Mobile Money"&&!["mtn","vod","atl"].includes(payment_network)){
       return new Response(JSON.stringify({ok:false,error:"Choose MTN Mobile Money, Telecel Cash, or ATMoney."}),{status:400,headers:h});
+    }
+    if(payment_method==="Mobile Money"&&!payment_phone){
+      return new Response(JSON.stringify({ok:false,error:"Enter the Mobile Money number that should receive the payment authorization prompt."}),{status:400,headers:h});
     }
 
     const items=await resolveItems(raw);
@@ -247,6 +251,7 @@ Deno.serve(async(req:Request)=>{
       buyer_google_place_id:buyer_google_place_id||null,
       payment_method,
       payment_network:payment_method==="Mobile Money"?payment_network:"bank_transfer",
+      payment_phone:payment_method==="Mobile Money"?payment_phone:null,
       unit_price:items.length===1?items[0].unit_price:null,
       product_total,
       delivery_fee:null,
@@ -286,6 +291,7 @@ Deno.serve(async(req:Request)=>{
         delivery_location,
         payment_method,
         payment_network:payment_method==="Mobile Money"?payment_network:"bank_transfer",
+        payment_phone:payment_method==="Mobile Money"?payment_phone:null,
         seller_country_code:sellerCountry,
         seller_country_name:sellerCountryName,
         buyer_country_code,
