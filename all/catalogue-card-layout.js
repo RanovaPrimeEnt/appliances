@@ -304,15 +304,29 @@ function openCheckout(d,w,data){
       var out=await paymentHelper("list_ghana_banks");
       bankSelect.innerHTML='<option value="">Choose bank</option>'+out.banks.map(function(b){return '<option value="'+esc(b.code)+'">'+esc(b.name)+'</option>'}).join("");
       banksLoaded=true;
+      if(bankNameStatus)bankNameStatus.textContent="Enter your account number and RANOVA will verify the registered account name.";
     }catch(e){
-      bankSelect.innerHTML='<option value="">Could not load banks</option>';
-      if(bankNameStatus)bankNameStatus.textContent=e.message||"Could not load banks.";
+      var fallback=[
+        "Absa Bank Ghana","Access Bank Ghana","Agricultural Development Bank","CalBank",
+        "Consolidated Bank Ghana","Ecobank Ghana","Fidelity Bank Ghana","First Atlantic Bank",
+        "First National Bank Ghana","GCB Bank","Guaranty Trust Bank Ghana","National Investment Bank",
+        "OmniBSIC Bank","Prudential Bank","Republic Bank Ghana","Stanbic Bank Ghana",
+        "Standard Chartered Bank Ghana","United Bank for Africa Ghana","Zenith Bank Ghana"
+      ];
+      bankSelect.innerHTML='<option value="">Choose bank</option>'+fallback.map(function(name){return '<option value="manual:'+esc(name)+'">'+esc(name)+'</option>'}).join("");
+      banksLoaded=true;
+      if(bankNameStatus)bankNameStatus.textContent="Bank list is available. Automatic account-name verification will activate when the secure Paystack connection is added.";
     }
   }
   async function resolveBankName(){
     if(!bankSelect||!bankAccount||!nameInput)return;
     var bankCode=bankSelect.value,account=cleanInput(bankAccount);
     if(!bankCode||account.length<6)return;
+    if(bankCode.indexOf("manual:")===0){
+      nameInput.readOnly=false;
+      if(bankNameStatus)bankNameStatus.textContent="Enter the account-holder name manually for now. Automatic verification will switch on when the secure Paystack connection is added.";
+      return;
+    }
     if(bankNameStatus)bankNameStatus.textContent="Checking account name…";
     try{
       var out=await paymentHelper("resolve_bank_account",{bank_code:bankCode,account_number:account});
