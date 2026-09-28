@@ -217,10 +217,36 @@ async function verifyReturnedPayment(){
   }catch(e){m.textContent=e.message||"Payment verification failed."}
 }
 el("securePayBtn").onclick=async function(){
-  var b=this,m=el("securePayMsg"),old=b.textContent;b.disabled=true;b.textContent="Opening secure payment…";m.textContent="";
+  var b=this,m=el("securePayMsg"),old=b.textContent;b.disabled=true;b.textContent="Starting payment…";m.textContent="";
   try{
     var out=await paymentApi("initialize");
-    if(!out.authorization_url)throw new Error("Payment provider did not return a checkout link.");
+    if(out.payment_mode==="mobile_money_prompt"){
+      m.textContent=out.display_text||"Check your phone and authorize the Mobile Money payment.";
+      b.textContent="Authorization sent";
+      var attempts=0,maxAttempts=24;
+      var timer=setInterval(async function(){
+        attempts++;
+        try{
+          var v=await paymentApi("verify",{reference:out.reference});
+          if(v.status==="success"){
+            clearInterval(timer);
+            m.textContent="Payment verified successfully. Your RANOVA payment is protected.";
+            b.textContent="Paid";
+            await check();
+            return;
+          }
+          if(attempts>=maxAttempts){
+            clearInterval(timer);
+            m.textContent="The Mobile Money authorization has not been confirmed yet. You can try payment again if the prompt expired.";
+            b.disabled=false;b.textContent=old;
+          }
+        }catch(err){
+          if(attempts>=maxAttempts){clearInterval(timer);b.disabled=false;b.textContent=old}
+        }
+      },7500);
+      return;
+    }
+    if(!out.authorization_url)throw new Error("Payment provider did not return a secure bank-transfer checkout link.");
     location.href=out.authorization_url;
   }catch(e){m.textContent=e.message||"Could not start secure payment.";b.disabled=false;b.textContent=old}
 };
