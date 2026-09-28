@@ -307,12 +307,10 @@ function decorateCard(card,p,w){
 
   var unitPrice=getUnitPrice(p);
   var priceDisplay=unitPrice>0?money(unitPrice):"GHS ______";
-  var qtyKey="rpeQty:"+(id||p.name||p.id||"product");
   var locationKey="rpeDeliveryLocation";
   var savedQty=0;
   var savedLocation="Accra, Ghana";
   try{
-    savedQty=Math.max(0,parseInt(w.localStorage.getItem(qtyKey)||"0",10)||0);
     savedLocation=w.localStorage.getItem(locationKey)||savedLocation;
   }catch(e){}
 
@@ -360,7 +358,6 @@ function decorateCard(card,p,w){
     if(grandTotalEl)grandTotalEl.textContent=money(unitPrice*v);
     if(orderBtn)orderBtn.disabled=(v<1);
     card.dataset.quantity=String(v);
-    try{w.localStorage.setItem(qtyKey,String(v))}catch(e){}
     return v;
   }
 
