@@ -1,3 +1,4 @@
+import { assertSettlementCurrency, selectCommissionRule } from "../_shared/commission.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -85,6 +86,7 @@ async function resolveItems(raw:any[]){
     for(const r of sellerRaw){
       const p:any=productMap.get(r.seller_product_id);
       if(!p||p.product_status!=="active")throw new Error("One of the selected seller products is no longer available.");
+      assertSettlementCurrency(p.currency);
       const store:any=storeMap.get(p.store_id);
       if(!store||store.store_status!=="active")throw new Error("One of the selected seller stores is not currently active.");
       if(!sellerApproval.has(p.seller_id))sellerApproval.set(p.seller_id,await approvedSeller(p.seller_id));
@@ -139,24 +141,7 @@ async function resolveCountryRule(storeId:string,sellerCountry:string|null,buyer
     .lte("effective_from",now)
     .order("effective_from",{ascending:false});
   if(error)throw error;
-  const eligible=(rows||[]).filter((r:any)=>{
-    if(r.store_id&&r.store_id!==storeId)return false;
-    if(r.seller_country_code&&r.seller_country_code!==sellerCountry)return false;
-    if(r.buyer_country_code&&r.buyer_country_code!==buyerCountry)return false;
-    if(r.payment_method&&r.payment_method!==paymentMethod)return false;
-    return true;
-  });
-  eligible.sort((a:any,b:any)=>{
-    const score=(x:any)=>(x.store_id?8:0)+(x.seller_country_code?4:0)+(x.buyer_country_code?2:0)+(x.payment_method?1:0);
-    const d=score(b)-score(a);
-    if(d)return d;
-    return new Date(b.effective_from).getTime()-new Date(a.effective_from).getTime();
-  });
-  const r:any=eligible[0]||null;
-  return r||{
-    id:null,commission_rate:0,required_payment_percent:100,payment_processing_rate:0,
-    payment_fixed_fee:0,payment_fee_payer:"platform",currency:"GHS",source_name:"RANOVA fallback"
-  };
+  return selectCommissionRule(rows||[], {store_id:storeId,seller_country_code:sellerCountry,buyer_country_code:buyerCountry,payment_method:paymentMethod,currency:"GHS"});
 }
 
 Deno.serve(async(req:Request)=>{
@@ -169,6 +154,7 @@ Deno.serve(async(req:Request)=>{
   let reservationOrderRef:string|null=null;
   try{
     const b=await req.json();
+    assertSettlementCurrency(b.currency||"GHS");
     const buyerUser=await optionalUser(req);
     const customer_name=clean(b.customer_name,100);
     const customer_phone=clean(b.customer_phone,40);
