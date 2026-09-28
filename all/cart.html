@@ -139,6 +139,15 @@ el("placeOrder").onclick=async function(){
   el("track").href="./order-status.html?ref="+encodeURIComponent(o.order_ref||"");try{localStorage.setItem("ranova_buyer_code_"+o.order_ref,o.buyer_access_code||"");localStorage.setItem("ranova_buyer_phone_"+o.order_ref,el("phone").value.trim())}catch(e){}quote={groups:[],item_count:0,total_quantity:0,product_total:0};render()
  }catch(e){m.textContent=e.message||"Could not place order.";m.style.display="block"}finally{b.disabled=false;b.textContent="Place marketplace order"}
 };
-(async function(){loadQuoteMap();var gs=await sb.auth.getSession();session=gs.data.session;el("authNote").querySelector("p").innerHTML=session?'Signed in as <b>'+esc(session.user.email||"buyer")+'</b>.':'<a href="./account.html" style="font-weight:900;color:var(--g)">Sign in</a> to keep your cart across devices.';await loadCountries();await loadAccountCart();prefill();await addFromUrl();await getQuote()})();
+async function refreshCartPricing(){if(!Object.keys(cart||{}).length)return;try{await getQuote()}catch(e){}}
+(async function(){loadQuoteMap();var gs=await sb.auth.getSession();session=gs.data.session;el("authNote").querySelector("p").innerHTML=session?'Signed in as <b>'+esc(session.user.email||"buyer")+'</b>.':'<a href="./account.html" style="font-weight:900;color:var(--g)">Sign in</a> to keep your cart across devices.';await loadCountries();await loadAccountCart();prefill();await addFromUrl();await getQuote();
+ window.addEventListener("focus",refreshCartPricing);
+ document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")refreshCartPricing()});
+ setInterval(function(){if(document.visibilityState!=="hidden")refreshCartPricing()},15000);
+ try{
+  if("BroadcastChannel" in window){var cartPriceChannel=new BroadcastChannel("ranova-marketplace-updates");cartPriceChannel.addEventListener("message",function(e){if(e.data&&e.data.type==="product_price")refreshCartPricing()})}
+  window.addEventListener("storage",function(e){if(e.key==="ranova_price_update_v1")refreshCartPricing()});
+ }catch(e){}
+})();
 })();
 </script></body></html>
