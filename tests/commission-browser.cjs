@@ -12,7 +12,7 @@ const fs=require('fs'),path=require('path'),assert=require('assert/strict');
  let calls=[];
  await page.exposeFunction('marketApi',async b=>{calls.push(b);assert.equal(b.action,'preview_commission');return {draft:b.preview_draft,rule_source:'Test policy',breakdown:commissionBreakdown({...b,currency:'GHS'},b.subtotal,b.delivery_fee)}});
  const clear=js.slice(js.indexOf('function clearCountryRuleForm(){'),js.indexOf('function renderCountryRules(){'));
- const handlers=js.slice(js.indexOf('$("suggestCommission").onclick='),js.indexOf('$("saveCountryRule").onclick='));
+ const handlers=js.slice(js.indexOf('if($("suggestCommission")&&$("previewCommission")){'),js.indexOf('$("saveCountryRule").onclick='));
  await page.addScriptTag({content:'const $=id=>document.getElementById(id);const isOwner=()=>true;const pretty=x=>x;const esc=x=>String(x).replace(/[&<>"\x27]/g,"");'+clear+handlers});
  await page.locator('#suggestCommission').click();assert.equal(await page.locator('#ruleCommission').inputValue(),'5');assert.equal(await page.locator('#ruleActive').isChecked(),false);assert.equal(calls.length,0);
  await page.locator('#rulePaymentRate').fill('2');await page.locator('#previewCommission').click();await page.waitForFunction(()=>document.getElementById('commissionPreviewResult').textContent.includes('570.00'));assert.match(await page.locator('#commissionPreviewResult').innerText(),/18.00/);
