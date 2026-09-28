@@ -244,10 +244,18 @@ function openCheckout(d,w,data){
     '<div class="rpe-checkout-payment">'+
       '<div class="rpe-checkout-payment-title">Choose payment method</div>'+
       '<button type="button" class="rpe-checkout-pay-option" data-method="Mobile Money"><span class="rpe-checkout-pay-radio"></span><span><b>Mobile Money</b><small>MTN MoMo, Telecel Cash or AT Money</small></span></button>'+
-      '<button type="button" class="rpe-checkout-pay-option" data-method="Bank Transfer"><span class="rpe-checkout-pay-radio"></span><span><b>Bank Transfer</b><small>Suitable for larger or bulk orders</small></span></button>'+
+      '<button type="button" class="rpe-checkout-pay-option" data-method="Bank Transfer"><span class="rpe-checkout-pay-radio"></span><span><b>Bank Transfer</b><small>Secure bank transfer through RANOVA</small></span></button>'+
+    '</div>'+
+    '<div class="rpe-payment-details rpe-momo-details" style="display:none">'+
+      '<div class="rpe-checkout-field"><label>Mobile Money network</label><select class="rpe-momo-network"><option value="">Choose network</option><option value="mtn">MTN Mobile Money</option><option value="vod">Telecel Cash</option><option value="atl">ATMoney / AirtelTigo Money</option></select></div>'+
+      '<div class="rpe-checkout-field"><label>Mobile Money number</label><input class="rpe-momo-phone" type="tel" inputmode="tel" placeholder="e.g. 024 000 0000"><small style="color:#6e7d77;font-size:9px">The authorization prompt will be sent to this number when payment is opened.</small></div>'+
+    '</div>'+
+    '<div class="rpe-payment-details rpe-bank-details" style="display:none">'+
+      '<div class="rpe-checkout-status" style="margin:0;background:#f4f8f6;padding:10px;border-radius:10px">For Ghana bank payments, RANOVA will generate a secure temporary bank account after the final order amount is confirmed. You will transfer from your bank app or bank channel. RANOVA does not collect your bank PIN or direct-debit your personal bank account.</div>'+
     '</div>'+
     '<div class="rpe-checkout-field"><label>Your name</label><input class="rpe-customer-name" type="text" autocomplete="name" placeholder="Full name"></div>'+
     '<div class="rpe-checkout-field"><label>Phone number</label><input class="rpe-customer-phone" type="tel" autocomplete="tel" placeholder="e.g. 024 000 0000"></div>'+
+    '<div class="rpe-checkout-field"><label>Email</label><input class="rpe-customer-email" type="email" autocomplete="email" placeholder="For payment and receipt"></div>'+
     '<button class="rpe-checkout-submit" type="button" disabled>Place Order</button>'+
     '<div class="rpe-checkout-status">Choose a payment method, then place the combined order. Payment account details remain private until confirmation.</div>';
 
@@ -258,6 +266,9 @@ function openCheckout(d,w,data){
     option.onclick=function(){
       selectedPayment=this.getAttribute("data-method")||"";
       payOptions.forEach(function(x){x.classList.toggle("active",x===option)});
+      var momo=body.querySelector(".rpe-momo-details"),bank=body.querySelector(".rpe-bank-details");
+      if(momo)momo.style.display=selectedPayment==="Mobile Money"?"block":"none";
+      if(bank)bank.style.display=selectedPayment==="Bank Transfer"?"block":"none";
       if(submit)submit.disabled=!selectedPayment;
     };
   });
@@ -265,8 +276,12 @@ function openCheckout(d,w,data){
   if(submit)submit.onclick=async function(){
     var name=cleanInput(body.querySelector(".rpe-customer-name"));
     var phone=cleanInput(body.querySelector(".rpe-customer-phone"));
+    var email=cleanInput(body.querySelector(".rpe-customer-email"));
+    var momoNetwork=cleanInput(body.querySelector(".rpe-momo-network"));
+    var momoPhone=cleanInput(body.querySelector(".rpe-momo-phone"));
     if(!selectedPayment){if(status)status.textContent="Please choose Mobile Money or Bank Transfer.";return}
-    if(!name||!phone){if(status)status.textContent="Please enter your name and phone number.";return}
+    if(!name||!phone||!email){if(status)status.textContent="Please enter your name, phone number and email.";return}
+    if(selectedPayment==="Mobile Money"&&(!momoNetwork||!momoPhone)){if(status)status.textContent="Choose your Mobile Money network and enter the MoMo number that should receive the authorization prompt.";return}
     submit.disabled=true;submit.textContent="Placing Order…";
     if(status)status.textContent="Saving your combined order securely…";
     try{
@@ -276,8 +291,11 @@ function openCheckout(d,w,data){
         body:JSON.stringify({
           customer_name:name,
           customer_phone:phone,
+          customer_email:email,
           delivery_location:data.delivery_location,
           payment_method:selectedPayment,
+          payment_network:selectedPayment==="Mobile Money"?momoNetwork:"bank_transfer",
+          payment_phone:selectedPayment==="Mobile Money"?momoPhone:"",
           items:items
         })
       });
