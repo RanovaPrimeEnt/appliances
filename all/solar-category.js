@@ -368,10 +368,30 @@ async function fetchSolar(){
   var url=API+"/products?select=id,sku,name,short_description,description,dimensions,specifications,product_images(image_url,is_primary,sort_order)&category_id=eq."+encodeURIComponent(cats[0].id)+"&active=eq.true";
   var pr=await fetch(url,{headers:h});
   if(!pr.ok)throw new Error("Solar products unavailable");
-  var rows=await pr.json(),seen={},unique=[];
+  var rows=await pr.json();
+
+  // Seller dashboard is the master price source. Pull active seller prices by SKU
+  // before these legacy catalogue items are rendered or opened in the detail modal.
+  var sellerPriceBySku={};
+  try{
+    var sr=await fetch(API+"/ranova_seller_products?select=sku,price,currency,product_status&product_status=eq.active&limit=1000",{headers:h,cache:"no-store"});
+    if(sr.ok){
+      var sellerRows=await sr.json();
+      (Array.isArray(sellerRows)?sellerRows:[]).forEach(function(x){
+        if(x&&x.sku)sellerPriceBySku[String(x.sku).trim().toUpperCase()]=x;
+      });
+    }
+  }catch(e){}
+
+  var seen={},unique=[];
   rows.forEach(function(p){
     if(!p.sku||seen[p.sku])return;
     seen[p.sku]=1;
+    var live=sellerPriceBySku[String(p.sku).trim().toUpperCase()];
+    if(live){
+      p.price=live.price==null?null:Number(live.price);
+      p.currency=live.currency||"GHS";
+    }
     unique.push(p);
   });
   unique.sort(function(a,b){
@@ -409,7 +429,9 @@ async function integrateSolarProducts(){
         rpeSeries:spec(p,"series",""),
         rpePowerOrder:powerRank(p),
         rpeSpecifications:p.specifications||{},
-        rpeDimensions:p.dimensions||""
+        rpeDimensions:p.dimensions||"",
+        price:p.price==null?null:Number(p.price),
+        currency:p.currency||"GHS"
       };
       if(bySku[p.sku]){
         Object.assign(bySku[p.sku],native);
