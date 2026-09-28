@@ -142,7 +142,7 @@ function installStyle(d){
     .rpe-checkout-pay-option small{display:block!important;margin-top:2px!important;font-size:9px!important;color:#84918c!important}
     .rpe-checkout-field{display:grid!important;gap:5px!important;margin-top:10px!important}
     .rpe-checkout-field label{font-size:10px!important;font-weight:900!important;color:#53665e!important}
-    .rpe-checkout-field input{width:100%!important;height:42px!important;border:1px solid #dce5e1!important;border-radius:11px!important;padding:0 11px!important;box-sizing:border-box!important;font-size:13px!important;outline:none!important}
+    .rpe-checkout-field input,.rpe-checkout-field select{width:100%!important;height:42px!important;border:1px solid #dce5e1!important;border-radius:11px!important;padding:0 11px!important;box-sizing:border-box!important;font-size:13px!important;outline:none!important;background:#fff!important;color:#243d34!important}
     .rpe-checkout-summary{display:grid!important;gap:10px!important;margin:16px 0!important;padding:16px!important;border-radius:16px!important;background:#ff5a2d!important;border:0!important;box-shadow:0 10px 24px rgba(255,90,45,.24)!important}
     .rpe-checkout-summary-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;font-size:15px!important;line-height:1.35!important;color:#fff!important;font-weight:800!important}
     .rpe-checkout-summary-row span{color:#fff!important;font-size:15px!important;font-weight:800!important}
