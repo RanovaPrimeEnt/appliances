@@ -859,8 +859,8 @@ function renderCountryRules(){
   $("ruleSellerCountry").innerHTML=countryOptions(currentSeller,true);
   $("ruleBuyerCountry").innerHTML=countryOptions(currentBuyer,true);
 
-  ["commissionSellerCountry","commissionBuyerCountry"].forEach(id=>{const current=$(id).value||"GH";$(id).innerHTML=countryOptions(current,false);$(id).value=current;});
-  $("suggestCommission").hidden=!isOwner();
+  ["commissionSellerCountry","commissionBuyerCountry"].forEach(id=>{if(!$(id))return;const current=$(id).value||"GH";$(id).innerHTML=countryOptions(current,false);$(id).value=current;});
+  if($("suggestCommission"))$("suggestCommission").hidden=!isOwner();
   const rules=market.country_rules||[],stores=new Map((market.stores||[]).map(s=>[s.id,s]));
   $("countryRulesList").innerHTML=rules.length?rules.map(r=>{
     const store=stores.get(r.store_id);
@@ -1169,6 +1169,7 @@ function renderSellerStores(){
 
 
 
+if($("suggestCommission")&&$("previewCommission")){
 $("suggestCommission").onclick=()=>{
   if(!isOwner())return;
   clearCountryRuleForm();
@@ -1198,6 +1199,7 @@ $("previewCommission").onclick=async()=>{
     if(x.commission_amount===0)$("commissionPreviewStatus").textContent+=" — RANOVA commission is currently zero.";
   }catch(e){$("commissionPreviewStatus").textContent=e.message||"Could not calculate earnings."}finally{button.disabled=false}
 };
+}
 $("saveCountryRule").onclick=async()=>{
   if(!isOwner())return alert("Only the Owner can change country finance rules.");
   const b=$("saveCountryRule");
