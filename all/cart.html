@@ -30,7 +30,7 @@
   <div class="sumrow"><span>Sellers</span><b id="sumSellers">0</b></div>
   <div class="sumrow total"><span>Known total</span><b id="sumTotal">GHS 0.00</b></div>
   <p>Delivery is calculated separately for each seller. No payment should be made until RANOVA shows the confirmed final amount.</p>
-  <button id="checkoutBtn" class="primary">Continue to one checkout</button>
+  <button id="checkoutBtn" class="primary">Order now</button>
   <a class="secondary" style="display:grid;place-items:center" href="./marketplace.html">Add more products</a>
  </div>
  <div id="checkoutCard" class="card checkout">
@@ -40,7 +40,7 @@
   <div class="field"><label>Email</label><input id="email" type="email"></div>
   <div class="field"><label>Delivery country</label><select id="country"><option value="">Choose country</option></select></div>
   <div class="field"><label>Delivery address</label><textarea id="address" rows="3"></textarea></div>
-  <div class="field"><label>Payment method</label><select id="payment"><option value="">Choose method</option><option>Mobile Money</option><option>Bank Transfer</option></select></div>
+  <div class="field"><label>Payment method</label><select id="payment"><option value="">Choose method</option><option value="Mobile Money">Mobile Money</option><option value="Bank Transfer">Bank / Transfer</option></select></div><div id="momoNetworkField" class="field" style="display:none"><label>Mobile Money network</label><select id="momoNetwork"><option value="">Choose network</option><option value="mtn">MTN Mobile Money</option><option value="vod">Telecel Cash</option><option value="atl">ATMoney / AirtelTigo Money</option></select></div><div class="msg good" style="display:block;margin-top:10px">Your payment is processed through RANOVA Buyer Protection. The company receiving destination is kept private and is never displayed to customers.</div>
   <div class="field"><label>Note for sellers / RANOVA</label><textarea id="note" rows="2"></textarea></div>
   <button id="placeOrder" class="primary">Place marketplace order</button>
  </div>
@@ -53,6 +53,8 @@
 var URL="https://igaerssbzobutlwvjfwt.supabase.co",KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr",sb=window.supabase.createClient(URL,KEY);
 var QUOTE=URL+"/functions/v1/ranova-cart-quote",ORDER=URL+"/functions/v1/ranova-place-order",COUNTRY=URL+"/functions/v1/ranova-country-service";
 var session=null,cart={},quote=null,profile=null,addresses=[],quoteMap={};
+function syncPaymentFields(){var isMomo=el("payment").value==="Mobile Money";el("momoNetworkField").style.display=isMomo?"block":"none";if(!isMomo)el("momoNetwork").value=""}
+el("payment").addEventListener("change",syncPaymentFields);syncPaymentFields();
 function el(id){return document.getElementById(id)}function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function money(v){return v==null?"Pending quote":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
 function localLoad(){try{return JSON.parse(localStorage.getItem("ranova_universal_cart")||"{}")}catch(e){return{}}}function localSave(){try{localStorage.setItem("ranova_universal_cart",JSON.stringify(cart))}catch(e){}}
@@ -126,8 +128,8 @@ function prefill(){if(session){el("email").value=session.user.email||"";if(profi
 el("checkoutBtn").onclick=function(){if(!quote||!quote.groups.length)return;el("checkoutCard").style.display="block";prefill();el("checkoutCard").scrollIntoView({behavior:"smooth",block:"start"});if(el("country").value)getQuote()};
 el("country").onchange=function(){getQuote()};
 el("placeOrder").onclick=async function(){
- var items=Object.keys(cart).map(id=>({seller_product_id:id,quantity:Number(cart[id]||1),quote_id:quoteMap[id]||null})),body={customer_name:el("name").value.trim(),customer_phone:el("phone").value.trim(),customer_email:el("email").value.trim(),delivery_location:el("address").value.trim(),buyer_country_code:el("country").value,buyer_country_name:el("country").selectedOptions[0]?.text||el("country").value,payment_method:el("payment").value,buyer_note:el("note").value.trim(),items:items};
- var m=el("msg");m.style.display="none";if(!body.customer_name||!body.customer_phone||!body.delivery_location||!body.buyer_country_code||!body.payment_method){m.textContent="Complete your name, phone, country, address and payment method.";m.style.display="block";return}
+ var items=Object.keys(cart).map(id=>({seller_product_id:id,quantity:Number(cart[id]||1),quote_id:quoteMap[id]||null})),body={customer_name:el("name").value.trim(),customer_phone:el("phone").value.trim(),customer_email:el("email").value.trim(),delivery_location:el("address").value.trim(),buyer_country_code:el("country").value,buyer_country_name:el("country").selectedOptions[0]?.text||el("country").value,payment_method:el("payment").value,payment_network:el("payment").value==="Mobile Money"?el("momoNetwork").value:"bank_transfer",buyer_note:el("note").value.trim(),items:items};
+ var m=el("msg");m.style.display="none";if(!body.customer_name||!body.customer_phone||!body.delivery_location||!body.buyer_country_code||!body.payment_method){m.textContent="Complete your name, phone, country, address and payment method.";m.style.display="block";return}if(body.payment_method==="Mobile Money"&&!body.payment_network){m.textContent="Choose your Mobile Money network.";m.style.display="block";return}
  var b=this;b.disabled=true;b.textContent="Placing order…";
  try{var h=await authHeaders(),r=await fetch(ORDER,{method:"POST",headers:h,body:JSON.stringify(body)}),o=await r.json().catch(function(){return{}});if(!r.ok||!o.ok)throw new Error(o.error||"Could not place order.");
   cart={};quoteMap={};saveQuoteMap();if(session){await sb.from("ranova_buyer_carts").delete().eq("user_id",session.user.id)}else localSave();
