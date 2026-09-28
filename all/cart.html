@@ -16,10 +16,10 @@
 </head><body>
 <header class="top"><div class="topin"><a class="brand" href="./">RANOVA CART</a><nav class="nav"><a href="./marketplace.html">Continue shopping</a><a href="./account.html">Buyer account</a><a href="./order-status.html">Track order</a></nav></div></header>
 <main class="wrap">
-<section class="hero"><small>SECURE RANOVA CHECKOUT</small><h1>Review your cart and complete one simple checkout.</h1><p>Products from different sellers stay organized in one cart while RANOVA handles seller-specific delivery and order processing behind the scenes.</p><div class="checkout-steps"><div class="checkout-step"><i>1</i><div><b>Review cart</b><span>Check products and quantities</span></div></div><div class="checkout-step"><i>2</i><div><b>Delivery & payment</b><span>Enter your details securely</span></div></div><div class="checkout-step"><i>3</i><div><b>Track order</b><span>Follow your order after checkout</span></div></div></div></section>
+<section class="hero"><small>SECURE CHECKOUT</small><h1>Review your cart and complete your order.</h1><p>Check your items, delivery details and payment method before placing your order.</p><div class="checkout-steps"><div class="checkout-step"><i>1</i><div><b>Review cart</b><span>Check products and quantities</span></div></div><div class="checkout-step"><i>2</i><div><b>Delivery & payment</b><span>Enter your details securely</span></div></div><div class="checkout-step"><i>3</i><div><b>Track order</b><span>Follow your order after checkout</span></div></div></div></section>
 <div class="layout">
 <section>
- <div id="authNote" class="card"><h2>Marketplace cart</h2><p>Guest carts stay on this device. Sign in to your Buyer Account to keep the cart across devices.</p></div>
+ <div id="authNote" class="card"><h2>Your cart</h2><p>Sign in to keep your cart available across devices.</p></div>
  <div id="cartHost"></div>
 </section>
 <aside class="summary">
@@ -29,8 +29,8 @@
   <div class="sumrow"><span>Total quantity</span><b id="sumQty">0</b></div>
   <div class="sumrow"><span>Sellers</span><b id="sumSellers">0</b></div>
   <div class="sumrow total"><span>Known total</span><b id="sumTotal">GHS 0.00</b></div>
-  <p>Delivery is calculated separately for each seller. You will see the confirmed amount before payment opens.</p>
-  <div class="buyer-protection"><i>🛡</i><div><strong>RANOVA Buyer Protection</strong>Your order and payment stay inside the protected RANOVA checkout flow.</div></div>
+  <p>You will see the confirmed total before payment opens.</p>
+  <div class="buyer-protection"><i>🛡</i><div><strong>RANOVA Buyer Protection</strong>Your payment stays protected inside RANOVA checkout.</div></div>
   <button id="checkoutBtn" class="primary">Continue to checkout</button>
   <a class="secondary" style="display:grid;place-items:center" href="./marketplace.html">Add more products</a>
  </div>
@@ -41,11 +41,11 @@
   <div class="field"><label>Email</label><input id="email" type="email"></div>
   <div class="field"><label>Delivery country</label><select id="country"><option value="">Choose country</option></select></div>
   <div class="field"><label>Delivery address</label><textarea id="address" rows="3"></textarea></div>
-  <div class="field"><label>Payment method</label><select id="payment"><option value="">Choose method</option><option value="Mobile Money">Mobile Money</option><option value="Bank Transfer">Bank / Transfer</option></select></div><div id="momoNetworkField" class="field" style="display:none"><label>Mobile Money network</label><select id="momoNetwork"><option value="">Choose network</option><option value="mtn">MTN Mobile Money</option><option value="vod">Telecel Cash</option><option value="atl">ATMoney / AirtelTigo Money</option></select></div><div class="msg good" style="display:block;margin-top:10px">Your payment is processed through RANOVA Buyer Protection. The company receiving destination is kept private and is never displayed to customers.</div>
+  <div class="field"><label>Payment method</label><select id="payment"><option value="">Choose method</option><option value="Mobile Money">Mobile Money</option><option value="Bank Transfer">Bank / Transfer</option></select></div><div id="momoNetworkField" class="field" style="display:none"><label>Mobile Money network</label><select id="momoNetwork"><option value="">Choose network</option><option value="mtn">MTN Mobile Money</option><option value="vod">Telecel Cash</option><option value="atl">ATMoney / AirtelTigo Money</option></select></div><div class="msg good" style="display:block;margin-top:10px">Payments are handled through RANOVA Buyer Protection.</div>
   <div class="field"><label>Note for sellers / RANOVA</label><textarea id="note" rows="2"></textarea></div>
   <button id="placeOrder" class="primary">Place marketplace order</button>
  </div>
- <div id="success" class="card checkout"><h2>Order received</h2><p>Keep this Buyer Security Code private. It protects sensitive guest-order actions.</p><div id="ref" style="font-weight:900;text-align:center;margin:10px"></div><div id="code" class="code"></div><div id="inventoryHold" class="msg good" style="display:none;margin-top:10px"></div><div class="msg good" style="display:block;margin-top:10px">Do not send money directly to a supplier. Payment opens in Order Tracking only after every supplier confirms the final product and delivery amount. RANOVA then keeps supplier payout pending until buyer-protection checks pass.</div><a id="track" class="secondary" style="display:grid;place-items:center" href="#">Track order / pay securely</a></div>
+ <div id="success" class="card checkout"><h2>Order received</h2><p>Keep your Buyer Security Code private.</p><div id="ref" style="font-weight:900;text-align:center;margin:10px"></div><div id="code" class="code"></div><div id="inventoryHold" class="msg good" style="display:none;margin-top:10px"></div><div class="msg good" style="display:block;margin-top:10px">Pay only through the secure RANOVA payment flow shown in Order Tracking.</div><a id="track" class="secondary" style="display:grid;place-items:center" href="#">Track order / pay securely</a></div>
 </aside>
 </div></main>
 <script>
@@ -139,6 +139,6 @@ el("placeOrder").onclick=async function(){
   el("track").href="./order-status.html?ref="+encodeURIComponent(o.order_ref||"");try{localStorage.setItem("ranova_buyer_code_"+o.order_ref,o.buyer_access_code||"");localStorage.setItem("ranova_buyer_phone_"+o.order_ref,el("phone").value.trim())}catch(e){}quote={groups:[],item_count:0,total_quantity:0,product_total:0};render()
  }catch(e){m.textContent=e.message||"Could not place order.";m.style.display="block"}finally{b.disabled=false;b.textContent="Place marketplace order"}
 };
-(async function(){loadQuoteMap();var gs=await sb.auth.getSession();session=gs.data.session;el("authNote").querySelector("p").innerHTML=session?'Signed in as <b>'+esc(session.user.email||"buyer")+'</b>. This cart syncs across devices.':'Guest cart: stored only on this device. <a href="./account.html" style="font-weight:900;color:var(--g)">Sign in</a> for cross-device cart sync.';await loadCountries();await loadAccountCart();prefill();await addFromUrl();await getQuote()})();
+(async function(){loadQuoteMap();var gs=await sb.auth.getSession();session=gs.data.session;el("authNote").querySelector("p").innerHTML=session?'Signed in as <b>'+esc(session.user.email||"buyer")+'</b>.':'<a href="./account.html" style="font-weight:900;color:var(--g)">Sign in</a> to keep your cart across devices.';await loadCountries();await loadAccountCart();prefill();await addFromUrl();await getQuote()})();
 })();
 </script></body></html>
