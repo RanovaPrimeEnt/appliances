@@ -322,6 +322,8 @@ function cleanInput(el){return el?String(el.value||"").trim():""}
 function decorateCard(card,p,w){
   var info=card.querySelector(".product-info");
   if(!info||!p)return;
+  if(card.__rpeEssentialReady)return;
+  card.__rpeEssentialReady=true;
 
   var id=p.rpeSku||p.rpeModel||p.id||"";
   var holder=info.querySelector(".rpe-essential-card");
@@ -330,6 +332,7 @@ function decorateCard(card,p,w){
     holder.className="rpe-essential-card";
     info.appendChild(holder);
   }
+  if(!holder){card.__rpeEssentialReady=false;return;}
 
   var unitPrice=getUnitPrice(p);
   var priceDisplay=unitPrice>0?money(unitPrice):"GHS ______";
@@ -390,10 +393,10 @@ function decorateCard(card,p,w){
   }
 
   if(qtyMinus){
-    qtyMinus.addEventListener("click",function(e){stopQtyEvent(e);refreshOrderSummary((parseInt(qtyInput.value,10)||0)-1)});
+    qtyMinus.addEventListener("click",function(e){e.preventDefault();stopQtyEvent(e);refreshOrderSummary((parseInt(qtyInput&&qtyInput.value,10)||0)-1)});
   }
   if(qtyPlus){
-    qtyPlus.addEventListener("click",function(e){stopQtyEvent(e);refreshOrderSummary((parseInt(qtyInput.value,10)||0)+1)});
+    qtyPlus.addEventListener("click",function(e){e.preventDefault();stopQtyEvent(e);refreshOrderSummary((parseInt(qtyInput&&qtyInput.value,10)||0)+1)});
   }
 
 
@@ -492,7 +495,7 @@ function apply(){
       queued=true;
       requestAnimationFrame(function(){queued=false;apply()});
     });
-    observer.observe(grid,{childList:true,subtree:true});
+    observer.observe(grid,{childList:true,subtree:false});
     grid.__rpeEssentialObserver=observer;
   }
   return true;
