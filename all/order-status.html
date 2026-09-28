@@ -34,7 +34,7 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;ba
     </div>
     <div id="inventoryReservationBox" class="inventory-reservation"></div>
     <div id="securePaymentBox" class="payment-box" style="display:none"><h3>RANOVA Buyer Protection payment</h3><p id="securePaymentText">Pay through RANOVA. Supplier payout remains pending until delivery and protection checks pass.</p><button id="securePayBtn" class="copy-btn" type="button">Pay securely with Paystack</button><div id="securePayMsg" class="payment-note"></div></div>
-    <div id="paymentBox" class="payment-box"><h3>Manual RANOVA payment instructions</h3><p>Use these details only if RANOVA has explicitly enabled this company payment destination. Never pay a supplier's personal account.</p><div class="payment-grid"><div class="payment-cell"><span>Method</span><b id="payMethod"></b></div><div class="payment-cell"><span>Provider</span><b id="payProvider"></b></div><div class="payment-cell"><span>Account name</span><b id="payName"></b></div><div class="payment-cell"><span>Account / number</span><b id="payRef"></b></div></div><div class="payment-cell" style="margin-top:8px"><span>Amount due</span><b id="payAmount"></b></div><div id="payNote" class="payment-note"></div><button id="copyPayRef" class="copy-btn" type="button">Copy account / number</button></div>
+    <div id="paymentBox" class="payment-box"><h3>Secure RANOVA payment</h3><p>Your payment destination is protected. RANOVA does not display its receiving Mobile Money number or bank settlement account to buyers.</p><div class="payment-grid"><div class="payment-cell"><span>Method</span><b id="payMethod"></b></div><div class="payment-cell"><span>Provider</span><b id="payProvider"></b></div><div class="payment-cell"><span>Network</span><b id="payNetwork"></b></div><div class="payment-cell"><span>Amount due</span><b id="payAmount"></b></div></div><div id="payNote" class="payment-note"></div></div>
     <div id="sellerOrders" class="seller-orders"></div>
     <div id="receiptBox" class="receipt">
       <div class="receipt-head"><div><span class="pill">PAYMENT RECEIPT</span><h3 id="receiptRef"></h3><p id="receiptDate" style="margin:5px 0 0;color:var(--muted);font-size:8px"></p></div><button id="printReceipt" type="button">Print receipt</button></div>
@@ -173,10 +173,9 @@ function render(out){
     box.style.display="block";
     el("payMethod").textContent=pi.payment_method||"—";
     el("payProvider").textContent=pi.provider_name||"—";
-    el("payName").textContent=pi.account_name||"—";
-    el("payRef").textContent=pi.account_reference||"—";
+    el("payNetwork").textContent=o.payment_method==="Mobile Money"?pretty(o.payment_network||"Mobile Money"):"Bank / Transfer";
     el("payAmount").textContent=money(pi.amount);
-    var buyerFee=Number(o.payment_processing_fee||0)>0&&o.payment_fee_payer==="buyer"?" Buyer processing fee included: "+money(o.payment_processing_fee)+".":"";el("payNote").textContent=(pi.instructions||"Use your order reference as the payment reference where possible.")+buyerFee;
+    var buyerFee=Number(o.payment_processing_fee||0)>0&&o.payment_fee_payer==="buyer"?" Buyer processing fee included: "+money(o.payment_processing_fee)+".":"";el("payNote").textContent=(pi.instructions||"Complete payment through the secure RANOVA button.")+buyerFee;
     el("copyPayRef").dataset.value=pi.account_reference||"";
   }else{
     box.style.display="none";
@@ -186,7 +185,7 @@ function render(out){
   var inventoryNote=(o.inventory_status==="held"&&o.inventory_reservation_expires_at)?" • stock reserved until "+new Date(o.inventory_reservation_expires_at).toLocaleString():o.inventory_status==="committed"?" • inventory committed":o.inventory_status==="expired"?" • inventory hold expired":"";
   el("summaryText").textContent=(o.item_count||0)+" product(s) • placed "+(o.created_at?new Date(o.created_at).toLocaleString():"")+inventoryNote;
   renderInventoryReservation(o);
-  el("customer").textContent=o.customer_name||"—";el("delivery").textContent=(o.delivery_location||"—")+(o.buyer_country_name?" • "+o.buyer_country_name:"");el("method").textContent=o.payment_method||"—";el("masterTotal").textContent=money(o.total_payment);
+  el("customer").textContent=o.customer_name||"—";el("delivery").textContent=(o.delivery_location||"—")+(o.buyer_country_name?" • "+o.buyer_country_name:"");el("method").textContent=(o.payment_method||"—")+(o.payment_method==="Mobile Money"&&o.payment_network?" • "+pretty(o.payment_network):"");el("masterTotal").textContent=money(o.total_payment);
   el("sellerOrders").innerHTML=children.length?children.map(function(x){
     var items=Array.isArray(x.items)?x.items:[];
     return '<article class="seller-card"><div class="seller-head"><div><b>'+esc(x.store_name)+'</b><small>'+esc(x.order_ref)+' • Updated '+esc(x.updated_at?new Date(x.updated_at).toLocaleString():"—")+'</small></div><span class="pill">'+esc(pretty(x.order_status))+'</span></div><div class="seller-body"><div class="items">'+items.map(function(i){return '<div class="item"><span>'+esc(i.product_name||"Product")+' × '+esc(i.quantity||1)+'</span><span>'+esc(i.line_total==null?"Price pending":money(i.line_total))+'</span></div>'}).join("")+'</div><div class="amounts"><div><span>Products</span><b>'+esc(money(x.subtotal))+'</b></div><div><span>Delivery</span><b>'+esc(x.delivery_fee==null?"Pending confirmation":money(x.delivery_fee))+'</b></div><div class="total"><span>Seller order total</span><b>'+esc(money(x.total))+'</b></div><div><span>Payment</span><b>'+esc(pretty(x.payment_status))+'</b></div></div>'+(x.seller_note?'<div class="note"><b>Seller note:</b> '+esc(x.seller_note)+'</div>':'')+(x.store_slug?'<a class="store-link" href="./seller-store.html?store='+encodeURIComponent(x.store_slug)+'">Open seller store</a>':'')+reviewMarkup(x)+'</div></article>'
