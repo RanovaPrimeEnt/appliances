@@ -859,6 +859,8 @@ function renderCountryRules(){
   $("ruleSellerCountry").innerHTML=countryOptions(currentSeller,true);
   $("ruleBuyerCountry").innerHTML=countryOptions(currentBuyer,true);
 
+  ["commissionSellerCountry","commissionBuyerCountry"].forEach(id=>{const current=$(id).value||"GH";$(id).innerHTML=countryOptions(current,false);$(id).value=current;});
+  $("suggestCommission").hidden=!isOwner();
   const rules=market.country_rules||[],stores=new Map((market.stores||[]).map(s=>[s.id,s]));
   $("countryRulesList").innerHTML=rules.length?rules.map(r=>{
     const store=stores.get(r.store_id);
@@ -1167,6 +1169,35 @@ function renderSellerStores(){
 
 
 
+$("suggestCommission").onclick=()=>{
+  if(!isOwner())return;
+  clearCountryRuleForm();
+  $("ruleSellerCountry").value="GH";$("ruleBuyerCountry").value="GH";
+  $("ruleCommission").value="5";$("ruleSourceName").value="RANOVA Ghana launch proposal";
+  $("ruleChangeReason").value="Proposed 5% product-only commission; owner review and seller disclosure required before activation.";
+  $("ruleActive").checked=false;$("commissionMode").value="draft";
+  $("commissionSellerCountry").value="GH";$("commissionBuyerCountry").value="GH";
+  $("commissionPreviewStatus").textContent="5% proposal loaded. It is not saved or active. Enter your verified provider fee above to estimate net earnings.";
+  $("commissionPreviewResult").replaceChildren();
+};
+$("previewCommission").onclick=async()=>{
+  const button=$("previewCommission");button.disabled=true;$("commissionPreviewResult").replaceChildren();
+  $("commissionPreviewStatus").textContent="Calculating…";
+  try{
+    const draft=$("commissionMode").value==="draft";
+    const result=await marketApi({action:"preview_commission",preview_draft:draft,
+      store_id:$("ruleStore").value,seller_country_code:$("commissionSellerCountry").value,buyer_country_code:$("commissionBuyerCountry").value,
+      currency:$("commissionCurrency").value,payment_method:$("commissionMethod").value,
+      subtotal:$("commissionSubtotal").value,delivery_fee:$("commissionDelivery").value,
+      commission_rate:$("ruleCommission").value,payment_processing_rate:$("rulePaymentRate").value,
+      payment_fixed_fee:$("ruleFixedFee").value,payment_fee_payer:$("ruleFeePayer").value});
+    const x=result.breakdown;
+    $("commissionPreviewStatus").textContent=(result.draft?"Unsaved proposal":"Active policy")+" · "+result.rule_source+" · "+x.currency;
+    const rows=[["Product subtotal",x.product_subtotal],["Delivery (no commission)",x.delivery_fee],["RANOVA commission ("+x.commission_rate+"%)",x.commission_amount],["Provider fee estimate — paid by "+pretty(x.provider_fee_payer),x.provider_fee_estimate],["Seller payout estimate",x.seller_payout_estimate],["Buyer total estimate",x.buyer_total_estimate],["RANOVA after provider fee, before other costs",x.platform_net_before_other_costs]];
+    $("commissionPreviewResult").innerHTML='<table style="width:100%;border-collapse:collapse"><tbody>'+rows.map(([label,value])=>'<tr><th style="text-align:left;padding:8px;font-weight:500">'+esc(label)+'</th><td style="text-align:right;padding:8px;white-space:nowrap">'+esc(x.currency)+' '+Number(value).toFixed(2)+'</td></tr>').join("")+'</tbody></table><p>'+esc(x.settlement_note)+'</p>';
+    if(x.commission_amount===0)$("commissionPreviewStatus").textContent+=" — RANOVA commission is currently zero.";
+  }catch(e){$("commissionPreviewStatus").textContent=e.message||"Could not calculate earnings."}finally{button.disabled=false}
+};
 $("saveCountryRule").onclick=async()=>{
   if(!isOwner())return alert("Only the Owner can change country finance rules.");
   const b=$("saveCountryRule");
@@ -1180,6 +1211,7 @@ $("saveCountryRule").onclick=async()=>{
       seller_country_code:$("ruleSellerCountry").value,
       buyer_country_code:$("ruleBuyerCountry").value,
       payment_method:$("rulePaymentMethod").value,
+      currency:"GHS",
       commission_rate:$("ruleCommission").value,
       required_payment_percent:100,
       payment_processing_rate:$("rulePaymentRate").value,
