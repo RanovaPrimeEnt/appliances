@@ -33,10 +33,10 @@
 <header class="topbar"><div class="topin">
   <a class="brand" href="./">RANOVA<small>Marketplace discovery</small></a>
   <div class="search"><input id="q" type="search" placeholder="Search products, models, categories…" autocomplete="off"><button id="searchBtn">Search</button></div>
-  <nav class="links"><a href="./">Main store</a><a href="./cart.html">Cart</a><a href="./messages.html">Messages</a><a href="./account.html">Buyer account</a><a href="./sell.html">Sell on RANOVA</a><a href="./order-status.html">Track order</a></nav>
+  <nav class="links"><a href="./">Home</a><a href="./cart.html">Cart</a><a href="./messages.html">Messages</a><a href="./account.html">Account</a><a href="./sell.html">Sell on RANOVA</a><a href="./order-status.html">Orders</a></nav>
 </div></header>
 <main class="wrap">
-<section class="hero"><small>SEARCH • COMPARE • SOURCE</small><h1>Find products without guessing who paid to rank first.</h1><p>Organic results prioritize search relevance and use smaller, capped seller-quality signals. Any paid placement is separated and clearly marked Sponsored.</p></section>
+<section class="hero"><small>SEARCH • COMPARE • SHOP</small><h1>Find the right product faster.</h1><p>Search products, compare options and shop from verified RANOVA sellers.</p></section>
 <section class="discovery-tools">
   <div><div class="discovery-label">Popular searches</div><div id="quickSearches" class="quick-searches">
     <button class="quick-chip" data-q="solar light">Solar lights</button>
@@ -62,10 +62,10 @@
   <div class="bar"><h2 id="resultHeading">Marketplace products</h2><select id="sort"><option value="relevance">Best match</option><option value="price_low">Price: low to high</option><option value="price_high">Price: high to low</option><option value="rating">Seller rating</option><option value="newest">Newest</option></select></div>
   <div id="status" class="status">Loading marketplace discovery…</div>
   <section id="sponsoredSection" class="sponsored"><div class="section-head"><h3>Sponsored products</h3><span>Paid placement — separate from organic ranking</span></div><div id="sponsoredGrid" class="grid"></div></section>
-  <div class="section-head"><h3>Organic results</h3><span id="organicNote">Ranked by relevance and capped trust signals</span></div>
+  <div class="section-head"><h3>Products</h3><span id="organicNote">Best matches for your search</span></div>
   <div id="organicGrid" class="grid"></div>
   <button id="more" class="more">Load more</button>
-  <div id="ranking" class="ranking">RANOVA ranking transparency: organic search is not sold. Search relevance is the main factor; fulfilment, service quality, verified ratings and capped recent engagement contribute smaller signals. New sellers receive limited exploration so they have a fair chance to be discovered.</div>
+  <div id="ranking" class="ranking">Sponsored products are labelled separately from regular search results.</div>
 </section>
 </div>
 </main>
@@ -143,7 +143,7 @@ async function search(reset){
   else if(organic.length)el("organicGrid").insertAdjacentHTML("beforeend",organic.map(function(p){return card(p,false)}).join(""));
   wire(el("organicGrid"),lastOrganic);
   var q=el("q").value.trim();el("resultHeading").textContent=q?'Results for “'+q+'”':"Marketplace products";
-  el("status").textContent=lastOrganic.length+" organic result"+(lastOrganic.length===1?"":"s")+" shown"+(ads.length?" • "+ads.length+" clearly labeled sponsored placement"+(ads.length===1?"":"s"):"")+".";
+  el("status").textContent=lastOrganic.length+" result"+(lastOrganic.length===1?"":"s")+" shown"+(ads.length?" • "+ads.length+" sponsored":"")+".";
   el("more").style.display=organic.length===limit?"block":"none";el("more").disabled=false;
   var u=new URL(location.href);q?u.searchParams.set("q",q):u.searchParams.delete("q");history.replaceState(null,"",u);
  }catch(e){el("status").textContent=e.message||"Search unavailable.";if(reset)el("organicGrid").innerHTML='<div class="empty">Marketplace search is temporarily unavailable.</div>'}
