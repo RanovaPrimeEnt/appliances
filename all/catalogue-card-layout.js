@@ -2,6 +2,7 @@
 "use strict";
 var frame=document.getElementById("site");
 var ORDER_ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-place-order";
+var PAYMENT_ENDPOINT="https://igaerssbzobutlwvjfwt.supabase.co/functions/v1/ranova-payment-gateway";
 var SUPABASE_REST="https://igaerssbzobutlwvjfwt.supabase.co/rest/v1/";
 var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
 if(!frame)return;
@@ -251,7 +252,9 @@ function openCheckout(d,w,data){
       '<div class="rpe-checkout-field"><label>Mobile Money number</label><input class="rpe-momo-phone" type="tel" inputmode="tel" placeholder="e.g. 024 000 0000"><small style="color:#6e7d77;font-size:9px">The authorization prompt will be sent to this number when payment is opened.</small></div>'+
     '</div>'+
     '<div class="rpe-payment-details rpe-bank-details" style="display:none">'+
-      '<div class="rpe-checkout-status" style="margin:0;background:#f4f8f6;padding:10px;border-radius:10px">For Ghana bank payments, RANOVA will generate a secure temporary bank account after the final order amount is confirmed. You will transfer from your bank app or bank channel. RANOVA does not collect your bank PIN or direct-debit your personal bank account.</div>'+
+      '<div class="rpe-checkout-field"><label>Your bank</label><select class="rpe-bank-select"><option value="">Loading Ghana banks…</option></select></div>'+
+      '<div class="rpe-checkout-field"><label>Your bank account number</label><input class="rpe-bank-account" type="text" inputmode="numeric" placeholder="Account number"></div>'+
+      '<div class="rpe-checkout-status rpe-bank-name-status" style="margin:8px 0 0;background:#f4f8f6;padding:10px;border-radius:10px">Enter the bank account number. RANOVA will verify the registered account name. This is for identity confirmation only; RANOVA will not collect your bank PIN.</div>'+
     '</div>'+
     '<div class="rpe-checkout-field"><label>Your name</label><input class="rpe-customer-name" type="text" autocomplete="name" placeholder="Full name"></div>'+
     '<div class="rpe-checkout-field"><label>Phone number</label><input class="rpe-customer-phone" type="tel" autocomplete="tel" placeholder="e.g. 024 000 0000"></div>'+
@@ -269,9 +272,53 @@ function openCheckout(d,w,data){
       var momo=body.querySelector(".rpe-momo-details"),bank=body.querySelector(".rpe-bank-details");
       if(momo)momo.style.display=selectedPayment==="Mobile Money"?"block":"none";
       if(bank)bank.style.display=selectedPayment==="Bank Transfer"?"block":"none";
+      if(selectedPayment==="Bank Transfer")loadGhanaBanks();
       if(submit)submit.disabled=!selectedPayment;
     };
   });
+
+
+  var bankSelect=body.querySelector(".rpe-bank-select");
+  var bankAccount=body.querySelector(".rpe-bank-account");
+  var nameInput=body.querySelector(".rpe-customer-name");
+  var bankNameStatus=body.querySelector(".rpe-bank-name-status");
+  var banksLoaded=false,resolveTimer=null;
+
+  async function paymentHelper(action,extra){
+    var r=await fetch(PAYMENT_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1"},body:JSON.stringify(Object.assign({action:action},extra||{}))});
+    var o=await r.json().catch(function(){return{}});
+    if(!r.ok||!o.ok)throw new Error(o.error||"Payment verification request failed.");
+    return o;
+  }
+  async function loadGhanaBanks(){
+    if(banksLoaded||!bankSelect)return;
+    bankSelect.innerHTML='<option value="">Loading Ghana banks…</option>';
+    try{
+      var out=await paymentHelper("list_ghana_banks");
+      bankSelect.innerHTML='<option value="">Choose bank</option>'+out.banks.map(function(b){return '<option value="'+esc(b.code)+'">'+esc(b.name)+'</option>'}).join("");
+      banksLoaded=true;
+    }catch(e){
+      bankSelect.innerHTML='<option value="">Could not load banks</option>';
+      if(bankNameStatus)bankNameStatus.textContent=e.message||"Could not load banks.";
+    }
+  }
+  async function resolveBankName(){
+    if(!bankSelect||!bankAccount||!nameInput)return;
+    var bankCode=bankSelect.value,account=cleanInput(bankAccount);
+    if(!bankCode||account.length<6)return;
+    if(bankNameStatus)bankNameStatus.textContent="Checking account name…";
+    try{
+      var out=await paymentHelper("resolve_bank_account",{bank_code:bankCode,account_number:account});
+      nameInput.value=out.account_name||"";
+      nameInput.readOnly=!!out.account_name;
+      if(bankNameStatus)bankNameStatus.textContent=out.account_name?"Verified account name: "+out.account_name:"Account name could not be verified.";
+    }catch(e){
+      nameInput.readOnly=false;
+      if(bankNameStatus)bankNameStatus.textContent=e.message||"Could not verify the account name.";
+    }
+  }
+  if(bankSelect)bankSelect.addEventListener("change",function(){if(resolveTimer)clearTimeout(resolveTimer);resolveTimer=setTimeout(resolveBankName,250)});
+  if(bankAccount)bankAccount.addEventListener("input",function(){nameInput.readOnly=false;if(resolveTimer)clearTimeout(resolveTimer);resolveTimer=setTimeout(resolveBankName,650)});
 
   if(submit)submit.onclick=async function(){
     var name=cleanInput(body.querySelector(".rpe-customer-name"));
