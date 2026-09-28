@@ -479,6 +479,7 @@ el("productList").onclick=async function(e){
     try{
       var result=await api({action:"update_product_price",id:p.id,price:raw});
       p.price=raw===""?null:Number(raw);
+      try{var priceUpdate={type:"product_price",product_id:p.id,price:p.price,ts:Date.now()};localStorage.setItem("ranova_price_update_v1",JSON.stringify(priceUpdate));if("BroadcastChannel" in window){var priceChannel=new BroadcastChannel("ranova-marketplace-updates");priceChannel.postMessage(priceUpdate);priceChannel.close()}}catch(e){}
       b.classList.remove("saving");b.classList.add("saved","has-price");b.textContent="✓ Saved";b.disabled=false;
       msg(el("productMsg"),raw===""?"Price changed to enquiry pricing.":"Price saved successfully and is now live.",true);
       setTimeout(function(){
