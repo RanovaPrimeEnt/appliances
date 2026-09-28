@@ -107,7 +107,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 
       <div id="panel-products" class="panel">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products & Price Manager</h2><p>This list shows products that still need a price. Once a price is saved successfully, the product leaves this list and the customer-facing price updates automatically.</p></div><button id="newProduct" class="btn green" type="button">+ Add product manually</button></div>
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products & Price Manager</h2><p>Use this list to set or change product prices at any time. Saved products remain here so you can update their prices whenever needed.</p></div><button id="newProduct" class="btn green" type="button">+ Add product manually</button></div>
           <div id="productMsg" class="msg" style="margin-top:12px"></div>
 
           <div class="catalogue-import">
@@ -442,14 +442,14 @@ el("uploadBanner").onclick=async function(){var b=this,old=b.textContent;b.disab
 
 function statusChip(status){return '<span class="chip '+esc(status)+'">'+esc(pretty(status))+'</span>'}
 function renderProducts(){
-  var list=el("productList"),all=state.products||[],ps=all.filter(function(p){return p.price==null||p.price===""});
-  if(!ps.length){list.innerHTML=all.length?'<div class="empty">All product prices have been saved. New products without a price will appear here.</div>':'<div class="empty">No seller products yet. Use “Add product” to create your first listing.</div>';return}
+  var list=el("productList"),all=state.products||[],ps=all;
+  if(!ps.length){list.innerHTML='<div class="empty">No seller products yet. Use “Add product” to create your first listing.</div>';return}
   list.innerHTML=ps.map(function(p){
     var img=p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="">':'<img alt="">';
     var submit=(p.product_status==="draft"||p.product_status==="paused"||p.product_status==="rejected")?'<button data-action="submit" data-id="'+p.id+'">Submit for review</button>':'';
     var pause=p.product_status==="active"?'<button data-action="pause" data-id="'+p.id+'">Pause</button>':'';
     var priceValue=p.price==null?"":String(p.price);
-    var priceControl='<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:7px"><span style="font-size:12px;font-weight:900">GHS</span><input data-price-input="'+esc(p.id)+'" type="number" min="0" step="0.01" value="'+esc(priceValue)+'" placeholder="Enquiry" style="width:105px;border:1px solid #d8e3df;border-radius:9px;padding:7px 8px"><button class="price-save-btn'+(p.price==null?"":" has-price")+'" data-action="price" data-id="'+esc(p.id)+'">Save price</button></div>';
+    var priceControl='<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:7px"><span style="font-size:12px;font-weight:900">GHS</span><input data-price-input="'+esc(p.id)+'" type="number" min="0" step="0.01" value="'+esc(priceValue)+'" placeholder="Enquiry" style="width:105px;border:1px solid #d8e3df;border-radius:9px;padding:7px 8px"><button class="price-save-btn'+(p.price==null?"":" has-price")+'" data-action="price" data-id="'+esc(p.id)+'">'+(p.price==null?"Save price":"Update price")+'</button></div>';
     return '<div class="product-row">'+img+'<div><b>'+esc(p.name)+'</b><small>'+esc(p.category)+' · '+esc(money(p.price))+' · MOQ '+esc(p.moq)+' · '+esc(pretty(p.stock_status))+'</small>'+statusChip(p.product_status)+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':'')+'</div><div class="row-actions">'+priceControl+'<button data-action="edit" data-id="'+p.id+'">Edit</button>'+submit+pause+'<button data-action="archive" data-id="'+p.id+'">Archive</button></div></div>'
   }).join("")||'<div class="empty">No current products.</div>';
 }
@@ -480,13 +480,13 @@ el("productList").onclick=async function(e){
       var result=await api({action:"update_product_price",id:p.id,price:raw});
       p.price=raw===""?null:Number(raw);
       b.classList.remove("saving");b.classList.add("saved","has-price");b.textContent="✓ Saved";b.disabled=false;
-      msg(el("productMsg"),raw===""?"Price changed to enquiry pricing.":"Price saved successfully. The product has left the pricing list and the new price is now live.",true);
-      if(raw!==""){
-        var row=b.closest(".product-row");
-        setTimeout(function(){if(row&&row.parentNode)row.remove();if(el("productList")&&!el("productList").querySelector(".product-row"))el("productList").innerHTML='<div class="empty">All product prices have been saved. New products without a price will appear here.</div>'},650);
-      }else{
-        setTimeout(function(){if(document.body.contains(b)){b.classList.remove("saved");b.textContent="Save price"}},1600);
-      }
+      msg(el("productMsg"),raw===""?"Price changed to enquiry pricing.":"Price saved successfully and is now live.",true);
+      setTimeout(function(){
+        if(document.body.contains(b)){
+          b.classList.remove("saved");
+          b.textContent=raw===""?"Save price":"Update price";
+        }
+      },1400);
       setTimeout(function(){refresh().catch(function(){});},900);
     }
     catch(err){b.classList.remove("saving","saved");b.textContent="Save price";b.disabled=false;msg(el("productMsg"),err.message||"Could not save the price. Please try again.")}
