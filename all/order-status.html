@@ -176,10 +176,8 @@ function render(out){
     el("payNetwork").textContent=o.payment_method==="Mobile Money"?pretty(o.payment_network||"Mobile Money"):"Bank / Transfer";
     el("payAmount").textContent=money(pi.amount);
     var buyerFee=Number(o.payment_processing_fee||0)>0&&o.payment_fee_payer==="buyer"?" Buyer processing fee included: "+money(o.payment_processing_fee)+".":"";el("payNote").textContent=(pi.instructions||"Complete payment through the secure RANOVA button.")+buyerFee;
-    el("copyPayRef").dataset.value=pi.account_reference||"";
   }else{
     box.style.display="none";
-    el("copyPayRef").dataset.value="";
   }
   el("refText").textContent=o.order_ref||"";
   var inventoryNote=(o.inventory_status==="held"&&o.inventory_reservation_expires_at)?" • stock reserved until "+new Date(o.inventory_reservation_expires_at).toLocaleString():o.inventory_status==="committed"?" • inventory committed":o.inventory_status==="expired"?" • inventory hold expired":"";
