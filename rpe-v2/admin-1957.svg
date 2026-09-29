@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="724" height="724" viewBox="0 0 360 360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#073C51"/><stop offset="1" stop-color="#031D2B"/></linearGradient>
+    <filter id="s"><feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#00131e" flood-opacity=".65"/></filter>
+  </defs>
+  <rect x="5" y="5" width="350" height="350" rx="72" fill="url(#bg)"/>
+  <ellipse cx="180" cy="138" rx="130" ry="55" fill="none" stroke="#00D9FF" stroke-opacity=".55" stroke-width="5"/>
+  <g transform="translate(110 50)">
+      <circle cx="95" cy="95" r="68" fill="#EEF7FB" stroke="#C9DCE6" stroke-width="16"/>
+      <g fill="#EEF7FB">
+        <rect x="80" y="0" width="30" height="35" rx="6"/><rect x="80" y="155" width="30" height="35" rx="6"/>
+        <rect x="0" y="80" width="35" height="30" rx="6"/><rect x="155" y="80" width="35" height="30" rx="6"/>
+      </g>
+      <rect x="61" y="102" width="18" height="38" rx="3" fill="#24C7F3"/>
+      <rect x="88" y="85" width="18" height="55" rx="3" fill="#6EE8FF"/>
+      <rect x="115" y="67" width="18" height="73" rx="3" fill="#DFF8FF"/>
+      <path d="M59 84c26-12 45-23 69-54" fill="none" stroke="#FF9200" stroke-width="10" stroke-linecap="round"/>
+      <path d="M125 31l20-6-6 20" fill="#FF9200"/>
+    </g>
+  <text x="180" y="255" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="72" font-weight="900" fill="#F6FBFF" stroke="#9BDDF0" stroke-width="2" filter="url(#s)">1957</text>
+  <rect x="82" y="267" width="196" height="43" rx="21.5" fill="#FF7A00"/>
+  <text x="180" y="296" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="900" fill="#FFF">RANOVA</text>
+  <text x="180" y="333" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="19" font-weight="800" letter-spacing="5" fill="#F4FAFD">ADMIN</text>
+</svg>
