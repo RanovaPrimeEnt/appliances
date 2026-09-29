@@ -1,3 +1,4 @@
+import { sellerDocumentCompliance } from "../_shared/seller-documents.ts";
 import { sellerAccessApproved } from "../_shared/seller-approval.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -60,7 +61,7 @@ async function resolveSeller(userId:string){
   if(!accounts.length)return null;
   const ref=accounts[0].application_ref;
   const apps=await serviceGet("ranova_seller_applications",{
-    select:"application_ref,business_name,contact_person,phone,email,business_location,supplier_type,categories,status,verification_status,store_setup_status,verification_notes,reviewed_at",
+    select:"application_ref,business_name,contact_person,phone,email,business_location,supplier_type,categories,status,verification_status,store_setup_status,verification_notes,reviewed_at,created_at",
     application_ref:"eq."+ref,
     limit:"1"
   });
@@ -68,7 +69,9 @@ async function resolveSeller(userId:string){
   const application=apps[0];
   const stores=await serviceGet("ranova_seller_stores",{select:"store_status,moderated_by,moderated_at",seller_id:"eq."+userId,application_ref:"eq."+ref,limit:"1"});
   const approved=sellerAccessApproved(application,stores[0]||null);
-  return {application_ref:ref,application,approved};
+  const verificationFiles=await serviceGet("ranova_seller_verification_files",{select:"id,document_type,original_filename,created_at",seller_id:"eq."+userId,application_ref:"eq."+ref});
+  const document_compliance=sellerDocumentCompliance(application,verificationFiles);
+  return {application_ref:ref,application,approved,document_compliance,store_accessible:approved&&!document_compliance.blocked};
 }
 async function patchApplication(ref:string,body:any){
   await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_applications?application_ref=eq."+encodeURIComponent(ref),{
@@ -274,7 +277,7 @@ async function loadDashboard(userId:string,seller:any){
   counts.awaiting_delivery_confirmation=deliveries.filter((d:any)=>d.delivery_status==="delivered_pending_confirmation").length;
   counts.published_reviews=reviews.filter((r:any)=>r.moderation_status==="published").length;
   counts.pending_reviews=reviews.filter((r:any)=>r.moderation_status==="pending").length;
-  return {ok:true,linked:true,approved:seller.approved,application:seller.application,store,products,orders,counts,finance_profile,payouts,finance_settings,notifications,refunds,disputes,delivery_zones,deliveries,delivery_events,delivery_proofs,reviews,trust_metrics,performance,enforcement,enforcement_events,appeals,inventory_reservations,inventory_events};
+  return {ok:true,linked:true,approved:seller.approved,store_accessible:seller.store_accessible,document_compliance:seller.document_compliance,application:seller.application,store,products,orders,counts,finance_profile,payouts,finance_settings,notifications,refunds,disputes,delivery_zones,deliveries,delivery_events,delivery_proofs,reviews,trust_metrics,performance,enforcement,enforcement_events,appeals,inventory_reservations,inventory_events};
 }
 function response(h:Record<string,string>,status:number,payload:any){
   return new Response(JSON.stringify(payload),{status,headers:h});
@@ -315,6 +318,7 @@ Deno.serve(async(req:Request)=>{
 
   try{
     if(action==="dashboard"){
+      if(seller.document_compliance.blocked)return response(h,200,{ok:true,linked:true,approved:seller.approved,store_accessible:false,document_compliance:seller.document_compliance,application:seller.application});
       return response(h,200,await loadDashboard(user.id,seller));
     }
     if(action==="mark_notifications_read"){
@@ -326,6 +330,9 @@ Deno.serve(async(req:Request)=>{
       return response(h,200,{ok:true});
     }
 
+    if(seller.document_compliance.blocked){
+      return response(h,403,{ok:false,error:"Your document submission deadline has passed. Upload the outstanding documents in Seller Center or email ranovaprimeenterprise360@gmail.com for help.",code:"seller_documents_overdue",document_compliance:seller.document_compliance});
+    }
     if(!seller.approved){
       return response(h,403,{ok:false,error:"Store management unlocks after RANOVA approves your seller verification."});
     }

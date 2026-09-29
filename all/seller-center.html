@@ -37,6 +37,7 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
 .seller-review-alert{grid-column:1/-1;padding:17px 19px;border:1px solid #f0c993;border-left:5px solid #d88625;border-radius:15px;background:#fff8eb;color:#573c1d;line-height:1.55}.seller-review-alert[hidden]{display:none}.seller-review-alert strong{display:block;font-size:18px}.seller-review-alert p{margin:7px 0 12px;white-space:pre-wrap;overflow-wrap:anywhere}.seller-review-alert a{display:inline-flex;min-height:40px;align-items:center;padding:0 14px;border-radius:999px;background:#116a52;color:#fff;text-decoration:none;font-size:14px;font-weight:800}
 .seller-review-alert [hidden]{display:none!important}
 .locked-box{font-size:16px;line-height:1.65}.locked-box b{font-size:18px}.step b{font-size:18px}.step small{font-size:14px;line-height:1.5}.small,.file span,.status-pill{font-size:14px}.card h2{font-size:22px}.field label{font-size:16px}.nav a,.nav button{font-size:14px}
+.next-action[hidden]{display:none!important}.document-deadline{border:2px solid #e4b55a;background:#fff8e8;color:#523b17;font-size:16px;line-height:1.6}.document-deadline strong{font-size:19px}.document-deadline p{margin:8px 0}.document-deadline a{color:#095e45;text-decoration:underline;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -167,7 +168,7 @@ var SUPABASE_KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr";
 var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 var LINK_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-link";
 var WORKSPACE_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-workspace";
-var mode="login",currentSession=null,currentApplication=null,currentFiles=[];
+var mode="login",currentSession=null,currentApplication=null,currentFiles=[],documentCompliance=null,complianceReceivedAt=0;
 var reviewBusy=false,uploadCount=0,validationAttempted=false;
 var requiredDocuments=[
   {type:"business_registration",input:"businessDoc",card:"businessUploadCard",name:"business proof"},
@@ -334,9 +335,24 @@ function renderProgress(files){
   if(submit)submit.disabled=reviewBusy;
   if(validationAttempted)showMissingDocuments(false);
   if(submit)submit.textContent=app.dashboard_approved?"Submit document updates":"Submit for RANOVA Review";
-  if(help&&app.dashboard_approved){help.textContent="Your dashboard is unlocked. You can upload outstanding documents here without losing approval.";if(next)next.innerHTML='Approved: <a href="./seller-dashboard.html">Open Seller Dashboard →</a>. Please complete any outstanding documents when available.';return}
+  if(help&&app.dashboard_approved){help.textContent=app.store_accessible?"Your dashboard is unlocked. Upload any outstanding documents below.":"Upload the outstanding documents below to restore store access.";renderDocumentReminder();return}
+  renderDocumentReminder();
   if(help)help.textContent=ready?"Everything required is present. Submit when you are ready for RANOVA Admin to review it.":"Complete the missing required steps above first.";
 }
+function renderDocumentReminder(){
+  var next=document.getElementById("nextAction"),c=documentCompliance;if(!next||!c)return;
+  var missing=c.missing_types||[];
+  next.hidden=!missing.length&&!!currentApplication?.dashboard_approved;
+  next.classList.toggle("document-deadline",!!missing.length);
+  if(!missing.length)return;
+  var names={business_registration:"Business proof",identity_document:"Identity ID",fulfilment_evidence:"Orders & delivery proof"};
+  var now=Date.parse(c.server_now)+(Date.now()-complianceReceivedAt),deadline=Date.parse(c.deadline_at),grace=Date.parse(c.grace_starts_at);
+  var days=Math.max(0,Math.ceil((deadline-now)/86400000));
+  if(now>=deadline&&currentApplication?.dashboard_approved){document.getElementById("dashboardLink").style.display="none";document.getElementById("storeSetupBox").innerHTML='<b>Store access is paused: documents overdue.</b><br>Upload your outstanding documents below or email <a href="mailto:ranovaprimeenterprise360@gmail.com">ranovaprimeenterprise360@gmail.com</a> for help.'}
+  var message=now>=deadline?"Your document deadline has passed. Store access is paused until you upload the outstanding documents.":now>=grace?"Your extra 2 months have started. You have "+days+" day"+(days===1?"":"s")+" remaining to upload the required documents before store access is paused.":"Please upload your outstanding documents. You have 8 months from registration, followed by an extra 2 months, to complete them.";
+  next.innerHTML='<strong>Outstanding documents</strong><p>'+message+'</p><p><b>Still needed:</b> '+missing.map(function(type){return names[type]||type}).join(', ')+'</p><p><b>Final deadline:</b> '+new Date(deadline).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</p><a href="#verificationChecklist">Upload documents →</a><p>Need help? <a href="mailto:ranovaprimeenterprise360@gmail.com">ranovaprimeenterprise360@gmail.com</a></p>';
+}
+setInterval(function(){if(document.visibilityState==="visible")renderDocumentReminder()},60000);
 function renderFiles(files){
   var host=document.getElementById("files");
   if(!files||!files.length){host.innerHTML='<div class="locked-box">No documents uploaded yet.</div>';renderProgress([]);return}
@@ -357,11 +373,13 @@ async function loadWorkspace(){
     }
     linkPanel.style.display="none";workspace.style.display="block";
     currentApplication=out.application;
+    documentCompliance=out.document_compliance;complianceReceivedAt=Date.now();
     document.getElementById("businessName").textContent=currentApplication.business_name||"Seller";
     document.getElementById("applicationMeta").textContent=(currentApplication.application_ref||"")+" · "+(currentApplication.supplier_type||"Seller")+" · "+(currentApplication.business_location||"");
     var approvalStatus=String(currentApplication.verification_status||currentApplication.status||"in_progress").toLowerCase();
     var approved=out.approved===true;
     currentApplication.dashboard_approved=approved;
+    currentApplication.store_accessible=out.store_accessible===true;
     var pill=document.getElementById("statusPill");
     pill.textContent=pretty(approvalStatus);
     pill.classList.toggle("approved",approved);
@@ -376,12 +394,15 @@ async function loadWorkspace(){
     setStage("sFulfilment",currentApplication.fulfilment_status);
     setStage("sStore",approved&&String(currentApplication.store_setup_status||"").toLowerCase()==="locked"?"in_progress":currentApplication.store_setup_status);
     var dashboardLink=document.getElementById("dashboardLink"),storeBox=document.getElementById("storeSetupBox");
-    if(approved){
+    if(approved&&currentApplication.store_accessible){
       dashboardLink.style.display="inline-flex";
       storeBox.innerHTML='<b>Your seller account is approved.</b><br>Store Builder is ready. Create your storefront, upload your logo/banner, add products, set MOQ/pricing/stock and prepare listings for RANOVA review.<div style="margin-top:12px"><a href="./seller-dashboard.html" style="display:inline-flex;min-height:40px;align-items:center;padding:0 14px;border-radius:999px;background:#116a52;color:#fff;text-decoration:none;font-size:16px;font-weight:900">Open Seller Dashboard →</a></div>';
       storeBox.style.borderStyle="solid";
       storeBox.style.borderColor="#b8ddcd";
       storeBox.style.background="#f0faf5";
+    }else if(approved&&documentCompliance?.blocked){
+      dashboardLink.style.display="none";
+      storeBox.innerHTML='<b>Store access is paused: documents overdue.</b><br>Upload the outstanding documents below to restore access, or <a href="mailto:ranovaprimeenterprise360@gmail.com">email RANOVA for help</a>.';
     }else{
       dashboardLink.style.display="none";
       storeBox.innerHTML='<b>Available after RANOVA approval.</b><br>Nothing is required here yet. Finish Steps 1–4 and submit them for review. After approval, this section becomes your Store Builder.';
