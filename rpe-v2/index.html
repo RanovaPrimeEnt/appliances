@@ -132,6 +132,12 @@ body{background:var(--r-page);color:var(--r-text)}
 .sd-related-copy b{display:block;font-size:12px;line-height:1.35}
 .sd-related-copy small{display:block;margin-top:4px;color:var(--muted);font-size:9px}
 .sd-related-copy strong{display:block;margin-top:7px;color:#e85b2a;font-size:13px}
+
+/* stage-20-essential-actions */
+.sd-actions{display:grid;grid-template-columns:auto auto 1fr;gap:7px;margin-top:13px}
+.sd-actions button{min-height:40px;border:0;border-radius:10px;padding:0 12px;font-size:10px;font-weight:900}
+.sd-save,.sd-store{background:#f1f3f2;color:var(--ink)}
+.sd-add{background:var(--green);color:#fff}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 </head>
@@ -254,6 +260,11 @@ body{background:var(--r-page);color:var(--r-text)}
       <div id="simpleDiscoveryPrice" class="sd-price"></div>
       <h2 id="simpleDiscoveryName"></h2>
       <p id="simpleDiscoveryCategory"></p>
+      <div id="simpleDiscoveryActions" class="sd-actions">
+        <button id="simpleDiscoverySave" class="sd-save" type="button">♡ Save</button>
+        <button id="simpleDiscoveryStore" class="sd-store hide" type="button">Store</button>
+        <button id="simpleDiscoveryAdd" class="sd-add" type="button">Add to cart</button>
+      </div>
     </div>
   </div>
   <div id="simpleDiscoveryRelated" class="sd-related"></div>
@@ -309,6 +320,6 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20260929-stage20a"></script>
+<script src="./app.js?v=20260929-stage20b"></script>
 <script src="./customer-pwa.js?v=20260929-03"></script>
 </body></html>
