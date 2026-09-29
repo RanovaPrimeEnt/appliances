@@ -81,6 +81,20 @@ body{background:var(--r-page);color:var(--r-text)}
 .msg-thread{min-height:0;overflow:auto;padding:15px 13px 18px;background:#f6f6f6;display:flex;flex-direction:column;gap:8px}.msg-date{align-self:center;color:#8e8e8e;font-size:10px;margin:7px 0}.msg-bubble{max-width:82%;padding:9px 11px;border-radius:14px;background:#fff;font-size:13px;line-height:1.48;box-shadow:0 1px 2px rgba(0,0,0,.035);overflow-wrap:anywhere}.msg-bubble.mine{align-self:flex-end;background:#dff5df}.msg-bubble.other{align-self:flex-start}.msg-bubble.system{align-self:center;max-width:92%;background:#fff8e8;color:#74653b;font-size:10px}.msg-bubble time{display:block;text-align:right;margin-top:4px;color:#999;font-size:8px}.msg-bubble img{display:block;max-width:min(100%,280px);max-height:300px;object-fit:cover;border-radius:9px;margin-bottom:5px}.msg-bubble audio{display:block;width:min(260px,100%)}.msg-bubble a{color:#176b61;font-weight:800;text-decoration:none}
 .msg-compose-shell{position:relative;background:#f5f5f5;border-top:1px solid #e8e8e8;padding:5px .19cm max(6px,env(safe-area-inset-bottom))}.msg-compose-shell [hidden]{display:none!important}.msg-compose{display:flex;align-items:center;gap:5px}.msg-input-shell{flex:1;min-width:0;height:39px;display:flex;align-items:center;gap:1px;padding:0 4px;background:#fff;border:1px solid #dedede;border-radius:20px;overflow:hidden}.msg-input-shell textarea{order:2;flex:1;min-width:45px;width:auto;height:33px;min-height:33px;max-height:33px;border:0;outline:0;resize:none;overflow:hidden;background:transparent;padding:5px 3px 4px;font:500 16px Georgia,"Times New Roman",serif;line-height:24px;color:#333}.msg-input-shell textarea::placeholder{color:#777}.msg-tool{width:28px;min-width:28px;height:28px;min-height:28px;border:0;border-radius:50%;background:transparent;color:#66706e;padding:0;display:grid;place-items:center}.msg-tool svg{width:20px;height:20px;stroke:currentColor}.msg-emoji-btn{order:1}.msg-file-btn{order:3}.msg-camera-btn{order:4}.msg-round{flex:0 0 41px;width:41px;height:41px;border:0;border-radius:50%;padding:0;display:grid;place-items:center;background:#101011;color:#fff}.msg-round svg{width:22px;height:22px;stroke:#fff}.msg-send{background:#176b61;font-size:18px}.msg-attach-preview{margin-bottom:6px;padding:7px 10px;background:#fff;border:1px solid #ddd;border-radius:13px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px}.msg-attach-preview button{width:29px;height:29px;border:0;border-radius:50%;background:#fde8ee;color:#d70a4f}.msg-recording{margin-bottom:6px;padding:8px 9px;background:#fff;border:1px solid #ddd;border-radius:18px;display:flex;align-items:center;gap:8px}.msg-recording button{border:0}.msg-rec-delete{width:43px;height:43px;border-radius:50%;background:#fde9ef;color:#e4004f;display:grid;place-items:center}.msg-rec-delete svg{width:21px;height:21px;stroke:currentColor}.msg-rec-pause{flex:1;height:43px;border-radius:24px;background:#f2f2f2}.msg-rec-send{width:45px;height:45px;border-radius:50%;background:#176b61;color:#fff}.msg-emoji-panel{position:absolute;left:.19cm;right:.19cm;bottom:100%;z-index:25;background:#fff;border:1px solid #ddd;border-radius:20px 20px 0 0;box-shadow:0 -10px 25px #0002;padding:10px;max-height:60vh;overflow:auto}.msg-emoji-tabs{display:flex;gap:5px;overflow-x:auto}.msg-emoji-tabs button{border:0;border-radius:99px;background:#f1f2f2;padding:6px 9px;font-size:10px}.msg-emoji-tabs button.active{background:#e3f1ea;color:#176b61}.msg-emoji-panel input{width:100%;margin-top:8px;padding:8px 10px;border:1px solid #ddd;border-radius:11px}.msg-emoji-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:3px;margin-top:8px}.msg-emoji-grid button{border:0;background:transparent;font-size:24px;padding:5px;border-radius:9px}.msg-list-empty{padding:50px 20px;text-align:center;color:#888;font-size:12px}
 @media(min-width:760px){.messages-panel{border-radius:18px!important;min-height:720px}.msg-list-view,.msg-chat-view{min-height:720px}}
+
+/* RANOVA marketplace home inspired layout 2026-09-29 */
+.market-home{margin:0!important;background:#f5f5f5!important;border-radius:0!important;box-shadow:none!important;min-height:calc(100dvh - 72px);padding-bottom:18px}
+.market-top{position:sticky;top:0;z-index:25;background:#fff;border-bottom:1px solid #ececec}
+.market-tabs{display:grid;grid-template-columns:repeat(3,1fr);align-items:end;padding:12px 14px 6px;gap:8px}
+.market-tab{border:0;background:transparent;font-weight:900;font-size:15px;color:#2c2c2c;padding:6px 0;position:relative}.market-tab.active{font-size:20px}.market-tab.active:after{content:"";position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:44px;height:4px;border-radius:4px;background:#ff6f2d}
+.market-searchbar{margin:4px 10px 10px;height:46px;border:2px solid #222;border-radius:24px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;overflow:hidden;background:#fff}
+.market-searchbar svg{width:21px;height:21px;margin-left:13px;color:#777}.market-searchbar input{border:0;outline:0;padding:0 9px;font-size:14px;min-width:0}.market-searchbar button{align-self:stretch;border:0;border-radius:23px;background:#ff5b2e;color:#fff;padding:0 20px;font-weight:900;font-size:14px}
+.market-feature-strip{display:flex;gap:15px;overflow-x:auto;padding:9px 12px 13px;background:#fff;scrollbar-width:none}.market-feature-strip::-webkit-scrollbar{display:none}.market-feature{flex:0 0 62px;text-align:center}.market-feature .ico{width:46px;height:46px;margin:auto;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#ffef9f,#ffb944);font-size:23px;box-shadow:0 3px 10px #0000000d}.market-feature:nth-child(2) .ico{background:linear-gradient(145deg,#ff99c9,#ff2f75)}.market-feature:nth-child(3) .ico{background:linear-gradient(145deg,#ffe97c,#ffbd00)}.market-feature:nth-child(4) .ico{background:linear-gradient(145deg,#a8f6d9,#17c886)}.market-feature:nth-child(5) .ico{background:linear-gradient(145deg,#d4c8ff,#755af5)}.market-feature b{display:block;font-size:9px;margin-top:6px;line-height:1.1}
+.market-promo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;background:#f2f2f2}.market-promo-card{background:#fff;border-radius:16px;padding:9px;min-height:145px;overflow:hidden}.market-promo-card h3{font-size:13px;margin:0 0 6px}.market-promo-card .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}.market-promo-card img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px;background:#f3f3f3}.market-promo-card .price{font-weight:900;color:#e84d2e;font-size:11px;margin-top:5px}
+.market-section-title{padding:15px 13px 8px;font-size:16px;font-weight:950}
+.factory-feed{display:grid;gap:9px;padding:0 9px}.factory-card{background:#fff;border-radius:14px;padding:9px;display:grid;grid-template-columns:132px minmax(0,1fr);gap:11px;box-shadow:0 1px 0 #00000008}.factory-media{width:132px;height:132px;border-radius:12px;overflow:hidden;background:#f1f1f1;display:grid;grid-template-columns:1fr 1fr;gap:2px}.factory-media img{width:100%;height:100%;object-fit:cover}.factory-media.single{grid-template-columns:1fr}.factory-copy{min-width:0}.factory-copy h3{margin:3px 0 5px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.factory-meta{font-size:9px;color:#8b8b8b;margin-bottom:7px}.factory-badges{display:flex;gap:4px;flex-wrap:wrap}.factory-badge{font-size:8px;padding:4px 6px;border-radius:5px;background:#fff2d8;color:#90600c;font-weight:800}.factory-badge.dark{background:#29203f;color:#fff}.factory-desc{font-size:9px;color:#888;margin-top:7px;line-height:1.4}.factory-actions{display:flex;gap:5px;margin-top:8px}.factory-actions button{border:0;border-radius:8px;padding:7px 8px;font-size:9px;font-weight:900}.factory-actions .ask{background:#ff5b2e;color:#fff}.factory-actions .visit{background:#f1f2f2;color:#222}
+.market-empty{padding:30px 16px;text-align:center;color:#888}
+@media(max-width:430px){.factory-card{grid-template-columns:118px minmax(0,1fr)}.factory-media{width:118px;height:118px}.market-promo-card{min-height:135px}}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 </head>
@@ -136,6 +150,22 @@ body{background:var(--r-page);color:var(--r-text)}
   </div>
 </section>
 
+<section id="marketplaceHomePanel" class="panel market-home">
+  <div class="market-top">
+    <div class="market-tabs"><button class="market-tab" type="button">Recommended</button><button class="market-tab active" type="button">Find Factories</button><button class="market-tab" type="button">Industrial Goods</button></div>
+    <div class="market-searchbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="marketHomeSearch" placeholder="Search products, stores or factories"><button id="marketHomeSearchBtn" type="button">Search</button></div>
+    <div class="market-feature-strip">
+      <div class="market-feature"><span class="ico">🏭</span><b>Top Factories</b></div>
+      <div class="market-feature"><span class="ico">✨</span><b>Custom Orders</b></div>
+      <div class="market-feature"><span class="ico">🏢</span><b>Official Stores</b></div>
+      <div class="market-feature"><span class="ico">🆕</span><b>New Products</b></div>
+      <div class="market-feature"><span class="ico">💬</span><b>Bulk Quotes</b></div>
+    </div>
+  </div>
+  <div id="marketPromoGrid" class="market-promo-grid"></div>
+  <div class="market-section-title">Factories & Stores for You</div>
+  <div id="marketFactoryFeed" class="factory-feed"></div>
+</section>
 <section id="homePanel" class="panel active">
   <div class="card">
     <div class="section-head"><h2>My Orders</h2><button data-panel="ordersPanel">All ›</button></div>
@@ -196,7 +226,7 @@ body{background:var(--r-page);color:var(--r-text)}
 </main>
 
 <nav class="bottom" aria-label="Main navigation">
-<a href="../all/" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></a>
+<button data-panel="marketplaceHomePanel" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></button>
 <button id="bottomMessages" data-panel="messagesPanel" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span><span id="bottomMessageCount" class="bubble hide">0</span></button>
 <button id="bottomCart" aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart</span><span id="bottomCartCount" class="bubble hide">0</span></button>
 <button class="active" data-panel="homePanel" aria-label="My account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></button>
@@ -211,6 +241,6 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20260929-01"></script>
+<script src="./app.js?v=20260929-02"></script>
 <script src="./customer-pwa.js?v=20260927-01"></script>
 </body></html>
