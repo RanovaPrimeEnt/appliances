@@ -456,20 +456,49 @@ function payItemImage(item){return item?.image_url||""}
 function renderToPayOrders(filter=""){
   const host=$("toPayOrders");if(!host)return;
   const q=String(filter||"").trim().toLowerCase();
-  const rows=toPayOrders.filter(o=>{const s=payStore(o.store_id),items=Array.isArray(o.items)?o.items:[];return !q||[o.order_ref,s?.store_name,...items.flatMap(i=>[i.product_name,i.sku])].some(x=>String(x||"").toLowerCase().includes(q))});
-  if(!rows.length){host.innerHTML='<div class="pay-empty"><b>No unpaid orders</b>Your orders that still need payment will appear here.</div>';return}
-  host.innerHTML=rows.map(o=>{
-    const store=payStore(o.store_id)||{},items=Array.isArray(o.items)?o.items:[],item=items[0]||{},currency=o.currency||"GHS";
-    const subtotal=o.subtotal==null?items.reduce((a,i)=>a+Number(i.line_total||0),0):Number(o.subtotal||0),delivery=Number(o.delivery_fee||0),total=o.total==null?(subtotal||0)+delivery:Number(o.total||0);
-    const recs=toPayRecommendations.filter(p=>p.store_id===o.store_id&&!items.some(i=>i.seller_product_id===p.id)).slice(0,4);
+  const rows=toPayOrders.filter(o=>{
+    const s=payStore(o.store_id),items=Array.isArray(o.items)?o.items:[];
+    return !q||[o.order_ref,s?.store_name,...items.flatMap(i=>[i.product_name,i.sku])].some(x=>String(x||"").toLowerCase().includes(q));
+  });
+  if(!rows.length){
+    host.innerHTML='<div class="pay-empty"><b>No unpaid orders</b>Your orders that still need payment will appear here.</div>';
+    return;
+  }
+
+  const pendingHtml=rows.map(o=>{
+    const store=payStore(o.store_id)||{},items=Array.isArray(o.items)?o.items:[],currency=o.currency||"GHS";
+    const subtotal=o.subtotal==null?items.reduce((a,i)=>a+Number(i.line_total||0),0):Number(o.subtotal||0);
+    const delivery=Number(o.delivery_fee||0);
+    const total=o.total==null?(subtotal||0)+delivery:Number(o.total||0);
     return '<article class="pay-order" data-pay-order="'+esc(o.id)+'">'+
       '<div class="pay-store"><span class="pay-store-avatar">'+(store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="">':'🏪')+'</span><b>'+esc(store.store_name||"RANOVA Store")+'</b><span class="pay-status">To Pay</span></div>'+
-      (items.length?items.map(i=>'<div class="pay-item">'+(payItemImage(i)?'<img class="pay-item-img" src="'+esc(payItemImage(i))+'" alt="'+esc(i.product_name||"Product")+'">':'<div class="pay-item-img" style="display:grid;place-items:center;color:#999">Product</div>')+'<div class="pay-item-copy"><div class="pay-item-title">'+esc(i.product_name||"Product")+'</div><div class="pay-item-meta">'+esc(i.sku||i.unit_label||"")+'</div><div class="pay-price">'+esc(i.unit_price==null?"Price pending":money(i.unit_price,currency))+'</div><span class="pay-qty">×'+esc(i.quantity||1)+'</span><div class="pay-benefit">RANOVA protected marketplace order</div></div></div>').join(""):'<div class="pay-item"><div class="pay-item-img"></div><div class="pay-item-copy"><div class="pay-item-title">Marketplace order</div></div></div>')+
+      (items.length?items.map(i=>'<div class="pay-item">'+
+        (payItemImage(i)?'<img class="pay-item-img" src="'+esc(payItemImage(i))+'" alt="'+esc(i.product_name||"Product")+'">':'<div class="pay-item-img" style="display:grid;place-items:center;color:#999">Product</div>')+
+        '<div class="pay-item-copy"><div class="pay-item-title">'+esc(i.product_name||"Product")+'</div><div class="pay-item-meta">'+esc(i.sku||i.unit_label||"")+'</div><div class="pay-price">'+esc(i.unit_price==null?"Price pending":money(i.unit_price,currency))+'</div><span class="pay-qty">×'+esc(i.quantity||1)+'</span><div class="pay-benefit">RANOVA protected marketplace order</div></div></div>').join("")
+        :'<div class="pay-item"><div class="pay-item-img"></div><div class="pay-item-copy"><div class="pay-item-title">Marketplace order</div></div></div>')+
       '<div class="pay-total-row"><span>Delivery '+esc(money(delivery,currency))+'</span><span>Amount due</span><strong>'+esc(total?money(total,currency):"Awaiting quote")+'</strong></div>'+
       '<div class="pay-actions"><button type="button" data-pay-close="'+esc(o.id)+'">Close</button><button type="button" data-pay-address="'+esc(o.id)+'">Modify Address</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'">Pay Now</button></div>'+
-      (recs.length?'<div class="pay-rec-head">More from '+esc(store.store_name||"this store")+'</div><div class="pay-recommend">'+recs.map(p=>'<button class="pay-product" type="button" data-pay-product="'+esc(p.id)+'">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'">':'<div style="aspect-ratio:1;background:#eee"></div>')+'<div class="pay-product-copy"><b>'+esc(p.name)+'</b><div class="price">'+esc(p.price==null?"Ask":money(p.price,p.currency||currency))+'</div><small>'+esc(p.moq?("MOQ "+p.moq+" "+(p.unit_label||"")):(p.category||"Store product"))+'</small></div></button>').join("")+'</div>':"")+
     '</article>';
   }).join("");
+
+  const storeIds=[...new Set(rows.map(o=>o.store_id).filter(Boolean))];
+  const orderedProductIds=new Set(rows.flatMap(o=>(Array.isArray(o.items)?o.items:[]).map(i=>i.seller_product_id).filter(Boolean)));
+  const recommendationSections=storeIds.map(storeId=>{
+    const store=payStore(storeId)||{};
+    const recs=toPayRecommendations
+      .filter(p=>p.store_id===storeId&&!orderedProductIds.has(p.id))
+      .slice(0,8);
+    if(!recs.length)return "";
+    return '<section class="pay-other-store">'+
+      '<div class="pay-rec-head">More from '+esc(store.store_name||"this store")+'</div>'+
+      '<div class="pay-recommend">'+
+      recs.map(p=>'<button class="pay-product" type="button" data-pay-product="'+esc(p.id)+'">'+
+        (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'">':'<div style="aspect-ratio:1;background:#eee"></div>')+
+        '<div class="pay-product-copy"><b>'+esc(p.name)+'</b><div class="price">'+esc(p.price==null?"Ask":money(p.price,p.currency||"GHS"))+'</div><small>'+esc(p.moq?("MOQ "+p.moq+" "+(p.unit_label||"")):(p.category||"Store product"))+'</small></div></button>').join("")+
+      '</div></section>';
+  }).join("");
+
+  host.innerHTML=pendingHtml+recommendationSections;
 }
 if($("toPayBack"))$("toPayBack").onclick=()=>showPanel("homePanel");
 if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>renderToPayOrders(e.target.value));
