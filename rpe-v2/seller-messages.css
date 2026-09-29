@@ -452,3 +452,27 @@
     padding-right:0.19cm;
   }
 }
+
+/* Seller decisions and receipt feedback */
+.seller-decision-card .card-head h2{font-size:18px;margin-bottom:5px}
+.seller-decision-card .card-head small{color:#687a75;line-height:1.5}
+.seller-decision-label{display:block;font-weight:650;margin-bottom:8px;color:#284c43}
+.seller-decision-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.seller-decision-option{--decision-color:#326fa1;--decision-bg:#eef6ff;display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #dbe5e1;border-radius:14px;padding:16px;background:#fff;color:#263c35;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.seller-decision-option.needs_information{--decision-color:#946012;--decision-bg:#fff6df}
+.seller-decision-option.approved{--decision-color:#16734e;--decision-bg:#e7f7ee}
+.seller-decision-option.rejected{--decision-color:#b24449;--decision-bg:#fff0f0}
+.seller-decision-option:hover,.seller-decision-option.is-current{background:var(--decision-bg);border-color:var(--decision-color)}
+.seller-decision-option:hover{transform:translateY(-1px)}
+.seller-decision-option:focus-visible{outline:3px solid var(--decision-color);outline-offset:3px}
+.seller-decision-option:disabled{opacity:.55;cursor:wait;transform:none}
+.seller-decision-icon{display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:12px;background:var(--decision-bg);color:var(--decision-color);font-size:24px;font-weight:700}
+.seller-decision-option b{display:block;font-size:14px}
+.seller-decision-option small{display:block;font-size:12px;line-height:1.45;color:#667971;margin-top:4px}
+.seller-decision-feedback{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:16px;padding:12px;border-radius:10px;background:#f3f7f5;color:#39584d;font-size:12px;line-height:1.5}
+.seller-decision-refresh{border:1px solid #ccdbd4;background:#fff;border-radius:8px;padding:7px 10px;color:#245d48;white-space:nowrap;cursor:pointer}
+.seller-message-receipt{display:block;text-align:right;font-size:10px;color:#647a71;margin-top:3px}
+.seller-message-receipt.seen{color:#1976bd}
+.seller-send-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:10000;background:#174d38;color:#fff;border-radius:12px;padding:14px 20px;box-shadow:0 8px 30px #123c3433;max-width:calc(100vw - 32px);font-size:14px}
+.seller-send-toast[hidden]{display:none}
+@media(max-width:560px){.seller-decision-actions{grid-template-columns:1fr}.seller-decision-option{padding:13px}.seller-decision-feedback{align-items:flex-start;flex-direction:column}}

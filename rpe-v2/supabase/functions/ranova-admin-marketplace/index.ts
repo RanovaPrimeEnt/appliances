@@ -140,8 +140,11 @@ async function dashboard(role:string){
     out.report_evidence=reportEvidence||[];
     out.store_cases=storeCases||[];
     out.admin_seller_threads=adminThreads||[];
+    const {data:sellerNotices}=await admin.from("ranova_marketplace_notifications").select("id,notification_type,metadata,read_at,created_at")
+      .eq("recipient_type","seller").in("notification_type",["admin_message","seller_more_information","seller_review_under_review","seller_review_needs_information","seller_review_approved","seller_review_rejected","seller_review_suspended"]).order("created_at",{ascending:false}).limit(3000);
+    out.seller_notice_receipts=sellerNotices||[];
     out.admin_seller_messages=await Promise.all((adminMessages||[]).map(async(m:any)=>({
-      ...m,media_url:m.storage_path?(await admin.storage.from("admin-seller-media").createSignedUrl(m.storage_path,3600)).data?.signedUrl||null:null
+      ...m,seller_seen_at:(sellerNotices||[]).find((n:any)=>String(n.metadata?.message_id||"")===String(m.id))?.read_at||null,media_url:m.storage_path?(await admin.storage.from("admin-seller-media").createSignedUrl(m.storage_path,3600)).data?.signedUrl||null:null
     })));
     if(!(out.safety_reports||[]).length){
       const [{data:sr},{data:rf}]=await Promise.all([
@@ -428,15 +431,15 @@ Deno.serve(async(req:Request)=>{
         if(created.error)throw created.error;
         thread=created.data;
       }
-      const {error}=await admin.from("ranova_admin_seller_messages").insert({thread_id:thread.id,sender_role:"admin",sender_user_id:actor.user.id,body,...media});
+      const {data:saved,error}=await admin.from("ranova_admin_seller_messages").insert({thread_id:thread.id,sender_role:"admin",sender_user_id:actor.user.id,body,...media}).select("id").single();
       if(error)throw error;
       await admin.from("ranova_admin_seller_threads").update({updated_at:new Date().toISOString(),status:"open"}).eq("id",thread.id);
       const sellerEmail=await emailForUser(store.seller_id);
       await queueNotice("seller",store.seller_id,sellerEmail,null,null,"admin_message",
-        "Official message from RANOVA Admin",(body||"Sent an attachment").slice(0,500),{store_id:store.id,store_name:store.store_name},
+        "Official message from RANOVA Admin",(body||"Sent an attachment").slice(0,500),{store_id:store.id,store_name:store.store_name,thread_id:thread.id,message_id:String(saved.id)},
         "/appliances/all/seller-admin-messages.html","admin-message:"+thread.id+":"+Date.now());
       await log(actor.user.id,"admin_message_sent","seller_store",store.id,{store_name:store.store_name});
-      return response(h,200,{ok:true,thread_id:thread.id});
+      return response(h,200,{ok:true,thread_id:thread.id,message_id:String(saved.id)});
     }
 
     if(action==="review_document"){
@@ -505,7 +508,7 @@ Deno.serve(async(req:Request)=>{
       if(["rejected","suspended"].includes(decision))storeSetup="locked";
       const sellerNote=decision==="approved"
         ? (note||"Seller verification approved. Store Builder is now available.")
-        : (note||app.verification_notes||null);
+        : (note||(decision==="under_review"?"Your application is being reviewed by RANOVA.":app.verification_notes||null));
       const {error}=await admin.from("ranova_seller_applications").update({
         status,
         verification_status:decision,
@@ -526,17 +529,19 @@ Deno.serve(async(req:Request)=>{
           updated_at:now
         }).eq("application_ref",ref);
       }
-      if(decision==="needs_information"){
+      let notificationQueued=false;
+      {
         const {data:account}=await admin.from("ranova_seller_accounts").select("user_id").eq("application_ref",ref).maybeSingle();
         try{
           await queueNotice("seller",account?.user_id||null,clean(app.email,250)||null,null,null,
-            "seller_more_information","RANOVA needs more information",note,
-            {application_ref:ref,decision},"/appliances/all/seller-center.html?ref="+encodeURIComponent(ref),
-            "seller-more-info:"+ref+":"+now);
+            "seller_review_"+decision,({under_review:"RANOVA is reviewing your application",needs_information:"RANOVA needs more information",approved:"Your seller account is approved",rejected:"Seller application decision",suspended:"Seller account update"} as any)[decision],sellerNote||decision.replace(/_/g," "),
+            {application_ref:ref,decision,reviewed_at:now},"/appliances/all/seller-center.html?ref="+encodeURIComponent(ref),
+            "seller-review:"+ref+":"+now);
+          notificationQueued=true;
         }catch(noticeError){console.error("Seller review notice failed",noticeError)}
       }
       await log(actor.user.id,"seller_reviewed","seller_application",ref,{decision,note});
-      return response(h,200,{ok:true});
+      return response(h,200,{ok:true,notification_queued:notificationQueued});
     }
 
     if(action==="review_product"){

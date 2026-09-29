@@ -41,7 +41,7 @@ Deno.serve(async(req:Request)=>{
   const ref=accounts[0].application_ref;
 
   const appQ=new URL(SUPABASE_URL+"/rest/v1/ranova_seller_applications");
-  appQ.searchParams.set("select","application_ref,business_name,contact_person,business_location,supplier_type,categories,status,verification_status,business_info_status,business_documents_status,identity_status,fulfilment_status,store_setup_status,verification_notes");
+  appQ.searchParams.set("select","application_ref,business_name,contact_person,business_location,supplier_type,categories,status,verification_status,business_info_status,business_documents_status,identity_status,fulfilment_status,store_setup_status,verification_notes,reviewed_at");
   appQ.searchParams.set("application_ref","eq."+ref);
   appQ.searchParams.set("limit","1");
   const appRes=await fetch(appQ.toString(),{headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY}});
@@ -133,4 +133,3 @@ Deno.serve(async(req:Request)=>{
 
   return new Response(JSON.stringify({ok:true,linked:true,application:apps[0],files}),{status:200,headers:h});
 });
-
