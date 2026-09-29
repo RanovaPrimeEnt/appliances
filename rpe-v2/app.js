@@ -390,10 +390,22 @@ function appendDiscoveryBatch(){
 }
 function renderDiscoveryFeed(seedKey){
   const host=$("productDiscoveryFeed");if(!host)return;
-  rebuildDiscoveryCache();const seed=discoveryMap.get(seedKey)||discoveryCache[0];if(!seed){host.innerHTML='<div class="empty">Products are loading.</div>';return}
-  const related=discoveryRelated(seed),seen=new Set();discoveryProducts=[seed,...related,...discoveryCache].filter(x=>x&&!seen.has(x.key)&&seen.add(x.key));
-  discoveryRenderCount=0;host.innerHTML="";appendDiscoveryBatch();
-  if(!discoveryScrollBound){discoveryScrollBound=true;window.addEventListener("scroll",()=>{if(activePanelId!=="productDiscoveryPanel")return;if(innerHeight+scrollY>document.documentElement.scrollHeight-900)appendDiscoveryBatch()},{passive:true})}
+  clearDiscoveryTimers();
+  rebuildDiscoveryCache();
+  const seed=discoveryMap.get(seedKey)||discoveryCache[0];
+  if(!seed){host.innerHTML='<div class="empty">Product is loading.</div>';return}
+  discoveryProducts=[seed];
+  const image=seed.images?.[0]||"";
+  host.innerHTML='<article class="pd-card" data-discovery-card="'+esc(seed.key)+'">'+
+    '<div class="pd-media" style="cursor:default">'+
+      (image?'<img class="active" src="'+esc(image)+'" alt="'+esc(seed.name)+'" loading="eager">':'<div style="display:grid;place-items:center;height:100%;color:#999">Product</div>')+
+    '</div>'+
+    '<div class="pd-info">'+
+      '<div class="pd-price">'+esc(seed.price==null?"Ask for quote":money(seed.price,seed.currency))+'</div>'+
+      '<div class="pd-name">'+esc(seed.name)+'</div>'+
+      '<div class="pd-meta">'+esc(seed.category||"Product")+'</div>'+
+    '</div>'+
+  '</article>';
 }
 function openDiscoveryFromProduct(p,source="legacy",origin=activePanelId){
   rebuildDiscoveryCache();const n=normalizeDiscoveryProduct(p,source);if(!n)return;discoveryOriginPanel=origin||"homePanel";showPanel("productDiscoveryPanel");renderDiscoveryFeed(n.key);window.scrollTo(0,0);
@@ -833,7 +845,7 @@ updateMsgAction();
 if($("productDiscoveryBack"))$("productDiscoveryBack").onclick=()=>{clearDiscoveryTimers();showPanel(discoveryOriginPanel||"homePanel")};
 if($("productDetailBack"))$("productDetailBack").onclick=()=>{clearInterval(detailGalleryTimer);showPanel(detailOriginPanel||"productDiscoveryPanel")};
 document.addEventListener("click",async e=>{
-  const d=e.target.closest("[data-discovery-detail]");if(d){const p=discoveryFind(d.dataset.discoveryDetail);if(p)openProductDetailInternal(p,"productDiscoveryPanel");return}
+  const d=e.target.closest("[data-discovery-detail]");if(d){return}
   const rel=e.target.closest("[data-detail-related]");if(rel){const p=discoveryFind(rel.dataset.detailRelated);if(p)openProductDetailInternal(p,"productDetailPanel");return}
   const save=e.target.closest("[data-discovery-save],[data-detail-save]");if(save){const key=save.dataset.discoverySave||save.dataset.detailSave,p=discoveryFind(key);if(p?.source==="legacy"){await toggleFavorite(p.id);if(currentDetailProduct?.key===p.key)renderProductDetail(p);else renderDiscoveryFeed(discoveryProducts[0]?.key)}return}
   const message=e.target.closest("[data-discovery-message],[data-detail-message]");if(message){const key=message.dataset.discoveryMessage||message.dataset.detailMessage,p=discoveryFind(key),sp=p?.source==="seller"?p.raw:p?.sellerProduct;if(!sp){showToast("Seller messaging is not available for this item yet.");return}try{const out=await messageApi({action:"start",product_id:sp.id,subject:sp.name});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open seller chat")}return}
