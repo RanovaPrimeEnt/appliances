@@ -115,7 +115,7 @@ body{background:var(--r-page);color:var(--r-text)}
 .pd-back,.pdetail-back{width:38px;height:38px;border:0;background:transparent;font-size:30px;display:grid;place-items:center}
 .pd-top b,.pdetail-top b{font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pd-feed{display:grid;gap:10px;padding:10px 0 18px}
-.pd-card{background:#fff;border-top:1px solid #eee;border-bottom:1px solid #eee;overflow:hidden}
+.pd-card{background:#fff;border-top:1px solid #eee;border-bottom:1px solid #eee;overflow:hidden;content-visibility:auto;contain-intrinsic-size:620px}
 .pd-media{position:relative;width:100%;aspect-ratio:1/1;background:#f2f2f2;overflow:hidden}
 .pd-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f7f7f7;opacity:0;transition:opacity .28s ease}
 .pd-media img.active{opacity:1}
@@ -306,6 +306,6 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20260929-08"></script>
+<script src="./app.js?v=20260929-09"></script>
 <script src="./customer-pwa.js?v=20260929-03"></script>
 </body></html>
