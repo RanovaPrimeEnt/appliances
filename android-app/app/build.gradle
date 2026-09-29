@@ -1,0 +1,23 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.ranova.marketplace'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.ranova.marketplace"
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName "1.0.0"
+    }
+}
+
+tasks.register("copyBuiltApk", Copy) {
+    dependsOn("assembleDebug")
+    from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
+    into(layout.buildDirectory.dir("outputs/apk/debug"))
+    rename { "RANOVA.apk" }
+}
