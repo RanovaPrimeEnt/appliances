@@ -92,6 +92,22 @@ body{background:var(--r-page);color:var(--r-text)}
 .pay-item{display:grid;grid-template-columns:112px 1fr;gap:10px}.pay-item-img{width:112px;height:112px;border-radius:6px;object-fit:cover;background:#f1f1f1}.pay-item-copy{min-width:0;position:relative;padding-right:4px}.pay-item-title{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:15px;line-height:1.2;margin:2px 0 4px}.pay-item-meta{font-size:10px;color:#888;line-height:1.5}.pay-price{font-family:Georgia,serif;font-size:15px;font-weight:800;margin-top:3px}.pay-qty{position:absolute;right:2px;top:33px;color:#999;font-size:10px}.pay-benefit{color:#37a75d;font-size:10px;margin-top:7px}.pay-total-row{display:flex;justify-content:flex-end;gap:8px;align-items:baseline;margin-top:10px;font-size:10px;color:#929292}.pay-total-row strong{font-size:18px;color:#f05c24;font-family:Georgia,serif}.pay-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:11px}.pay-actions button{border:0;border-radius:7px;padding:8px 13px;font-size:10px;background:#f2f2f2;color:#333}.pay-actions .pay-now{background:#fff2e8;color:#f05c24;font-weight:900}
 .pay-rec-head{padding:12px 11px 8px;background:#fff;font-family:Georgia,serif;font-weight:800;font-size:14px;border-top:1px solid #eee}.pay-recommend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 8px 12px;background:#f4f4f4}.pay-product{border:0;background:#fff;border-radius:9px;overflow:hidden;text-align:left;padding:0;box-shadow:0 1px 0 #00000008}.pay-product img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f1f1f1}.pay-product-copy{padding:8px}.pay-product b{display:block;font-size:11px;line-height:1.3;min-height:29px}.pay-product .price{font-size:17px;color:#ff5a22;font-family:Georgia,serif;font-weight:800;margin-top:5px}.pay-product small{display:block;color:#999;font-size:8px;margin-top:3px}.pay-empty{padding:45px 20px;text-align:center;color:#888;background:#fff}.pay-empty b{display:block;color:#333;margin-bottom:4px}
 @media(min-width:760px){.to-pay-panel{min-height:760px;border-radius:18px!important}.pay-item{grid-template-columns:132px 1fr}.pay-item-img{width:132px;height:132px}}
+
+/* instant internal marketplace panel */
+#marketPromoGrid .mh-promo{background:#fff;border-radius:14px;padding:8px;overflow:hidden}
+#marketPromoGrid .mh-promo h3{margin:0 0 6px;font-size:12px}
+#marketPromoGrid .mh-mini{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+#marketPromoGrid .mh-mini button{border:0;background:transparent;padding:0;text-align:left}
+#marketPromoGrid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:9px;background:#eee}
+#marketFactoryFeed .mh-store{background:#fff;border-radius:14px;padding:9px;display:grid;grid-template-columns:116px minmax(0,1fr);gap:10px}
+#marketFactoryFeed .mh-store-media{width:116px;height:116px;border-radius:10px;overflow:hidden;background:#eee}
+#marketFactoryFeed .mh-store-media img{width:100%;height:100%;object-fit:cover}
+#marketFactoryFeed .mh-store h3{margin:2px 0 5px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#marketFactoryFeed .mh-meta{font-size:9px;color:#888}
+#marketFactoryFeed .mh-actions{display:flex;gap:5px;margin-top:8px}
+#marketFactoryFeed .mh-actions button{border:0;border-radius:8px;padding:7px 8px;font-size:9px;font-weight:900}
+#marketFactoryFeed .mh-ask{background:#ff5b2e;color:#fff}
+#marketFactoryFeed .mh-view{background:#f1f1f1}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 </head>
@@ -103,7 +119,7 @@ body{background:var(--r-page);color:var(--r-text)}
     <div data-install-body style="margin-top:12px;font-size:13px;line-height:1.75;color:#555"></div>
   </div>
 </div>
-<div id="setup" class="loading">Preparing My RPE…</div>
+<div id="setup" class="loading hide" aria-hidden="true"></div>
 
 <section id="auth" class="auth hide">
   <div class="brand"><span class="mark">RPE</span><span><b>Ranova Prime Enterprise</b><small>My RPE</small></span></div>
@@ -147,7 +163,31 @@ body{background:var(--r-page);color:var(--r-text)}
   </div>
 </section>
 
-<section id="homePanel" class="panel active">
+<section id="marketplaceHomePanel" class="panel">
+  <div style="background:#fff;border-radius:0;min-height:calc(100vh - 80px)">
+    <div style="position:sticky;top:0;z-index:12;background:#fff;border-bottom:1px solid #eee">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px 7px">
+        <button type="button" style="border:0;background:transparent;font-weight:800">Recommended</button>
+        <button type="button" style="border:0;background:transparent;font-weight:950;font-size:18px;border-bottom:4px solid #ff672f;padding-bottom:7px">Find Factories</button>
+        <button type="button" style="border:0;background:transparent;font-weight:800">Industrial Goods</button>
+      </div>
+      <div style="margin:4px 10px 10px;height:44px;border:2px solid #222;border-radius:23px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;overflow:hidden">
+        <span style="padding-left:12px">⌕</span><input id="marketHomeSearch" placeholder="Search products, stores or factories" style="border:0;outline:0;min-width:0;padding:0 9px">
+        <button id="marketHomeSearchBtn" type="button" style="height:100%;border:0;background:#ff5b2e;color:#fff;padding:0 18px;font-weight:900">Search</button>
+      </div>
+      <div style="display:flex;gap:14px;overflow:auto;padding:8px 12px 12px">
+        <span style="min-width:62px;text-align:center">🏭<small style="display:block">Top Factories</small></span>
+        <span style="min-width:62px;text-align:center">✨<small style="display:block">Custom Orders</small></span>
+        <span style="min-width:62px;text-align:center">🏢<small style="display:block">Official Stores</small></span>
+        <span style="min-width:62px;text-align:center">🆕<small style="display:block">New Products</small></span>
+        <span style="min-width:62px;text-align:center">💬<small style="display:block">Bulk Quotes</small></span>
+      </div>
+    </div>
+    <div id="marketPromoGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px"></div>
+    <div style="padding:8px 12px;font-weight:950">Factories & Stores for You</div>
+    <div id="marketFactoryFeed" style="display:grid;gap:9px;padding:0 9px 14px"></div>
+  </div>
+</section><section id="homePanel" class="panel active">
   <div class="card">
     <div class="section-head"><h2>My Orders</h2><button data-panel="ordersPanel">All ›</button></div>
     <div class="order-statuses">
@@ -214,7 +254,7 @@ body{background:var(--r-page);color:var(--r-text)}
 </main>
 
 <nav class="bottom" aria-label="Main navigation">
-<a href="./market-home.html" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></a>
+<button data-panel="marketplaceHomePanel" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></button>
 <button id="bottomMessages" data-panel="messagesPanel" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span><span id="bottomMessageCount" class="bubble hide">0</span></button>
 <button id="bottomCart" aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart</span><span id="bottomCartCount" class="bubble hide">0</span></button>
 <button class="active" data-panel="homePanel" aria-label="My account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></button>
@@ -229,6 +269,6 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20260929-04"></script>
+<script src="./app.js?v=20260929-05"></script>
 <script src="./customer-pwa.js?v=20260927-01"></script>
 </body></html>
