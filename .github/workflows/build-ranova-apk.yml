@@ -29,6 +29,20 @@ jobs:
         with:
           gradle-version: "8.7"
 
+      - name: Create 1957 launcher icon
+        run: |
+          python -m pip install --quiet cairosvg
+          mkdir -p android-app/app/src/main/res/drawable-nodpi
+          python - <<'PY'
+          import cairosvg
+          cairosvg.svg2png(
+              url="rpe-v2/customer-1957.svg",
+              write_to="android-app/app/src/main/res/drawable-nodpi/ranova_customer.png",
+              output_width=512,
+              output_height=512
+          )
+          PY
+
       - name: Build signed debug APK
         run: |
           gradle -p android-app :app:assembleDebug --no-daemon
