@@ -4,6 +4,7 @@ let deferredPrompt=null;
 const installBtn=document.getElementById("installCustomerApp");
 const updateNote=document.getElementById("customerUpdateNote");
 const globalBtn=document.getElementById("globalInstallRanova");
+const homeBtn=document.getElementById("installCustomerHome");
 const installHelp=document.getElementById("installHelp");
 const closeHelp=document.getElementById("closeInstallHelp");
 
@@ -19,7 +20,7 @@ function isiOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)}
 function isAndroid(){return /android/i.test(navigator.userAgent)}
 function syncButtons(){
   const installed=standalone();
-  [installBtn,globalBtn].forEach(btn=>{
+  [installBtn,globalBtn,homeBtn].forEach(btn=>{
     if(!btn)return;
     btn.style.display=installed?"none":"inline-flex";
     btn.classList.remove("hide");
