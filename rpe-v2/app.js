@@ -27,6 +27,7 @@ let returns = [];
 let toPayOrders = [];
 let toPayStores = [];
 let toPayRecommendations = [];
+let marketStores=[],marketSellerProducts=[],marketLoadedAt=0;
 let orderFilter = null;
 let signUpMode = false;
 let incomingCartHandled = false;
@@ -63,7 +64,7 @@ function saveFastCache(){
   if(!user)return;
   try{sessionStorage.setItem(fastCacheKey(),JSON.stringify({
     t:Date.now(),profile,products,favorites:[...favorites],recentIds,cartId,cartItems,orders,notifications,addresses,returns,
-    toPayOrders,toPayStores,toPayRecommendations,messageConversations
+    toPayOrders,toPayStores,toPayRecommendations,messageConversations,marketStores,marketSellerProducts,marketLoadedAt
   }))}catch{}
 }
 function restoreFastCache(){
@@ -74,7 +75,7 @@ function restoreFastCache(){
     profile=d.profile||null;products=d.products||[];favorites=new Set(d.favorites||[]);recentIds=d.recentIds||[];
     cartId=d.cartId||null;cartItems=d.cartItems||[];orders=d.orders||[];notifications=d.notifications||[];
     addresses=d.addresses||[];returns=d.returns||[];toPayOrders=d.toPayOrders||[];toPayStores=d.toPayStores||[];
-    toPayRecommendations=d.toPayRecommendations||[];messageConversations=d.messageConversations||[];
+    toPayRecommendations=d.toPayRecommendations||[];messageConversations=d.messageConversations||[];marketStores=d.marketStores||[];marketSellerProducts=d.marketSellerProducts||[];marketLoadedAt=d.marketLoadedAt||0;
     renderAll();
     if(messageConversations.length){renderMessageList();setBadge("bottomMessageCount",messageConversations.filter(x=>x.unread).length)}
     return true;
@@ -87,11 +88,12 @@ function showPanel(id){
   hidePreparationScreen();
   document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
   $(id)?.classList.add("active");
-  document.querySelectorAll(".bottom button[data-panel]").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));
+  document.querySelectorAll(".bottom [data-panel]").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));
   if(id==="notifPanel") markNotificationsRead();
   if(id==="ordersPanel") renderOrders();
   if(id==="messagesPanel"){if(messageConversations.length)renderMessageList();if(Date.now()-messagesLoadedAt>30000)loadMessageConversations().catch(()=>{})}
-  if(id==="toPayPanel"){if(toPayOrders.length)renderToPayOrders($("toPaySearch")?.value||"");if(Date.now()-toPayLoadedAt>30000)loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"))}
+  if(id==="toPayPanel"){renderToPayOrders($("toPaySearch")?.value||"");if(Date.now()-toPayLoadedAt>30000)loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"))}
+  if(id==="marketplaceHomePanel"){renderMarketplaceHome($("marketHomeSearch")?.value||"");if(Date.now()-marketLoadedAt>60000)loadMarketplaceHomeData().catch(()=>{})}
   window.scrollTo(0,0);
 }
 document.addEventListener("click",e=>{
@@ -222,7 +224,8 @@ async function applySession(session,initial=false){
     subscribeRealtime();
     handleIncomingCartLink().catch(()=>{});
     idleRun(()=>loadMessageConversations(true).catch(()=>{}),900);
-    idleRun(()=>loadToPayOrders(true).catch(()=>{}),1300);
+    idleRun(()=>loadToPayOrders(true).catch(()=>{}),900);
+    idleRun(()=>loadMarketplaceHomeData().catch(()=>{}),1100);
   }catch(e){
     console.error(e);
     // Do not blank an already-open app because one refresh call failed.
@@ -268,7 +271,7 @@ async function loadCartItems(){
 
 
 function renderAll(){
-  const fallback=user.user_metadata?.first_name || user.email?.split("@")[0] || "Customer";
+  const fallback=user?.user_metadata?.first_name || user?.email?.split("@")[0] || "Customer";
   const fullName=[profile?.first_name,profile?.last_name].filter(Boolean).join(" ")||fallback;
   $("helloName").textContent=fullName;
   if($("accountAvatar"))$("accountAvatar").textContent=fullName.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]||"").join("").toUpperCase()||"R";
@@ -497,6 +500,34 @@ function cleanupRealtime(){realtimeChannels.forEach(ch=>sb.removeChannel(ch));re
 
 
 
+
+async function loadMarketplaceHomeData(){
+  const [a,b]=await Promise.all([
+    sb.from("ranova_seller_stores").select("id,store_name,slug,tagline,description,logo_url,banner_url,business_location,country_name").eq("store_status","active").limit(60),
+    sb.from("ranova_seller_products").select("id,store_id,name,sku,category,short_description,price,currency,moq,unit_label,primary_image_url").eq("product_status","active").limit(120)
+  ]);
+  if(a.error)throw a.error;if(b.error)throw b.error;
+  marketStores=a.data||[];marketSellerProducts=b.data||[];marketLoadedAt=Date.now();renderMarketplaceHome($("marketHomeSearch")?.value||"");
+}
+function marketStoreProducts(id){return marketSellerProducts.filter(p=>p.store_id===id)}
+function renderMarketplaceHome(filter=""){
+  const promo=$("marketPromoGrid"),feed=$("marketFactoryFeed");if(!promo||!feed)return;
+  const q=String(filter||"").trim().toLowerCase();
+  if(!marketStores.length&&!marketSellerProducts.length){
+    promo.innerHTML='<div style="grid-column:1/-1;padding:18px;text-align:center;color:#888">Loading marketplace…</div>';
+    feed.innerHTML="";return;
+  }
+  const ps=marketSellerProducts.filter(p=>!q||[p.name,p.category,p.short_description,p.sku].some(x=>String(x||"").toLowerCase().includes(q)));
+  const ss=marketStores.filter(s=>!q||[s.store_name,s.tagline,s.description,s.business_location,s.country_name].some(x=>String(x||"").toLowerCase().includes(q))||marketStoreProducts(s.id).some(p=>[p.name,p.category].some(x=>String(x||"").toLowerCase().includes(q))));
+  promo.innerHTML=[0,2,4,6].map((n,i)=>{const pair=(ps.length?ps:marketSellerProducts).slice(n,n+2);if(!pair.length)return"";return'<div class="mh-promo"><h3>'+["Trending Picks","New Arrivals","Factory Deals","Popular Today"][i]+'</h3><div class="mh-mini">'+pair.map(p=>'<button type="button" data-mh-product="'+esc(p.id)+'">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'" loading="lazy">':'')+'<div style="font-size:10px;font-weight:900;color:#e84e31;margin-top:4px">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</div></button>').join("")+'</div></div>'}).join("");
+  feed.innerHTML=(ss.length?ss:marketStores).map(s=>{const p=marketStoreProducts(s.id),img=p.find(x=>x.primary_image_url)?.primary_image_url||s.banner_url||"";return'<article class="mh-store"><div class="mh-store-media">'+(img?'<img src="'+esc(img)+'" alt="" loading="lazy">':'<div style="display:grid;place-items:center;height:100%;font-size:38px">🏭</div>')+'</div><div style="min-width:0"><h3>'+esc(s.store_name||"RANOVA Store")+'</h3><div class="mh-meta">'+esc(s.business_location||s.country_name||"Marketplace seller")+' · '+p.length+' products</div><div style="font-size:9px;color:#888;margin-top:6px;line-height:1.4">'+esc(s.tagline||s.description||"Contact this store for product details and bulk pricing.")+'</div><div class="mh-actions"><button class="mh-ask" type="button" data-mh-message="'+esc(s.id)+'">Message Store</button><button class="mh-view" type="button" data-mh-store="'+esc(s.slug||s.id)+'">View Store</button></div></div></article>'}).join("");
+}
+if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>renderMarketplaceHome($("marketHomeSearch").value);
+if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>renderMarketplaceHome(e.target.value);
+document.addEventListener("click",async e=>{
+ const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);if(item){try{const out=await messageApi({action:"start",product_id:item.id,subject:item.name});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open product chat")}}return}
+ const m=e.target.closest("[data-mh-message]");if(m){try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
+});
 async function loadToPayOrders(prefetch=false){
   if(prefetch&&toPayOrders.length&&Date.now()-toPayLoadedAt<30000)return;
   const out=await messageApi({action:"buyer_payment_orders"});
