@@ -275,7 +275,7 @@ function renderSellerDetail(ref){
           <div class="docs">${docs.length?docs.map(f=>`<div class="doc-row"><div><b>${esc(label(f.document_type))}</b><small>${esc(f.original_filename||"Document")} • Submitted ${esc(f.created_at?new Date(f.created_at).toLocaleString():"—")} • <b>${esc(label(f.review_status))}</b>${f.review_note?" • "+esc(f.review_note):""}</small></div><div class="actions"><button data-doc-view="${f.id}">Open document</button><button data-doc-action="approved" data-doc-id="${f.id}" class="primary">Approve document</button><button data-doc-action="needs_information" data-doc-id="${f.id}">Request clearer info</button><button data-doc-action="rejected" data-doc-id="${f.id}">Reject</button></div></div>`).join(""):'<div class="empty">No verification documents submitted yet.</div>'}</div>
         </div>
       </div>
-      <div class="card seller-decision-card" style="box-shadow:none"><div class="card-head"><div><h2>Overall seller decision</h2><small>Choose the next step for this seller. Your note appears in their Seller Center.</small></div></div><div class="body"><label for="sellerDecisionNote" class="seller-decision-label">Message to the seller</label><textarea id="sellerDecisionNote" class="review-note" placeholder="Explain the decision or list what the seller needs to correct.">${esc(a.verification_notes||"")}</textarea><div class="seller-decision-actions">${[["under_review","◷","Mark under review","Continue checking this application"],["needs_information","✎","Request more information","Ask the seller to correct or resubmit"],["approved","✓","Approve seller","Unlock the seller’s store setup"],["rejected","×","Reject seller","Send a clear reason for the decision"]].map(([value,icon,title,help])=>`<button type="button" data-seller-decision="${value}" class="seller-decision-option ${value}${String(a.verification_status||a.status)===value?" is-current":""}"><span class="seller-decision-icon" aria-hidden="true">${icon}</span><span><b>${title}</b><small>${help}</small></span></button>`).join("")}${st==="approved"?'<button type="button" data-seller-decision="suspended" class="seller-decision-option rejected"><span class="seller-decision-icon">!</span><span><b>Suspend seller</b><small>Temporarily restrict this account</small></span></button>':""}</div><div id="sellerDecisionFeedback" class="seller-decision-feedback" role="status"><span>${sellerReviewReceipt(a)}</span><button type="button" id="sellerDecisionRefresh" class="seller-decision-refresh">Refresh status</button></div></div></div>
+      <div class="card seller-decision-card" style="box-shadow:none"><div class="card-head"><div><h2>Overall seller decision</h2><small>Choose the next step for this seller. Your note appears in their Seller Center.</small></div></div><div class="body"><label for="sellerDecisionNote" class="seller-decision-label">Message to the seller</label><textarea id="sellerDecisionNote" class="review-note" placeholder="Explain the decision or list what the seller needs to correct."></textarea><div class="seller-decision-actions">${[["under_review","◷","Mark under review","Continue checking this application"],["needs_information","✎","Request more information","Ask the seller to correct or resubmit"],["approved","✓","Approve seller","Unlock the seller’s store setup"],["rejected","×","Reject seller","Send a clear reason for the decision"]].map(([value,icon,title,help])=>`<button type="button" data-seller-decision="${value}" class="seller-decision-option ${value}${String(a.verification_status||a.status)===value?" is-current":""}"><span class="seller-decision-icon" aria-hidden="true">${icon}</span><span><b>${title}</b><small>${help}</small></span></button>`).join("")}${st==="approved"?'<button type="button" data-seller-decision="suspended" class="seller-decision-option rejected"><span class="seller-decision-icon">!</span><span><b>Suspend seller</b><small>Temporarily restrict this account</small></span></button>':""}</div><div id="sellerDecisionFeedback" class="seller-decision-feedback" role="status"><span>${sellerReviewReceipt(a)}</span><button type="button" id="sellerDecisionRefresh" class="seller-decision-refresh">Refresh status</button></div></div></div>
     </div>`;
   wireSellerDetail(host,a);
 }
@@ -314,8 +314,12 @@ function wireSellerDetail(host,a){
     b.disabled=true;
     try{
       const result=await marketApi({action:"review_seller",application_ref:a.application_ref,decision,note});
-      await reloadMarketplace();selectedApplicationRef=a.application_ref;renderSellerDetail(a.application_ref);
+      selectedApplicationRef=null;
+      $("sellerDecisionNote").value="";
+      $("sellerReviewDetail").classList.add("hide");
+      $("sellerApplicationsList").scrollIntoView({behavior:"smooth",block:"start"});
       showSellerSendConfirmation(result.notification_queued?"✓ Decision saved · Seller notice sent":"✓ Decision saved · Seller Center updated");
+      await reloadMarketplace().catch(()=>{});
     }catch(err){alert(err.message)}finally{b.disabled=false}
   });
 }
@@ -1071,7 +1075,7 @@ function openStoreRegistryDetail(ref){
     const box=document.getElementById("adminSellerMessage"),body=box.value.trim();
     if(body.length<2)return alert("Write a message first.");
     sendOfficial.disabled=true;
-    try{await marketApi({action:"message_seller",store_id:store.id,body});await reloadMarketplace();openStoreRegistryDetail(ref);showSellerSendConfirmation("✓ Message sent to seller")}
+    try{await marketApi({action:"message_seller",store_id:store.id,body});box.value="";modal.style.display="none";showSellerSendConfirmation("✓ Message sent to seller");await reloadMarketplace().catch(()=>{})}
     catch(err){alert(err.message)}finally{sendOfficial.disabled=false}
   };
   document.getElementById("closeStoreRegistryModal").onclick=()=>modal.style.display="none";
@@ -1164,7 +1168,12 @@ function renderSellerChatDetail(storeId){
         media={storage_path:prepared.path,media_type:prepared.media_type,file_name:file.name,mime_type:mime};
       }
       await marketApi({action:"message_seller",store_id:store.id,body,...media});
-      clearInterval(timer);stopMedia();await reloadMarketplace();showSellerSendConfirmation("✓ Message sent to seller");
+      clearInterval(timer);stopMedia();input.value="";attachment=null;
+      $("sellerAttachmentPreview").hidden=true;$("sellerEmojiPanel").hidden=true;
+      updateComposerAction();button.disabled=false;
+      showSellerSendConfirmation("✓ Message sent to seller");
+      await reloadMarketplace().catch(()=>{});
+      $("sellerChatInput")?.focus();
     }catch(err){errorText(err.message||"Could not send the message. Please try again.");button.disabled=false}
   };
   const stopMedia=()=>{if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}recorder=null;$("sellerRecording").hidden=true};
