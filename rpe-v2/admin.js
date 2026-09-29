@@ -1079,6 +1079,22 @@ function sellerChatMessages(store){
 }
 function sellerChatTime(value){const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}
 function sellerChatDate(value){const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleDateString([],{year:"numeric",month:"short",day:"numeric"})}
+function sellerMediaBubble(m){
+  if(!m.media_url)return "";
+  const url=esc(m.media_url),name=esc(m.file_name||"Attachment");
+  if(m.media_type==="image")return '<a href="'+url+'" target="_blank" rel="noopener"><img class="seller-media-image" src="'+url+'" alt="'+name+'" loading="lazy"></a>';
+  if(m.media_type==="audio")return '<audio controls preload="metadata" src="'+url+'" aria-label="Voice note"></audio>';
+  return '<a class="seller-media-file" href="'+url+'" target="_blank" rel="noopener" download="'+name+'">📄 '+name+'</a>';
+}
+const sellerEmojiGroups={
+  "Recent":"😊 😂 🥰 ❤️ 👍 🙏 🔥 🎉 👋 😎",
+  "Smileys":"😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😍 🥰 😘 😋 😎 🤩 🥳 😔 😭 😤 😱",
+  "People":"👋 🤝 👍 👎 🙌 👏 🙏 💪 👨‍💼 👩‍💼 🧑‍💻",
+  "Nature":"🌹 🌷 🌻 🌴 🌍 🌈 ☀️ ⭐ 🌙 🔥",
+  "Food":"🍎 🍉 🍕 🍔 🍰 ☕ 🥂",
+  "Objects":"📷 📎 🎁 📦 💡 💻 📱 🛒 💳 ✅ ❗"
+};
+const sellerEmojiNames={"😊":"smile happy","😂":"laugh tears","🥰":"love hearts","❤️":"heart love","👍":"thumbs up yes","🙏":"pray thanks","🔥":"fire","🎉":"celebrate party","👋":"wave hello","😎":"cool","😭":"cry sad","📦":"package delivery","✅":"check done"};
 function sellerChatReadKey(){return "ranova-admin-seller-read-"+(user?.id||"unknown")}
 function sellerChatRead(){try{return JSON.parse(localStorage.getItem(sellerChatReadKey())||"{}")||{}}catch(e){return {}}}
 function markSellerChatRead(storeId,messages){
@@ -1100,7 +1116,7 @@ function renderSellerConversationList(){
     const unread=messages.filter(m=>m.sender_role==="seller"&&(Date.parse(m.created_at)||0)>Number(read[store.id]||0)).length;
     return {store,last,unread};
   }).sort((a,b)=>(Date.parse(b.last?.created_at)||0)-(Date.parse(a.last?.created_at)||0)||String(a.store.store_name).localeCompare(String(b.store.store_name)));
-  list.innerHTML=stores.length?stores.map(({store,last,unread})=>'<button type="button" class="seller-conversation'+(selectedSellerChatId===store.id?' active':'')+'" data-open-seller-chat="'+esc(store.id)+'" aria-label="Open conversation with '+esc(store.store_name)+(unread?', '+unread+' new on this device':'')+'">'+sellerAvatar(store)+'<span class="seller-conversation-main"><span class="seller-conversation-top"><strong>'+esc(store.store_name)+'</strong><time>'+esc(last?sellerChatTime(last.created_at):"")+'</time></span><span class="seller-conversation-bottom"><span>'+esc(last?(last.sender_role==="admin"?"You: ":"")+String(last.body||"").replace(/\s+/g," "):"Start an official conversation")+'</span>'+(unread?'<span class="seller-unread" title="New since opened on this device">'+unread+'</span>':'')+'</span></span></button>').join(""):'<div class="seller-list-empty">'+(query?'No stores match your search.':'No seller stores available yet.')+'</div>';
+  list.innerHTML=stores.length?stores.map(({store,last,unread})=>'<button type="button" class="seller-conversation'+(selectedSellerChatId===store.id?' active':'')+'" data-open-seller-chat="'+esc(store.id)+'" aria-label="Open conversation with '+esc(store.store_name)+(unread?', '+unread+' new on this device':'')+'">'+sellerAvatar(store)+'<span class="seller-conversation-main"><span class="seller-conversation-top"><strong>'+esc(store.store_name)+'</strong><time>'+esc(last?sellerChatTime(last.created_at):"")+'</time></span><span class="seller-conversation-bottom"><span>'+esc(last?(last.sender_role==="admin"?"You: ":"")+String(last.body||({image:"📷 Photo",audio:"🎙 Voice note",file:"📎 "+(last.file_name||"File")}[last.media_type]||"")).replace(/\s+/g," "):"Start an official conversation")+'</span>'+(unread?'<span class="seller-unread" title="New since opened on this device">'+unread+'</span>':'')+'</span></span></button>').join(""):'<div class="seller-list-empty">'+(query?'No stores match your search.':'No seller stores available yet.')+'</div>';
   list.querySelectorAll("[data-open-seller-chat]").forEach(b=>b.onclick=()=>{selectedSellerChatId=b.dataset.openSellerChat;renderSellerChatDetail(selectedSellerChatId);renderSellerConversationList();$("sellerMessageCentre").classList.add("chat-open")});
 }
 function renderSellerChatDetail(storeId){
@@ -1111,17 +1127,59 @@ function renderSellerChatDetail(storeId){
   let previousDay="";
   const bubbles=messages.map(m=>{
     const day=sellerChatDate(m.created_at),date=day&&day!==previousDay?'<div class="seller-chat-day">'+esc(day)+'</div>':'';previousDay=day;
-    return date+'<div class="seller-chat-bubble '+(m.sender_role==="admin"?"outgoing":"incoming")+'"><p>'+esc(m.body)+'</p><time datetime="'+esc(m.created_at)+'">'+esc(sellerChatTime(m.created_at))+'</time></div>';
+    return date+'<div class="seller-chat-bubble '+(m.sender_role==="admin"?"outgoing":"incoming")+'">'+sellerMediaBubble(m)+(m.body?'<p>'+esc(m.body)+'</p>':'')+'<time datetime="'+esc(m.created_at)+'">'+esc(sellerChatTime(m.created_at))+'</time></div>';
   }).join("");
-  box.innerHTML='<header class="seller-chat-header"><button id="sellerChatBack" class="seller-chat-back" type="button" aria-label="Back to conversations">‹</button>'+sellerAvatar(store)+'<div class="seller-chat-heading"><strong>'+esc(store.store_name)+'</strong><small>Official RANOVA conversation · '+esc(label(store.store_status))+'</small></div></header><div id="sellerChatMessages" class="seller-chat-messages" aria-label="Messages with '+esc(store.store_name)+'">'+(bubbles||'<div class="seller-chat-intro"><b>No messages yet</b>Send the first official message to this store.</div>')+'</div><div id="sellerChatError" class="seller-chat-error" role="alert"></div><div class="seller-chat-composer"><textarea id="sellerChatInput" rows="1" aria-label="Message '+esc(store.store_name)+'" placeholder="Message '+esc(store.store_name)+'…"></textarea><button id="sellerChatSend" type="button">Send</button></div>';
+  box.innerHTML='<header class="seller-chat-header"><button id="sellerChatBack" class="seller-chat-back" type="button" aria-label="Back to conversations">‹</button>'+sellerAvatar(store)+'<div class="seller-chat-heading"><strong>'+esc(store.store_name)+'</strong><small>Official RANOVA conversation · '+esc(label(store.store_status))+'</small></div></header><div id="sellerChatMessages" class="seller-chat-messages" aria-label="Messages with '+esc(store.store_name)+'">'+(bubbles||'<div class="seller-chat-intro"><b>No messages yet</b>Send the first official message to this store.</div>')+'</div><div id="sellerChatError" class="seller-chat-error" role="alert"></div><div class="seller-composer-shell"><div id="sellerEmojiPanel" class="seller-emoji-panel" hidden><div class="seller-emoji-tabs"></div><input id="sellerEmojiSearch" type="search" placeholder="Search emoji" aria-label="Search emojis"><div id="sellerEmojiGrid" class="seller-emoji-grid"></div></div><div id="sellerAttachmentPreview" class="seller-attachment-preview" hidden></div><div id="sellerRecording" class="seller-recording" hidden><button id="sellerRecordDelete" type="button" aria-label="Discard recording">🗑</button><span id="sellerRecordTime">0:00</span><button id="sellerRecordPause" type="button">⏸ Pause</button><button id="sellerRecordSend" type="button" aria-label="Send voice note">➤</button></div><div class="seller-chat-composer"><button id="sellerEmojiToggle" class="seller-icon-button" type="button" aria-label="Choose emoji" aria-expanded="false">☻</button><button id="sellerImagePick" class="seller-icon-button" type="button" aria-label="Choose image">▣</button><button id="sellerFilePick" class="seller-icon-button" type="button" aria-label="Select file">📎</button><input id="sellerImageInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="sellerFileInput" type="file" accept="image/*,application/pdf,text/plain,audio/*" hidden><textarea id="sellerChatInput" rows="1" aria-label="Message '+esc(store.store_name)+'" placeholder="Message…" ></textarea><button id="sellerRecordStart" class="seller-icon-button" type="button" aria-label="Record voice note">🎙</button><button id="sellerChatSend" class="seller-send-button" type="button" aria-label="Send message">➤</button></div></div>';
   $("sellerChatMessages").scrollTop=$("sellerChatMessages").scrollHeight;
   $("sellerChatBack").onclick=()=>{selectedSellerChatId=null;$("sellerMessageCentre").classList.remove("chat-open");renderSellerConversationList();$("sellerMessageSearch").focus()};
-  const send=async()=>{
-    const input=$("sellerChatInput"),body=input.value.trim();if(body.length<2){input.focus();return}
+  let attachment=null,recorder=null,stream=null,chunks=[],started=0,paused=0,pauseStarted=0,timer=null;
+  const errorText=message=>{const el=$("sellerChatError");if(el){el.textContent=message;el.classList.add("show")}};
+  const preview=file=>{attachment=file;$("sellerAttachmentPreview").hidden=false;$("sellerAttachmentPreview").innerHTML='<span>'+esc(file.name)+' ('+Math.ceil(file.size/1024)+' KB)</span><button type="button" id="sellerRemoveAttachment" aria-label="Remove attachment">×</button>';$("sellerRemoveAttachment").onclick=()=>{attachment=null;$("sellerAttachmentPreview").hidden=true}};
+  const send=async(fileOverride)=>{
+    const input=$("sellerChatInput"),body=input.value.trim(),file=fileOverride||attachment;
+    if(!body&&!file){input.focus();return}
     const button=$("sellerChatSend");button.disabled=true;$("sellerChatError").classList.remove("show");
-    try{await marketApi({action:"message_seller",store_id:store.id,body});await reloadMarketplace()}
-    catch(err){const error=$("sellerChatError");if(error){error.textContent=err.message||"Could not send the message. Please try again.";error.classList.add("show");button.disabled=false}}
+    try{
+      let media={};
+      if(file){
+        if(file.size>15*1024*1024)throw new Error("The attachment must be under 15 MB.");
+        const mime=file.type||"audio/webm";
+        const prepared=await marketApi({action:"prepare_seller_media",store_id:store.id,mime_type:mime,file_size:file.size});
+        const up=await sb.storage.from("admin-seller-media").uploadToSignedUrl(prepared.path,prepared.token,file,{contentType:mime});
+        if(up.error)throw up.error;
+        media={storage_path:prepared.path,media_type:prepared.media_type,file_name:file.name,mime_type:mime};
+      }
+      await marketApi({action:"message_seller",store_id:store.id,body,...media});
+      clearInterval(timer);stopMedia();await reloadMarketplace();
+    }catch(err){errorText(err.message||"Could not send the message. Please try again.");button.disabled=false}
   };
+  const stopMedia=()=>{if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}recorder=null;$("sellerRecording").hidden=true};
+  const showEmoji=(group="Recent",filter="")=>{
+    $("sellerEmojiPanel").hidden=false;$("sellerEmojiToggle").setAttribute("aria-expanded","true");
+    $("sellerEmojiPanel").querySelector(".seller-emoji-tabs").innerHTML=Object.keys(sellerEmojiGroups).map(g=>'<button type="button" class="'+(g===group?'active':'')+'" data-emoji-group="'+g+'">'+g+'</button>').join("");
+    $("sellerEmojiGrid").innerHTML=[...new Set((filter?Object.values(sellerEmojiGroups).join(" "):sellerEmojiGroups[group]).split(/\s+/))].filter(e=>e&&(!filter||(sellerEmojiNames[e]||"").includes(filter.toLowerCase()))).map(e=>'<button type="button" data-emoji="'+esc(e)+'" aria-label="Insert '+esc(e)+'">'+esc(e)+'</button>').join("");
+    $("sellerEmojiPanel").querySelectorAll("[data-emoji-group]").forEach(b=>b.onclick=()=>showEmoji(b.dataset.emojiGroup));
+    $("sellerEmojiGrid").querySelectorAll("[data-emoji]").forEach(b=>b.onclick=()=>{const input=$("sellerChatInput"),at=input.selectionStart;input.setRangeText(b.dataset.emoji,at,input.selectionEnd,"end");input.focus()});
+  };
+  $("sellerEmojiToggle").onclick=()=>{$("sellerEmojiPanel").hidden?showEmoji():($("sellerEmojiPanel").hidden=true,$("sellerEmojiToggle").setAttribute("aria-expanded","false"))};
+  $("sellerEmojiSearch").oninput=e=>showEmoji("Recent",e.target.value.trim());
+  $("sellerImagePick").onclick=()=>$("sellerImageInput").click();
+  $("sellerFilePick").onclick=()=>$("sellerFileInput").click();
+  ["sellerImageInput","sellerFileInput"].forEach(id=>$(id).onchange=e=>{if(e.target.files?.[0])preview(e.target.files[0])});
+  $("sellerRecordStart").onclick=async()=>{
+    try{
+      if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw new Error("Voice recording is unavailable in this browser.");
+      stream=await navigator.mediaDevices.getUserMedia({audio:true});const mime=["audio/webm;codecs=opus","audio/mp4","audio/webm"].find(x=>MediaRecorder.isTypeSupported(x))||"";
+      recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);chunks=[];started=Date.now();paused=0;pauseStarted=0;
+      recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+      recorder.onstop=()=>{const type=recorder?.mimeType?.split(";")[0]||"audio/webm";const blob=new Blob(chunks,{type});stopMedia();if(blob.size)send(new File([blob],"Voice note."+({ "audio/mp4":"m4a","audio/ogg":"ogg" }[type]||"webm"),{type}))};
+      recorder.start();$("sellerRecording").hidden=false;$("sellerRecordTime").textContent="0:00";
+      timer=setInterval(()=>{const ms=(pauseStarted||Date.now())-started-paused;const sec=Math.floor(ms/1000);const t=$("sellerRecordTime");if(t)t.textContent=Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0")},500);
+    }catch(err){stopMedia();errorText(err.message||"Microphone access was denied.")}
+  };
+  $("sellerRecordPause").onclick=()=>{if(!recorder)return;const b=$("sellerRecordPause");if(recorder.state==="recording"){recorder.pause();pauseStarted=Date.now();b.textContent="▶ Resume"}else if(recorder.state==="paused"){recorder.resume();paused+=Date.now()-pauseStarted;pauseStarted=0;b.textContent="⏸ Pause"}};
+  $("sellerRecordDelete").onclick=()=>{if(recorder){recorder.onstop=null;if(recorder.state!=="inactive")recorder.stop()}clearInterval(timer);stopMedia()};
+  $("sellerRecordSend").onclick=()=>{if(recorder&&recorder.state!=="inactive"){clearInterval(timer);recorder.stop()}};
   $("sellerChatSend").onclick=send;
   $("sellerChatInput").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}};
   renderSellerConversationList();
