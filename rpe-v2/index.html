@@ -108,6 +108,34 @@ body{background:var(--r-page);color:var(--r-text)}
 #marketFactoryFeed .mh-actions button{border:0;border-radius:8px;padding:7px 8px;font-size:9px;font-weight:900}
 #marketFactoryFeed .mh-ask{background:#ff5b2e;color:#fff}
 #marketFactoryFeed .mh-view{background:#f1f1f1}
+
+/* Product discovery + detail flow 2026-09-29 */
+.product-discovery-panel,.product-detail-panel{margin:0!important;background:#f4f4f4!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-height:calc(100dvh - 72px)}
+.pd-top,.pdetail-top{position:sticky;top:0;z-index:30;height:54px;background:#fff;border-bottom:1px solid #ececec;display:flex;align-items:center;gap:8px;padding:0 10px}
+.pd-back,.pdetail-back{width:38px;height:38px;border:0;background:transparent;font-size:30px;display:grid;place-items:center}
+.pd-top b,.pdetail-top b{font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pd-feed{display:grid;gap:10px;padding:10px 0 18px}
+.pd-card{background:#fff;border-top:1px solid #eee;border-bottom:1px solid #eee;overflow:hidden}
+.pd-media{position:relative;width:100%;aspect-ratio:1/1;background:#f2f2f2;overflow:hidden}
+.pd-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f7f7f7;opacity:0;transition:opacity .28s ease}
+.pd-media img.active{opacity:1}
+.pd-dots{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;gap:4px;z-index:3}
+.pd-dot{width:5px;height:5px;border-radius:50%;background:#ffffff80;border:1px solid #00000018}.pd-dot.active{width:13px;border-radius:99px;background:#fff}
+.pd-info{padding:11px 12px 12px}
+.pd-price{font-size:21px;font-weight:950;color:#ff5c27;line-height:1.1}
+.pd-name{font-size:14px;font-weight:800;line-height:1.35;margin-top:5px}
+.pd-meta{font-size:9px;color:#858585;margin-top:5px;line-height:1.5}
+.pd-store{display:flex;align-items:center;gap:7px;margin-top:9px;padding-top:8px;border-top:1px solid #f0f0f0}.pd-store-avatar{width:28px;height:28px;border-radius:50%;background:#eee;overflow:hidden;display:grid;place-items:center}.pd-store-avatar img{width:100%;height:100%;object-fit:cover}.pd-store div{min-width:0}.pd-store b{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pd-store small{display:block;font-size:8px;color:#999}
+.pd-card-actions{display:grid;grid-template-columns:1fr auto auto;gap:7px;margin-top:10px}.pd-card-actions button{min-height:38px;border:0;border-radius:10px;font-size:10px;font-weight:900}.pd-details{background:#111;color:#fff}.pd-save,.pd-message{width:42px;background:#f1f1f1;color:#222}
+.pdetail-body{background:#fff;padding-bottom:86px}
+.pdetail-gallery{position:relative;aspect-ratio:1/1;background:#f7f7f7;overflow:hidden}.pdetail-gallery img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .3s ease}.pdetail-gallery img.active{opacity:1}
+.pdetail-indicator{position:absolute;right:10px;bottom:10px;background:#0009;color:#fff;border-radius:99px;padding:4px 8px;font-size:9px}
+.pdetail-main{padding:13px 13px 0}.pdetail-price{font-size:25px;font-weight:950;color:#ff5a20}.pdetail-title{font-size:17px;font-weight:850;line-height:1.35;margin-top:5px}.pdetail-sub{font-size:10px;color:#8a8a8a;margin-top:6px;line-height:1.5}
+.pdetail-box{margin-top:11px;border-top:8px solid #f4f4f4;padding:13px}.pdetail-box h3{margin:0 0 9px;font-size:14px}.pdetail-facts{display:grid;gap:0}.pdetail-fact{display:grid;grid-template-columns:105px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:10px}.pdetail-fact b{color:#666}.pdetail-fact span{overflow-wrap:anywhere}
+.pdetail-store{display:grid;grid-template-columns:42px 1fr auto;gap:9px;align-items:center}.pdetail-store-avatar{width:42px;height:42px;border-radius:50%;overflow:hidden;background:#eee;display:grid;place-items:center}.pdetail-store-avatar img{width:100%;height:100%;object-fit:cover}.pdetail-store b{display:block;font-size:12px}.pdetail-store small{display:block;color:#888;font-size:9px;margin-top:2px}.pdetail-store button{border:0;border-radius:9px;padding:8px 9px;font-size:9px;font-weight:900;background:#f1f1f1}
+.pdetail-related{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pdetail-related button{border:0;background:#fff;text-align:left;padding:0;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px #0000000a}.pdetail-related img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f3f3f3}.pdetail-related .copy{padding:7px}.pdetail-related b{display:block;font-size:10px;line-height:1.3}.pdetail-related strong{display:block;color:#ff5a20;font-size:13px;margin-top:4px}
+.pdetail-actions{position:fixed;left:50%;bottom:max(0px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:65;width:min(100%,620px);display:grid;grid-template-columns:48px 48px 1fr 1fr;gap:6px;padding:8px;background:#fff;border-top:1px solid #e8e8e8}.pdetail-actions button{height:44px;border:0;border-radius:10px;font-size:9px;font-weight:900}.pdetail-actions .ico{background:#f2f2f2;font-size:18px}.pdetail-actions .quote{background:#fff1e9;color:#ef5d25}.pdetail-actions .buy{background:#ff5d25;color:#fff}
+@media(min-width:760px){.product-discovery-panel,.product-detail-panel{border-radius:18px!important;overflow:hidden}.pd-feed{padding-left:12px;padding-right:12px}.pd-card{border:1px solid #eee;border-radius:15px}.pdetail-actions{bottom:8px;border:1px solid #eee;border-radius:14px}}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 </head>
@@ -219,6 +247,15 @@ body{background:var(--r-page);color:var(--r-text)}
   <div class="home-products-card"><div class="section-head"><h2>Recommended for You</h2><button data-panel="shopPanel">See more ›</button></div><div id="homeProducts" class="panel-body grid"></div></div>
 </section>
 
+<section id="productDiscoveryPanel" class="panel product-discovery-panel">
+  <header class="pd-top"><button id="productDiscoveryBack" class="pd-back" type="button">‹</button><b>Discover products</b></header>
+  <div id="productDiscoveryFeed" class="pd-feed"></div>
+</section>
+<section id="productDetailPanel" class="panel product-detail-panel">
+  <header class="pdetail-top"><button id="productDetailBack" class="pdetail-back" type="button">‹</button><b id="productDetailHeader">Product details</b></header>
+  <div id="productDetailBody" class="pdetail-body"></div>
+  <div id="productDetailActions" class="pdetail-actions"></div>
+</section>
 <section id="messagesPanel" class="panel card messages-panel">
   <div class="msg-list-view">
     <div class="msg-head"><h2>Messages <small id="messageConversationCount"></small></h2><button id="messageSearchButton" class="msg-search" type="button" aria-label="Search messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></div>
@@ -269,6 +306,6 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20260929-07"></script>
+<script src="./app.js?v=20260929-08"></script>
 <script src="./customer-pwa.js?v=20260929-03"></script>
 </body></html>
