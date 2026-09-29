@@ -128,6 +128,13 @@ document.addEventListener("click",e=>{
   if(coming){showToast(coming.dataset.coming+" is coming soon to RANOVA.")}
 });
 if($("simpleDiscoveryBack"))$("simpleDiscoveryBack").onclick=()=>showPanel(simpleDiscoveryOrigin||"homePanel");
+document.addEventListener("click",e=>{
+  const related=e.target.closest("[data-simple-related]");
+  if(!related)return;
+  const p=products.find(x=>x.id===related.dataset.simpleRelated);if(!p)return;
+  renderSimpleDiscoveryProduct(p,true);
+  window.scrollTo(0,0);
+});
 if($("contactShortcut"))$("contactShortcut").onclick=contactRpe;
 if($("helpContact"))$("helpContact").onclick=contactRpe;
 if($("notifBtn"))$("notifBtn").onclick=()=>showPanel("notifPanel");
@@ -361,9 +368,9 @@ async function toggleFavorite(id){
 function filteredProductsNow(){
   const q=$("productSearch").value.trim().toLowerCase();return q?products.filter(p=>[p.name,p.sku,p.legacy_id,p.brand,p.categories?.name,p.short_description].some(x=>String(x||"").toLowerCase().includes(q))):products
 }
-async function openProduct(id){
-  const p=products.find(x=>x.id===id);if(!p)return;
-  simpleDiscoveryOrigin=activePanelId||"homePanel";
+function renderSimpleDiscoveryProduct(p,keepOrigin=false){
+  if(!p)return;
+  if(!keepOrigin)simpleDiscoveryOrigin=activePanelId||"homePanel";
   const image=imageFor(p);
   $("simpleDiscoveryImage").innerHTML=image
     ? '<img src="'+esc(image)+'" alt="'+esc(p.name)+'" loading="eager" decoding="async">'
@@ -371,6 +378,26 @@ async function openProduct(id){
   $("simpleDiscoveryName").textContent=p.name||"Product";
   $("simpleDiscoveryCategory").textContent=p.categories?.name||"RPE Product";
   $("simpleDiscoveryPrice").textContent=money(p.price,p.currency);
+
+  const selectedCategory=String(p.categories?.name||"").trim().toLowerCase();
+  const related=[
+    ...products.filter(x=>x.id!==p.id&&selectedCategory&&String(x.categories?.name||"").trim().toLowerCase()===selectedCategory),
+    ...products.filter(x=>x.id!==p.id&&(!selectedCategory||String(x.categories?.name||"").trim().toLowerCase()!==selectedCategory))
+  ].slice(0,5);
+
+  $("simpleDiscoveryRelated").innerHTML=related.length
+    ? '<h3>More products</h3>'+related.map(x=>{
+        const img=imageFor(x);
+        return '<button class="sd-related-card" type="button" data-simple-related="'+esc(x.id)+'">'+
+          (img?'<img src="'+esc(img)+'" alt="'+esc(x.name)+'" loading="lazy" decoding="async">':'<span class="sd-related-empty">RPE</span>')+
+          '<span class="sd-related-copy"><b>'+esc(x.name||"Product")+'</b><small>'+esc(x.categories?.name||"RPE Product")+'</small><strong>'+esc(money(x.price,x.currency))+'</strong></span>'+
+        '</button>';
+      }).join("")
+    : "";
+}
+async function openProduct(id){
+  const p=products.find(x=>x.id===id);if(!p)return;
+  renderSimpleDiscoveryProduct(p,false);
   showPanel("simpleDiscoveryPanel");
 }
 
