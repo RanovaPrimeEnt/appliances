@@ -30,3 +30,4 @@
 .seller-chat-bubble audio{display:block;width:min(275px,100%);margin:4px 0}
 .seller-media-file{display:block;color:#176649;font-weight:700;margin:5px 0;overflow-wrap:anywhere}
 @media(max-width:720px){#seller-messages{padding:0!important}.seller-messenger{height:calc(100dvh - 95px);min-height:0;border-radius:0;border-left:0;border-right:0;margin:0}.seller-chat-composer{padding:7px 4px;gap:1px}.seller-chat-composer .seller-icon-button{width:34px;min-width:34px}.seller-chat-composer .seller-send-button{min-width:38px;width:38px}.seller-chat-header{min-height:62px}}
+@media(max-width:720px){.admin-wrap:has(#seller-messages.active){width:100%;margin:0;gap:0}.admin-wrap:has(#seller-messages.active) .side{border-radius:0;border-left:0;border-right:0}.admin-wrap:has(#seller-messages.active) main{min-width:0}.admin-wrap:has(#seller-messages.active) .seller-messenger{height:calc(100dvh - 142px)}}
