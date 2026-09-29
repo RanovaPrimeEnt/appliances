@@ -15,9 +15,3 @@ android {
     }
 }
 
-tasks.register("copyBuiltApk", Copy) {
-    dependsOn("assembleDebug")
-    from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
-    into(layout.buildDirectory.dir("outputs/apk/debug"))
-    rename { "RANOVA.apk" }
-}
