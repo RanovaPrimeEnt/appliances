@@ -33,6 +33,8 @@ let incomingCartHandled = false;
 let realtimeChannels = [];
 let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null;
 const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
+const FAST_CACHE_TTL=5*60*1000;
+let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -50,6 +52,30 @@ function statusLabel(s){return ({
 })[s] || String(s||"").replaceAll("_"," ")}
 function prettyKey(s){return String(s||"").replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}
 function setBadge(id,n){const el=$(id);if(!el)return;el.textContent=n;el.classList.toggle("hide",!n)}
+
+function fastCacheKey(){return user?"rpe-fast-"+user.id:""}
+function saveFastCache(){
+  if(!user)return;
+  try{sessionStorage.setItem(fastCacheKey(),JSON.stringify({
+    t:Date.now(),profile,products,favorites:[...favorites],recentIds,cartId,cartItems,orders,notifications,addresses,returns,
+    toPayOrders,toPayStores,toPayRecommendations,messageConversations
+  }))}catch{}
+}
+function restoreFastCache(){
+  if(!user)return false;
+  try{
+    const raw=sessionStorage.getItem(fastCacheKey());if(!raw)return false;
+    const d=JSON.parse(raw);if(!d?.t||Date.now()-d.t>FAST_CACHE_TTL)return false;
+    profile=d.profile||null;products=d.products||[];favorites=new Set(d.favorites||[]);recentIds=d.recentIds||[];
+    cartId=d.cartId||null;cartItems=d.cartItems||[];orders=d.orders||[];notifications=d.notifications||[];
+    addresses=d.addresses||[];returns=d.returns||[];toPayOrders=d.toPayOrders||[];toPayStores=d.toPayStores||[];
+    toPayRecommendations=d.toPayRecommendations||[];messageConversations=d.messageConversations||[];
+    renderAll();
+    if(messageConversations.length){renderMessageList();setBadge("bottomMessageCount",messageConversations.filter(x=>x.unread).length)}
+    return true;
+  }catch{return false}
+}
+function idleRun(fn,timeout=1200){if("requestIdleCallback"in window)requestIdleCallback(fn,{timeout});else setTimeout(fn,250)}
 function contactRpe(){window.open("https://wa.me/233542846895?text="+encodeURIComponent("Hello Ranova Prime Enterprise, I need some help with my order or shopping."),"_blank","noopener")}
 
 function showPanel(id){
@@ -58,8 +84,8 @@ function showPanel(id){
   document.querySelectorAll(".bottom button[data-panel]").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));
   if(id==="notifPanel") markNotificationsRead();
   if(id==="ordersPanel") renderOrders();
-  if(id==="messagesPanel") loadMessageConversations().catch(()=>{});
-  if(id==="toPayPanel") loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"));
+  if(id==="messagesPanel"){if(messageConversations.length)renderMessageList();if(Date.now()-messagesLoadedAt>30000)loadMessageConversations().catch(()=>{})}
+  if(id==="toPayPanel"){if(toPayOrders.length)renderToPayOrders($("toPaySearch")?.value||"");if(Date.now()-toPayLoadedAt>30000)loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"))}
   window.scrollTo({top:0,behavior:"smooth"});
 }
 document.addEventListener("click",e=>{
@@ -139,41 +165,52 @@ async function applySession(session){
   if(!user){
     setup.classList.add("hide");appBox.classList.add("hide");authBox.classList.remove("hide");authUI();return;
   }
-  authBox.classList.add("hide");setup.classList.remove("hide");setup.textContent="Loading your RPE account…";
+  authBox.classList.add("hide");
+  const cached=restoreFastCache();
+  if(cached){setup.classList.add("hide");appBox.classList.remove("hide")}else{setup.classList.remove("hide");setup.textContent="Loading your RPE account…"}
   try{
     await loadAll();
     setup.classList.add("hide");appBox.classList.remove("hide");subscribeRealtime();
-    await handleIncomingCartLink();
+    handleIncomingCartLink().catch(()=>{});
+    idleRun(()=>loadMessageConversations(true).catch(()=>{}),900);
+    idleRun(()=>loadToPayOrders(true).catch(()=>{}),1300);
   }catch(e){
     console.error(e);
-    setup.innerHTML='<div style="text-align:center;padding:24px"><b style="display:block;color:#173d32">We could not load My RPE.</b><span>Please refresh or try again shortly.</span></div>';
+    if(!cached)setup.innerHTML='<div style="text-align:center;padding:24px"><b style="display:block;color:#173d32">We could not load My RPE.</b><span>Please refresh or try again shortly.</span></div>';
   }
 }
 
 async function loadAll(){
   const uid=user.id;
-  const [
-    prof,prod,fav,rec,cart,ord,noti,addr,ret
-  ]=await Promise.all([
-    sb.from("profiles").select("*").eq("user_id",uid).maybeSingle(),
-    sb.from("products").select("id,legacy_id,sku,name,slug,brand,short_description,description,price,currency,stock_status,category_id,dimensions,specifications,product_images(image_url,is_primary,sort_order),categories(name)").eq("active",true).order("created_at",{ascending:false}),
+  const [prof,prod,cart,ord]=await Promise.all([
+    sb.from("profiles").select("user_id,first_name,last_name,phone,avatar_url").eq("user_id",uid).maybeSingle(),
+    sb.from("products").select("id,legacy_id,sku,name,slug,brand,short_description,description,price,currency,stock_status,category_id,dimensions,specifications,product_images(image_url,is_primary,sort_order),categories(name)").eq("active",true).order("created_at",{ascending:false}).limit(120),
+    sb.from("carts").select("id").eq("user_id",uid).maybeSingle(),
+    sb.from("orders").select("id,order_number,user_id,address_id,order_type,order_status,payment_status,subtotal,discount,delivery_fee,total,currency,created_at,updated_at,order_items(id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price,line_total)").eq("user_id",uid).order("created_at",{ascending:false}).limit(60)
+  ]);
+  [prof,prod,cart,ord].forEach(x=>{if(x.error)throw x.error});
+  profile=prof.data;products=prod.data||[];cartId=cart.data?.id||null;orders=ord.data||[];
+  renderAll();
+  saveFastCache();
+
+  secondaryLoadPromise=Promise.all([
     sb.from("favorites").select("product_id").eq("user_id",uid),
     sb.from("recently_viewed").select("product_id,viewed_at").eq("user_id",uid).order("viewed_at",{ascending:false}).limit(20),
-    sb.from("carts").select("id").eq("user_id",uid).maybeSingle(),
-    sb.from("orders").select("*,order_items(*)").eq("user_id",uid).order("created_at",{ascending:false}),
-    sb.from("notifications").select("*").eq("user_id",uid).order("created_at",{ascending:false}).limit(50),
-    sb.from("addresses").select("*").eq("user_id",uid).order("is_default",{ascending:false}).order("created_at",{ascending:false}),
-    sb.from("return_requests").select("*").eq("user_id",uid).order("created_at",{ascending:false})
-  ]);
-  [prof,prod,fav,rec,cart,ord,noti,addr,ret].forEach(x=>{if(x.error)throw x.error});
-  profile=prof.data;products=prod.data||[];favorites=new Set((fav.data||[]).map(x=>x.product_id));recentIds=(rec.data||[]).map(x=>x.product_id);
-  cartId=cart.data?.id||null;orders=ord.data||[];notifications=noti.data||[];addresses=addr.data||[];returns=ret.data||[];
-  await loadCartItems();
-  renderAll();
+    sb.from("notifications").select("id,user_id,type,title,message,related_order_id,read_at,created_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(40),
+    sb.from("addresses").select("id,user_id,label,recipient_name,phone,region,city,area,street_address,landmark,is_default,created_at").eq("user_id",uid).order("is_default",{ascending:false}).order("created_at",{ascending:false}).limit(20),
+    sb.from("return_requests").select("id,order_id,order_item_id,user_id,reason,return_status,created_at,updated_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(30),
+    loadCartItems().then(()=>({data:null,error:null}))
+  ]).then(([fav,rec,noti,addr,ret])=>{
+    [fav,rec,noti,addr,ret].forEach(x=>{if(x?.error)throw x.error});
+    favorites=new Set((fav.data||[]).map(x=>x.product_id));recentIds=(rec.data||[]).map(x=>x.product_id);
+    notifications=noti.data||[];addresses=addr.data||[];returns=ret.data||[];
+    renderProducts(filteredProductsNow());renderHomeProducts();renderSaved();renderRecent();renderCart();renderNotifications();renderAddresses();renderCounts();
+    saveFastCache();
+  }).catch(console.error);
 }
 async function loadCartItems(){
   if(!cartId){cartItems=[];return}
-  const {data,error}=await sb.from("cart_items").select("id,quantity,product_id,products(id,name,sku,price,currency,stock_status,product_images(image_url,is_primary,sort_order))").eq("cart_id",cartId).order("created_at");
+  const {data,error}=await sb.from("cart_items").select("id,quantity,product_id,products(id,name,sku,price,currency,stock_status,product_images(image_url,is_primary,sort_order))").eq("cart_id",cartId).order("created_at").limit(100);
   if(error)throw error;cartItems=data||[];
 }
 
@@ -227,10 +264,10 @@ function searchProducts(){
 async function toggleFavorite(id){
   if(favorites.has(id)){
     const {error}=await sb.from("favorites").delete().eq("user_id",user.id).eq("product_id",id);if(error)return showToast("Could not update saved products");
-    favorites.delete(id);showToast("Removed from saved");
+    favorites.delete(id);showToast("Removed from saved");saveFastCache();
   }else{
     const {error}=await sb.from("favorites").insert({user_id:user.id,product_id:id});if(error)return showToast("Could not save product");
-    favorites.add(id);showToast("Saved");
+    favorites.add(id);showToast("Saved");saveFastCache();
   }
   renderProducts(filteredProductsNow());renderHomeProducts();renderSaved();renderRecent();
 }
@@ -278,13 +315,13 @@ async function addToCart(productId){
   if(existing)res=await sb.from("cart_items").update({quantity:Math.min(99,existing.quantity+1)}).eq("id",existing.id);
   else res=await sb.from("cart_items").insert({cart_id:cartId,product_id:productId,quantity:1});
   if(res.error)return showToast("Could not add product");
-  await loadCartItems();renderCart();showToast("Added to cart");
+  await loadCartItems();renderCart();showToast("Added to cart");saveFastCache();
 }
 async function changeQty(item,delta){
   const q=Math.max(1,Math.min(99,item.quantity+delta));const {error}=await sb.from("cart_items").update({quantity:q}).eq("id",item.id);
-  if(error)return showToast("Could not update quantity");await loadCartItems();renderCart();
+  if(error)return showToast("Could not update quantity");await loadCartItems();renderCart();saveFastCache();
 }
-async function removeCart(item){const {error}=await sb.from("cart_items").delete().eq("id",item.id);if(error)return showToast("Could not remove product");await loadCartItems();renderCart()}
+async function removeCart(item){const {error}=await sb.from("cart_items").delete().eq("id",item.id);if(error)return showToast("Could not remove product");await loadCartItems();renderCart()saveFastCache();}
 function renderCart(){
   const list=$("cartList");setBadge("cartCount",cartItems.length);setBadge("bottomCartCount",cartItems.length);
   if(!cartItems.length){list.innerHTML='<div class="empty"><b>Your cart is empty</b>Add products you want and they will appear here.</div>';return}
@@ -408,9 +445,10 @@ function cleanupRealtime(){realtimeChannels.forEach(ch=>sb.removeChannel(ch));re
 
 
 
-async function loadToPayOrders(){
+async function loadToPayOrders(prefetch=false){
+  if(prefetch&&toPayOrders.length&&Date.now()-toPayLoadedAt<30000)return;
   const out=await messageApi({action:"buyer_payment_orders"});
-  toPayOrders=out.orders||[];toPayStores=out.stores||[];toPayRecommendations=out.recommendations||[];
+  toPayOrders=out.orders||[];toPayStores=out.stores||[];toPayRecommendations=out.recommendations||[];toPayLoadedAt=Date.now();saveFastCache();
   renderToPayOrders($("toPaySearch")?.value||"");
 }
 function payStore(id){return toPayStores.find(s=>s.id===id)||null}
@@ -462,9 +500,9 @@ function msgPreview(c){
   return m.body||({image:"📷 Photo",audio:"🎙 Voice note",file:"📎 Attachment",rfq:"Quotation request",quote:"Seller quotation",quote_status:"Quote update"}[m.message_type]||prettyKey(m.message_type));
 }
 function messageTime(v){const d=new Date(v);if(Number.isNaN(d.getTime()))return "";const now=new Date();return d.toDateString()===now.toDateString()?d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):d.toLocaleDateString([],{month:"2-digit",day:"2-digit"})}
-async function loadMessageConversations(){
-  if(!user)return;
-  const out=await messageApi({action:"list"});messageConversations=out.conversations||[];
+async function loadMessageConversations(prefetch=false){
+  if(!user)return;if(prefetch&&messageConversations.length&&Date.now()-messagesLoadedAt<30000)return;
+  const out=await messageApi({action:"list"});messageConversations=out.conversations||[];messagesLoadedAt=Date.now();saveFastCache();
   renderMessageList();
   setBadge("bottomMessageCount",messageConversations.filter(x=>x.unread).length);
 }
