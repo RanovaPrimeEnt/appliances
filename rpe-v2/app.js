@@ -24,6 +24,9 @@ let orders = [];
 let notifications = [];
 let addresses = [];
 let returns = [];
+let toPayOrders = [];
+let toPayStores = [];
+let toPayRecommendations = [];
 let orderFilter = null;
 let signUpMode = false;
 let incomingCartHandled = false;
@@ -56,6 +59,7 @@ function showPanel(id){
   if(id==="notifPanel") markNotificationsRead();
   if(id==="ordersPanel") renderOrders();
   if(id==="messagesPanel") loadMessageConversations().catch(()=>{});
+  if(id==="toPayPanel") loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"));
   window.scrollTo({top:0,behavior:"smooth"});
 }
 document.addEventListener("click",e=>{
@@ -370,6 +374,7 @@ function openOrder(id){
   })
 }
 function renderCounts(){
+  if(toPayOrders.length)setBadge("payN",toPayOrders.length);
   setBadge("payN",orders.filter(o=>o.order_status==="awaiting_payment").length);
   setBadge("prepN",orders.filter(o=>["payment_confirmed","preparing","ready_for_dispatch"].includes(o.order_status)).length);
   setBadge("recvN",orders.filter(o=>["ready_for_dispatch","dispatched","out_for_delivery"].includes(o.order_status)).length);
@@ -435,6 +440,41 @@ function subscribeRealtime(){
 function cleanupRealtime(){realtimeChannels.forEach(ch=>sb.removeChannel(ch));realtimeChannels=[]}
 
 
+
+
+async function loadToPayOrders(){
+  const out=await messageApi({action:"buyer_payment_orders"});
+  toPayOrders=out.orders||[];toPayStores=out.stores||[];toPayRecommendations=out.recommendations||[];
+  renderToPayOrders($("toPaySearch")?.value||"");
+}
+function payStore(id){return toPayStores.find(s=>s.id===id)||null}
+function payItemImage(item){return item?.image_url||""}
+function renderToPayOrders(filter=""){
+  const host=$("toPayOrders");if(!host)return;
+  const q=String(filter||"").trim().toLowerCase();
+  const rows=toPayOrders.filter(o=>{const s=payStore(o.store_id),items=Array.isArray(o.items)?o.items:[];return !q||[o.order_ref,s?.store_name,...items.flatMap(i=>[i.product_name,i.sku])].some(x=>String(x||"").toLowerCase().includes(q))});
+  if(!rows.length){host.innerHTML='<div class="pay-empty"><b>No unpaid orders</b>Your orders that still need payment will appear here.</div>';return}
+  host.innerHTML=rows.map(o=>{
+    const store=payStore(o.store_id)||{},items=Array.isArray(o.items)?o.items:[],item=items[0]||{},currency=o.currency||"GHS";
+    const subtotal=o.subtotal==null?items.reduce((a,i)=>a+Number(i.line_total||0),0):Number(o.subtotal||0),delivery=Number(o.delivery_fee||0),total=o.total==null?(subtotal||0)+delivery:Number(o.total||0);
+    const recs=toPayRecommendations.filter(p=>p.store_id===o.store_id&&!items.some(i=>i.seller_product_id===p.id)).slice(0,4);
+    return '<article class="pay-order" data-pay-order="'+esc(o.id)+'">'+
+      '<div class="pay-store"><span class="pay-store-avatar">'+(store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="">':'🏪')+'</span><b>'+esc(store.store_name||"RANOVA Store")+'</b><span class="pay-status">To Pay</span></div>'+
+      (items.length?items.map(i=>'<div class="pay-item">'+(payItemImage(i)?'<img class="pay-item-img" src="'+esc(payItemImage(i))+'" alt="'+esc(i.product_name||"Product")+'">':'<div class="pay-item-img" style="display:grid;place-items:center;color:#999">Product</div>')+'<div class="pay-item-copy"><div class="pay-item-title">'+esc(i.product_name||"Product")+'</div><div class="pay-item-meta">'+esc(i.sku||i.unit_label||"")+'</div><div class="pay-price">'+esc(i.unit_price==null?"Price pending":money(i.unit_price,currency))+'</div><span class="pay-qty">×'+esc(i.quantity||1)+'</span><div class="pay-benefit">RANOVA protected marketplace order</div></div></div>').join(""):'<div class="pay-item"><div class="pay-item-img"></div><div class="pay-item-copy"><div class="pay-item-title">Marketplace order</div></div></div>')+
+      '<div class="pay-total-row"><span>Delivery '+esc(money(delivery,currency))+'</span><span>Amount due</span><strong>'+esc(total?money(total,currency):"Awaiting quote")+'</strong></div>'+
+      '<div class="pay-actions"><button type="button" data-pay-close="'+esc(o.id)+'">Close</button><button type="button" data-pay-address="'+esc(o.id)+'">Modify Address</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'">Pay Now</button></div>'+
+      (recs.length?'<div class="pay-rec-head">More from '+esc(store.store_name||"this store")+'</div><div class="pay-recommend">'+recs.map(p=>'<button class="pay-product" type="button" data-pay-product="'+esc(p.id)+'">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'">':'<div style="aspect-ratio:1;background:#eee"></div>')+'<div class="pay-product-copy"><b>'+esc(p.name)+'</b><div class="price">'+esc(p.price==null?"Ask":money(p.price,p.currency||currency))+'</div><small>'+esc(p.moq?("MOQ "+p.moq+" "+(p.unit_label||"")):(p.category||"Store product"))+'</small></div></button>').join("")+'</div>':"")+
+    '</article>';
+  }).join("");
+}
+if($("toPayBack"))$("toPayBack").onclick=()=>showPanel("homePanel");
+if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>renderToPayOrders(e.target.value));
+document.addEventListener("click",async e=>{
+  const close=e.target.closest("[data-pay-close]");if(close){const card=close.closest(".pay-order");if(card)card.style.display="none";return}
+  const address=e.target.closest("[data-pay-address]");if(address){showPanel("addressPanel");return}
+  const pay=e.target.closest("[data-pay-now]");if(pay){const order=toPayOrders.find(x=>x.id===pay.dataset.payNow);if(!order)return;showToast(order.total==null?"The seller must confirm the final amount before payment.":"Secure payment checkout is being connected for this order.");return}
+  const product=e.target.closest("[data-pay-product]");if(product){const p=toPayRecommendations.find(x=>x.id===product.dataset.payProduct);if(!p)return;try{const out=await messageApi({action:"start",product_id:p.id,subject:p.name});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open product enquiry")}return}
+});
 
 // RANOVA in-app buyer messenger 2026-09-29
 async function messageApi(body){
