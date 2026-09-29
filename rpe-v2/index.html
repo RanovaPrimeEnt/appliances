@@ -146,7 +146,7 @@ body{background:var(--r-page);color:var(--r-text)}
 /* home-install-button */
 .home-orders-head{gap:10px}
 .home-install-row{padding:0 12px 8px}
-.home-install-btn{width:100%;border:1px solid #ffd3b0!important;border-radius:14px!important;background:#fff5ec!important;color:#8a3f00!important;padding:10px 12px!important;display:flex!important;align-items:center!important;gap:10px!important;text-align:left!important;box-shadow:none!important;position:static!important}
+.home-install-btn{width:100%;border:1px solid #ffd3b0!important;border-radius:14px!important;background:#fff5ec!important;color:#8a3f00!important;padding:10px 12px!important;display:flex!important;align-items:center!important;gap:10px!important;text-align:left!important;box-shadow:none!important;position:static!important;text-decoration:none!important}
 .home-install-icon{width:34px;height:34px;border-radius:10px;background:#ff7a00;color:#fff;display:grid;place-items:center;font-size:16px;font-weight:900;flex:0 0 34px}
 .home-install-btn b{display:block;font-size:11px;line-height:1.2}
 .home-install-btn small{display:block;margin-top:2px;font-size:8px;color:#9b6b47;font-weight:700}
@@ -240,10 +240,10 @@ body{background:var(--r-page);color:var(--r-text)}
   <div class="card">
     <div class="section-head home-orders-head"><h2>My Orders</h2><button data-panel="ordersPanel">All ›</button></div>
     <div class="home-install-row">
-      <button id="installCustomerHome" class="home-install-btn" type="button">
+      <a id="downloadCustomerHome" class="home-install-btn" href="https://github.com/RanovaPrimeEnt/appliances/releases/download/ranova-android-latest/RANOVA.apk" download="RANOVA.apk">
         <span class="home-install-icon">⬇</span>
-        <span><b>Install RANOVA</b><small>Add the app to this device</small></span>
-      </button>
+        <span><b>Download RANOVA</b><small>Download the Android app (APK)</small></span>
+      </a>
     </div>
     <div class="order-statuses">
       <button class="status" data-panel="toPayPanel"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h3"/></svg></span><span id="payN" class="n hide">0</span><b>To Pay</b></button>
@@ -346,5 +346,5 @@ function iconSvg(k){return""}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <script src="./app.js?v=20260929-recommend01"></script>
-<script src="./customer-pwa.js?v=20260929-05"></script>
+<script src="./customer-pwa.js?v=20260929-06"></script>
 </body></html>
