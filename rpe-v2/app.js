@@ -361,6 +361,8 @@ function filteredProductsNow(){
 }
 async function openProduct(id){
   const p=products.find(x=>x.id===id);if(!p)return;
+  const sellerProduct=matchingSellerProduct(p),storeUrl=sellerStoreProductUrl(sellerProduct);
+  if(storeUrl){location.href=storeUrl;return}
   recentIds=[id,...recentIds.filter(x=>x!==id)].slice(0,20);panelPainted.delete("recentPanel");
   sb.from("recently_viewed").upsert({user_id:user.id,product_id:id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"}).then(()=>saveFastCache()).catch(()=>{});
   const specRows=Object.entries(p.specifications||{}).map(([k,v])=>`<div class="list-row"><div><b>${esc(prettyKey(k))}</b><small>${esc(typeof v==="boolean"?(v?"Yes":"No"):v)}</small></div></div>`).join("");
@@ -540,6 +542,22 @@ async function loadMarketplaceHomeData(){
   marketStores=a.data||[];marketSellerProducts=b.data||[];marketLoadedAt=Date.now();renderMarketplaceHome($("marketHomeSearch")?.value||"");markPanelPainted("marketplaceHomePanel");
 }
 function marketStoreProducts(id){return marketSellerProducts.filter(p=>p.store_id===id)}
+function sellerStoreProductUrl(product){
+  if(!product)return null;
+  const store=marketStores.find(s=>s.id===product.store_id);
+  if(!store?.slug)return null;
+  return "../all/seller-store.html?store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(product.id);
+}
+function matchingSellerProduct(product){
+  if(!product)return null;
+  const sku=String(product.sku||product.legacy_id||"").trim().toLowerCase();
+  const name=String(product.name||"").trim().toLowerCase();
+  return marketSellerProducts.find(p=>{
+    const psku=String(p.sku||"").trim().toLowerCase();
+    const pname=String(p.name||"").trim().toLowerCase();
+    return (sku&&psku===sku)||(name&&pname===name);
+  })||null;
+}
 function renderMarketplaceHome(filter=""){
   const promo=$("marketPromoGrid"),feed=$("marketFactoryFeed");if(!promo||!feed)return;
   const q=String(filter||"").trim().toLowerCase();
@@ -555,8 +573,9 @@ function renderMarketplaceHome(filter=""){
 if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>renderMarketplaceHome($("marketHomeSearch").value);
 if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>renderMarketplaceHome(e.target.value);
 document.addEventListener("click",async e=>{
- const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);if(item){try{const out=await messageApi({action:"start",product_id:item.id,subject:item.name});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open product chat")}}return}
+ const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct),url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
  const m=e.target.closest("[data-mh-message]");if(m){try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
+ const v=e.target.closest("[data-mh-store]");if(v){location.href="../all/seller-store.html?store="+encodeURIComponent(v.dataset.mhStore);return}
 });
 async function loadToPayOrders(prefetch=false){
   if(prefetch&&toPayOrders.length&&Date.now()-toPayLoadedAt<30000)return;
@@ -619,7 +638,7 @@ document.addEventListener("click",async e=>{
   const close=e.target.closest("[data-pay-close]");if(close){const card=close.closest(".pay-order");if(card)card.style.display="none";return}
   const address=e.target.closest("[data-pay-address]");if(address){showPanel("addressPanel");return}
   const pay=e.target.closest("[data-pay-now]");if(pay){const order=toPayOrders.find(x=>x.id===pay.dataset.payNow);if(!order)return;showToast(order.total==null?"The seller must confirm the final amount before payment.":"Secure payment checkout is being connected for this order.");return}
-  const product=e.target.closest("[data-pay-product]");if(product){const p=toPayRecommendations.find(x=>x.id===product.dataset.payProduct);if(!p)return;try{const out=await messageApi({action:"start",product_id:p.id,subject:p.name});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open product enquiry")}return}
+  const product=e.target.closest("[data-pay-product]");if(product){const p=toPayRecommendations.find(x=>x.id===product.dataset.payProduct);if(!p)return;const store=toPayStores.find(s=>s.id===p.store_id);if(store?.slug){location.href="../all/seller-store.html?store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(p.id)}else showToast("This seller store is not available right now.");return}
 });
 
 // RANOVA in-app buyer messenger 2026-09-29
