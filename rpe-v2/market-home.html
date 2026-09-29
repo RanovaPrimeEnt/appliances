@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ff7a00">
+<title>RANOVA Marketplace</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f4f4;color:#202020;font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;padding-bottom:72px}
+.wrap{width:min(100%,620px);margin:auto;min-height:100vh;background:#f4f4f4}
+.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #e9e9e9}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 14px 7px}
+.tab{border:0;background:transparent;font-weight:900;font-size:14px;padding:7px 0;position:relative}.tab.active{font-size:21px}.tab.active:after{content:"";position:absolute;width:48px;height:4px;border-radius:99px;background:#ff672f;left:50%;bottom:0;transform:translateX(-50%)}
+.search{margin:4px 10px 10px;height:48px;border:2px solid #202020;border-radius:25px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;overflow:hidden;background:#fff}.search svg{width:21px;height:21px;margin-left:13px;color:#777}.search input{border:0;outline:0;padding:0 9px;font-size:14px;min-width:0}.search button{height:100%;border:0;border-radius:24px;background:#ff5b2e;color:#fff;padding:0 21px;font-weight:900}
+.features{display:flex;gap:17px;overflow:auto;padding:10px 13px 14px;background:#fff;scrollbar-width:none}.features::-webkit-scrollbar{display:none}.feature{flex:0 0 62px;text-align:center}.feature span{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;margin:auto;font-size:24px;background:linear-gradient(145deg,#ffe178,#ffb400)}.feature:nth-child(2) span{background:linear-gradient(145deg,#ff9cc8,#ff2f75)}.feature:nth-child(3) span{background:linear-gradient(145deg,#fbe880,#ffbd00)}.feature:nth-child(4) span{background:linear-gradient(145deg,#a6f3d5,#18c789)}.feature:nth-child(5) span{background:linear-gradient(145deg,#d6c9ff,#7558f5)}.feature b{display:block;font-size:9px;margin-top:6px}
+.promos{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}.promo{background:#fff;border-radius:15px;padding:9px}.promo h3{font-size:13px;margin:0 0 7px}.mini{display:grid;grid-template-columns:1fr 1fr;gap:5px}.mini button{border:0;background:transparent;padding:0;text-align:left}.mini img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:9px;background:#eee}.price{color:#e84e31;font-size:10px;font-weight:900;margin-top:4px}
+.heading{padding:7px 13px 10px;font-size:16px;font-weight:950}
+.feed{display:grid;gap:9px;padding:0 9px}.factory{background:#fff;border-radius:14px;padding:9px;display:grid;grid-template-columns:128px minmax(0,1fr);gap:10px}.media{height:128px;border-radius:11px;overflow:hidden;background:#eee;display:grid;grid-template-columns:1fr 1fr;gap:2px}.media.single{grid-template-columns:1fr}.media img{width:100%;height:100%;object-fit:cover}.copy{min-width:0}.copy h3{font-size:15px;margin:3px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{font-size:9px;color:#888;margin-bottom:6px}.badges{display:flex;gap:4px;flex-wrap:wrap}.badge{font-size:8px;padding:4px 6px;border-radius:5px;background:#fff0d4;color:#8a5c0b;font-weight:800}.badge.dark{background:#2b2140;color:#fff}.desc{font-size:9px;color:#888;margin-top:6px;line-height:1.4}.actions{display:flex;gap:5px;margin-top:8px}.actions button{border:0;border-radius:8px;padding:7px 8px;font-size:9px;font-weight:900}.ask{background:#ff5b2e;color:#fff}.visit{background:#f1f1f1}
+.bottom{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,620px);height:70px;background:#fff;border-top:1px solid #e8e8e8;display:grid;grid-template-columns:repeat(4,1fr);z-index:30}.bottom a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#222;text-decoration:none;font-size:9px}.bottom svg{width:25px;height:25px}.bottom a.active{color:#ff7a00}
+.empty{padding:30px;text-align:center;color:#888}
+@media(min-width:760px){body{background:#e9e9e9}.wrap{box-shadow:0 0 35px #00000010}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+ <div class="tabs"><button class="tab">Recommended</button><button class="tab active">Find Factories</button><button class="tab">Industrial Goods</button></div>
+ <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="q" placeholder="Search products, stores or factories"><button id="searchBtn">Search</button></div>
+ <div class="features"><div class="feature"><span>🏭</span><b>Top Factories</b></div><div class="feature"><span>✨</span><b>Custom Orders</b></div><div class="feature"><span>🏢</span><b>Official Stores</b></div><div class="feature"><span>🆕</span><b>New Products</b></div><div class="feature"><span>💬</span><b>Bulk Quotes</b></div></div>
+</header>
+<div id="promos" class="promos"></div>
+<div class="heading">Factories & Stores for You</div>
+<div id="feed" class="feed"></div>
+</div>
+<nav class="bottom">
+<a class="active" href="./market-home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></a>
+<a href="./index.html#messagesPanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span></a>
+<a href="./index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart</span></a>
+<a href="./index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></a>
+</nav>
+<script>
+(function(){"use strict";
+const cfg=window.RPE_CONFIG||{},sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+let stores=[],products=[];
+function money(n,c="GHS"){if(n==null)return"Ask for quote";try{return new Intl.NumberFormat("en-GH",{style:"currency",currency:c||"GHS",maximumFractionDigits:2}).format(Number(n))}catch{return(c||"GHS")+" "+Number(n).toFixed(2)}}
+function ps(id){return products.filter(p=>p.store_id===id)}
+function render(filter=""){const q=filter.trim().toLowerCase(),mp=products.filter(p=>!q||[p.name,p.category,p.short_description,p.sku].some(x=>String(x||"").toLowerCase().includes(q))),ms=stores.filter(s=>!q||[s.store_name,s.tagline,s.description,s.business_location,s.country_name].some(x=>String(x||"").toLowerCase().includes(q))||ps(s.id).some(p=>[p.name,p.category].some(x=>String(x||"").toLowerCase().includes(q))));
+const promo=(mp.length?mp:products).slice(0,8);document.getElementById("promos").innerHTML=promo.length?[0,2,4,6].map((n,i)=>{const pair=promo.slice(n,n+2);if(!pair.length)return"";return'<div class="promo"><h3>'+["Trending Picks","New Arrivals","Factory Deals","Popular Today"][i]+'</h3><div class="mini">'+pair.map(p=>'<button data-product="'+p.id+'">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'">':'')+'<div class="price">'+esc(money(p.price,p.currency))+'</div></button>').join("")+'</div></div>'}).join(""):'<div class="empty" style="grid-column:1/-1">Products will appear here.</div>';
+document.getElementById("feed").innerHTML=ms.length?ms.map(s=>{const sp=ps(s.id).filter(p=>!q||[p.name,p.category,p.short_description].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,4),imgs=sp.map(p=>p.primary_image_url).filter(Boolean).slice(0,4);return'<article class="factory"><div class="media '+(imgs.length<2?'single':'')+'">'+(imgs.length?imgs.map(u=>'<img src="'+esc(u)+'" alt="">').join(""):(s.banner_url?'<img src="'+esc(s.banner_url)+'" alt="">':'<div style="display:grid;place-items:center;font-size:40px">🏭</div>'))+'</div><div class="copy"><h3>'+esc(s.store_name||"RANOVA Store")+'</h3><div class="meta">'+esc(s.business_location||s.country_name||"Marketplace seller")+' · '+sp.length+' featured products</div><div class="badges"><span class="badge dark">Verified Store</span><span class="badge">Factory Direct</span></div><div class="desc">'+esc(s.tagline||s.description||"Contact this store for product details and bulk pricing.")+'</div><div class="actions"><button class="ask" data-message-store="'+s.id+'">Message Store</button><button class="visit" data-store="'+esc(s.slug||s.id)+'">View Store</button></div></div></article>'}).join(""):'<div class="empty">No matching active stores.</div>';
+}
+async function load(){const[a,b]=await Promise.all([sb.from("ranova_seller_stores").select("id,store_name,slug,tagline,description,logo_url,banner_url,business_location,country_name").eq("store_status","active").limit(100),sb.from("ranova_seller_products").select("id,store_id,name,sku,category,short_description,price,currency,primary_image_url").eq("product_status","active").limit(240)]);stores=a.data||[];products=b.data||[];render()}
+document.getElementById("searchBtn").onclick=()=>render(document.getElementById("q").value);document.getElementById("q").oninput=e=>render(e.target.value);
+document.addEventListener("click",e=>{const p=e.target.closest("[data-product]");if(p){location.href="../all/messages.html?product="+encodeURIComponent(p.dataset.product);return}const m=e.target.closest("[data-message-store]");if(m){location.href="../all/messages.html?store="+encodeURIComponent(m.dataset.messageStore);return}const s=e.target.closest("[data-store]");if(s)location.href="../all/marketplace.html?store="+encodeURIComponent(s.dataset.store)});
+load();
+})();
+</script>
+</body></html>
