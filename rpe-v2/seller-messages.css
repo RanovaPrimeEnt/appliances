@@ -31,3 +31,198 @@
 .seller-media-file{display:block;color:#176649;font-weight:700;margin:5px 0;overflow-wrap:anywhere}
 @media(max-width:720px){#seller-messages{padding:0!important}.seller-messenger{height:calc(100dvh - 95px);min-height:0;border-radius:0;border-left:0;border-right:0;margin:0}.seller-chat-composer{padding:7px 4px;gap:1px}.seller-chat-composer .seller-icon-button{width:34px;min-width:34px}.seller-chat-composer .seller-send-button{min-width:38px;width:38px}.seller-chat-header{min-height:62px}}
 @media(max-width:720px){.admin-wrap:has(#seller-messages.active){width:100%;margin:0;gap:0}.admin-wrap:has(#seller-messages.active) .side{border-radius:0;border-left:0;border-right:0}.admin-wrap:has(#seller-messages.active) main{min-width:0}.admin-wrap:has(#seller-messages.active) .seller-messenger{height:calc(100dvh - 142px)}}
+
+
+/* RANOVA WhatsApp-style messenger refinement 2026-09-29 */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
+
+.seller-messenger{
+  --seller-chat-font:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  font-family:var(--seller-chat-font);
+}
+.seller-messenger button,
+.seller-messenger input,
+.seller-messenger textarea{
+  font-family:inherit;
+}
+.seller-inbox-title h1,
+.seller-conversation-top strong,
+.seller-chat-heading strong,
+.seller-chat-bubble,
+.seller-chat-intro{
+  font-family:var(--seller-chat-font);
+}
+.seller-conversation-top strong{font-size:1.08rem}
+.seller-conversation-bottom span{font-size:.93rem}
+.seller-chat-heading strong{font-size:1.12rem}
+.seller-chat-heading small{font-size:.88rem}
+.seller-chat-bubble{font-size:1.03rem;line-height:1.42}
+.seller-chat-bubble time{font-family:var(--font-ui);font-size:.68rem}
+.seller-chat-day{font-family:var(--font-ui)}
+
+.seller-composer-shell{
+  background:#f0f2f1;
+  padding:7px 8px 8px;
+}
+.seller-chat-composer{
+  display:flex;
+  align-items:flex-end;
+  gap:7px;
+  width:100%;
+  padding:0;
+  background:transparent;
+}
+.seller-message-field{
+  flex:1;
+  min-width:0;
+  min-height:48px;
+  display:flex;
+  align-items:flex-end;
+  gap:2px;
+  padding:3px 5px 3px 3px;
+  background:#fff;
+  border:1px solid #dde3e0;
+  border-radius:25px;
+  box-shadow:0 1px 2px rgba(30,53,44,.08);
+}
+.seller-message-field .seller-icon-button{
+  flex:none;
+  width:38px;
+  min-width:38px;
+  height:40px;
+  min-height:40px;
+  border-radius:50%;
+  color:#5e6e68;
+  background:transparent;
+  font-family:var(--font-ui);
+  font-size:1.25rem;
+}
+.seller-message-field .seller-icon-button:hover{background:#f0f3f2}
+.seller-message-field textarea{
+  flex:1;
+  min-width:0;
+  min-height:40px;
+  height:40px;
+  max-height:112px;
+  resize:none;
+  border:0;
+  outline:0;
+  box-shadow:none;
+  background:transparent;
+  border-radius:0;
+  padding:8px 4px 7px;
+  color:#31433e;
+  font-family:var(--seller-chat-font);
+  font-size:1.12rem;
+  line-height:1.25;
+}
+.seller-message-field textarea::placeholder{
+  color:#68746f;
+  opacity:1;
+}
+.seller-chat-composer > .seller-round-action{
+  flex:none;
+  width:48px;
+  min-width:48px;
+  height:48px;
+  min-height:48px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:#16a36f;
+  color:#fff;
+  box-shadow:0 2px 5px rgba(16,92,68,.18);
+  font-family:var(--font-ui);
+  font-size:1.28rem;
+}
+.seller-chat-composer > .seller-round-action:hover{background:#138f62}
+.seller-chat-composer > .seller-round-action[hidden]{display:none!important}
+
+.seller-attachment-preview{
+  margin:0 1px 7px;
+  border-radius:15px;
+  background:#fff;
+  border:1px solid #dde5e1;
+  font-family:var(--seller-chat-font);
+  font-size:.96rem;
+}
+.seller-attachment-preview button{
+  width:34px;
+  min-width:34px;
+  height:34px;
+  min-height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#fde8ee;
+  color:#d70a4f;
+  font-family:var(--font-ui);
+  font-size:1.25rem;
+}
+
+.seller-recording{
+  gap:12px;
+  margin:0 1px 7px;
+  min-height:84px;
+  padding:12px;
+  border:1px solid #e1e6e3;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 2px 8px rgba(31,55,45,.06);
+}
+.seller-recording #sellerRecordDelete{
+  width:52px;
+  min-width:52px;
+  height:52px;
+  min-height:52px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  padding:0;
+  background:#fde9ef;
+  color:#e4004f;
+}
+.seller-recording #sellerRecordDelete svg{
+  width:25px;
+  height:25px;
+  stroke:currentColor;
+}
+.seller-recording #sellerRecordPause{
+  min-height:52px;
+  border-radius:28px;
+  background:#f2f3f3;
+  color:#2b4038;
+  font-family:var(--seller-chat-font);
+  font-size:1.02rem;
+}
+.seller-recording #sellerRecordSend{
+  width:54px;
+  min-width:54px;
+  height:54px;
+  min-height:54px;
+  border-radius:50%;
+  background:#16a36f;
+  color:#fff;
+}
+
+.seller-emoji-panel{
+  font-family:var(--seller-chat-font);
+}
+.seller-emoji-tabs button,
+.seller-emoji-panel input{
+  font-family:var(--seller-chat-font);
+  font-size:.98rem;
+}
+
+@media(max-width:720px){
+  .seller-composer-shell{padding:6px 6px 7px}
+  .seller-chat-composer{gap:5px}
+  .seller-message-field{min-height:47px;border-radius:24px}
+  .seller-message-field .seller-icon-button{width:35px;min-width:35px}
+  .seller-message-field textarea{font-size:1.08rem}
+  .seller-chat-composer > .seller-round-action{
+    width:47px;min-width:47px;height:47px;min-height:47px;
+  }
+}
