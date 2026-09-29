@@ -35,6 +35,7 @@ let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=nul
 const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 const FAST_CACHE_TTL=5*60*1000;
 let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
+let initializedUserId=null,sessionApplyInFlight=false;
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -43,6 +44,10 @@ const imageFor = (p) => {
   const imgs = (p.product_images || []).slice().sort((a,b)=>(b.is_primary?1:0)-(a.is_primary?1:0)||(a.sort_order||0)-(b.sort_order||0));
   return imgs[0]?.image_url || "";
 };
+function hidePreparationScreen(){
+  if(setup)setup.classList.add("hide");
+  if(appBox&&user)appBox.classList.remove("hide");
+}
 function showToast(msg){toast.textContent=msg;toast.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove("show"),1700)}
 function statusLabel(s){return ({
   quote_pending:"Quote pending",awaiting_confirmation:"Awaiting confirmation",awaiting_payment:"To pay",
@@ -79,6 +84,7 @@ function idleRun(fn,timeout=1200){if("requestIdleCallback"in window)requestIdleC
 function contactRpe(){window.open("https://wa.me/233542846895?text="+encodeURIComponent("Hello Ranova Prime Enterprise, I need some help with my order or shopping."),"_blank","noopener")}
 
 function showPanel(id){
+  hidePreparationScreen();
   document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
   $(id)?.classList.add("active");
   document.querySelectorAll(".bottom button[data-panel]").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));
@@ -86,7 +92,7 @@ function showPanel(id){
   if(id==="ordersPanel") renderOrders();
   if(id==="messagesPanel"){if(messageConversations.length)renderMessageList();if(Date.now()-messagesLoadedAt>30000)loadMessageConversations().catch(()=>{})}
   if(id==="toPayPanel"){if(toPayOrders.length)renderToPayOrders($("toPaySearch")?.value||"");if(Date.now()-toPayLoadedAt>30000)loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"))}
-  window.scrollTo({top:0,behavior:"smooth"});
+  window.scrollTo(0,0);
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-panel]");
@@ -156,27 +162,73 @@ $("signOut").onclick=()=>sb.auth.signOut();
 
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
-  applySession(session);
-  sb.auth.onAuthStateChange((_event,session)=>setTimeout(()=>applySession(session),0));
+  await applySession(session,true);
+  sb.auth.onAuthStateChange((event,session)=>{
+    setTimeout(()=>{
+      const nextId=session?.user?.id||null;
+      if(event==="SIGNED_OUT"||!nextId){applySession(null,false);return}
+      if(initializedUserId===nextId){
+        user=session.user;
+        return;
+      }
+      applySession(session,false);
+    },0);
+  });
 }
-async function applySession(session){
-  cleanupRealtime();
-  user=session?.user||null;
-  if(!user){
-    setup.classList.add("hide");appBox.classList.add("hide");authBox.classList.remove("hide");authUI();return;
+async function applySession(session,initial=false){
+  const nextUser=session?.user||null;
+  const nextId=nextUser?.id||null;
+
+  if(!nextUser){
+    cleanupRealtime();
+    initializedUserId=null;
+    user=null;
+    setup.classList.add("hide");
+    appBox.classList.add("hide");
+    authBox.classList.remove("hide");
+    authUI();
+    return;
   }
+
+  // If the same signed-in user is already inside the app, never replace
+  // the current screen with the loading page on token refresh/auth events.
+  if(initializedUserId===nextId && appBox && !appBox.classList.contains("hide")){
+    user=nextUser;
+    return;
+  }
+  if(sessionApplyInFlight)return;
+  sessionApplyInFlight=true;
+
+  cleanupRealtime();
+  user=nextUser;
   authBox.classList.add("hide");
+
+  // Keep the actual app visible immediately. Data paints from cache first,
+  // then refreshes silently in the background.
   const cached=restoreFastCache();
-  if(cached){setup.classList.add("hide");appBox.classList.remove("hide")}else{setup.classList.remove("hide");setup.textContent="Loading your RPE account…"}
+  setup.classList.add("hide");
+  appBox.classList.remove("hide");
+  if(!cached){
+    // Render the existing shell immediately rather than showing
+    // "Preparing My RPE..." between destinations.
+    try{renderAll()}catch{}
+  }
+
   try{
     await loadAll();
-    setup.classList.add("hide");appBox.classList.remove("hide");subscribeRealtime();
+    initializedUserId=nextId;
+    setup.classList.add("hide");
+    appBox.classList.remove("hide");
+    subscribeRealtime();
     handleIncomingCartLink().catch(()=>{});
     idleRun(()=>loadMessageConversations(true).catch(()=>{}),900);
     idleRun(()=>loadToPayOrders(true).catch(()=>{}),1300);
   }catch(e){
     console.error(e);
-    if(!cached)setup.innerHTML='<div style="text-align:center;padding:24px"><b style="display:block;color:#173d32">We could not load My RPE.</b><span>Please refresh or try again shortly.</span></div>';
+    // Do not blank an already-open app because one refresh call failed.
+    if(!cached)showToast("Some account information is still loading.");
+  }finally{
+    sessionApplyInFlight=false;
   }
 }
 
