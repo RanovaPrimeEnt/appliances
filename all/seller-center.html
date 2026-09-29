@@ -36,6 +36,7 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
 .verify-card.needs-document{border-color:#df783c;background:#fffaf5;box-shadow:0 0 0 2px #ffead8}.document-reminder{display:flex;align-items:center;gap:9px;margin:12px 0 0;padding:11px 13px;border-radius:12px;background:#fff0df;color:#814015;font-size:15px;font-weight:750;line-height:1.5}.document-reminder[hidden]{display:none}.document-reminder .friendly-thumb{display:inline-grid;place-items:center;flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#fff;font-size:23px}.verify-card,#sBusiness{scroll-margin-top:100px}.upload input:focus-visible{outline:3px solid #c5672c;outline-offset:3px}.submit-review button{cursor:pointer}
 .seller-review-alert{grid-column:1/-1;padding:17px 19px;border:1px solid #f0c993;border-left:5px solid #d88625;border-radius:15px;background:#fff8eb;color:#573c1d;line-height:1.55}.seller-review-alert[hidden]{display:none}.seller-review-alert strong{display:block;font-size:18px}.seller-review-alert p{margin:7px 0 12px;white-space:pre-wrap;overflow-wrap:anywhere}.seller-review-alert a{display:inline-flex;min-height:40px;align-items:center;padding:0 14px;border-radius:999px;background:#116a52;color:#fff;text-decoration:none;font-size:14px;font-weight:800}
 .seller-review-alert [hidden]{display:none!important}
+.locked-box{font-size:16px;line-height:1.65}.locked-box b{font-size:18px}.step b{font-size:18px}.step small{font-size:14px;line-height:1.5}.small,.file span,.status-pill{font-size:14px}.card h2{font-size:22px}.field label{font-size:16px}.nav a,.nav button{font-size:14px}
 </style>
 </head>
 <body>
@@ -332,6 +333,8 @@ function renderProgress(files){
   var ready=businessDone&&businessReady&&identityReady&&fulfilmentReady;
   if(submit)submit.disabled=reviewBusy;
   if(validationAttempted)showMissingDocuments(false);
+  if(submit)submit.textContent=app.dashboard_approved?"Submit document updates":"Submit for RANOVA Review";
+  if(help&&app.dashboard_approved){help.textContent="Your dashboard is unlocked. You can upload outstanding documents here without losing approval.";if(next)next.innerHTML='Approved: <a href="./seller-dashboard.html">Open Seller Dashboard →</a>. Please complete any outstanding documents when available.';return}
   if(help)help.textContent=ready?"Everything required is present. Submit when you are ready for RANOVA Admin to review it.":"Complete the missing required steps above first.";
 }
 function renderFiles(files){
@@ -357,7 +360,8 @@ async function loadWorkspace(){
     document.getElementById("businessName").textContent=currentApplication.business_name||"Seller";
     document.getElementById("applicationMeta").textContent=(currentApplication.application_ref||"")+" · "+(currentApplication.supplier_type||"Seller")+" · "+(currentApplication.business_location||"");
     var approvalStatus=String(currentApplication.verification_status||currentApplication.status||"in_progress").toLowerCase();
-    var approved=approvalStatus==="approved";
+    var approved=out.approved===true;
+    currentApplication.dashboard_approved=approved;
     var pill=document.getElementById("statusPill");
     pill.textContent=pretty(approvalStatus);
     pill.classList.toggle("approved",approved);
@@ -374,7 +378,7 @@ async function loadWorkspace(){
     var dashboardLink=document.getElementById("dashboardLink"),storeBox=document.getElementById("storeSetupBox");
     if(approved){
       dashboardLink.style.display="inline-flex";
-      storeBox.innerHTML='<b>Your seller account is approved.</b><br>Store Builder is ready. Create your storefront, upload your logo/banner, add products, set MOQ/pricing/stock and prepare listings for RANOVA review.<div style="margin-top:12px"><a href="./seller-dashboard.html" style="display:inline-flex;min-height:40px;align-items:center;padding:0 14px;border-radius:999px;background:#116a52;color:#fff;text-decoration:none;font-size:14px;font-weight:900">Open Seller Dashboard →</a></div>';
+      storeBox.innerHTML='<b>Your seller account is approved.</b><br>Store Builder is ready. Create your storefront, upload your logo/banner, add products, set MOQ/pricing/stock and prepare listings for RANOVA review.<div style="margin-top:12px"><a href="./seller-dashboard.html" style="display:inline-flex;min-height:40px;align-items:center;padding:0 14px;border-radius:999px;background:#116a52;color:#fff;text-decoration:none;font-size:16px;font-weight:900">Open Seller Dashboard →</a></div>';
       storeBox.style.borderStyle="solid";
       storeBox.style.borderColor="#b8ddcd";
       storeBox.style.background="#f0faf5";
@@ -402,14 +406,14 @@ document.getElementById("submitForReview").addEventListener("click",async functi
   var btn=this,msg=document.getElementById("verifyMsg");hideMsg(msg);
   if(reviewBusy)return;
   validationAttempted=true;
-  var missing=showMissingDocuments(true);
+  var missing=currentApplication?.dashboard_approved?[]:showMissingDocuments(true);
   if(missing.length){
     document.getElementById("submitReviewHelp").textContent="You’re nearly there! Please complete the "+missing.length+" highlighted section"+(missing.length===1?"":"s")+" above. Selected files must finish uploading before you submit.";
     return;
   }
   if(uploadCount){showMsg(msg,"Your document is still uploading. Please wait for it to finish, then submit 👍");return}
   if(!currentSession||!currentApplication){showMsg(msg,"Sign in and connect your seller application first.");return}
-  if(!stageComplete(currentApplication.business_info_status)){
+  if(!currentApplication.dashboard_approved&&!stageComplete(currentApplication.business_info_status)){
     var info=document.getElementById("sBusiness");info.classList.add("needs-document");
     var hint=document.getElementById("businessInfoReminder");
     if(!hint){hint=document.createElement("p");hint.id="businessInfoReminder";hint.className="document-reminder";info.appendChild(hint)}
@@ -419,8 +423,8 @@ document.getElementById("submitForReview").addEventListener("click",async functi
   if(!confirm("Submit your completed seller verification to RANOVA Admin for review?"))return;
   reviewBusy=true;btn.disabled=true;var old=btn.textContent;btn.textContent="Submitting…";
   try{
-    await api(WORKSPACE_ENDPOINT,{action:"submit_for_review"});
-    showMsg(msg,"Seller registration submitted successfully. RANOVA Admin can now review your business, identity and fulfilment documents.");
+    var result=await api(WORKSPACE_ENDPOINT,{action:"submit_for_review"});
+    showMsg(msg,result.approval_preserved?"Document updates saved. Your approval and Seller Dashboard access remain active.":"Seller registration submitted successfully. RANOVA Admin can now review your business, identity and fulfilment documents.");
     await loadWorkspace();
     window.scrollTo({top:0,behavior:"smooth"});
   }catch(err){

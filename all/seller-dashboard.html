@@ -398,7 +398,7 @@ function setPanel(name){
 async function refresh(){
   state=await api({action:"dashboard"});
   if(!state.approved){
-    el("gate").innerHTML='<div class="locked"><b>Seller verification is not approved yet.</b>Complete the Seller Center verification steps and wait for RANOVA approval before store-management tools unlock.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Return to Seller Center →</a></div></div>';
+    el("gate").innerHTML='<div class="locked"><b>Seller verification is not approved yet.</b>Wait for RANOVA Admin to approve your seller account or store. After approval, missing documents do not block store management.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Return to Seller Center →</a></div></div>';
     el("dashboard").classList.add("hide");return;
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
