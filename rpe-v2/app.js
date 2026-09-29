@@ -40,6 +40,7 @@ let initializedUserId=null,sessionApplyInFlight=false;
 let activePanelId="homePanel";
 let simpleDiscoveryOrigin="homePanel";
 let simpleDiscoveryProductId=null;
+let recommendationRotation=0,recommendationTimer=null;
 const panelPainted=new Set();
 function afterPaint(fn){requestAnimationFrame(()=>setTimeout(fn,0))}
 function markPanelPainted(id){panelPainted.add(id)}
@@ -351,11 +352,88 @@ function productCard(p){
 function renderProducts(list){
   $("productsGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>No matching products</b>Try another search.</div>';
 }
-function renderHomeProducts(){$("homeProducts").innerHTML=products.slice(0,4).map(productCard).join("")||'<div class="empty" style="grid-column:1/-1">Products will appear here when the RPE catalogue is connected.</div>'}
+function homeSellerCard(p){
+  const store=marketStores.find(s=>s.id===p.store_id)||{};
+  return '<article class="product home-seller-product">'+
+    '<button class="product-open" data-home-seller-product="'+esc(p.id)+'" style="display:block;width:100%;padding:0;border:0;background:#fff;text-align:left">'+
+      (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" loading="lazy" decoding="async" alt="'+esc(p.name)+'">':'<div style="height:155px;display:grid;place-items:center;background:#f5f7f6;color:#93a49e;font-size:10px">Marketplace Product</div>')+
+      '<div class="product-copy"><h3>'+esc(p.name||"Product")+'</h3><small>'+esc(store.store_name||p.category||"Marketplace Store")+'</small><small style="font-weight:800;color:#0e5b43">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</small></div>'+
+    '</button>'+
+  '</article>';
+}
+function pickHomeRecommendations(){
+  const sellerPool=marketSellerProducts.filter(p=>p&&p.id);
+  if(sellerPool.length){
+    const storeBuckets=new Map();
+    sellerPool.forEach(p=>{const key=p.store_id||"unknown";if(!storeBuckets.has(key))storeBuckets.set(key,[]);storeBuckets.get(key).push(p)});
+    const stores=[...storeBuckets.keys()];
+    const chosen=[],used=new Set();
+    let round=0;
+    while(chosen.length<4&&round<sellerPool.length+stores.length){
+      for(let i=0;i<stores.length&&chosen.length<4;i++){
+        const storeKey=stores[(i+recommendationRotation)%stores.length];
+        const arr=storeBuckets.get(storeKey)||[];
+        if(!arr.length)continue;
+        const p=arr[(recommendationRotation+round+i)%arr.length];
+        if(p&&!used.has(p.id)){used.add(p.id);chosen.push({kind:"seller",p})}
+      }
+      round++;
+    }
+    // If there are fewer stores, fill remaining slots with different products/categories.
+    const ordered=sellerPool.slice().sort((a,b)=>{
+      const ac=String(a.category||""),bc=String(b.category||"");
+      return ac.localeCompare(bc)||String(a.name||"").localeCompare(String(b.name||""));
+    });
+    for(let i=0;i<ordered.length&&chosen.length<4;i++){
+      const p=ordered[(i+recommendationRotation*3)%ordered.length];
+      if(!used.has(p.id)){used.add(p.id);chosen.push({kind:"seller",p})}
+    }
+    if(chosen.length)return chosen;
+  }
+
+  // Fallback: deliberately mix catalogue categories instead of taking the first four records.
+  const byCategory=new Map();
+  products.forEach(p=>{const key=p.categories?.name||p.brand||"Other";if(!byCategory.has(key))byCategory.set(key,[]);byCategory.get(key).push(p)});
+  const cats=[...byCategory.keys()],chosen=[];
+  if(cats.length){
+    for(let i=0;i<cats.length&&chosen.length<4;i++){
+      const arr=byCategory.get(cats[(i+recommendationRotation)%cats.length])||[];
+      const p=arr[recommendationRotation%Math.max(1,arr.length)];
+      if(p)chosen.push({kind:"legacy",p});
+    }
+  }
+  for(let i=0;i<products.length&&chosen.length<4;i++){
+    const p=products[(i+recommendationRotation)%products.length];
+    if(p&&!chosen.some(x=>x.p.id===p.id))chosen.push({kind:"legacy",p});
+  }
+  return chosen;
+}
+function renderHomeProducts(){
+  const host=$("homeProducts");if(!host)return;
+  const picks=pickHomeRecommendations();
+  host.innerHTML=picks.length
+    ? picks.map(x=>x.kind==="seller"?homeSellerCard(x.p):productCard(x.p)).join("")
+    : '<div class="empty" style="grid-column:1/-1">Products will appear here when the RPE catalogue is connected.</div>';
+}
+function startRecommendationRotation(){
+  if(recommendationTimer)return;
+  recommendationTimer=setInterval(()=>{
+    if(document.hidden)return;
+    recommendationRotation++;
+    renderHomeProducts();
+  },45000);
+}
 function renderSaved(){const list=products.filter(p=>favorites.has(p.id));$("savedGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>No saved products yet</b>Tap ♡ on a product you want to remember.</div>'}
 function renderRecent(){const map=new Map(products.map(p=>[p.id,p]));const list=recentIds.map(id=>map.get(id)).filter(Boolean);$("recentGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>Nothing viewed yet</b>Products you open will appear here automatically.</div>'}
 
 document.addEventListener("click",async e=>{
+  const sellerHome=e.target.closest("[data-home-seller-product]");
+  if(sellerHome){
+    const p=marketSellerProducts.find(x=>x.id===sellerHome.dataset.homeSellerProduct);
+    const url=sellerStoreProductUrl(p);
+    if(url)location.href=url;else showToast("This product is not available right now.");
+    return;
+  }
   const add=e.target.closest("[data-add]"); if(add){e.stopPropagation();await addToCart(add.dataset.add);return}
   const fav=e.target.closest("[data-fav]"); if(fav){e.stopPropagation();await toggleFavorite(fav.dataset.fav);return}
   const open=e.target.closest("[data-open-product]"); if(open){openProduct(open.dataset.openProduct);return}
@@ -583,7 +661,7 @@ async function loadMarketplaceHomeData(){
     sb.from("ranova_seller_products").select("id,store_id,name,sku,category,short_description,price,currency,moq,unit_label,primary_image_url").eq("product_status","active").limit(120)
   ]);
   if(a.error)throw a.error;if(b.error)throw b.error;
-  marketStores=a.data||[];marketSellerProducts=b.data||[];marketLoadedAt=Date.now();renderMarketplaceHome($("marketHomeSearch")?.value||"");markPanelPainted("marketplaceHomePanel");
+  marketStores=a.data||[];marketSellerProducts=b.data||[];marketLoadedAt=Date.now();renderMarketplaceHome($("marketHomeSearch")?.value||"");renderHomeProducts();markPanelPainted("marketplaceHomePanel");
 }
 function marketStoreProducts(id){return marketSellerProducts.filter(p=>p.store_id===id)}
 function sellerStoreProductUrl(product){
@@ -785,5 +863,6 @@ $("msgRecordPause").onclick=()=>{if(!msgRecorder)return;const b=$("msgRecordPaus
 $("msgRecordDelete").onclick=()=>{if(msgRecorder){msgRecorder.onstop=null;if(msgRecorder.state!=="inactive")msgRecorder.stop()}clearInterval(msgTimer);stopMsgRecording()};$("msgRecordSend").onclick=()=>{if(msgRecorder&&msgRecorder.state!=="inactive"){clearInterval(msgTimer);msgRecorder.stop()}};
 updateMsgAction();
 
+startRecommendationRotation();
 boot();
 })();
