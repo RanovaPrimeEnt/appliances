@@ -38,6 +38,7 @@ const FAST_CACHE_TTL=5*60*1000;
 let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 let initializedUserId=null,sessionApplyInFlight=false;
 let activePanelId="homePanel";
+let simpleDiscoveryOrigin="homePanel";
 const panelPainted=new Set();
 function afterPaint(fn){requestAnimationFrame(()=>setTimeout(fn,0))}
 function markPanelPainted(id){panelPainted.add(id)}
@@ -126,6 +127,7 @@ document.addEventListener("click",e=>{
   const coming=e.target.closest("[data-coming]");
   if(coming){showToast(coming.dataset.coming+" is coming soon to RANOVA.")}
 });
+if($("simpleDiscoveryBack"))$("simpleDiscoveryBack").onclick=()=>showPanel(simpleDiscoveryOrigin||"homePanel");
 if($("contactShortcut"))$("contactShortcut").onclick=contactRpe;
 if($("helpContact"))$("helpContact").onclick=contactRpe;
 if($("notifBtn"))$("notifBtn").onclick=()=>showPanel("notifPanel");
@@ -361,27 +363,16 @@ function filteredProductsNow(){
 }
 async function openProduct(id){
   const p=products.find(x=>x.id===id);if(!p)return;
-  const sellerProduct=matchingSellerProduct(p),storeUrl=sellerStoreProductUrl(sellerProduct);
-  if(storeUrl){location.href=storeUrl;return}
-  recentIds=[id,...recentIds.filter(x=>x!==id)].slice(0,20);panelPainted.delete("recentPanel");
-  sb.from("recently_viewed").upsert({user_id:user.id,product_id:id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"}).then(()=>saveFastCache()).catch(()=>{});
-  const specRows=Object.entries(p.specifications||{}).map(([k,v])=>`<div class="list-row"><div><b>${esc(prettyKey(k))}</b><small>${esc(typeof v==="boolean"?(v?"Yes":"No"):v)}</small></div></div>`).join("");
-  const dimensions=p.dimensions?`<div class="list-row"><div><b>Dimensions</b><small>${esc(p.dimensions)}</small></div></div>`:"";
-  const overlay=document.createElement("div");overlay.className="cart-drawer open";overlay.innerHTML=`<aside class="drawer"><div class="drawer-head"><h3>Product details</h3><button class="icon-btn" data-close-product>×</button></div><div class="drawer-list">
-    ${imageFor(p)?'<img src="'+esc(imageFor(p))+'" style="width:100%;height:250px;object-fit:contain;background:#f5f7f6;border-radius:18px" alt="'+esc(p.name)+'">':""}
-    <h2 style="font-family:Georgia,serif">${esc(p.name)}</h2><p style="font-size:12px;color:var(--muted)">${esc(p.description||p.short_description||"Contact RPE for full product information.")}</p>
-    <div class="list-row"><div><b>Price</b><small>${esc(money(p.price,p.currency))}</small></div><span class="status-chip">${esc(p.stock_status==="confirm_on_enquiry"?"Confirm availability":statusLabel(p.stock_status))}</span></div>
-    <div class="list-row"><div><b>Product ID</b><small>${esc(p.sku||p.legacy_id||p.id)}</small></div></div>
-    ${dimensions}${specRows}
-  </div><div class="drawer-foot"><button class="btn primary" data-modal-add="${p.id}">Add to cart</button><button class="btn soft" data-modal-fav="${p.id}">${favorites.has(p.id)?"Remove from saved":"Save product"}</button></div></aside>`;
-  document.body.appendChild(overlay);
-  const close=()=>overlay.remove();overlay.addEventListener("click",async e=>{
-    if(e.target===overlay||e.target.closest("[data-close-product]"))close();
-    if(e.target.closest("[data-modal-add]")){await addToCart(p.id);close()}
-    if(e.target.closest("[data-modal-fav]")){await toggleFavorite(p.id);close()}
-  });
+  simpleDiscoveryOrigin=activePanelId||"homePanel";
+  const image=imageFor(p);
+  $("simpleDiscoveryImage").innerHTML=image
+    ? '<img src="'+esc(image)+'" alt="'+esc(p.name)+'" loading="eager" decoding="async">'
+    : '<div class="sd-empty">RPE Product</div>';
+  $("simpleDiscoveryName").textContent=p.name||"Product";
+  $("simpleDiscoveryCategory").textContent=p.categories?.name||"RPE Product";
+  $("simpleDiscoveryPrice").textContent=money(p.price,p.currency);
+  showPanel("simpleDiscoveryPanel");
 }
-
 
 async function handleIncomingCartLink(){
   if(incomingCartHandled)return;
