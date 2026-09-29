@@ -145,9 +145,12 @@ body{background:var(--r-page);color:var(--r-text)}
 
 /* home-install-button */
 .home-orders-head{gap:10px}
-.home-orders-actions{display:flex;align-items:center;gap:7px}
-.home-install-btn{border:0!important;border-radius:999px!important;background:#ff7a00!important;color:#fff!important;padding:8px 11px!important;font-size:10px!important;font-weight:900!important;white-space:nowrap}
-@media(max-width:380px){.home-install-btn{padding:7px 9px!important;font-size:9px!important}}
+.home-install-row{padding:0 12px 8px}
+.home-install-btn{width:100%;border:1px solid #ffd3b0!important;border-radius:14px!important;background:#fff5ec!important;color:#8a3f00!important;padding:10px 12px!important;display:flex!important;align-items:center!important;gap:10px!important;text-align:left!important;box-shadow:none!important;position:static!important}
+.home-install-icon{width:34px;height:34px;border-radius:10px;background:#ff7a00;color:#fff;display:grid;place-items:center;font-size:16px;font-weight:900;flex:0 0 34px}
+.home-install-btn b{display:block;font-size:11px;line-height:1.2}
+.home-install-btn small{display:block;margin-top:2px;font-size:8px;color:#9b6b47;font-weight:700}
+@media(max-width:380px){.home-install-btn{padding:9px 10px!important}.home-install-icon{width:32px;height:32px;flex-basis:32px}}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 </head>
@@ -228,7 +231,13 @@ body{background:var(--r-page);color:var(--r-text)}
   </div>
 </section><section id="homePanel" class="panel active">
   <div class="card">
-    <div class="section-head home-orders-head"><h2>My Orders</h2><div class="home-orders-actions"><button id="installCustomerHome" class="home-install-btn" type="button">Install RANOVA</button><button data-panel="ordersPanel">All ›</button></div></div>
+    <div class="section-head home-orders-head"><h2>My Orders</h2><button data-panel="ordersPanel">All ›</button></div>
+    <div class="home-install-row">
+      <button id="installCustomerHome" class="home-install-btn" type="button">
+        <span class="home-install-icon">⬇</span>
+        <span><b>Install RANOVA</b><small>Add the app to this device</small></span>
+      </button>
+    </div>
     <div class="order-statuses">
       <button class="status" data-panel="toPayPanel"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h3"/></svg></span><span id="payN" class="n hide">0</span><b>To Pay</b></button>
       <button class="status" data-order-filter="preparing"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16l-1 5H5L4 5Z"/><path d="M6 10v10h12V10M9 20v-6h6v6"/></svg></span><span id="prepN" class="n hide">0</span><b>To Ship</b></button>
