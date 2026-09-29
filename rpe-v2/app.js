@@ -37,7 +37,6 @@ let realtimeChannels = [];
 let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null;
 const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 const FAST_CACHE_TTL=5*60*1000;
-let fastCacheSaveTimer=null;
 let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 let initializedUserId=null,sessionApplyInFlight=false;
 let activePanelId="homePanel";
@@ -70,19 +69,10 @@ function setBadge(id,n){const el=$(id);if(!el)return;el.textContent=n;el.classLi
 function fastCacheKey(){return user?"rpe-fast-"+user.id:""}
 function saveFastCache(){
   if(!user)return;
-  clearTimeout(fastCacheSaveTimer);
-  fastCacheSaveTimer=setTimeout(()=>{
-    const write=()=>{try{
-      sessionStorage.setItem(fastCacheKey(),JSON.stringify({
-        t:Date.now(),profile,
-        products:products.map(p=>({id:p.id,legacy_id:p.legacy_id,sku:p.sku,name:p.name,slug:p.slug,brand:p.brand,short_description:p.short_description,description:p.description,price:p.price,currency:p.currency,stock_status:p.stock_status,category_id:p.category_id,dimensions:p.dimensions,specifications:p.specifications,product_images:p.product_images,categories:p.categories})),
-        favorites:[...favorites],recentIds,cartId,cartItems,orders,notifications,addresses,returns,
-        toPayOrders,toPayStores,toPayRecommendations,messageConversations,
-        marketStores,marketSellerProducts,marketLoadedAt
-      }))
-    }catch{}};
-    if("requestIdleCallback"in window)requestIdleCallback(write,{timeout:800});else setTimeout(write,0);
-  },220);
+  try{sessionStorage.setItem(fastCacheKey(),JSON.stringify({
+    t:Date.now(),profile,products,favorites:[...favorites],recentIds,cartId,cartItems,orders,notifications,addresses,returns,
+    toPayOrders,toPayStores,toPayRecommendations,messageConversations,marketStores,marketSellerProducts,marketLoadedAt
+  }))}catch{}
 }
 function restoreFastCache(){
   if(!user)return false;
@@ -110,13 +100,14 @@ function showPanel(id){
   document.querySelectorAll(".bottom [data-panel]").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));
   window.scrollTo(0,0);
 
+  // Paint the destination first. Any database refresh happens only after
+  // the browser has displayed the tapped section.
   afterPaint(()=>{
-    if(id==="shopPanel"&&!panelIsPainted(id)){renderProducts(filteredProductsNow());markPanelPainted(id)}
-    else if(id==="notifPanel"){if(!panelIsPainted(id)){renderNotifications();markPanelPainted(id)}markNotificationsRead().catch(()=>{})}
-    else if(id==="ordersPanel"&&!panelIsPainted(id)){renderOrders();markPanelPainted(id)}
-    else if(id==="savedPanel"&&!panelIsPainted(id)){renderSaved();markPanelPainted(id)}
-    else if(id==="recentPanel"&&!panelIsPainted(id)){renderRecent();markPanelPainted(id)}
-    else if(id==="addressPanel"&&!panelIsPainted(id)){renderAddresses();markPanelPainted(id)}
+    if(id==="notifPanel"){if(!panelIsPainted(id)){renderNotifications();markPanelPainted(id)}markNotificationsRead().catch(()=>{})}
+    else if(id==="ordersPanel"){if(!panelIsPainted(id)){renderOrders();markPanelPainted(id)}}
+    else if(id==="savedPanel"){if(!panelIsPainted(id)){renderSaved();markPanelPainted(id)}}
+    else if(id==="recentPanel"){if(!panelIsPainted(id)){renderRecent();markPanelPainted(id)}}
+    else if(id==="addressPanel"){if(!panelIsPainted(id)){renderAddresses();markPanelPainted(id)}}
     else if(id==="messagesPanel"){
       if(!panelIsPainted(id)){renderMessageList();markPanelPainted(id)}
       if(Date.now()-messagesLoadedAt>30000)loadMessageConversations().catch(()=>{});
@@ -256,10 +247,9 @@ async function applySession(session,initial=false){
     appBox.classList.remove("hide");
     subscribeRealtime();
     handleIncomingCartLink().catch(()=>{});
-    idleRun(()=>{rebuildDiscoveryCache();},700);
-    setTimeout(()=>loadMessageConversations(true).catch(()=>{}),900);
-    setTimeout(()=>loadToPayOrders(true).catch(()=>{}),1300);
-    setTimeout(()=>loadMarketplaceHomeData().catch(()=>{}),1700);
+    afterPaint(()=>loadMessageConversations(true).catch(()=>{}));
+    setTimeout(()=>loadToPayOrders(true).catch(()=>{}),80);
+    setTimeout(()=>loadMarketplaceHomeData().catch(()=>{}),140);
   }catch(e){
     console.error(e);
     // Do not blank an already-open app because one refresh call failed.
@@ -315,24 +305,23 @@ function renderAll(){
   $("profileFirst").value=profile?.first_name||"";
   $("profileLast").value=profile?.last_name||"";
   $("profilePhone").value=profile?.phone||"";
+  renderProducts(products);
   renderHomeProducts();
+  renderSaved();
+  renderRecent();
+  renderCart();
+  renderOrders();
+  renderNotifications();
+  renderAddresses();
   renderCounts();
-  panelPainted.delete("shopPanel");
-  panelPainted.delete("savedPanel");
-  panelPainted.delete("recentPanel");
-  panelPainted.delete("ordersPanel");
-  panelPainted.delete("notifPanel");
-  panelPainted.delete("addressPanel");
-  panelPainted.delete("cartDrawer");
 }
-
 
 function legacyImages(p){
   const rows=Array.isArray(p?.product_images)?p.product_images.slice().sort((a,b)=>(Number(b.is_primary)-Number(a.is_primary))+(Number(a.sort_order||0)-Number(b.sort_order||0))):[];
   return [...new Set(rows.map(x=>x.image_url).filter(Boolean))];
 }
 function sellerImages(p){return [...new Set([p?.primary_image_url,...(Array.isArray(p?.image_urls)?p.image_urls:[])].filter(Boolean))}
-let discoveryCache=[],discoveryMap=new Map(),discoveryCacheStamp="",discoveryVisibleMedia=new Set(),discoveryMediaObserver=null,discoveryAutoTimer=null,discoveryRenderCount=0,discoveryScrollBound=false,discoveryRelatedCache=new Map();
+let discoveryCache=[],discoveryMap=new Map(),discoveryCacheStamp="",discoveryVisibleMedia=new Set(),discoveryMediaObserver=null,discoveryAutoTimer=null,discoveryRenderCount=0,discoveryScrollBound=false;
 function discoveryStamp(){return products.length+":"+marketSellerProducts.length+":"+marketStores.length+":"+(products[0]?.id||"")+":"+(marketSellerProducts[0]?.id||"")}
 function rebuildDiscoveryCache(){
   const stamp=discoveryStamp();if(stamp===discoveryCacheStamp&&discoveryCache.length)return;
@@ -347,16 +336,14 @@ function rebuildDiscoveryCache(){
     return {key:"legacy:"+p.id,id:p.id,source:"legacy",name:p.name,sku:p.sku||p.legacy_id,category:p.categories?.name||"RPE Product",description:p.description||p.short_description||"",price:p.price,currency:p.currency||"GHS",images:imgs.length?imgs:(imageFor(p)?[imageFor(p)]:[]),moq:seller?.moq||1,unit_label:seller?.unit_label||"unit",dimensions:p.dimensions||seller?.dimensions,specifications:p.specifications||seller?.specifications||{},stock_status:p.stock_status||seller?.stock_status,stock_quantity:seller?.stock_quantity,store_id:seller?.store_id||null,store,sellerProduct:seller,raw:p};
   });
   const sellerOnly=marketSellerProducts.filter(p=>!linked.has(p.id)).map(p=>({key:"seller:"+p.id,id:p.id,source:"seller",name:p.name,sku:p.sku,category:p.category||"Marketplace product",description:p.description||p.short_description||"",price:p.price,currency:p.currency||"GHS",images:sellerImages(p),moq:p.moq||1,unit_label:p.unit_label||"unit",dimensions:p.dimensions,specifications:p.specifications||{},stock_status:p.stock_status,stock_quantity:p.stock_quantity,store_id:p.store_id,store:storeMap.get(p.store_id)||{},raw:p}));
-  discoveryCache=[...legacy,...sellerOnly];discoveryMap=new Map(discoveryCache.map(x=>[x.key,x]));discoveryRelatedCache.clear();discoveryCacheStamp=stamp;
+  discoveryCache=[...legacy,...sellerOnly];discoveryMap=new Map(discoveryCache.map(x=>[x.key,x]));discoveryCacheStamp=stamp;
 }
 function normalizeDiscoveryProduct(p,source="legacy"){rebuildDiscoveryCache();return discoveryMap.get(source+":"+p?.id)||null}
 function allDiscoveryProducts(){rebuildDiscoveryCache();return discoveryCache}
 function discoveryRelated(seed){
-  rebuildDiscoveryCache();
-  if(discoveryRelatedCache.has(seed.key))return discoveryRelatedCache.get(seed.key);
-  const cat=String(seed?.category||"").toLowerCase(),tokens=String(seed?.name||"").toLowerCase().split(/\s+/).filter(x=>x.length>3).slice(0,4);
+  rebuildDiscoveryCache();const cat=String(seed?.category||"").toLowerCase(),tokens=String(seed?.name||"").toLowerCase().split(/\s+/).filter(x=>x.length>3).slice(0,4);
   const scored=[];for(const x of discoveryCache){if(x.key===seed.key)continue;let score=0;if(cat&&String(x.category||"").toLowerCase()===cat)score+=6;const xn=String(x.name||"").toLowerCase();for(const t of tokens)if(xn.includes(t))score+=2;if(seed.store_id&&x.store_id===seed.store_id)score+=1;scored.push({x,score})}
-  scored.sort((a,b)=>b.score-a.score);const result=scored.map(v=>v.x);discoveryRelatedCache.set(seed.key,result);return result;
+  scored.sort((a,b)=>b.score-a.score);return scored.map(v=>v.x);
 }
 function clearDiscoveryTimers(){
   if(discoveryAutoTimer){clearInterval(discoveryAutoTimer);discoveryAutoTimer=null}
@@ -367,32 +354,26 @@ function activateMedia(media){
   media.querySelectorAll("img[data-src]").forEach(img=>{img.src=img.dataset.src;img.removeAttribute("data-src")});
   discoveryVisibleMedia.add(media);
 }
-function ensureDiscoveryMediaEngine(){
-  if(!discoveryMediaObserver&&"IntersectionObserver"in window){
-    discoveryMediaObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)activateMedia(e.target);else discoveryVisibleMedia.delete(e.target)}),{rootMargin:"140px 0px"});
-  }
-  if(!discoveryAutoTimer){
-    discoveryAutoTimer=setInterval(()=>{
-      if(document.hidden||activePanelId!=="productDiscoveryPanel")return;
-      discoveryVisibleMedia.forEach(media=>{
-        const imgs=media.querySelectorAll("img");if(imgs.length<2)return;
-        let index=Number(media.dataset.index||0),dots=media.querySelectorAll(".pd-dot");
-        imgs[index]?.classList.remove("active");dots[index]?.classList.remove("active");index=(index+1)%imgs.length;
-        imgs[index]?.classList.add("active");dots[index]?.classList.add("active");media.dataset.index=String(index);
-      });
-    },2800);
-  }
-}
-function observeNewDiscoveryMedia(root=document){
-  ensureDiscoveryMediaEngine();
-  root.querySelectorAll(".pd-media[data-images]:not([data-observed])").forEach(media=>{
-    media.dataset.observed="1";
-    if(discoveryMediaObserver)discoveryMediaObserver.observe(media);else activateMedia(media);
-  });
+function startDiscoveryAutoMedia(){
+  clearDiscoveryTimers();
+  const medias=[...document.querySelectorAll(".pd-media[data-images]")];
+  if("IntersectionObserver"in window){
+    discoveryMediaObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)activateMedia(e.target);else discoveryVisibleMedia.delete(e.target)}),{rootMargin:"180px 0px"});
+    medias.forEach(m=>discoveryMediaObserver.observe(m));
+  }else medias.forEach(activateMedia);
+  discoveryAutoTimer=setInterval(()=>{
+    if(document.hidden||activePanelId!=="productDiscoveryPanel")return;
+    discoveryVisibleMedia.forEach(media=>{
+      const imgs=media.querySelectorAll("img");if(imgs.length<2)return;
+      let index=Number(media.dataset.index||0),dots=media.querySelectorAll(".pd-dot");
+      imgs[index]?.classList.remove("active");dots[index]?.classList.remove("active");index=(index+1)%imgs.length;
+      imgs[index]?.classList.add("active");dots[index]?.classList.add("active");media.dataset.index=String(index);
+    });
+  },2800);
 }
 function discoveryMediaHtml(p){
   const imgs=p.images?.length?p.images:[""];
-  return '<div class="pd-media" data-images="'+imgs.length+'" data-index="0" data-discovery-detail="'+esc(p.key)+'">'+imgs.map((u,i)=>u?'<img class="'+(i===0?'active':'')+'" '+(i===0?'src="'+esc(u)+'"':'data-src="'+esc(u)+'"')+' alt="'+esc(p.name)+'" loading="'+(i===0?'eager':'lazy')+'" decoding="async">':'<div style="display:grid;place-items:center;height:100%;color:#999">Product</div>').join("")+(imgs.length>1?'<div class="pd-dots">'+imgs.map((_,i)=>'<i class="pd-dot '+(i===0?'active':'')+'"></i>').join("")+'</div>':'')+'</div>';
+  return '<div class="pd-media" data-images="'+imgs.length+'" data-index="0" data-discovery-detail="'+esc(p.key)+'">'+imgs.map((u,i)=>u?'<img class="'+(i===0?'active':'')+'" '+(i===0?'src="'+esc(u)+'"':'data-src="'+esc(u)+'"')+' alt="'+esc(p.name)+'" loading="'+(i===0?'eager':'lazy')+'">':'<div style="display:grid;place-items:center;height:100%;color:#999">Product</div>').join("")+(imgs.length>1?'<div class="pd-dots">'+imgs.map((_,i)=>'<i class="pd-dot '+(i===0?'active':'')+'"></i>').join("")+'</div>':'')+'</div>';
 }
 function discoveryCardHtml(p){
   const store=p.store||{};
@@ -404,8 +385,8 @@ function discoveryCardHtml(p){
 }
 function appendDiscoveryBatch(){
   const host=$("productDiscoveryFeed");if(!host||discoveryRenderCount>=discoveryProducts.length)return;
-  const next=discoveryProducts.slice(discoveryRenderCount,discoveryRenderCount+6);host.insertAdjacentHTML("beforeend",next.map(discoveryCardHtml).join(""));discoveryRenderCount+=next.length;
-  afterPaint(()=>observeNewDiscoveryMedia(host));
+  const next=discoveryProducts.slice(discoveryRenderCount,discoveryRenderCount+12);host.insertAdjacentHTML("beforeend",next.map(discoveryCardHtml).join(""));discoveryRenderCount+=next.length;
+  afterPaint(startDiscoveryAutoMedia);
 }
 function renderDiscoveryFeed(seedKey){
   const host=$("productDiscoveryFeed");if(!host)return;
@@ -508,13 +489,13 @@ async function addToCart(productId){
   if(existing)res=await sb.from("cart_items").update({quantity:Math.min(99,existing.quantity+1)}).eq("id",existing.id);
   else res=await sb.from("cart_items").insert({cart_id:cartId,product_id:productId,quantity:1});
   if(res.error)return showToast("Could not add product");
-  await loadCartItems();panelPainted.delete("cartDrawer");showToast("Added to cart");saveFastCache();
+  await loadCartItems();renderCart();showToast("Added to cart");saveFastCache();
 }
 async function changeQty(item,delta){
   const q=Math.max(1,Math.min(99,item.quantity+delta));const {error}=await sb.from("cart_items").update({quantity:q}).eq("id",item.id);
-  if(error)return showToast("Could not update quantity");await loadCartItems();panelPainted.delete("cartDrawer");saveFastCache();
+  if(error)return showToast("Could not update quantity");await loadCartItems();renderCart();saveFastCache();
 }
-async function removeCart(item){const {error}=await sb.from("cart_items").delete().eq("id",item.id);if(error)return showToast("Could not remove product");await loadCartItems();panelPainted.delete("cartDrawer");saveFastCache();}
+async function removeCart(item){const {error}=await sb.from("cart_items").delete().eq("id",item.id);if(error)return showToast("Could not remove product");await loadCartItems();renderCart();saveFastCache();}
 function renderCart(){
   const list=$("cartList");setBadge("cartCount",cartItems.length);setBadge("bottomCartCount",cartItems.length);
   if(!cartItems.length){list.innerHTML='<div class="empty"><b>Your cart is empty</b>Add products you want and they will appear here.</div>';return}
@@ -527,7 +508,7 @@ function renderCart(){
   list.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>changeQty(cartItems.find(x=>x.id===b.dataset.plus),1));
   list.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeCart(cartItems.find(x=>x.id===b.dataset.remove)));
 }
-function openCart(){$("cartDrawer").classList.add("open");if(!panelIsPainted("cartDrawer"))afterPaint(()=>{renderCart();markPanelPainted("cartDrawer")})}
+function openCart(){$("cartDrawer").classList.add("open");afterPaint(()=>renderCart())}
 function closeCart(){$("cartDrawer").classList.remove("open")}
 $("sendOrder").onclick=async()=>{
   if(!cartItems.length)return showToast("Your cart is empty");
@@ -667,12 +648,14 @@ function matchingSellerProduct(product){
 function renderMarketplaceHome(filter=""){
   const promo=$("marketPromoGrid"),feed=$("marketFactoryFeed");if(!promo||!feed)return;
   const q=String(filter||"").trim().toLowerCase();
-  if(!marketStores.length&&!marketSellerProducts.length){promo.innerHTML='<div style="grid-column:1/-1;padding:18px;text-align:center;color:#888">Loading marketplace…</div>';feed.innerHTML="";return}
-  const byStore=new Map();for(const p of marketSellerProducts){if(!byStore.has(p.store_id))byStore.set(p.store_id,[]);byStore.get(p.store_id).push(p)}
-  const ps=q?marketSellerProducts.filter(p=>[p.name,p.category,p.short_description,p.sku].some(x=>String(x||"").toLowerCase().includes(q))):marketSellerProducts;
-  const ss=q?marketStores.filter(s=>[s.store_name,s.tagline,s.description,s.business_location,s.country_name].some(x=>String(x||"").toLowerCase().includes(q))||(byStore.get(s.id)||[]).some(p=>[p.name,p.category].some(x=>String(x||"").toLowerCase().includes(q)))):marketStores;
-  promo.innerHTML=[0,2,4,6].map((n,i)=>{const pair=(ps.length?ps:marketSellerProducts).slice(n,n+2);if(!pair.length)return"";return'<div class="mh-promo"><h3>'+["Trending Picks","New Arrivals","Factory Deals","Popular Today"][i]+'</h3><div class="mh-mini">'+pair.map(p=>'<button type="button" data-mh-product="'+esc(p.id)+'">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'')+'<div style="font-size:10px;font-weight:900;color:#e84e31;margin-top:4px">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</div></button>').join("")+'</div></div>'}).join("");
-  feed.innerHTML=(ss.length?ss:marketStores).slice(0,36).map(s=>{const p=byStore.get(s.id)||[],img=p.find(x=>x.primary_image_url)?.primary_image_url||s.banner_url||"";return'<article class="mh-store"><div class="mh-store-media">'+(img?'<img src="'+esc(img)+'" alt="" loading="lazy" decoding="async">':'<div style="display:grid;place-items:center;height:100%;font-size:38px">🏭</div>')+'</div><div style="min-width:0"><h3>'+esc(s.store_name||"RANOVA Store")+'</h3><div class="mh-meta">'+esc(s.business_location||s.country_name||"Marketplace seller")+' · '+p.length+' products</div><div style="font-size:9px;color:#888;margin-top:6px;line-height:1.4">'+esc(s.tagline||s.description||"Contact this store for product details and bulk pricing.")+'</div><div class="mh-actions"><button class="mh-ask" type="button" data-mh-message="'+esc(s.id)+'">Message Store</button><button class="mh-view" type="button" data-mh-store="'+esc(s.slug||s.id)+'">View Store</button></div></div></article>'}).join("");
+  if(!marketStores.length&&!marketSellerProducts.length){
+    promo.innerHTML='<div style="grid-column:1/-1;padding:18px;text-align:center;color:#888">Loading marketplace…</div>';
+    feed.innerHTML="";return;
+  }
+  const ps=marketSellerProducts.filter(p=>!q||[p.name,p.category,p.short_description,p.sku].some(x=>String(x||"").toLowerCase().includes(q)));
+  const ss=marketStores.filter(s=>!q||[s.store_name,s.tagline,s.description,s.business_location,s.country_name].some(x=>String(x||"").toLowerCase().includes(q))||marketStoreProducts(s.id).some(p=>[p.name,p.category].some(x=>String(x||"").toLowerCase().includes(q))));
+  promo.innerHTML=[0,2,4,6].map((n,i)=>{const pair=(ps.length?ps:marketSellerProducts).slice(n,n+2);if(!pair.length)return"";return'<div class="mh-promo"><h3>'+["Trending Picks","New Arrivals","Factory Deals","Popular Today"][i]+'</h3><div class="mh-mini">'+pair.map(p=>'<button type="button" data-mh-product="'+esc(p.id)+'">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'" loading="lazy">':'')+'<div style="font-size:10px;font-weight:900;color:#e84e31;margin-top:4px">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</div></button>').join("")+'</div></div>'}).join("");
+  feed.innerHTML=(ss.length?ss:marketStores).map(s=>{const p=marketStoreProducts(s.id),img=p.find(x=>x.primary_image_url)?.primary_image_url||s.banner_url||"";return'<article class="mh-store"><div class="mh-store-media">'+(img?'<img src="'+esc(img)+'" alt="" loading="lazy">':'<div style="display:grid;place-items:center;height:100%;font-size:38px">🏭</div>')+'</div><div style="min-width:0"><h3>'+esc(s.store_name||"RANOVA Store")+'</h3><div class="mh-meta">'+esc(s.business_location||s.country_name||"Marketplace seller")+' · '+p.length+' products</div><div style="font-size:9px;color:#888;margin-top:6px;line-height:1.4">'+esc(s.tagline||s.description||"Contact this store for product details and bulk pricing.")+'</div><div class="mh-actions"><button class="mh-ask" type="button" data-mh-message="'+esc(s.id)+'">Message Store</button><button class="mh-view" type="button" data-mh-store="'+esc(s.slug||s.id)+'">View Store</button></div></div></article>'}).join("");
 }
 if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>renderMarketplaceHome($("marketHomeSearch").value);
 if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>renderMarketplaceHome(e.target.value);
