@@ -227,6 +227,17 @@ function stageOptions(current){
   const values=["not_started","in_progress","under_review","needs_information","complete","approved","verified","rejected"];
   return values.map(v=>'<option value="'+v+'"'+(v===current?' selected':'')+'>'+esc(label(v))+'</option>').join("");
 }
+function sellerReviewReceipt(a){
+  const receipt=(market.seller_notice_receipts||[]).find(n=>n.metadata?.application_ref===a.application_ref&&Date.parse(n.metadata?.reviewed_at)===Date.parse(a.reviewed_at));
+  if(receipt?.read_at)return '✓✓ Seen by seller · '+esc(new Date(receipt.read_at).toLocaleString());
+  if(receipt)return '✓ Sent to seller · Waiting for the seller to open this notice';
+  return a.reviewed_at?'Decision saved · Read status is unavailable for this earlier update':'Your decision confirmation will appear here.';
+}
+function showSellerSendConfirmation(message){
+  let toast=$("sellerSendToast");if(!toast){toast=document.createElement("div");toast.id="sellerSendToast";toast.className="seller-send-toast";toast.setAttribute("role","status");document.body.appendChild(toast)}
+  toast.textContent=message;toast.hidden=false;clearTimeout(showSellerSendConfirmation.timer);showSellerSendConfirmation.timer=setTimeout(()=>toast.hidden=true,5000);
+}
+function sellerMessageReceipt(m){return m.sender_role==="admin"?'<span class="seller-message-receipt'+(m.seller_seen_at?' seen':'')+'" title="'+esc(m.seller_seen_at?'Seller opened this conversation at '+new Date(m.seller_seen_at).toLocaleString():'Saved in the seller conversation; not yet confirmed opened')+'">'+(m.seller_seen_at?'✓✓ Seen by seller':'✓ Sent')+'</span>':''}
 function renderSellerDetail(ref){
   const host=$("sellerReviewDetail");if(!host||!canSellerReview())return;
   const a=(market.applications||[]).find(x=>x.application_ref===ref);
@@ -264,7 +275,7 @@ function renderSellerDetail(ref){
           <div class="docs">${docs.length?docs.map(f=>`<div class="doc-row"><div><b>${esc(label(f.document_type))}</b><small>${esc(f.original_filename||"Document")} • Submitted ${esc(f.created_at?new Date(f.created_at).toLocaleString():"—")} • <b>${esc(label(f.review_status))}</b>${f.review_note?" • "+esc(f.review_note):""}</small></div><div class="actions"><button data-doc-view="${f.id}">Open document</button><button data-doc-action="approved" data-doc-id="${f.id}" class="primary">Approve document</button><button data-doc-action="needs_information" data-doc-id="${f.id}">Request clearer info</button><button data-doc-action="rejected" data-doc-id="${f.id}">Reject</button></div></div>`).join(""):'<div class="empty">No verification documents submitted yet.</div>'}</div>
         </div>
       </div>
-      <div class="card" style="box-shadow:none"><div class="card-head"><h2>Overall seller decision</h2></div><div class="body"><textarea id="sellerDecisionNote" class="review-note" placeholder="Review note for the seller. Required for rejection, suspension or requests for more information.">${esc(a.verification_notes||"")}</textarea><div class="decision-actions"><button data-seller-decision="under_review">Mark under review</button><button data-seller-decision="needs_information" class="warn">Request more information</button><button data-seller-decision="approved" class="approve">Approve seller</button><button data-seller-decision="rejected" class="danger">Reject seller</button>${st==="approved"?'<button data-seller-decision="suspended" class="danger">Suspend seller</button>':""}</div></div></div>
+      <div class="card seller-decision-card" style="box-shadow:none"><div class="card-head"><div><h2>Overall seller decision</h2><small>Choose the next step for this seller. Your note appears in their Seller Center.</small></div></div><div class="body"><label for="sellerDecisionNote" class="seller-decision-label">Message to the seller</label><textarea id="sellerDecisionNote" class="review-note" placeholder="Explain the decision or list what the seller needs to correct.">${esc(a.verification_notes||"")}</textarea><div class="seller-decision-actions">${[["under_review","◷","Mark under review","Continue checking this application"],["needs_information","✎","Request more information","Ask the seller to correct or resubmit"],["approved","✓","Approve seller","Unlock the seller’s store setup"],["rejected","×","Reject seller","Send a clear reason for the decision"]].map(([value,icon,title,help])=>`<button type="button" data-seller-decision="${value}" class="seller-decision-option ${value}${String(a.verification_status||a.status)===value?" is-current":""}"><span class="seller-decision-icon" aria-hidden="true">${icon}</span><span><b>${title}</b><small>${help}</small></span></button>`).join("")}${st==="approved"?'<button type="button" data-seller-decision="suspended" class="seller-decision-option rejected"><span class="seller-decision-icon">!</span><span><b>Suspend seller</b><small>Temporarily restrict this account</small></span></button>':""}</div><div id="sellerDecisionFeedback" class="seller-decision-feedback" role="status"><span>${sellerReviewReceipt(a)}</span><button type="button" id="sellerDecisionRefresh" class="seller-decision-refresh">Refresh status</button></div></div></div>
     </div>`;
   wireSellerDetail(host,a);
 }
@@ -295,14 +306,16 @@ function wireSellerDetail(host,a){
       await reloadMarketplace();selectedApplicationRef=a.application_ref;renderSellerDetail(a.application_ref);
     }catch(err){alert(err.message)}finally{b.disabled=false}
   });
+  $("sellerDecisionRefresh").onclick=async()=>{try{await reloadMarketplace();renderSellerDetail(a.application_ref)}catch(err){alert(err.message)}};
   host.querySelectorAll("[data-seller-decision]").forEach(b=>b.onclick=async()=>{
     const decision=b.dataset.sellerDecision,note=$("sellerDecisionNote")?.value.trim()||"";
     if(["rejected","needs_information","suspended"].includes(decision)&&!note)return alert("Add a review note explaining this decision.");
     if(["approved","rejected","suspended"].includes(decision)&&!confirm("Confirm: "+label(decision)+" this seller?"))return;
     b.disabled=true;
     try{
-      await marketApi({action:"review_seller",application_ref:a.application_ref,decision,note});
+      const result=await marketApi({action:"review_seller",application_ref:a.application_ref,decision,note});
       await reloadMarketplace();selectedApplicationRef=a.application_ref;renderSellerDetail(a.application_ref);
+      showSellerSendConfirmation(result.notification_queued?"✓ Decision saved · Seller notice sent":"✓ Decision saved · Seller Center updated");
     }catch(err){alert(err.message)}finally{b.disabled=false}
   });
 }
@@ -975,7 +988,7 @@ function openStoreRegistryDetail(ref){
         '<button data-report-status="dismissed" data-report-id="'+r.id+'">Dismiss</button>'+
       '</div></div>';
   }).join(""):'<div style="color:#7a8983">No customer reports for this store.</div>';
-  const messageRows=officialMessages.length?officialMessages.map(m=>'<div style="padding:9px 11px;border-radius:12px;margin:7px 0;background:'+(m.sender_role==="admin"?"#edf7f3":"#fff2ec")+'"><b>'+(m.sender_role==="admin"?"RANOVA Admin":"Seller")+'</b><div style="margin-top:3px">'+esc(m.body)+'</div><small style="color:#718078">'+new Date(m.created_at).toLocaleString()+'</small></div>').join(""):'<div style="color:#7a8983">No official Admin ↔ Seller messages yet.</div>';
+  const messageRows=officialMessages.length?officialMessages.map(m=>'<div style="padding:9px 11px;border-radius:12px;margin:7px 0;background:'+(m.sender_role==="admin"?"#edf7f3":"#fff2ec")+'"><b>'+(m.sender_role==="admin"?"RANOVA Admin":"Seller")+'</b><div style="margin-top:3px">'+esc(m.body)+'</div><small style="color:#718078">'+new Date(m.created_at).toLocaleString()+'</small>'+sellerMessageReceipt(m)+'</div>').join(""):'<div style="color:#7a8983">No official Admin ↔ Seller messages yet.</div>';
   card.innerHTML=
     '<div style="padding:20px 22px;background:#123d34;color:#fff;display:flex;justify-content:space-between;gap:12px;align-items:flex-start">'+
       '<div><div style="font-size:12px;opacity:.75">SELLER DATABASE RECORD</div><h2 style="margin:4px 0 5px;font-size:25px">'+esc(store?.store_name||app?.business_name||"Seller")+'</h2><div style="font-size:13px;opacity:.86">'+esc(ref||"")+'</div></div>'+
@@ -1058,7 +1071,7 @@ function openStoreRegistryDetail(ref){
     const box=document.getElementById("adminSellerMessage"),body=box.value.trim();
     if(body.length<2)return alert("Write a message first.");
     sendOfficial.disabled=true;
-    try{await marketApi({action:"message_seller",store_id:store.id,body});await reloadMarketplace();openStoreRegistryDetail(ref)}
+    try{await marketApi({action:"message_seller",store_id:store.id,body});await reloadMarketplace();openStoreRegistryDetail(ref);showSellerSendConfirmation("✓ Message sent to seller")}
     catch(err){alert(err.message)}finally{sendOfficial.disabled=false}
   };
   document.getElementById("closeStoreRegistryModal").onclick=()=>modal.style.display="none";
@@ -1127,7 +1140,7 @@ function renderSellerChatDetail(storeId){
   let previousDay="";
   const bubbles=messages.map(m=>{
     const day=sellerChatDate(m.created_at),date=day&&day!==previousDay?'<div class="seller-chat-day">'+esc(day)+'</div>':'';previousDay=day;
-    return date+'<div class="seller-chat-bubble '+(m.sender_role==="admin"?"outgoing":"incoming")+'">'+sellerMediaBubble(m)+(m.body?'<p>'+esc(m.body)+'</p>':'')+'<time datetime="'+esc(m.created_at)+'">'+esc(sellerChatTime(m.created_at))+'</time></div>';
+    return date+'<div class="seller-chat-bubble '+(m.sender_role==="admin"?"outgoing":"incoming")+'">'+sellerMediaBubble(m)+(m.body?'<p>'+esc(m.body)+'</p>':'')+'<time datetime="'+esc(m.created_at)+'">'+esc(sellerChatTime(m.created_at))+'</time>'+sellerMessageReceipt(m)+'</div>';
   }).join("");
   box.innerHTML='<header class="seller-chat-header"><button id="sellerChatBack" class="seller-chat-back" type="button" aria-label="Back to conversations">‹</button>'+sellerAvatar(store)+'<div class="seller-chat-heading"><strong>'+esc(store.store_name)+'</strong><small>Official RANOVA conversation · '+esc(label(store.store_status))+'</small></div></header><div id="sellerChatMessages" class="seller-chat-messages" aria-label="Messages with '+esc(store.store_name)+'">'+(bubbles||'<div class="seller-chat-intro"><b>No messages yet</b>Send the first official message to this store.</div>')+'</div><div id="sellerChatError" class="seller-chat-error" role="alert"></div><div class="seller-composer-shell"><div id="sellerEmojiPanel" class="seller-emoji-panel" hidden><div class="seller-emoji-tabs"></div><input id="sellerEmojiSearch" type="search" placeholder="Search emoji" aria-label="Search emojis"><div id="sellerEmojiGrid" class="seller-emoji-grid"></div></div><div id="sellerAttachmentPreview" class="seller-attachment-preview" hidden></div><div id="sellerRecording" class="seller-recording" hidden><button id="sellerRecordDelete" type="button" aria-label="Discard recording"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></button><span id="sellerRecordTime">0:00</span><button id="sellerRecordPause" type="button">⏸ Pause</button><button id="sellerRecordSend" type="button" aria-label="Send voice note">➤</button></div><div class="seller-chat-composer"><div class="seller-message-field"><button id="sellerEmojiToggle" class="seller-icon-button" type="button" aria-label="Choose emoji" aria-expanded="false">☺</button><textarea id="sellerChatInput" rows="1" aria-label="Message '+esc(store.store_name)+'" placeholder="Message"></textarea><button id="sellerFilePick" class="seller-icon-button" type="button" aria-label="Select file">📎</button><button id="sellerImagePick" class="seller-icon-button" type="button" aria-label="Choose image">📷</button><input id="sellerImageInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="sellerFileInput" type="file" accept="image/*,application/pdf,text/plain,audio/*" hidden></div><button id="sellerRecordStart" class="seller-round-action" type="button" aria-label="Record voice note">🎙</button><button id="sellerChatSend" class="seller-round-action" type="button" aria-label="Send message" hidden>➤</button></div></div>';
   $("sellerChatMessages").scrollTop=$("sellerChatMessages").scrollHeight;
@@ -1151,7 +1164,7 @@ function renderSellerChatDetail(storeId){
         media={storage_path:prepared.path,media_type:prepared.media_type,file_name:file.name,mime_type:mime};
       }
       await marketApi({action:"message_seller",store_id:store.id,body,...media});
-      clearInterval(timer);stopMedia();await reloadMarketplace();
+      clearInterval(timer);stopMedia();await reloadMarketplace();showSellerSendConfirmation("✓ Message sent to seller");
     }catch(err){errorText(err.message||"Could not send the message. Please try again.");button.disabled=false}
   };
   const stopMedia=()=>{if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}recorder=null;$("sellerRecording").hidden=true};
@@ -1181,7 +1194,7 @@ function renderSellerChatDetail(storeId){
   $("sellerRecordPause").onclick=()=>{if(!recorder)return;const b=$("sellerRecordPause");if(recorder.state==="recording"){recorder.pause();pauseStarted=Date.now();b.textContent="▶ Resume"}else if(recorder.state==="paused"){recorder.resume();paused+=Date.now()-pauseStarted;pauseStarted=0;b.textContent="⏸ Pause"}};
   $("sellerRecordDelete").onclick=()=>{if(recorder){recorder.onstop=null;if(recorder.state!=="inactive")recorder.stop()}clearInterval(timer);stopMedia()};
   $("sellerRecordSend").onclick=()=>{if(recorder&&recorder.state!=="inactive"){clearInterval(timer);recorder.stop()}};
-  $("sellerChatSend").onclick=send;
+  $("sellerChatSend").onclick=()=>send();
   $("sellerChatInput").oninput=updateComposerAction;
   $("sellerChatInput").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}};
   updateComposerAction();

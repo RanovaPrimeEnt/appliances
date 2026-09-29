@@ -90,6 +90,29 @@ Deno.serve(async(req:Request)=>{
       return response(h,200,{ok:true,reports:reports||[]});
     }
 
+    if(action==="seller_review_seen"){
+      const ref=clean(b.application_ref,80),stamp=clean(b.reviewed_at,60);
+      const {data:account}=await admin.from("ranova_seller_accounts").select("application_ref").eq("user_id",user.id).eq("application_ref",ref).maybeSingle();
+      if(!account)return response(h,403,{ok:false,error:"This application does not belong to your account."});
+      const {data:app}=await admin.from("ranova_seller_applications").select("reviewed_at").eq("application_ref",ref).maybeSingle();
+      if(!stamp||!app?.reviewed_at||Date.parse(stamp)!==Date.parse(app.reviewed_at))return response(h,409,{ok:false,error:"Refresh to read the latest review note."});
+      const {error}=await admin.from("ranova_marketplace_notifications").update({read_at:new Date().toISOString()})
+        .eq("recipient_type","seller").eq("recipient_user_id",user.id).eq("metadata->>application_ref",ref).eq("metadata->>reviewed_at",new Date(app.reviewed_at).toISOString()).is("read_at",null);
+      if(error)throw error;
+      return response(h,200,{ok:true});
+    }
+    if(action==="seller_messages_seen"){
+      const store=await sellerStore(user.id);
+      if(!store)return response(h,404,{ok:false,error:"Seller store not found."});
+      const thread=await getOrCreateThread(store);
+      const ids=Array.isArray(b.message_ids)?b.message_ids.map((x:any)=>clean(x,30)).filter((x:string)=>/^\d+$/.test(x)).slice(0,500):[];
+      if(ids.length){
+        const {error}=await admin.from("ranova_marketplace_notifications").update({read_at:new Date().toISOString()})
+          .eq("recipient_type","seller").eq("recipient_user_id",user.id).eq("metadata->>thread_id",thread.id).in("metadata->>message_id",ids).is("read_at",null);
+        if(error)throw error;
+      }
+      return response(h,200,{ok:true});
+    }
     if(action==="seller_messages"){
       const store=await sellerStore(user.id);
       if(!store)return response(h,404,{ok:false,error:"Seller store not found."});
@@ -102,13 +125,37 @@ Deno.serve(async(req:Request)=>{
       return response(h,200,{ok:true,store:{id:store.id,store_name:store.store_name,store_status:store.store_status,moderation_note:store.moderation_note},thread,messages:signed});
     }
 
-    if(action==="seller_send_message"){
-      const body=clean(b.body,4000);
-      if(body.length<2)return response(h,400,{ok:false,error:"Write a message first."});
+    if(action==="seller_prepare_media"){
       const store=await sellerStore(user.id);
       if(!store)return response(h,404,{ok:false,error:"Seller store not found."});
+      const mime=clean(b.mime_type,120),size=Number(b.file_size||0);
+      const types:any={"image/jpeg":"image","image/png":"image","image/webp":"image","image/gif":"image","application/pdf":"file","text/plain":"file","audio/webm":"audio","audio/mp4":"audio","audio/ogg":"audio","audio/mpeg":"audio","audio/wav":"audio"};
+      if(!types[mime]||!Number.isFinite(size)||size<1||size>15728640)return response(h,400,{ok:false,error:"Unsupported file type or file is larger than 15 MB."});
+      const extension:any={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","application/pdf":"pdf","text/plain":"txt","audio/webm":"webm","audio/mp4":"m4a","audio/ogg":"ogg","audio/mpeg":"mp3","audio/wav":"wav"};
+      const path=store.id+"/"+user.id+"/"+crypto.randomUUID()+"."+extension[mime];
+      const {data,error}=await admin.storage.from("admin-seller-media").createSignedUploadUrl(path);
+      if(error)throw error;
+      return response(h,200,{ok:true,path,token:data.token,media_type:types[mime]});
+    }
+
+    if(action==="seller_send_message"){
+      const body=clean(b.body,4000),path=clean(b.storage_path,300);
+      if(body.length<2&&!path)return response(h,400,{ok:false,error:"Write a message or attach a file first."});
+      const store=await sellerStore(user.id);
+      if(!store)return response(h,404,{ok:false,error:"Seller store not found."});
+      let media:any={};
+      if(path){
+        if(!path.startsWith(store.id+"/"+user.id+"/"))return response(h,400,{ok:false,error:"Invalid attachment path."});
+        const type=clean(b.media_type,10),mime=clean(b.mime_type,120);
+        if(!["image","file","audio"].includes(type))return response(h,400,{ok:false,error:"Invalid media type."});
+        const name=path.split("/").at(-1)||"";
+        const {data:files,error:listError}=await admin.storage.from("admin-seller-media").list(store.id+"/"+user.id,{search:name});
+        const file=files?.find((x:any)=>x.name===name);
+        if(listError||!file||Number(file.metadata?.size||0)>15728640)return response(h,400,{ok:false,error:"Upload the attachment before sending."});
+        media={media_type:type,storage_path:path,file_name:clean(b.file_name,250)||"Attachment",mime_type:mime};
+      }
       const thread=await getOrCreateThread(store);
-      const {error}=await admin.from("ranova_admin_seller_messages").insert({thread_id:thread.id,sender_role:"seller",sender_user_id:user.id,body});
+      const {error}=await admin.from("ranova_admin_seller_messages").insert({thread_id:thread.id,sender_role:"seller",sender_user_id:user.id,body,...media});
       if(error)throw error;
       await admin.from("ranova_admin_seller_threads").update({updated_at:new Date().toISOString(),status:"open"}).eq("id",thread.id);
       return response(h,200,{ok:true});
