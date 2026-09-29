@@ -77,7 +77,7 @@ if("serviceWorker" in navigator){
     try{
       const reg=await navigator.serviceWorker.register("./rpe-v2-sw.js?v=20260929-08",{scope:"./",updateViaCache:"none"});
       reg.update().catch(()=>{});
-      setInterval(()=>reg.update().catch(()=>{}),5*60*1000);
+      setInterval(()=>reg.update().catch(()=>{}),30*60*1000);
       if(reg.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});
       reg.addEventListener("updatefound",()=>{
         const worker=reg.installing;
@@ -89,12 +89,10 @@ if("serviceWorker" in navigator){
           }
         });
       });
-      let refreshing=false;
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
-        if(refreshing)return;
-        refreshing=true;
-        note("RANOVA updated. Reloading…");
-        setTimeout(()=>location.reload(),700);
+        // Update silently. Never reload the running app because an in-session
+        // reload triggers the installed-app splash screen and interrupts taps.
+        note("");
       });
     }catch(err){console.error("RANOVA install/update setup failed",err)}
   });
