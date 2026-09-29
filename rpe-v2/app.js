@@ -39,6 +39,7 @@ let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 let initializedUserId=null,sessionApplyInFlight=false;
 let activePanelId="homePanel";
 let simpleDiscoveryOrigin="homePanel";
+let simpleDiscoveryProductId=null;
 const panelPainted=new Set();
 function afterPaint(fn){requestAnimationFrame(()=>setTimeout(fn,0))}
 function markPanelPainted(id){panelPainted.add(id)}
@@ -128,11 +129,26 @@ document.addEventListener("click",e=>{
   if(coming){showToast(coming.dataset.coming+" is coming soon to RANOVA.")}
 });
 if($("simpleDiscoveryBack"))$("simpleDiscoveryBack").onclick=()=>showPanel(simpleDiscoveryOrigin||"homePanel");
+if($("simpleDiscoveryAdd"))$("simpleDiscoveryAdd").onclick=async()=>{
+  const id=simpleDiscoveryProductId;if(!id)return;
+  await addToCart(id);
+};
+if($("simpleDiscoverySave"))$("simpleDiscoverySave").onclick=async()=>{
+  const id=simpleDiscoveryProductId;if(!id)return;
+  await toggleFavorite(id);
+  $("simpleDiscoverySave").textContent=favorites.has(id)?"♥ Saved":"♡ Save";
+};
+if($("simpleDiscoveryStore"))$("simpleDiscoveryStore").onclick=()=>{
+  const url=$("simpleDiscoveryStore").dataset.url;if(url)location.href=url;
+};
 document.addEventListener("click",e=>{
   const related=e.target.closest("[data-simple-related]");
   if(!related)return;
   const p=products.find(x=>x.id===related.dataset.simpleRelated);if(!p)return;
   renderSimpleDiscoveryProduct(p,true);
+  recentIds=[p.id,...recentIds.filter(x=>x!==p.id)].slice(0,20);
+  panelPainted.delete("recentPanel");
+  sb.from("recently_viewed").upsert({user_id:user.id,product_id:p.id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"}).then(()=>saveFastCache()).catch(()=>{});
   window.scrollTo(0,0);
 });
 if($("contactShortcut"))$("contactShortcut").onclick=contactRpe;
@@ -370,6 +386,7 @@ function filteredProductsNow(){
 }
 function renderSimpleDiscoveryProduct(p,keepOrigin=false){
   if(!p)return;
+  simpleDiscoveryProductId=p.id;
   if(!keepOrigin)simpleDiscoveryOrigin=activePanelId||"homePanel";
   const image=imageFor(p);
   $("simpleDiscoveryImage").innerHTML=image
@@ -394,11 +411,20 @@ function renderSimpleDiscoveryProduct(p,keepOrigin=false){
         '</button>';
       }).join("")
     : "";
+
+  const sellerProduct=matchingSellerProduct(p),storeUrl=sellerStoreProductUrl(sellerProduct);
+  $("simpleDiscoverySave").textContent=favorites.has(p.id)?"♥ Saved":"♡ Save";
+  $("simpleDiscoveryStore").classList.toggle("hide",!storeUrl);
+  $("simpleDiscoveryStore").dataset.url=storeUrl||"";
+  $("simpleDiscoveryAdd").dataset.productId=p.id;
 }
 async function openProduct(id){
   const p=products.find(x=>x.id===id);if(!p)return;
   renderSimpleDiscoveryProduct(p,false);
   showPanel("simpleDiscoveryPanel");
+  recentIds=[id,...recentIds.filter(x=>x!==id)].slice(0,20);
+  panelPainted.delete("recentPanel");
+  sb.from("recently_viewed").upsert({user_id:user.id,product_id:id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"}).then(()=>saveFastCache()).catch(()=>{});
 }
 
 async function handleIncomingCartLink(){
