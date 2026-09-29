@@ -106,7 +106,7 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
           <h2>Your verification checklist</h2>
           <p>Do one step at a time. Choose the requested file, upload it, then move to the next step. RANOVA Admin will review the real document securely.</p>
           <div style="margin-top:12px;padding:12px 14px;border:1px solid #dce8e3;border-radius:13px;background:#f8fbf9;font-size:14px;line-height:1.6;color:#61736c">
-            <b style="color:#15342e">Before uploading:</b> use clear PDF/JPG/PNG/WEBP files, make sure names/numbers are readable, do not crop important details, and only submit documents that genuinely belong to the business or its authorized representative. Maximum file size: 10 MB each.
+            <b style="color:#15342e">Before uploading:</b> use clear PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), or image files, make sure names/numbers are readable, do not crop important details, and only submit documents that genuinely belong to the business or its authorized representative. Maximum file size: 10 MB each.
           </div>
           <div id="verifyMsg" class="msg"></div>
 
@@ -115,25 +115,25 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
               <span class="step-tag">STEP 2 · REQUIRED</span><span id="businessDocStatus" class="doc-status">Not uploaded</span>
               <b style="display:block">Verify your business</b>
               <p><b>What to upload:</b> official business registration certificate, registration document, or the strongest legitimate proof that the business/trading activity exists.</p>
-              <div class="upload"><input id="businessDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="business_registration" data-input="businessDoc">Upload business proof</button></div>
+              <div class="upload"><input id="businessDoc" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,image/*"><button data-upload="business_registration" data-input="businessDoc">Upload business proof</button></div>
             </div>
             <div id="identityUploadCard" class="verify-card required">
               <span class="step-tag">STEP 3 · REQUIRED</span><span id="identityDocStatus" class="doc-status">Not uploaded</span>
               <b style="display:block">Verify your identity</b>
               <p><b>What to upload:</b> a valid government-issued ID for the person responsible for the seller account. Make sure the name, photo and important details are clear.</p>
-              <div class="upload"><input id="identityDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="identity_document" data-input="identityDoc">Upload ID</button></div>
+              <div class="upload"><input id="identityDoc" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,image/*"><button data-upload="identity_document" data-input="identityDoc">Upload ID</button></div>
             </div>
             <div id="locationUploadCard" class="verify-card supporting">
               <span class="step-tag">OPTIONAL SUPPORT</span><span id="locationDocStatus" class="doc-status">Optional</span>
               <b style="display:block">Add business location proof</b>
               <p><b>Optional:</b> utility bill, tenancy/lease document, shop or warehouse evidence, or another genuine document supporting the business location.</p>
-              <div class="upload"><input id="locationDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="location_proof" data-input="locationDoc">Upload location proof</button></div>
+              <div class="upload"><input id="locationDoc" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,image/*"><button data-upload="location_proof" data-input="locationDoc">Upload location proof</button></div>
             </div>
             <div id="fulfilmentUploadCard" class="verify-card required">
               <span class="step-tag">STEP 4 · REQUIRED</span><span id="fulfilmentDocStatus" class="doc-status">Not uploaded</span>
               <b style="display:block">Set up orders & delivery</b>
               <p><b>What to upload:</b> genuine stock/shop/warehouse photos, inventory or supplier evidence, delivery/courier arrangement, or other proof that you can prepare and deliver customer orders.</p>
-              <div class="upload"><input id="fulfilmentDoc" type="file" accept=".pdf,image/jpeg,image/png,image/webp"><button data-upload="fulfilment_evidence" data-input="fulfilmentDoc">Upload orders & delivery proof</button></div>
+              <div class="upload"><input id="fulfilmentDoc" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,image/*"><button data-upload="fulfilment_evidence" data-input="fulfilmentDoc">Upload orders & delivery proof</button></div>
             </div>
           </div>
 
@@ -177,7 +177,14 @@ requiredDocuments.forEach(function(doc){
   var input=document.getElementById(doc.input);input.setAttribute("aria-describedby",note.id);
   input.addEventListener("change",function(){if(validationAttempted)showMissingDocuments(false)});
 });
-function acceptableDocument(file){return !!file&&["submitted","under_review","approved"].includes(String(file.review_status||"").toLowerCase())}
+var documentMimeTypes={pdf:"application/pdf",doc:"application/msword",docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",ppt:"application/vnd.ms-powerpoint",pptx:"application/vnd.openxmlformats-officedocument.presentationml.presentation",jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",bmp:"image/bmp",tif:"image/tiff",tiff:"image/tiff",heic:"image/heic",heif:"image/heif",avif:"image/avif",svg:"image/svg+xml",ico:"image/x-icon"};
+function documentMime(file){
+  var extension=String(file.name||"").split(".").pop().toLowerCase(),expected=documentMimeTypes[extension],mime=String(file.type||"").toLowerCase();
+  if(!expected)return null;
+  if(mime&&mime!=="application/octet-stream"&&mime!==expected&&!(expected.indexOf("image/")===0&&mime.indexOf("image/")===0))return null;
+  return expected;
+}
+function acceptableDocument(file){return !!file&&!!documentMimeTypes[String(file.original_filename||"").split(".").pop().toLowerCase()]}
 function missingDocuments(){return requiredDocuments.filter(function(doc){return !acceptableDocument(latestFile(currentFiles,doc.type))})}
 function showMissingDocuments(focusFirst,serverMissing){
   var missing=missingDocuments();
@@ -285,7 +292,7 @@ function setDocStatus(id,file,optional){
   el.classList.remove("done","review");
   if(!file){el.textContent=optional?"Optional":"Not uploaded";return}
   var st=String(file.review_status||"submitted").toLowerCase();
-  el.textContent=pretty(st);
+  el.textContent=st==="rejected"?"Uploaded":pretty(st);
   if(st==="approved")el.classList.add("done");
   else el.classList.add("review");
 }
@@ -329,7 +336,7 @@ function renderFiles(files){
   if(!files||!files.length){host.innerHTML='<div class="locked-box">No documents uploaded yet.</div>';renderProgress([]);return}
   host.innerHTML=files.map(function(f){
     var name=({business_registration:"Business proof",identity_document:"Identity ID",location_proof:"Location proof",fulfilment_evidence:"Orders & delivery proof"})[f.document_type]||pretty(f.document_type);
-    return '<div class="file"><div><b>'+name+'</b><span>'+String(f.original_filename||"Document")+' · '+pretty(f.review_status)+(f.review_note?'<br><em style="display:block;margin-top:4px;color:#9a542e;font-style:normal">'+String(f.review_note)+'</em>':'')+'</span></div><strong>'+pretty(f.review_status)+'</strong></div>'
+    return '<div class="file"><div><b>'+name+'</b><span>'+String(f.original_filename||"Document")+' · '+(f.review_status==="rejected"?"Uploaded":pretty(f.review_status))+(f.review_note?'<br><em style="display:block;margin-top:4px;color:#9a542e;font-style:normal">'+String(f.review_note)+'</em>':'')+'</span></div><strong>'+(f.review_status==="rejected"?"Uploaded":pretty(f.review_status))+'</strong></div>'
   }).join("");
   renderProgress(files);
 }
@@ -415,12 +422,14 @@ document.getElementById("submitForReview").addEventListener("click",async functi
     if(!input||!input.files||!input.files[0]){validationAttempted=true;showMissingDocuments(false);if(input)input.focus();showMsg(msg,"Please fill this part 👍 — choose a file, then tap Upload.");return}
     if(!currentSession||!currentApplication){showMsg(msg,"Sign in and link your application first.");return}
     var file=input.files[0];
+    var acceptedMime=documentMime(file);
+    if(!acceptedMime){showMsg(msg,"Please attach a PDF, Word document (DOC/DOCX), PowerPoint (PPT/PPTX), or image 👍");input.focus();return}
     if(file.size>10*1024*1024){showMsg(msg,"Maximum file size is 10 MB.");return}
     var safe=file.name.replace(/[^a-zA-Z0-9._-]+/g,"_");
     var path=currentSession.user.id+"/"+currentApplication.application_ref+"/"+type+"_"+Date.now()+"_"+safe;
     uploadCount++;this.disabled=true;var old=this.textContent;this.textContent="Uploading…";
     try{
-      var up=await sb.storage.from("seller-verification").upload(path,file,{upsert:false,contentType:file.type||undefined});
+      var up=await sb.storage.from("seller-verification").upload(path,file,{upsert:false,contentType:acceptedMime});
       if(up.error)throw up.error;
       var ins=await sb.from("ranova_seller_verification_files").insert({
         seller_id:currentSession.user.id,
@@ -448,3 +457,4 @@ refreshSession();
 <script src="./seller-pwa.js?v=20260927-01"></script>
 </body>
 </html>
+

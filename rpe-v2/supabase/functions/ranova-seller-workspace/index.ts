@@ -91,7 +91,7 @@ Deno.serve(async(req:Request)=>{
 
   if(action==="submit_for_review"){
     const reqQ=new URL(SUPABASE_URL+"/rest/v1/ranova_seller_verification_files");
-    reqQ.searchParams.set("select","id,document_type,review_status,created_at");
+    reqQ.searchParams.set("select","id,document_type,original_filename,review_status,created_at");
     reqQ.searchParams.set("order","created_at.desc,id.desc");
     reqQ.searchParams.set("seller_id","eq."+user.id);
     reqQ.searchParams.set("application_ref","eq."+ref);
@@ -99,7 +99,7 @@ Deno.serve(async(req:Request)=>{
     const rr=await fetch(reqQ.toString(),{headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY}});
     const rows=await rr.json().catch(()=>[]);
     if(!rr.ok)return new Response(JSON.stringify({ok:false,error:"Could not verify submitted documents."}),{status:500,headers:h});
-    const acceptable=(t:string)=>{const latest=rows.find((x:any)=>x.document_type===t);return latest&&["submitted","under_review","approved"].includes(String(latest.review_status||"").toLowerCase())};
+    const acceptable=(t:string)=>{const latest=rows.find((x:any)=>x.document_type===t);return latest&&/\.(pdf|doc|docx|ppt|pptx|jpe?g|png|webp|gif|bmp|tiff?|heic|heif|avif|svg|ico)$/i.test(String(latest.original_filename||""))};
     const missing:string[]=[];
     if(!acceptable("business_registration"))missing.push("business proof");
     if(!acceptable("identity_document"))missing.push("identity ID");
@@ -133,3 +133,4 @@ Deno.serve(async(req:Request)=>{
 
   return new Response(JSON.stringify({ok:true,linked:true,application:apps[0],files}),{status:200,headers:h});
 });
+
