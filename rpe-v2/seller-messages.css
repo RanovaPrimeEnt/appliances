@@ -439,3 +439,16 @@
     flex-basis:41px;
   }
 }
+
+
+/* Edge spacing 0.19cm 2026-09-29 */
+.seller-composer-shell{
+  padding-left:0.19cm;
+  padding-right:0.19cm;
+}
+@media(max-width:720px){
+  .seller-composer-shell{
+    padding-left:0.19cm;
+    padding-right:0.19cm;
+  }
+}
