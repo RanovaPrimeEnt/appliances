@@ -311,3 +311,131 @@
     flex-basis:42px;
   }
 }
+
+
+/* Composer alignment polish 2026-09-29 */
+.seller-composer-shell{
+  padding:5px 6px 6px;
+  background:#f2f4f3;
+}
+.seller-chat-composer{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:6px;
+  min-height:44px;
+  width:100%;
+}
+.seller-message-field{
+  flex:1 1 auto;
+  min-width:0;
+  height:40px;
+  min-height:40px;
+  max-height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:1px;
+  padding:0 5px 0 4px;
+  border-radius:20px;
+  background:#fff;
+  overflow:hidden;
+}
+.seller-message-field #sellerEmojiToggle{
+  order:1;
+  flex:0 0 29px;
+}
+.seller-message-field #sellerChatInput{
+  order:2;
+  flex:1 1 auto;
+  min-width:55px;
+  width:auto;
+  height:34px;
+  min-height:34px;
+  max-height:34px;
+  margin:0;
+  padding:5px 5px 4px;
+  border:0;
+  line-height:24px;
+  white-space:nowrap;
+  overflow-x:hidden;
+  overflow-y:hidden;
+  vertical-align:middle;
+}
+.seller-message-field #sellerFilePick{
+  order:3;
+  flex:0 0 29px;
+}
+.seller-message-field #sellerImagePick{
+  order:4;
+  flex:0 0 29px;
+}
+.seller-message-field .seller-icon-button{
+  width:29px;
+  min-width:29px;
+  height:29px;
+  min-height:29px;
+  margin:0;
+  padding:0;
+  display:grid;
+  place-items:center;
+  align-self:center;
+  line-height:1;
+}
+.seller-message-field .seller-icon-button svg{
+  width:21px;
+  height:21px;
+  display:block;
+}
+.seller-chat-composer > .seller-round-action{
+  flex:0 0 42px;
+  width:42px;
+  min-width:42px;
+  height:42px;
+  min-height:42px;
+  margin:0;
+  align-self:center;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+}
+.seller-chat-composer > .seller-round-action svg{
+  width:22px;
+  height:22px;
+  display:block;
+}
+@media(max-width:720px){
+  .seller-composer-shell{padding:4px 5px 5px}
+  .seller-chat-composer{gap:5px;min-height:43px}
+  .seller-message-field{
+    height:39px;
+    min-height:39px;
+    max-height:39px;
+    padding:0 4px;
+  }
+  .seller-message-field #sellerChatInput{
+    min-width:48px;
+    height:33px;
+    min-height:33px;
+    max-height:33px;
+    padding:5px 3px 4px;
+    font-size:1rem;
+  }
+  .seller-message-field .seller-icon-button{
+    width:28px;
+    min-width:28px;
+    height:28px;
+    min-height:28px;
+  }
+  .seller-message-field .seller-icon-button svg{
+    width:20px;
+    height:20px;
+  }
+  .seller-chat-composer > .seller-round-action{
+    width:41px;
+    min-width:41px;
+    height:41px;
+    min-height:41px;
+    flex-basis:41px;
+  }
+}
