@@ -37,6 +37,11 @@ const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 const FAST_CACHE_TTL=5*60*1000;
 let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 let initializedUserId=null,sessionApplyInFlight=false;
+let activePanelId="homePanel";
+const panelPainted=new Set();
+function afterPaint(fn){requestAnimationFrame(()=>setTimeout(fn,0))}
+function markPanelPainted(id){panelPainted.add(id)}
+function panelIsPainted(id){return panelPainted.has(id)}
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -86,21 +91,38 @@ function contactRpe(){window.open("https://wa.me/233542846895?text="+encodeURICo
 
 function showPanel(id){
   hidePreparationScreen();
-  document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
-  $(id)?.classList.add("active");
+  const next=$(id);if(!next)return;
+  activePanelId=id;
+  document.querySelectorAll(".panel.active").forEach(x=>x.classList.remove("active"));
+  next.classList.add("active");
   document.querySelectorAll(".bottom [data-panel]").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));
-  if(id==="notifPanel") markNotificationsRead();
-  if(id==="ordersPanel") renderOrders();
-  if(id==="messagesPanel"){if(messageConversations.length)renderMessageList();if(Date.now()-messagesLoadedAt>30000)loadMessageConversations().catch(()=>{})}
-  if(id==="toPayPanel"){renderToPayOrders($("toPaySearch")?.value||"");if(Date.now()-toPayLoadedAt>30000)loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"))}
-  if(id==="marketplaceHomePanel"){renderMarketplaceHome($("marketHomeSearch")?.value||"");if(Date.now()-marketLoadedAt>60000)loadMarketplaceHomeData().catch(()=>{})}
   window.scrollTo(0,0);
+
+  // Paint the destination first. Any database refresh happens only after
+  // the browser has displayed the tapped section.
+  afterPaint(()=>{
+    if(id==="notifPanel"){if(!panelIsPainted(id)){renderNotifications();markPanelPainted(id)}markNotificationsRead().catch(()=>{})}
+    else if(id==="ordersPanel"){if(!panelIsPainted(id)){renderOrders();markPanelPainted(id)}}
+    else if(id==="savedPanel"){if(!panelIsPainted(id)){renderSaved();markPanelPainted(id)}}
+    else if(id==="recentPanel"){if(!panelIsPainted(id)){renderRecent();markPanelPainted(id)}}
+    else if(id==="addressPanel"){if(!panelIsPainted(id)){renderAddresses();markPanelPainted(id)}}
+    else if(id==="messagesPanel"){
+      if(!panelIsPainted(id)){renderMessageList();markPanelPainted(id)}
+      if(Date.now()-messagesLoadedAt>30000)loadMessageConversations().catch(()=>{});
+    }else if(id==="toPayPanel"){
+      if(!panelIsPainted(id)){renderToPayOrders($("toPaySearch")?.value||"");markPanelPainted(id)}
+      if(Date.now()-toPayLoadedAt>30000)loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"));
+    }else if(id==="marketplaceHomePanel"){
+      if(!panelIsPainted(id)){renderMarketplaceHome($("marketHomeSearch")?.value||"");markPanelPainted(id)}
+      if(Date.now()-marketLoadedAt>60000)loadMarketplaceHomeData().catch(()=>{});
+    }
+  });
 }
 document.addEventListener("click",e=>{
-  const b=e.target.closest("[data-panel]");
-  if(b){orderFilter=null;showPanel(b.dataset.panel)}
   const s=e.target.closest("[data-order-filter]");
-  if(s){orderFilter=s.dataset.orderFilter;showPanel("ordersPanel")}
+  if(s){e.preventDefault();orderFilter=s.dataset.orderFilter;panelPainted.delete("ordersPanel");showPanel("ordersPanel");return}
+  const b=e.target.closest("[data-panel]");
+  if(b){e.preventDefault();orderFilter=null;showPanel(b.dataset.panel);return}
   const coming=e.target.closest("[data-coming]");
   if(coming){showToast(coming.dataset.coming+" is coming soon to RANOVA.")}
 });
@@ -223,9 +245,9 @@ async function applySession(session,initial=false){
     appBox.classList.remove("hide");
     subscribeRealtime();
     handleIncomingCartLink().catch(()=>{});
-    idleRun(()=>loadMessageConversations(true).catch(()=>{}),900);
-    idleRun(()=>loadToPayOrders(true).catch(()=>{}),900);
-    idleRun(()=>loadMarketplaceHomeData().catch(()=>{}),1100);
+    afterPaint(()=>loadMessageConversations(true).catch(()=>{}));
+    setTimeout(()=>loadToPayOrders(true).catch(()=>{}),80);
+    setTimeout(()=>loadMarketplaceHomeData().catch(()=>{}),140);
   }catch(e){
     console.error(e);
     // Do not blank an already-open app because one refresh call failed.
@@ -246,6 +268,8 @@ async function loadAll(){
   [prof,prod,cart,ord].forEach(x=>{if(x.error)throw x.error});
   profile=prof.data;products=prod.data||[];cartId=cart.data?.id||null;orders=ord.data||[];
   renderAll();
+  panelPainted.clear();
+  ["homePanel","shopPanel","ordersPanel","savedPanel","recentPanel","addressPanel","notifPanel","profilePanel"].forEach(markPanelPainted);
   saveFastCache();
 
   secondaryLoadPromise=Promise.all([
@@ -260,6 +284,7 @@ async function loadAll(){
     favorites=new Set((fav.data||[]).map(x=>x.product_id));recentIds=(rec.data||[]).map(x=>x.product_id);
     notifications=noti.data||[];addresses=addr.data||[];returns=ret.data||[];
     renderProducts(filteredProductsNow());renderHomeProducts();renderSaved();renderRecent();renderCart();renderNotifications();renderAddresses();renderCounts();
+    ["savedPanel","recentPanel","addressPanel","notifPanel"].forEach(markPanelPainted);
     saveFastCache();
   }).catch(console.error);
 }
@@ -308,7 +333,7 @@ function renderRecent(){const map=new Map(products.map(p=>[p.id,p]));const list=
 document.addEventListener("click",async e=>{
   const add=e.target.closest("[data-add]"); if(add){e.stopPropagation();await addToCart(add.dataset.add);return}
   const fav=e.target.closest("[data-fav]"); if(fav){e.stopPropagation();await toggleFavorite(fav.dataset.fav);return}
-  const open=e.target.closest("[data-open-product]"); if(open){await openProduct(open.dataset.openProduct);return}
+  const open=e.target.closest("[data-open-product]"); if(open){openProduct(open.dataset.openProduct);return}
 });
 $("searchBtn").onclick=searchProducts;$("productSearch").addEventListener("input",searchProducts);
 function searchProducts(){
@@ -317,22 +342,27 @@ function searchProducts(){
   renderProducts(products.filter(p=>[p.name,p.sku,p.legacy_id,p.brand,p.categories?.name,p.short_description].some(x=>String(x||"").toLowerCase().includes(q))));
 }
 async function toggleFavorite(id){
-  if(favorites.has(id)){
-    const {error}=await sb.from("favorites").delete().eq("user_id",user.id).eq("product_id",id);if(error)return showToast("Could not update saved products");
-    favorites.delete(id);showToast("Removed from saved");saveFastCache();
-  }else{
-    const {error}=await sb.from("favorites").insert({user_id:user.id,product_id:id});if(error)return showToast("Could not save product");
-    favorites.add(id);showToast("Saved");saveFastCache();
+  const wasSaved=favorites.has(id);
+  if(wasSaved)favorites.delete(id);else favorites.add(id);
+  renderProducts(filteredProductsNow());renderHomeProducts();renderSaved();renderRecent();saveFastCache();
+  showToast(wasSaved?"Removed from saved":"Saved");
+  const req=wasSaved
+    ? sb.from("favorites").delete().eq("user_id",user.id).eq("product_id",id)
+    : sb.from("favorites").insert({user_id:user.id,product_id:id});
+  const {error}=await req;
+  if(error){
+    if(wasSaved)favorites.add(id);else favorites.delete(id);
+    renderProducts(filteredProductsNow());renderHomeProducts();renderSaved();renderRecent();saveFastCache();
+    showToast("Could not update saved products");
   }
-  renderProducts(filteredProductsNow());renderHomeProducts();renderSaved();renderRecent();
 }
 function filteredProductsNow(){
   const q=$("productSearch").value.trim().toLowerCase();return q?products.filter(p=>[p.name,p.sku,p.legacy_id,p.brand,p.categories?.name,p.short_description].some(x=>String(x||"").toLowerCase().includes(q))):products
 }
 async function openProduct(id){
   const p=products.find(x=>x.id===id);if(!p)return;
-  await sb.from("recently_viewed").upsert({user_id:user.id,product_id:id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"});
-  recentIds=[id,...recentIds.filter(x=>x!==id)].slice(0,20);renderRecent();
+  recentIds=[id,...recentIds.filter(x=>x!==id)].slice(0,20);panelPainted.delete("recentPanel");
+  sb.from("recently_viewed").upsert({user_id:user.id,product_id:id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"}).then(()=>saveFastCache()).catch(()=>{});
   const specRows=Object.entries(p.specifications||{}).map(([k,v])=>`<div class="list-row"><div><b>${esc(prettyKey(k))}</b><small>${esc(typeof v==="boolean"?(v?"Yes":"No"):v)}</small></div></div>`).join("");
   const dimensions=p.dimensions?`<div class="list-row"><div><b>Dimensions</b><small>${esc(p.dimensions)}</small></div></div>`:"";
   const overlay=document.createElement("div");overlay.className="cart-drawer open";overlay.innerHTML=`<aside class="drawer"><div class="drawer-head"><h3>Product details</h3><button class="icon-btn" data-close-product>×</button></div><div class="drawer-list">
@@ -376,7 +406,7 @@ async function changeQty(item,delta){
   const q=Math.max(1,Math.min(99,item.quantity+delta));const {error}=await sb.from("cart_items").update({quantity:q}).eq("id",item.id);
   if(error)return showToast("Could not update quantity");await loadCartItems();renderCart();saveFastCache();
 }
-async function removeCart(item){const {error}=await sb.from("cart_items").delete().eq("id",item.id);if(error)return showToast("Could not remove product");await loadCartItems();renderCart()saveFastCache();}
+async function removeCart(item){const {error}=await sb.from("cart_items").delete().eq("id",item.id);if(error)return showToast("Could not remove product");await loadCartItems();renderCart();saveFastCache();}
 function renderCart(){
   const list=$("cartList");setBadge("cartCount",cartItems.length);setBadge("bottomCartCount",cartItems.length);
   if(!cartItems.length){list.innerHTML='<div class="empty"><b>Your cart is empty</b>Add products you want and they will appear here.</div>';return}
@@ -389,7 +419,7 @@ function renderCart(){
   list.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>changeQty(cartItems.find(x=>x.id===b.dataset.plus),1));
   list.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeCart(cartItems.find(x=>x.id===b.dataset.remove)));
 }
-function openCart(){renderCart();$("cartDrawer").classList.add("open")}
+function openCart(){$("cartDrawer").classList.add("open");afterPaint(()=>renderCart())}
 function closeCart(){$("cartDrawer").classList.remove("open")}
 $("sendOrder").onclick=async()=>{
   if(!cartItems.length)return showToast("Your cart is empty");
@@ -507,7 +537,7 @@ async function loadMarketplaceHomeData(){
     sb.from("ranova_seller_products").select("id,store_id,name,sku,category,short_description,price,currency,moq,unit_label,primary_image_url").eq("product_status","active").limit(120)
   ]);
   if(a.error)throw a.error;if(b.error)throw b.error;
-  marketStores=a.data||[];marketSellerProducts=b.data||[];marketLoadedAt=Date.now();renderMarketplaceHome($("marketHomeSearch")?.value||"");
+  marketStores=a.data||[];marketSellerProducts=b.data||[];marketLoadedAt=Date.now();renderMarketplaceHome($("marketHomeSearch")?.value||"");markPanelPainted("marketplaceHomePanel");
 }
 function marketStoreProducts(id){return marketSellerProducts.filter(p=>p.store_id===id)}
 function renderMarketplaceHome(filter=""){
@@ -532,7 +562,7 @@ async function loadToPayOrders(prefetch=false){
   if(prefetch&&toPayOrders.length&&Date.now()-toPayLoadedAt<30000)return;
   const out=await messageApi({action:"buyer_payment_orders"});
   toPayOrders=out.orders||[];toPayStores=out.stores||[];toPayRecommendations=out.recommendations||[];toPayLoadedAt=Date.now();saveFastCache();
-  renderToPayOrders($("toPaySearch")?.value||"");
+  renderToPayOrders($("toPaySearch")?.value||"");markPanelPainted("toPayPanel");
 }
 function payStore(id){return toPayStores.find(s=>s.id===id)||null}
 function payItemImage(item){return item?.image_url||""}
@@ -615,7 +645,7 @@ function messageTime(v){const d=new Date(v);if(Number.isNaN(d.getTime()))return 
 async function loadMessageConversations(prefetch=false){
   if(!user)return;if(prefetch&&messageConversations.length&&Date.now()-messagesLoadedAt<30000)return;
   const out=await messageApi({action:"list"});messageConversations=out.conversations||[];messagesLoadedAt=Date.now();saveFastCache();
-  renderMessageList();
+  renderMessageList();markPanelPainted("messagesPanel");
   setBadge("bottomMessageCount",messageConversations.filter(x=>x.unread).length);
 }
 function renderMessageList(){
