@@ -30,7 +30,9 @@ jobs:
           gradle-version: "8.7"
 
       - name: Build signed debug APK
-        run: gradle -p android-app :app:copyBuiltApk --no-daemon
+        run: |
+          gradle -p android-app :app:assembleDebug --no-daemon
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk android-app/app/build/outputs/apk/debug/RANOVA.apk
 
       - name: Publish downloadable APK
         uses: softprops/action-gh-release@v2
