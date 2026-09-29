@@ -64,7 +64,7 @@ window.addEventListener("appinstalled",()=>{
   note("RANOVA is installed on this device.");
   setTimeout(()=>note(""),3500);
 });
-[installBtn,globalBtn].forEach(btn=>{if(btn)btn.addEventListener("click",install)});
+[installBtn,globalBtn,homeBtn].forEach(btn=>{if(btn)btn.addEventListener("click",install)});
 if(closeHelp)closeHelp.addEventListener("click",()=>installHelp.style.display="none");
 if(installHelp)installHelp.addEventListener("click",e=>{if(e.target===installHelp)installHelp.style.display="none"});
 syncButtons();
