@@ -1,4 +1,4 @@
-const CACHE="ranova-admin-shell-v3";
+const CACHE="ranova-admin-shell-v4";
 const CORE=[
   "./admin.html",
   "./admin.js",
