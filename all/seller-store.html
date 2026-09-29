@@ -73,6 +73,14 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
   .trust-metric{padding:12px}
 }
 @media(prefers-reduced-motion:reduce){.drawer{transition:none}}
+/* Keep the existing product card geometry; additional tools live in details. */
+.product-name{font:inherit;font-weight:inherit;color:inherit;text-align:left;border:0;background:none;padding:0;cursor:pointer}
+.product-name:hover{text-decoration:underline}.product button:focus-visible,.detail-card :focus-visible{outline:3px solid #b68b32;outline-offset:2px}
+.detail-quantity-label,.detail-compare label{display:block;font-size:14px;font-weight:800;margin-top:16px}
+.detail-quantity button{width:40px;height:40px;font-size:18px}.detail-quantity input{width:76px;height:40px;font-size:16px}
+.detail-compare select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;margin:8px 0;font-size:14px}
+.comparison-scroll{overflow:auto}.comparison-scroll table{width:100%;min-width:420px;border-collapse:collapse;font-size:14px;text-align:left}.comparison-scroll caption{text-align:left;font-weight:800;padding:10px 0}.comparison-scroll th,.comparison-scroll td{padding:10px;border:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}.comparison-scroll th{background:#f1f7f4}
+.cart-line b,.summary-row{font-size:14px}.cart-line small,.remove{font-size:12px}.qty input{font-size:14px}.summary-row.total{font-size:16px}
 </style>
 </head>
 <body>
@@ -149,6 +157,22 @@ function el(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function phoneDigits(v){var d=String(v||"").replace(/\D/g,"");if(d.startsWith("0"))d="233"+d.slice(1);return d}
 function money(v){return v==null?"Ask seller for price":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function stockLabel(p){return ({in_stock:"In stock",out_of_stock:"Out of stock",pre_order:"Pre-order",limited_stock:"Limited stock",confirm_on_enquiry:"Check availability"})[p.stock_status]||"Check availability"}
+function orderUnavailable(p){return p.stock_status==="out_of_stock"||(p.stock_quantity!=null&&Number(p.stock_quantity)<Number(p.moq||1))||["restricted","suspended"].includes(String((marketplaceTrust.enforcement||{}).enforcement_status||""))}
+function boundedQuantity(p,value){
+  var min=Math.max(1,Math.floor(Number(p.moq)||1)),q=Number(value);
+  q=Number.isFinite(q)?Math.max(min,Math.floor(q)):min;
+  if(p.stock_quantity!=null)q=Math.min(q,Math.max(0,Math.floor(Number(p.stock_quantity)||0)));
+  return q>=min?q:null;
+}
+function renderComparison(id,otherId){
+  var a=products.find(function(p){return p.id===id}),b=products.find(function(p){return p.id===otherId}),host=el("detailComparison");
+  if(!host)return;host.innerHTML="";if(!a||!b)return;
+  var rows=[["Price",money(a.price),money(b.price)],["Availability",stockLabel(a),stockLabel(b)],["Minimum order",a.moq||1,b.moq||1],["Model / SKU",a.sku||"Not provided",b.sku||"Not provided"]];
+  var keys=Array.from(new Set(Object.keys(a.specifications||{}).concat(Object.keys(b.specifications||{}))));
+  keys.forEach(function(k){var av=(a.specifications||{})[k],bv=(b.specifications||{})[k];if(typeof av!=="object"&&typeof bv!=="object")rows.push([k.replace(/_/g," "),av==null||av===""?"Not provided":av,bv==null||bv===""?"Not provided":bv])});
+  host.innerHTML='<div class="comparison-scroll"><table><caption>Product comparison</caption><thead><tr><th scope="col">Feature</th><th scope="col">'+esc(a.name)+'</th><th scope="col">'+esc(b.name)+'</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><th scope="row">'+esc(r[0])+'</th><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td></tr>'}).join("")+'</tbody></table></div>';
+}
 function stars(n){n=Number(n||0);return "★".repeat(Math.max(0,Math.min(5,Math.round(n))))+"☆".repeat(Math.max(0,5-Math.min(5,Math.round(n))))}
 function websiteProduct(p){
   var list=(window.RPE_WEBSITE_PRODUCTS||[]).concat(window.RPE_LIGHTING_PRODUCTS||[]);
@@ -168,7 +192,8 @@ function productPhotos(p){
 function saveProductList(){try{localStorage.setItem("ranova_saved_store_"+store.id,JSON.stringify(Array.from(savedProducts)))}catch(e){}}
 function toggleSaved(id){
   if(savedProducts.has(id))savedProducts.delete(id);else savedProducts.add(id);
-  saveProductList();render();if(detailProductId===id)openProductDetail(id);
+  var quantity=detailProductId===id&&el("detailQuantity")?el("detailQuantity").value:null;
+  saveProductList();render();if(detailProductId===id){openProductDetail(id);if(quantity!=null)el("detailQuantity").value=quantity}
 }
 function shareProduct(id){
   var p=products.find(function(x){return x.id===id});if(!p)return;
@@ -182,13 +207,21 @@ function openProductDetail(id){
   detailProductId=id;
   var photos=productPhotos(p),specs=p.specifications&&typeof p.specifications==="object"?p.specifications:{},facts=[];
   if(p.sku)facts.push(["Model / SKU",p.sku]);
-  facts.push(["Category",p.category||"General"],["Availability",String(p.stock_status||"confirm_on_enquiry").replace(/_/g," ")],["Minimum order",String(p.moq||1)+(p.unit_label?" "+p.unit_label:"")]);
+  facts.push(["Category",p.category||"General"],["Availability",stockLabel(p)],["Minimum order",String(p.moq||1)+(p.unit_label?" "+p.unit_label:"")]);
   Object.keys(specs).forEach(function(k){var value=specs[k];if(value!=null&&value!==""&&typeof value!=="object")facts.push([k.replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase()}),String(value)])});
-  var unavailable=p.stock_status==="out_of_stock"||["restricted","suspended"].includes(String((marketplaceTrust.enforcement||{}).enforcement_status||""));
-  el("detailContent").innerHTML='<div>'+ (photos.length?'<img class="detail-main-image" id="detailMainImage" src="'+esc(photos[0])+'" alt="'+esc(p.name)+'">':'<div class="detail-main-image empty">Image available on enquiry</div>')+(photos.length>1?'<div class="detail-gallery" aria-label="Product images">'+photos.map(function(src,i){return '<button type="button" class="'+(i===0?'selected':'')+'" data-detail-photo="'+i+'" aria-label="Show image '+(i+1)+'"><img src="'+esc(src)+'" alt=""></button>'}).join("")+'</div>':"")+'</div><div><small>'+esc(p.category||"Product")+'</small><h3 id="detailName">'+esc(p.name)+'</h3><strong>'+esc(money(p.price))+'</strong><p>'+esc(productDescription(p))+'</p><dl class="detail-facts">'+facts.map(function(row){return '<div><dt>'+esc(row[0])+'</dt><dd>'+esc(row[1])+'</dd></div>'}).join("")+'</dl><p class="detail-note">Confirm price, stock, important specifications, delivery and applicable warranty before payment.</p><div class="detail-actions"><button type="button" class="buy" data-detail-add="'+esc(id)+'" '+(unavailable?'disabled':'')+'>'+(unavailable?'Ordering paused':'Add to order')+'</button><a class="buy" style="background:#116a52;color:#fff" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'&quote=1">Ask for Quote</a><button type="button" data-detail-save="'+esc(id)+'">'+(savedProducts.has(id)?'♥ Saved':'♡ Save')+'</button><button type="button" data-detail-share="'+esc(id)+'">Share</button><a href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div>';
+  facts.push(["Delivery",store.fulfilment_summary||"Ask seller for delivery options"],["Returns",store.return_policy_summary||"Confirm return terms with seller"]);
+  var unavailable=orderUnavailable(p),minimum=Number(p.moq||1),initial=boundedQuantity(p,cart[id]||minimum)||minimum;
+  var options=products.filter(function(x){return x.id!==id&&x.category===p.category});
+  el("detailContent").innerHTML='<div>'+ (photos.length?'<img class="detail-main-image" id="detailMainImage" src="'+esc(photos[0])+'" alt="'+esc(p.name)+'">':'<div class="detail-main-image empty">Image available on enquiry</div>')+(photos.length>1?'<div class="detail-gallery" aria-label="Product images">'+photos.map(function(src,i){return '<button type="button" class="'+(i===0?'selected':'')+'" data-detail-photo="'+i+'" aria-label="Show image '+(i+1)+'"><img src="'+esc(src)+'" alt=""></button>'}).join("")+'</div>':"")+'</div><div><small>'+esc(p.category||"Product")+'</small><h3 id="detailName">'+esc(p.name)+'</h3><strong>'+esc(money(p.price))+'</strong><p>'+esc(productDescription(p))+'</p><dl class="detail-facts">'+facts.map(function(row){return '<div><dt>'+esc(row[0])+'</dt><dd>'+esc(row[1])+'</dd></div>'}).join("")+'</dl><p class="detail-note">Confirm price, stock, important specifications, delivery and applicable warranty before payment.</p><label class="detail-quantity-label" for="detailQuantity">Quantity</label><div class="qty detail-quantity"><button type="button" id="detailMinus" aria-label="Decrease quantity" '+(unavailable?'disabled':'')+'>−</button><input id="detailQuantity" type="number" step="1" min="'+esc(minimum)+'" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(initial)+'" '+(unavailable?'disabled':'')+'><button type="button" id="detailPlus" aria-label="Increase quantity" '+(unavailable?'disabled':'')+'>+</button></div><div class="detail-actions"><button type="button" class="buy" data-detail-add="'+esc(id)+'" '+(unavailable?'disabled':'')+'>'+(unavailable?'Ordering unavailable':p.price==null?'Add to order selection':cart[id]!=null?'Update cart':'Add to cart')+'</button><a class="buy" style="background:#116a52;color:#fff" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'&quote=1">Request price</a><button type="button" data-detail-save="'+esc(id)+'">'+(savedProducts.has(id)?'♥ Saved':'♡ Save')+'</button><button type="button" data-detail-share="'+esc(id)+'">Share</button><a href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a>'+(phoneDigits(store.public_phone)?'<a target="_blank" rel="noopener" href="https://wa.me/'+phoneDigits(store.public_phone)+'?text='+encodeURIComponent('Hello, I am interested in '+p.name+' on RANOVA.')+'">WhatsApp seller</a>':'')+'</div>'+(options.length?'<div class="detail-compare"><label for="compareProduct">Compare with another '+esc(p.category||'product')+'</label><select id="compareProduct"><option value="">Choose a product</option>'+options.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select><div id="detailComparison" aria-live="polite"></div></div>':'')+'</div>';
   var dialog=el("productDetail");dialog.classList.add("open");dialog.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");el("closeDetail").focus();
   dialog.querySelectorAll("[data-detail-photo]").forEach(function(b){b.onclick=function(){el("detailMainImage").src=photos[Number(b.dataset.detailPhoto)];dialog.querySelectorAll("[data-detail-photo]").forEach(function(x){x.classList.toggle("selected",x===b)})}});
-  dialog.querySelector("[data-detail-add]").onclick=function(){closeProductDetail();addProduct(id)};
+  var input=el("detailQuantity");
+  function updateDetailQuantity(value){input.value=boundedQuantity(p,value)||minimum}
+  el("detailMinus").onclick=function(){updateDetailQuantity(Number(input.value)-1)};
+  el("detailPlus").onclick=function(){updateDetailQuantity(Number(input.value)+1)};
+  input.onchange=function(){updateDetailQuantity(input.value)};
+  dialog.querySelector("[data-detail-add]").onclick=function(){var q=boundedQuantity(p,input.value);if(q==null||orderUnavailable(p))return;cart[id]=q;saveCart();closeProductDetail();render();renderCart();openCart()};
+  if(el("compareProduct"))el("compareProduct").onchange=function(){renderComparison(id,this.value)};
   dialog.querySelector("[data-detail-save]").onclick=function(){toggleSaved(id)};
   dialog.querySelector("[data-detail-share]").onclick=function(){shareProduct(id)};
 }
@@ -332,7 +365,8 @@ function sanitizeCart(){
 function productCard(p){
   var inCart=cart[p.id]!=null,enforcement=String((marketplaceTrust.enforcement||{}).enforcement_status||"good_standing"),disabled=p.stock_status==="out_of_stock"||enforcement==="restricted"||enforcement==="suspended";
   var photo=productPhoto(p);
-  return '<article class="product"><button type="button" class="img" data-open="'+esc(p.id)+'" aria-label="View '+esc(p.name)+' details">'+(photo?'<img src="'+esc(photo)+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<span>Image available on enquiry</span>')+'</button><div class="copy"><small>'+esc(p.category||"Product")+'</small><h3>'+esc(p.name)+'</h3><p>'+esc(p.short_description||productDescription(p))+'</p><div class="meta"><span class="chip">MOQ '+esc(p.moq||1)+'</span><span class="chip">'+esc(String(p.stock_status||"confirm_on_enquiry").replace(/_/g," "))+'</span></div><div class="price">'+esc(money(p.price))+(p.price==null?'<small>Final amount confirmed before payment</small>':'')+'</div><div class="product-tools"><button type="button" class="details" data-open="'+esc(p.id)+'">View details</button><button type="button" data-save="'+esc(p.id)+'" aria-label="'+(savedProducts.has(p.id)?'Remove saved ':'Save ')+esc(p.name)+'">'+(savedProducts.has(p.id)?'♥':'♡')+'</button><button type="button" data-share="'+esc(p.id)+'" aria-label="Share '+esc(p.name)+'">Share</button></div><div class="card-actions"><button class="buy'+(inCart?' in-cart':'')+'" data-add="'+esc(p.id)+'" '+(disabled?'disabled':'')+'>'+(p.stock_status==="out_of_stock"?'Out of stock':disabled?'Ordering paused':inCart?'✓ Added to order':'Add to order')+'</button><a class="contact-btn" href="./messages.html?product='+encodeURIComponent(p.id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div></article>'
+  disabled=disabled||orderUnavailable(p);
+  return '<article class="product"><button type="button" class="img" data-open="'+esc(p.id)+'" aria-label="View '+esc(p.name)+' details">'+(photo?'<img src="'+esc(photo)+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<span>Image available on enquiry</span>')+'</button><div class="copy"><small>'+esc(p.category||"Product")+'</small><h3><button type="button" class="product-name" data-open="'+esc(p.id)+'">'+esc(p.name)+'</button></h3><p>'+esc(p.short_description||productDescription(p))+'</p><div class="meta"><span class="chip" title="Minimum order quantity">MOQ '+esc(p.moq||1)+'</span><span class="chip">'+esc(stockLabel(p))+'</span></div><div class="price">'+esc(money(p.price))+(p.price==null?'<small>Request a quote before ordering</small>':'')+'</div><div class="product-tools"><button type="button" class="details" data-open="'+esc(p.id)+'">View details</button><button type="button" data-save="'+esc(p.id)+'" aria-label="'+(savedProducts.has(p.id)?'Remove saved ':'Save ')+esc(p.name)+'">'+(savedProducts.has(p.id)?'♥':'♡')+'</button><button type="button" data-share="'+esc(p.id)+'" aria-label="Share '+esc(p.name)+'">Share</button></div><div class="card-actions"><button class="buy'+(inCart?' in-cart':'')+'" data-add="'+esc(p.id)+'" '+(disabled?'disabled':'')+'>'+(p.stock_status==="out_of_stock"?'Out of stock':disabled?'Ordering paused':inCart?'✓ View cart':p.price==null?'Request price':'Add to cart')+'</button><a class="contact-btn" href="./messages.html?product='+encodeURIComponent(p.id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div></article>'
 }
 function renderCategoryNav(){
   var cats=CATEGORY_ORDER.filter(function(c){return products.some(function(p){return p.category===c})});
@@ -363,14 +397,14 @@ function render(){
 }
 function addProduct(id){
   var p=products.find(function(x){return x.id===id}),enforcement=String((marketplaceTrust.enforcement||{}).enforcement_status||"good_standing");
-  if(!p||p.stock_status==="out_of_stock"||enforcement==="restricted"||enforcement==="suspended")return;
+  if(!p||orderUnavailable(p))return;
+  if(p.price==null&&cart[id]==null){location.href="./messages.html?product="+encodeURIComponent(id)+"&store="+encodeURIComponent(store.id)+"&quote=1";return}
   if(cart[id]!=null){openCart();return}
-  cart[id]=Number(p.moq||1);saveCart();render();renderCart();openCart();
+  cart[id]=boundedQuantity(p,p.moq||1);saveCart();render();renderCart();openCart();
 }
 function setQuantity(id,value){
   var p=products.find(function(x){return x.id===id});if(!p)return;
-  var min=Number(p.moq||1),q=Math.max(min,Math.floor(Number(value||min)));
-  if(p.stock_quantity!=null)q=Math.min(q,Number(p.stock_quantity));
+  var q=boundedQuantity(p,value);if(q==null){delete cart[id];saveCart();render();renderCart();return}
   cart[id]=q;saveCart();renderCart();
 }
 function removeItem(id){delete cart[id];saveCart();render();renderCart()}
@@ -383,7 +417,7 @@ function renderCart(){
   el("checkoutCount").value=count+" product(s), "+qty+" unit(s)";
   el("cartLines").innerHTML=count?items.map(function(x){
     var p=x.product;
-    return '<div class="cart-line"><img src="'+esc(p.primary_image_url||"")+'" alt=""><div><b>'+esc(p.name)+'</b><small>'+esc(money(p.price))+' • MOQ '+esc(p.moq||1)+'</small><div class="qty"><button data-minus="'+p.id+'" type="button">−</button><input data-qty="'+p.id+'" type="number" min="'+esc(p.moq||1)+'" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(x.quantity)+'"><button data-plus="'+p.id+'" type="button">+</button></div></div><button class="remove" data-remove="'+p.id+'" type="button">Remove</button></div>';
+    return '<div class="cart-line"><img src="'+esc(productPhoto(p)||"")+'" alt=""><div><b>'+esc(p.name)+'</b><small>'+esc(money(p.price))+' • MOQ '+esc(p.moq||1)+'</small><div class="qty"><button data-minus="'+p.id+'" type="button">−</button><input data-qty="'+p.id+'" type="number" min="'+esc(p.moq||1)+'" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(x.quantity)+'"><button data-plus="'+p.id+'" type="button">+</button></div></div><button class="remove" data-remove="'+p.id+'" type="button">Remove</button></div>';
   }).join(""):'<div class="empty">Your order selection is empty.</div>';
   el("cartSummary").innerHTML='<div class="summary-row"><span>Products</span><b>'+count+'</b></div><div class="summary-row"><span>Total quantity</span><b>'+qty+'</b></div><div class="summary-row total"><span>Product total</span><b>'+(total==null?'Confirmed before payment':money(total))+'</b></div><div class="summary-row"><span>Delivery</span><b>Confirmed separately</b></div>';
   el("cartLines").querySelectorAll("[data-minus]").forEach(function(b){b.onclick=function(){var p=products.find(function(x){return x.id===b.dataset.minus}),step=1,min=Number(p.moq||1);setQuantity(p.id,Math.max(min,(cart[p.id]||min)-step))}});
