@@ -28,6 +28,8 @@ let orderFilter = null;
 let signUpMode = false;
 let incomingCartHandled = false;
 let realtimeChannels = [];
+let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null;
+const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -53,6 +55,7 @@ function showPanel(id){
   document.querySelectorAll(".bottom button[data-panel]").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));
   if(id==="notifPanel") markNotificationsRead();
   if(id==="ordersPanel") renderOrders();
+  if(id==="messagesPanel") loadMessageConversations().catch(()=>{});
   window.scrollTo({top:0,behavior:"smooth"});
 }
 document.addEventListener("click",e=>{
@@ -187,6 +190,7 @@ function renderAll(){
   renderNotifications();
   renderAddresses();
   renderCounts();
+  loadMessageConversations().catch(()=>{});
 }
 function productCard(p){
   const image=imageFor(p),cat=p.categories?.name||"RPE Product";
@@ -395,6 +399,108 @@ function subscribeRealtime(){
   realtimeChannels=[orderCh,notifCh,returnCh];
 }
 function cleanupRealtime(){realtimeChannels.forEach(ch=>sb.removeChannel(ch));realtimeChannels=[]}
+
+
+
+// RANOVA in-app buyer messenger 2026-09-29
+async function messageApi(body){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)throw Error("Sign in to use messages.");
+  const r=await fetch(MESSAGE_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":cfg.supabasePublishableKey,"Authorization":"Bearer "+session.access_token},body:JSON.stringify(body)});
+  const out=await r.json().catch(()=>({}));if(!r.ok||!out.ok)throw Error(out.error||"Messaging request failed.");return out;
+}
+function animalAvatar(seed){
+  const animals=["🦁","🐯","🐺","🦅","🐆","🦊","🐻","🦈","🐉","🦬"];
+  let h=0;for(const ch of String(seed||"RANOVA"))h=(h*31+ch.charCodeAt(0))>>>0;
+  return '<span class="msg-animal" title="Wildlife store avatar">'+animals[h%animals.length]+'</span>';
+}
+function messageAvatar(store,cls="msg-avatar"){
+  return '<span class="'+cls+'">'+(store?.logo_url?'<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name||"Store")+'">':animalAvatar(store?.id||store?.store_name))+'</span>';
+}
+function msgPreview(c){
+  const m=c.last_message;if(!m)return "Start a conversation";
+  return m.body||({image:"📷 Photo",audio:"🎙 Voice note",file:"📎 Attachment",rfq:"Quotation request",quote:"Seller quotation",quote_status:"Quote update"}[m.message_type]||prettyKey(m.message_type));
+}
+function messageTime(v){const d=new Date(v);if(Number.isNaN(d.getTime()))return "";const now=new Date();return d.toDateString()===now.toDateString()?d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):d.toLocaleDateString([],{month:"2-digit",day:"2-digit"})}
+async function loadMessageConversations(){
+  if(!user)return;
+  const out=await messageApi({action:"list"});messageConversations=out.conversations||[];
+  renderMessageList();
+  setBadge("bottomMessageCount",messageConversations.filter(x=>x.unread).length);
+}
+function renderMessageList(){
+  const host=$("messageConversationList");if(!host)return;
+  $("messageConversationCount").textContent=messageConversations.length?"("+messageConversations.length+")":"";
+  host.innerHTML=messageConversations.length?messageConversations.map(c=>{
+    const store=c.store||{},product=c.product||null;
+    return '<button class="msg-row" type="button" data-message-conversation="'+esc(c.id)+'">'+
+      messageAvatar(store)+
+      '<span class="msg-row-main"><span class="msg-row-top"><b>'+esc(store.store_name||"RANOVA Store")+'</b>'+(c.unread?'<span class="msg-unread">new</span>':'')+'<time class="msg-row-time">'+esc(messageTime(c.last_message?.created_at||c.updated_at))+'</time></span><span class="msg-row-preview">'+esc(msgPreview(c))+'</span></span>'+
+      '<span class="msg-row-product">'+(product?.primary_image_url?'<img src="'+esc(product.primary_image_url)+'" alt="'+esc(product.name||"Product")+'">':'<span>'+(product?esc(product.name||"Product"):"Chat")+'</span>')+'</span>'+
+    '</button>';
+  }).join(""):'<div class="msg-list-empty"><b>No messages yet</b><br>When you contact a store, the conversation will appear here.</div>';
+  host.querySelectorAll("[data-message-conversation]").forEach(b=>b.onclick=()=>openMessageConversation(b.dataset.messageConversation));
+}
+function messageMedia(m){
+  if(!m.media_url)return "";
+  const url=esc(m.media_url),name=esc(m.file_name||"Attachment");
+  if(m.message_type==="image")return '<a href="'+url+'" target="_blank" rel="noopener"><img src="'+url+'" alt="'+name+'"></a>';
+  if(m.message_type==="audio")return '<audio controls preload="metadata" src="'+url+'"></audio>';
+  if(m.message_type==="file")return '<a href="'+url+'" target="_blank" rel="noopener">📎 '+name+'</a>';
+  return "";
+}
+async function openMessageConversation(id){
+  const out=await messageApi({action:"open",conversation_id:id});messageCurrent=out.conversation;messageRole=out.role;
+  $("messagesPanel").classList.add("chat-open");
+  const store=messageCurrent.store||{};$("messageChatTitle").textContent=store.store_name||"RANOVA Store";$("messageChatSub").textContent="Online store conversation";
+  $("messageChatAvatar").innerHTML=store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="" style="width:100%;height:100%;object-fit:cover">':animalAvatar(store.id||store.store_name);
+  const p=messageCurrent.product,ctx=$("messageProductContext");
+  if(p){ctx.classList.add("show");ctx.innerHTML=(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'">':'<div style="width:48px;height:48px;border-radius:9px;background:#eee"></div>')+'<div><b>'+esc(p.name||"Product")+'</b><small>'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</small></div><span class="ask-tag">Product enquiry</span>'}else{ctx.classList.remove("show");ctx.innerHTML=""}
+  renderMessageThread();
+  await loadMessageConversations();
+  clearInterval(messagePoll);messagePoll=setInterval(()=>{if(messageCurrent&&$("messagesPanel").classList.contains("active"))refreshOpenMessage().catch(()=>{})},5000);
+}
+async function refreshOpenMessage(){if(!messageCurrent)return;const out=await messageApi({action:"open",conversation_id:messageCurrent.id});messageCurrent=out.conversation;messageRole=out.role;renderMessageThread()}
+function renderMessageThread(){
+  const host=$("messageThread");if(!host||!messageCurrent)return;
+  let day="";
+  host.innerHTML=(messageCurrent.messages||[]).map(m=>{const d=new Date(m.created_at),key=d.toDateString(),sep=key!==day?'<div class="msg-date">'+d.toLocaleDateString([],{year:"numeric",month:"long",day:"numeric"})+'</div>':"";day=key;const mine=m.sender_role===messageRole,cl=m.sender_role==="system"?"system":mine?"mine":"other",media=messageMedia(m),body=m.body?'<div>'+esc(m.body)+'</div>':"";return sep+'<div class="msg-bubble '+cl+'">'+media+body+'<time>'+d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+'</time></div>'}).join("")||'<div class="msg-list-empty">Start your conversation with this store.</div>';
+  host.scrollTop=host.scrollHeight;
+}
+$("messageBack").onclick=()=>{$("messagesPanel").classList.remove("chat-open");messageCurrent=null;clearInterval(messagePoll);loadMessageConversations().catch(()=>{})};
+$("messageStoreButton").onclick=()=>{if(messageCurrent?.store?.slug)location.href="../all/marketplace.html?store="+encodeURIComponent(messageCurrent.store.slug)};
+$("messageSearchButton").onclick=()=>{const q=prompt("Search store conversations:","");if(q==null)return;const s=q.trim().toLowerCase();document.querySelectorAll("#messageConversationList .msg-row").forEach(row=>{row.style.display=!s||row.textContent.toLowerCase().includes(s)?"grid":"none"})};
+
+const msgEmojiGroups={
+ "Recent":"😂 🤣 🥳 🔥 👍 🥹 🌚 🙌 🫶 ❤️ 😭 🙏 😎 😍 😉 😊 😁 😅 💃 🕺 🎉 ✨",
+ "Smileys":"😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😋 😜 🤪 🤗 🤭 🤫 🤔 😎 🥺 🥹 😭 😱 😤 😡",
+ "People":"👋 🤚 ✋ 👌 ✌️ 🤞 🤟 🤙 👈 👉 👆 👇 👍 👎 ✊ 👊 👏 🙌 🫶 🤲 🙏 💪 🧑‍💻 👨‍💼 👩‍💼",
+ "Love":"❤️ 🩷 🧡 💛 💚 🩵 💙 💜 🤎 🖤 🤍 💘 💝 💖 💗 💓 💞 💕 💌 💋",
+ "Animals":"🦁 🐯 🐺 🦅 🐆 🦊 🐻 🦬 🐘 🦏 🦈 🐊 🐍 🦍 🐆 🦓 🦒 🐒 🐼 🦋",
+ "Food":"🍎 🍊 🍋 🍌 🍉 🍇 🍓 🍒 🍑 🥭 🍍 🥥 🥑 🍅 🍔 🍟 🍕 🌮 🍜 🍣 🍩 🎂 🍰 🍫 ☕ 🥤 🥂",
+ "Nature":"🌹 🌷 🌸 🌺 🌻 🌿 🍀 🌴 🌍 🌞 🌝 🌚 ⭐ ✨ ⚡ 🔥 🌈 ☀️ ☁️ 🌧️ ❄️ 🌊",
+ "Objects":"📱 💻 ⌚ 📷 📸 🎥 📎 📌 ✂️ 🖊️ 📚 📦 🎁 🛒 💳 🔑 🏆 🎓 💡 🔒",
+ "Flags":"🇬🇭 🇳🇬 🇺🇸 🇬🇧 🇨🇦 🇿🇦 🇨🇮 🇰🇪 🇹🇬 🇫🇷 🇩🇪 🇪🇸 🇮🇹 🇯🇵 🇨🇳 🇮🇳 🇧🇷 🇦🇪"
+};
+function updateMsgAction(){const has=!!$("msgInput").value.trim()||!!msgAttachment;$("msgRecordStart").hidden=has;$("msgSend").hidden=!has}
+function showMsgEmoji(group="Recent",filter=""){$("msgEmojiPanel").hidden=false;$("msgEmojiTabs").innerHTML=Object.keys(msgEmojiGroups).map(g=>'<button type="button" class="'+(g===group?'active':'')+'" data-msg-emoji-group="'+g+'">'+g+'</button>').join("");const src=filter?Object.values(msgEmojiGroups).join(" "):(msgEmojiGroups[group]||msgEmojiGroups.Recent);$("msgEmojiGrid").innerHTML=[...new Set(src.split(/\s+/))].filter(Boolean).map(e=>'<button type="button" data-msg-emoji="'+e+'">'+e+'</button>').join("");$("msgEmojiTabs").querySelectorAll("[data-msg-emoji-group]").forEach(b=>b.onclick=()=>showMsgEmoji(b.dataset.msgEmojiGroup));$("msgEmojiGrid").querySelectorAll("[data-msg-emoji]").forEach(b=>b.onclick=()=>{const i=$("msgInput"),at=i.selectionStart;i.setRangeText(b.dataset.msgEmoji,at,i.selectionEnd,"end");i.focus();updateMsgAction()})}
+function previewMsgAttachment(file){msgAttachment=file;$("msgAttachmentPreview").hidden=false;$("msgAttachmentPreview").innerHTML='<span>'+esc(file.name)+' ('+Math.ceil(file.size/1024)+' KB)</span><button id="msgRemoveAttachment" type="button">×</button>';$("msgRemoveAttachment").onclick=()=>{msgAttachment=null;$("msgAttachmentPreview").hidden=true;updateMsgAction()};updateMsgAction()}
+async function sendInAppMessage(fileOverride){
+  if(!messageCurrent)return;const body=$("msgInput").value.trim(),file=fileOverride||msgAttachment;if(!body&&!file)return;
+  $("msgSend").disabled=true;
+  try{
+    if(file){if(file.size>15*1024*1024)throw Error("The attachment must be under 15 MB.");const mime=file.type||"audio/webm",prep=await messageApi({action:"prepare_media",conversation_id:messageCurrent.id,mime_type:mime,file_size:file.size});const up=await sb.storage.from("buyer-seller-media").uploadToSignedUrl(prep.path,prep.token,file,{contentType:mime});if(up.error)throw up.error;await messageApi({action:"send_media",conversation_id:messageCurrent.id,body,storage_path:prep.path,media_type:prep.media_type,file_name:file.name,mime_type:mime});msgAttachment=null;$("msgAttachmentPreview").hidden=true}else await messageApi({action:"send",conversation_id:messageCurrent.id,body});
+    $("msgInput").value="";updateMsgAction();await refreshOpenMessage();await loadMessageConversations();
+  }catch(e){showToast(e.message||"Could not send message")}finally{$("msgSend").disabled=false}
+}
+function stopMsgRecording(){if(msgStream){msgStream.getTracks().forEach(t=>t.stop());msgStream=null}msgRecorder=null;$("msgRecording").hidden=true}
+$("msgEmojiToggle").onclick=()=>{$("msgEmojiPanel").hidden?showMsgEmoji():$("msgEmojiPanel").hidden=true};$("msgEmojiSearch").oninput=e=>showMsgEmoji("Recent",e.target.value.trim());
+$("msgFilePick").onclick=()=>$("msgFileInput").click();$("msgImagePick").onclick=()=>$("msgImageInput").click();["msgFileInput","msgImageInput"].forEach(id=>$(id).onchange=e=>{if(e.target.files?.[0])previewMsgAttachment(e.target.files[0])});
+$("msgInput").oninput=updateMsgAction;$("msgInput").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendInAppMessage()}};$("msgSend").onclick=()=>sendInAppMessage();
+$("msgRecordStart").onclick=async()=>{try{if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw Error("Voice recording is unavailable in this browser.");msgStream=await navigator.mediaDevices.getUserMedia({audio:true});const mime=["audio/webm;codecs=opus","audio/mp4","audio/webm"].find(x=>MediaRecorder.isTypeSupported(x))||"";msgRecorder=new MediaRecorder(msgStream,mime?{mimeType:mime}:undefined);msgChunks=[];msgStarted=Date.now();msgPaused=0;msgPauseStarted=0;msgRecorder.ondataavailable=e=>{if(e.data.size)msgChunks.push(e.data)};msgRecorder.onstop=()=>{const type=msgRecorder?.mimeType?.split(";")[0]||"audio/webm",blob=new Blob(msgChunks,{type});stopMsgRecording();if(blob.size)sendInAppMessage(new File([blob],"Voice note."+({"audio/mp4":"m4a","audio/ogg":"ogg"}[type]||"webm"),{type}))};msgRecorder.start();$("msgRecording").hidden=false;$("msgRecordTime").textContent="0:00";msgTimer=setInterval(()=>{const ms=(msgPauseStarted||Date.now())-msgStarted-msgPaused,sec=Math.floor(ms/1000);$("msgRecordTime").textContent=Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0")},500)}catch(e){stopMsgRecording();showToast(e.message||"Microphone access was denied.")}};
+$("msgRecordPause").onclick=()=>{if(!msgRecorder)return;const b=$("msgRecordPause");if(msgRecorder.state==="recording"){msgRecorder.pause();msgPauseStarted=Date.now();b.textContent="▶ Resume"}else if(msgRecorder.state==="paused"){msgRecorder.resume();msgPaused+=Date.now()-msgPauseStarted;msgPauseStarted=0;b.textContent="⏸ Pause"}};
+$("msgRecordDelete").onclick=()=>{if(msgRecorder){msgRecorder.onstop=null;if(msgRecorder.state!=="inactive")msgRecorder.stop()}clearInterval(msgTimer);stopMsgRecording()};$("msgRecordSend").onclick=()=>{if(msgRecorder&&msgRecorder.state!=="inactive"){clearInterval(msgTimer);msgRecorder.stop()}};
+updateMsgAction();
 
 boot();
 })();
