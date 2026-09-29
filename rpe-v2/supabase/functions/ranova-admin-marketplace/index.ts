@@ -1,3 +1,4 @@
+import { sellerAccessApproved } from "../_shared/seller-approval.ts";
 import { assertSettlementCurrency, selectCommissionRule, commissionBreakdown } from "../_shared/commission.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -90,8 +91,9 @@ async function notifyOrderSellers(order:any,type:string,title:string,message:str
 async function sellerApproved(userId:string){
   const {data:acc}=await admin.from("ranova_seller_accounts").select("application_ref").eq("user_id",userId).maybeSingle();
   if(!acc)return false;
-  const {data:app}=await admin.from("ranova_seller_applications").select("verification_status,status").eq("application_ref",acc.application_ref).maybeSingle();
-  return String(app?.verification_status||app?.status||"").toLowerCase()==="approved";
+  const {data:app}=await admin.from("ranova_seller_applications").select("verification_status,status,reviewed_at").eq("application_ref",acc.application_ref).maybeSingle();
+  const {data:store}=await admin.from("ranova_seller_stores").select("store_status,moderated_by,moderated_at").eq("seller_id",userId).eq("application_ref",acc.application_ref).maybeSingle();
+  return sellerAccessApproved(app,store);
 }
 function accepted(v:any){
   return ["approved","complete","verified"].includes(String(v||"").toLowerCase());
@@ -463,6 +465,8 @@ Deno.serve(async(req:Request)=>{
           verification_status:stageStatus==="needs_information"?"needs_information":"in_progress",
           updated_at:now
         };
+        const {data:overall}=await admin.from("ranova_seller_applications").select("verification_status,status").eq("application_ref",file.application_ref).maybeSingle();
+        if(["approved","rejected","suspended"].includes(String(overall?.verification_status||overall?.status)))delete appPatch.verification_status;
         if(note)appPatch.verification_notes=note;
         await admin.from("ranova_seller_applications").update(appPatch).eq("application_ref",file.application_ref);
       }
@@ -480,6 +484,8 @@ Deno.serve(async(req:Request)=>{
       if(note)patch.verification_notes=note;
       if(status==="needs_information"||status==="rejected")patch.verification_status="needs_information";
       else patch.verification_status="in_progress";
+      const {data:overall}=await admin.from("ranova_seller_applications").select("verification_status,status").eq("application_ref",ref).maybeSingle();
+      if(["approved","rejected","suspended"].includes(String(overall?.verification_status||overall?.status)))delete patch.verification_status;
       const {error}=await admin.from("ranova_seller_applications").update(patch).eq("application_ref",ref);
       if(error)throw error;
       await log(actor.user.id,"seller_stage_updated","seller_application",ref,{stage,status,note});
@@ -492,11 +498,6 @@ Deno.serve(async(req:Request)=>{
       if(!["approved","rejected","needs_information","under_review","suspended"].includes(decision))return response(h,400,{ok:false,error:"Invalid seller decision."});
       const {data:app}=await admin.from("ranova_seller_applications").select("*").eq("application_ref",ref).maybeSingle();
       if(!app)return response(h,404,{ok:false,error:"Seller application not found."});
-      if(decision==="approved"){
-        if(!accepted(app.business_info_status)||!accepted(app.business_documents_status)||!accepted(app.identity_status)||!accepted(app.fulfilment_status)){
-          return response(h,400,{ok:false,error:"Approve the business information, documents, identity and fulfilment stages before approving this seller."});
-        }
-      }
       if(["rejected","needs_information","suspended"].includes(decision)&&!note){
         return response(h,400,{ok:false,error:"Add a review note explaining this decision."});
       }
@@ -575,7 +576,7 @@ Deno.serve(async(req:Request)=>{
       if(!["active","paused","suspended"].includes(status))return response(h,400,{ok:false,error:"Invalid store status."});
       const {data:store}=await admin.from("ranova_seller_stores").select("*").eq("id",id).maybeSingle();
       if(!store)return response(h,404,{ok:false,error:"Seller store not found."});
-      if(status==="active"&&!(await sellerApproved(store.seller_id)))return response(h,400,{ok:false,error:"The seller must be fully approved before the store can be activated."});
+
       if(["paused","suspended"].includes(status)&&!note)return response(h,400,{ok:false,error:"Add the reason for this store-control action."});
 
       const now=new Date().toISOString();
@@ -588,6 +589,12 @@ Deno.serve(async(req:Request)=>{
         updated_at:now
       }).eq("id",id);
       if(error)throw error;
+
+      if(status==="active"){
+        const {error:approvalError}=await admin.from("ranova_seller_applications").update({status:"approved",verification_status:"approved",store_setup_status:"in_progress",verification_notes:nextModerationNote,reviewed_at:now,reviewed_by:actor.user.id,updated_at:now}).eq("application_ref",store.application_ref);
+        if(approvalError)throw approvalError;
+        try{await queueNotice("seller",store.seller_id,await emailForUser(store.seller_id),null,null,"seller_review_approved","Your seller account is approved",nextModerationNote,{application_ref:store.application_ref,decision:"approved",reviewed_at:now},"/appliances/all/seller-center.html","seller-review:"+store.application_ref+":"+now)}catch(e){console.error("Store approval notification failed",e)}
+      }
 
       // Keep a server-side enforcement record so a seller cannot bypass
       // an Admin investigation/suspension by republishing the store.

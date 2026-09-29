@@ -1,3 +1,4 @@
+import { sellerAccessApproved } from "../_shared/seller-approval.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
@@ -48,6 +49,16 @@ Deno.serve(async(req:Request)=>{
   const apps=await appRes.json().catch(()=>[]);
   if(!apps.length)return new Response(JSON.stringify({ok:false,error:"Linked application could not be loaded."}),{status:404,headers:h});
 
+  const storeQ=new URL(SUPABASE_URL+"/rest/v1/ranova_seller_stores");
+  storeQ.searchParams.set("select","store_status,moderated_by,moderated_at");
+  storeQ.searchParams.set("seller_id","eq."+user.id);
+  storeQ.searchParams.set("application_ref","eq."+ref);
+  storeQ.searchParams.set("limit","1");
+  const storeRes=await fetch(storeQ.toString(),{headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY}});
+  const stores=await storeRes.json().catch(()=>[]);
+  if(!storeRes.ok)return new Response(JSON.stringify({ok:false,error:"Could not check store approval."}),{status:500,headers:h});
+  const approved=sellerAccessApproved(apps[0],stores[0]||null);
+
   if(action==="document_submitted"){
     const type=String(body?.document_type||"").trim().toLowerCase();
     const stageMap:Record<string,string>={
@@ -75,7 +86,8 @@ Deno.serve(async(req:Request)=>{
 
     const stage=stageMap[type];
     if(stage){
-      const patch:any={[stage]:"under_review",verification_status:"in_progress",updated_at:new Date().toISOString()};
+      const patch:any={[stage]:"under_review",updated_at:new Date().toISOString()};
+      if(!approved&&!["rejected","suspended"].includes(String(apps[0].verification_status||apps[0].status)))patch.verification_status="in_progress";
       const pr=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_applications?application_ref=eq."+encodeURIComponent(ref),{
         method:"PATCH",
         headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},
@@ -90,6 +102,7 @@ Deno.serve(async(req:Request)=>{
   }
 
   if(action==="submit_for_review"){
+    if(approved)return new Response(JSON.stringify({ok:true,application_ref:ref,status:"approved",approval_preserved:true}),{status:200,headers:h});
     const reqQ=new URL(SUPABASE_URL+"/rest/v1/ranova_seller_verification_files");
     reqQ.searchParams.set("select","id,document_type,original_filename,review_status,created_at");
     reqQ.searchParams.set("order","created_at.desc,id.desc");
@@ -131,5 +144,5 @@ Deno.serve(async(req:Request)=>{
   const fr=await fetch(filesQ.toString(),{headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY}});
   const files=await fr.json().catch(()=>[]);
 
-  return new Response(JSON.stringify({ok:true,linked:true,application:apps[0],files}),{status:200,headers:h});
+  return new Response(JSON.stringify({ok:true,linked:true,application:apps[0],approved,files}),{status:200,headers:h});
 });

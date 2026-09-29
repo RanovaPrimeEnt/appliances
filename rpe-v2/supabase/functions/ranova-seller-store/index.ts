@@ -1,3 +1,4 @@
+import { sellerAccessApproved } from "../_shared/seller-approval.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -59,13 +60,14 @@ async function resolveSeller(userId:string){
   if(!accounts.length)return null;
   const ref=accounts[0].application_ref;
   const apps=await serviceGet("ranova_seller_applications",{
-    select:"application_ref,business_name,contact_person,phone,email,business_location,supplier_type,categories,status,verification_status,store_setup_status,verification_notes",
+    select:"application_ref,business_name,contact_person,phone,email,business_location,supplier_type,categories,status,verification_status,store_setup_status,verification_notes,reviewed_at",
     application_ref:"eq."+ref,
     limit:"1"
   });
   if(!apps.length)return null;
   const application=apps[0];
-  const approved=String(application.verification_status||application.status||"").toLowerCase()==="approved";
+  const stores=await serviceGet("ranova_seller_stores",{select:"store_status,moderated_by,moderated_at",seller_id:"eq."+userId,application_ref:"eq."+ref,limit:"1"});
+  const approved=sellerAccessApproved(application,stores[0]||null);
   return {application_ref:ref,application,approved};
 }
 async function patchApplication(ref:string,body:any){
@@ -343,8 +345,8 @@ Deno.serve(async(req:Request)=>{
       if(store_status==="active"&&existing){
         const enf=await serviceGet("ranova_seller_enforcement",{select:"enforcement_status,ends_at",store_id:"eq."+existing.id,limit:"1"});
         const e=enf[0];
-        if(e&&e.enforcement_status==="suspended"&&(!e.ends_at||new Date(e.ends_at).getTime()>Date.now())){
-          return response(h,403,{ok:false,error:"This store is suspended by RANOVA and cannot be republished until the enforcement action is lifted or expires."});
+        if(e&&["suspended","restricted"].includes(e.enforcement_status)&&(!e.ends_at||new Date(e.ends_at).getTime()>Date.now())){
+          return response(h,403,{ok:false,error:"This store is paused or suspended by RANOVA and cannot be republished until the enforcement action is lifted or expires."});
         }
       }
       const public_phone=clean(b.public_phone,40)||clean(seller.application.phone,40);

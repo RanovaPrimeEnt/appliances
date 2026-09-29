@@ -310,7 +310,9 @@ function wireSellerDetail(host,a){
   host.querySelectorAll("[data-seller-decision]").forEach(b=>b.onclick=async()=>{
     const decision=b.dataset.sellerDecision,note=$("sellerDecisionNote")?.value.trim()||"";
     if(["rejected","needs_information","suspended"].includes(decision)&&!note)return alert("Add a review note explaining this decision.");
-    if(["approved","rejected","suspended"].includes(decision)&&!confirm("Confirm: "+label(decision)+" this seller?"))return;
+    const outstanding=[['Business information',a.business_info_status],['Business documents',a.business_documents_status],['Identity',a.identity_status],['Fulfilment',a.fulfilment_status]].filter(([,value])=>!['complete','approved','verified'].includes(String(value||'').toLowerCase())).map(([name])=>name);
+    const confirmation=decision==='approved'&&outstanding.length?'Approve this seller and unlock Store Builder with outstanding verification items: '+outstanding.join(', ')+'?':'Confirm: '+label(decision)+' this seller?';
+    if(["approved","rejected","suspended"].includes(decision)&&!confirm(confirmation))return;
     b.disabled=true;
     try{
       const result=await marketApi({action:"review_seller",application_ref:a.application_ref,decision,note});
@@ -1235,7 +1237,7 @@ function renderSellerStores(){
           const reportCount=storeReports.length;
           const reportKinds=[...new Set(storeReports.map(r=>label(r.category)))].slice(0,2);
           const riskCount=store?(riskByStore.get(store.id)||0):0;
-          const disabled=!store||(!approved&&st!=="active");
+          const disabled=!store;
           return '<div data-store-record="'+esc(a.application_ref)+'" style="display:grid;grid-template-columns:1.3fr 1fr .55fr 1.7fr;gap:10px;align-items:center;padding:13px;border-bottom:1px solid #edf1ef;cursor:pointer;background:#fff">'+
             '<div><b style="font-size:14px">'+esc(store?.store_name||a.business_name||"Seller")+'</b><small style="display:block;margin-top:4px;color:#708079">'+esc(a.application_ref||"")+' · '+esc(label(st))+'</small></div>'+
             '<div><b>'+esc(store?.business_location||a.business_location||"—")+'</b><small style="display:block;margin-top:4px;color:#708079">'+esc(store?.country_name||store?.country_code||"")+'</small></div>'+
