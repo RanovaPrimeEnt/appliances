@@ -476,3 +476,12 @@
 .seller-send-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:10000;background:#174d38;color:#fff;border-radius:12px;padding:14px 20px;box-shadow:0 8px 30px #123c3433;max-width:calc(100vw - 32px);font-size:14px}
 .seller-send-toast[hidden]{display:none}
 @media(max-width:560px){.seller-decision-actions{grid-template-columns:1fr}.seller-decision-option{padding:13px}.seller-decision-feedback{align-items:flex-start;flex-direction:column}}
+
+.store-control{--control:#16764b;--control-soft:#edf8f1;min-height:52px;border:2px solid var(--control);border-radius:12px;padding:8px 10px;background:var(--control-soft);color:var(--control);cursor:pointer;text-align:center}
+.store-control.suspended{--control:#b82736;--control-soft:#fff0f1}
+.store-control.paused{--control:#845900;--control-soft:#fff5d5}
+.store-control b{display:block;font-size:13px}.store-control small{display:block;font-size:11px;margin-top:3px}
+.store-control.is-current{background:var(--control);color:#fff;box-shadow:0 0 0 3px var(--control-soft)}
+.store-control:hover:not(:disabled){filter:brightness(.94)}.store-control:focus-visible{outline:3px solid var(--control);outline-offset:3px}
+.store-control:disabled{background:#f1f4f2;border-color:#d8dfdb;color:#7c8982;cursor:not-allowed;box-shadow:none}
+.store-control-help{grid-column:1/-1;font-size:12px;color:#60736a;line-height:1.5}.store-control-help button{background:transparent;border:0;color:#126447;font-weight:750;padding:2px 4px;cursor:pointer;text-decoration:underline}

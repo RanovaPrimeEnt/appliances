@@ -937,12 +937,10 @@ function clearPaymentAccountForm(){
 }
 
 function storeControlButton(store,status,labelText,color,current,disabled=false){
-  const active=store&&store.store_status===status;
-  const opacity=active?1:.32;
-  const shadow=active?"0 0 0 4px "+color+"26,0 6px 16px "+color+"45":"none";
-  const cursor=disabled?"not-allowed":"pointer";
-  const title=status==="suspended"?"Terminate / remove from customer marketplace":status==="paused"?"Temporary stop / investigation":"Approved / active selling";
-  return '<button type="button" data-store-control="'+status+'" data-store-id="'+(store?.id||"")+'" title="'+title+'" '+(disabled?"disabled":"")+' style="min-height:40px;border:0;border-radius:12px;padding:8px 10px;background:'+color+';color:#fff;font-weight:950;font-size:11px;opacity:'+opacity+';box-shadow:'+shadow+';cursor:'+cursor+'">'+labelText+'</button>';
+  const active=!!store&&store.store_status===status;
+  const names={suspended:"Remove store",paused:"Pause store",active:"Activate store"};
+  const title=!store?"The seller must create a store first":disabled?"Approve this seller’s application before activating the store":names[status];
+  return '<button type="button" class="store-control '+status+(active?' is-current':'')+'" data-store-control="'+status+'" data-store-id="'+esc(store?.id||"")+'" aria-pressed="'+active+'" title="'+esc(title)+'" '+(disabled?'disabled':'')+'><b>'+labelText+(active?' ✓':'')+'</b><small>'+names[status]+'</small></button>';
 }
 function ensureStoreRegistryModal(){
   let modal=document.getElementById("storeRegistryModal");
@@ -1246,6 +1244,7 @@ function renderSellerStores(){
               storeControlButton(store,"suspended","Red","#c62828",st==="suspended",!store)+
               storeControlButton(store,"paused","Yellow","#d19a00",st==="paused",!store)+
               storeControlButton(store,"active","Green","#16824b",st==="active",disabled)+
+              (!store?'<div class="store-control-help">No store created yet. <button type="button" data-control-review="'+esc(a.application_ref)+'">Review seller →</button></div>':disabled?'<div class="store-control-help">Approve the seller before activating this store.</div>':'')+
             '</div>'+
           '</div>';
         }).join("")+
@@ -1257,6 +1256,7 @@ function renderSellerStores(){
     if(e.target.closest("[data-store-control]"))return;
     openStoreRegistryDetail(row.dataset.storeRecord);
   });
+  host.querySelectorAll("[data-control-review]").forEach(b=>b.onclick=e=>{e.stopPropagation();selectedApplicationRef=b.dataset.controlReview;renderSellerDetail(selectedApplicationRef);$("sellerReviewDetail").scrollIntoView({behavior:"smooth",block:"start"})});
   host.querySelectorAll("[data-store-control]").forEach(b=>b.onclick=async e=>{
     e.stopPropagation();
     if(b.disabled||!b.dataset.storeId)return;
@@ -1274,11 +1274,17 @@ function renderSellerStores(){
       note=prompt("Optional restoration/approval note:","Restored to approved selling status by RANOVA Admin.")||"Restored to approved selling status by RANOVA Admin.";
       if(!confirm("Approve / restore this store? Eligible active products will become visible to customers again."))return;
     }
-    b.disabled=true;
+    const controls=[...b.parentElement.querySelectorAll("[data-store-control]")];
+    const previousDisabled=controls.map(control=>control.disabled);
+    controls.forEach(control=>control.disabled=true);
     try{
       await marketApi({action:"set_store_status",id:b.dataset.storeId,status,note});
-      await reloadMarketplace();
-    }catch(err){alert(err.message)}finally{b.disabled=false}
+      const store=(market.stores||[]).find(store=>store.id===b.dataset.storeId);
+      if(store){store.store_status=status;store.moderation_note=note}
+      renderSellerStores();
+      showSellerSendConfirmation(status==="active"?"✓ Green · Store active":status==="paused"?"✓ Yellow · Store paused":"✓ Red · Store removed from the marketplace");
+      await reloadMarketplace().catch(()=>{});
+    }catch(err){alert(err.message)}finally{controls.forEach((control,i)=>control.disabled=previousDisabled[i])}
   });
 }
 
