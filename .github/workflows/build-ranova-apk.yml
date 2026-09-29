@@ -1,0 +1,44 @@
+name: Build RANOVA Android APK
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-ranova-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build signed debug APK
+        run: gradle -p android-app :app:copyBuiltApk --no-daemon
+
+      - name: Publish downloadable APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ranova-android-latest
+          name: RANOVA Android
+          body: Latest downloadable Android build of the RANOVA customer app.
+          prerelease: false
+          make_latest: true
+          files: android-app/app/build/outputs/apk/debug/RANOVA.apk
+          overwrite_files: true
