@@ -108,6 +108,20 @@ body{background:var(--r-page);color:var(--r-text)}
 #marketFactoryFeed .mh-actions button{border:0;border-radius:8px;padding:7px 8px;font-size:9px;font-weight:900}
 #marketFactoryFeed .mh-ask{background:#ff5b2e;color:#fff}
 #marketFactoryFeed .mh-view{background:#f1f1f1}
+
+/* stage-10-simple-discovery */
+.sd-panel{background:#f5f5f5!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-height:calc(100dvh - 84px)}
+.sd-head{height:52px;background:#fff;border-bottom:1px solid #ececec;display:flex;align-items:center;gap:8px;padding:0 10px;position:sticky;top:0;z-index:20}
+.sd-head b{font-size:15px}
+.sd-back{width:38px;height:38px;border:0;background:transparent;font-size:30px;line-height:1;color:var(--ink)}
+.sd-card{background:#fff}
+.sd-image{width:100%;aspect-ratio:1/1;background:#f6f7f7;display:grid;place-items:center;overflow:hidden}
+.sd-image img{width:100%;height:100%;object-fit:contain}
+.sd-empty{font-size:11px;color:#92a09c}
+.sd-copy{padding:14px 14px 18px}
+.sd-price{font-size:22px;font-weight:900;color:#e85b2a}
+.sd-copy h2{margin:6px 0 4px;font-size:17px;line-height:1.35}
+.sd-copy p{margin:0;color:var(--muted);font-size:11px}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 </head>
@@ -219,6 +233,21 @@ body{background:var(--r-page);color:var(--r-text)}
   <div class="home-products-card"><div class="section-head"><h2>Recommended for You</h2><button data-panel="shopPanel">See more ›</button></div><div id="homeProducts" class="panel-body grid"></div></div>
 </section>
 
+<section id="simpleDiscoveryPanel" class="panel sd-panel">
+  <header class="sd-head">
+    <button id="simpleDiscoveryBack" class="sd-back" type="button" aria-label="Back">‹</button>
+    <b>Discover</b>
+  </header>
+  <div class="sd-card">
+    <div id="simpleDiscoveryImage" class="sd-image"></div>
+    <div class="sd-copy">
+      <div id="simpleDiscoveryPrice" class="sd-price"></div>
+      <h2 id="simpleDiscoveryName"></h2>
+      <p id="simpleDiscoveryCategory"></p>
+    </div>
+  </div>
+</section>
+
 <section id="messagesPanel" class="panel card messages-panel">
   <div class="msg-list-view">
     <div class="msg-head"><h2>Messages <small id="messageConversationCount"></small></h2><button id="messageSearchButton" class="msg-search" type="button" aria-label="Search messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button></div>
@@ -269,6 +298,6 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20260929-stable01"></script>
+<script src="./app.js?v=20260929-stage10a"></script>
 <script src="./customer-pwa.js?v=20260929-03"></script>
 </body></html>
