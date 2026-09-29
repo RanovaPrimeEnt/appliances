@@ -526,6 +526,15 @@ Deno.serve(async(req:Request)=>{
           updated_at:now
         }).eq("application_ref",ref);
       }
+      if(decision==="needs_information"){
+        const {data:account}=await admin.from("ranova_seller_accounts").select("user_id").eq("application_ref",ref).maybeSingle();
+        try{
+          await queueNotice("seller",account?.user_id||null,clean(app.email,250)||null,null,null,
+            "seller_more_information","RANOVA needs more information",note,
+            {application_ref:ref,decision},"/appliances/all/seller-center.html?ref="+encodeURIComponent(ref),
+            "seller-more-info:"+ref+":"+now);
+        }catch(noticeError){console.error("Seller review notice failed",noticeError)}
+      }
       await log(actor.user.id,"seller_reviewed","seller_application",ref,{decision,note});
       return response(h,200,{ok:true});
     }
