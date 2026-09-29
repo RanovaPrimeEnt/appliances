@@ -38,6 +38,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 .order-row{grid-template-columns:minmax(0,1.3fr) .8fr .8fr}.status{font-size:16px;font-weight:900;padding:5px 8px;border-radius:999px;background:#eef6f3;color:#28604f;justify-self:start}.order-items-mini{margin-top:6px;display:grid;gap:3px}.order-items-mini span{font-size:16px;color:var(--muted)}.order-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.order-actions button{min-height:32px;border:1px solid #d8e3df;border-radius:999px;background:#fff;padding:0 9px;font-size:16px;font-weight:900}.order-actions .primary{background:var(--green2);color:#fff;border-color:var(--green2)}.order-actions .danger{color:#9a453d;background:#fff1ef;border-color:#efc9c4}.payout-breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:7px}.payout-breakdown span{padding:7px;border-radius:9px;background:#f7f9f8;color:var(--muted);font-size:7px}.payout-breakdown b{display:block;color:var(--ink);font-size:13px;margin-top:2px}.delivery-timeline{display:grid;gap:5px;margin-top:8px}.delivery-event{padding:7px 8px;border-left:3px solid #dbe8e2;background:#f8faf9;border-radius:0 9px 9px 0}.delivery-event b{font-size:16px}.delivery-event small{display:block;margin-top:2px;color:var(--muted);font-size:7px}.delivery-editor{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:15px}.delivery-editor.open{display:block}.delivery-proof-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px;border:1px solid var(--line);border-radius:10px;margin-top:6px}.delivery-proof-row span{font-size:16px}.delivery-proof-row button{min-height:30px;border:1px solid var(--line);border-radius:999px;background:#fff;padding:0 9px;font-size:16px;font-weight:900}
 @media(max-width:900px){.shell{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto}.side button{width:auto;white-space:nowrap}.metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.catalogue-preview{grid-template-columns:1fr}.payout-breakdown{grid-template-columns:1fr 1fr}.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
+[hidden]{display:none!important}#sellerDocumentNotice{margin:18px auto;max-width:1100px;border:2px solid #e4b55a;background:#fff8e8;color:#523b17}#sellerDocumentNotice a{color:#095e45;text-decoration:underline;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -54,6 +55,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 <main class="wrap">
   <div id="gate" class="card" style="margin-top:20px"><div class="locked"><b>Checking your seller account…</b>Please wait while RANOVA verifies your Seller Center session.</div></div>
 
+  <div id="sellerDocumentNotice" class="locked" style="font-size:16px;line-height:1.6" hidden></div>
   <div id="dashboard" class="shell hide">
     <aside class="side">
       <button class="navbtn active" data-panel="overview">Overview</button>
@@ -395,10 +397,34 @@ function setPanel(name){
 }
 [].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.onclick=function(){setPanel(this.dataset.panel)}});
 
+function renderSellerDocumentNotice(){
+  if(!state)return;
+  var compliance=state.document_compliance||{},notice=el("sellerDocumentNotice");
+  if(compliance.server_now){
+    var now=Date.parse(compliance.server_now)+(Date.now()-(state.compliance_received_at||Date.now()));
+    compliance.days_remaining=Math.max(0,Math.ceil((Date.parse(compliance.deadline_at)-now)/86400000));
+    if((compliance.missing_types||[]).length)compliance.phase=now>=Date.parse(compliance.deadline_at)?"expired":now>=Date.parse(compliance.grace_starts_at)?"grace":"reminder";
+  }
+  if(compliance.phase==="expired"&&state.approved){state.store_accessible=false;el("dashboard").classList.add("hide");el("gate").classList.remove("hide");el("gate").innerHTML='<div class="locked"><b>Upload your outstanding documents to restore store access.</b><p><a href="./seller-center.html#verificationChecklist">Open Seller Center →</a></p></div>'}
+  notice.hidden=!(compliance.missing_types||[]).length;
+  if(!notice.hidden){
+    var names={business_registration:"Business proof",identity_document:"Identity ID",fulfilment_evidence:"Orders & delivery proof"};
+    notice.innerHTML='<b style="font-size:19px">Outstanding documents</b><p>'+esc(compliance.phase==="expired"?"Your document deadline has passed. Store access is paused.":compliance.phase==="grace"?"Your extra 2 months have started. You have "+compliance.days_remaining+" days remaining to upload your documents before store access is paused.":"Please complete your documents within 8 months of registration. An extra 2 months will follow if needed.")+'</p><p>Still needed: '+esc(compliance.missing_types.map(function(t){return names[t]||t}).join(', '))+'</p><p>Final deadline: '+esc(new Date(compliance.deadline_at).toLocaleDateString('en-GB'))+'</p><a href="./seller-center.html#verificationChecklist">Upload documents →</a><p>Need help? <a href="mailto:ranovaprimeenterprise360@gmail.com">ranovaprimeenterprise360@gmail.com</a></p>';
+  }
+}
+setInterval(function(){if(document.visibilityState==="visible")renderSellerDocumentNotice()},60000);
+
 async function refresh(){
   state=await api({action:"dashboard"});
+  state.compliance_received_at=Date.now();
+  renderSellerDocumentNotice();
+  if(state.approved&&state.store_accessible===false){
+    el("gate").classList.remove("hide");el("gate").innerHTML='<div class="locked"><b>Upload the outstanding documents to restore store access.</b><p><a href="./seller-center.html#verificationChecklist">Open Seller Center →</a></p></div>';
+    el("dashboard").classList.add("hide");return;
+  }
   if(!state.approved){
-    el("gate").innerHTML='<div class="locked"><b>Seller verification is not approved yet.</b>Wait for RANOVA Admin to approve your seller account or store. After approval, missing documents do not block store management.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Return to Seller Center →</a></div></div>';
+    el("gate").classList.remove("hide");
+    el("gate").innerHTML='<div class="locked"><b>Seller verification is not approved yet.</b>Wait for RANOVA Admin to approve your seller account or store. After approval, you can manage your store during the document submission period.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Return to Seller Center →</a></div></div>';
     el("dashboard").classList.add("hide");return;
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");

@@ -1,3 +1,4 @@
+import { sellerDocumentCompliance } from "../_shared/seller-documents.ts";
 import { sellerAccessApproved } from "../_shared/seller-approval.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
@@ -42,12 +43,23 @@ Deno.serve(async(req:Request)=>{
   const ref=accounts[0].application_ref;
 
   const appQ=new URL(SUPABASE_URL+"/rest/v1/ranova_seller_applications");
-  appQ.searchParams.set("select","application_ref,business_name,contact_person,business_location,supplier_type,categories,status,verification_status,business_info_status,business_documents_status,identity_status,fulfilment_status,store_setup_status,verification_notes,reviewed_at");
+  appQ.searchParams.set("select","application_ref,business_name,contact_person,business_location,supplier_type,categories,status,verification_status,business_info_status,business_documents_status,identity_status,fulfilment_status,store_setup_status,verification_notes,reviewed_at,created_at");
   appQ.searchParams.set("application_ref","eq."+ref);
   appQ.searchParams.set("limit","1");
   const appRes=await fetch(appQ.toString(),{headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY}});
   const apps=await appRes.json().catch(()=>[]);
   if(!apps.length)return new Response(JSON.stringify({ok:false,error:"Linked application could not be loaded."}),{status:404,headers:h});
+
+  const filesQ=new URL(SUPABASE_URL+"/rest/v1/ranova_seller_verification_files");
+  filesQ.searchParams.set("select","id,document_type,original_filename,review_status,review_note,created_at");
+  filesQ.searchParams.set("seller_id","eq."+user.id);
+  filesQ.searchParams.set("application_ref","eq."+ref);
+  filesQ.searchParams.set("order","created_at.desc,id.desc");
+  const fr=await fetch(filesQ.toString(),{headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY}});
+  const files=await fr.json().catch(()=>[]);
+
+  if(!fr.ok)return new Response(JSON.stringify({ok:false,error:"Could not check uploaded documents."}),{status:500,headers:h});
+  const document_compliance=sellerDocumentCompliance(apps[0],files);
 
   const storeQ=new URL(SUPABASE_URL+"/rest/v1/ranova_seller_stores");
   storeQ.searchParams.set("select","store_status,moderated_by,moderated_at");
@@ -136,13 +148,6 @@ Deno.serve(async(req:Request)=>{
     return new Response(JSON.stringify({ok:true,application_ref:ref,status:"under_review"}),{status:200,headers:h});
   }
 
-  const filesQ=new URL(SUPABASE_URL+"/rest/v1/ranova_seller_verification_files");
-  filesQ.searchParams.set("select","id,document_type,original_filename,review_status,review_note,created_at");
-  filesQ.searchParams.set("seller_id","eq."+user.id);
-  filesQ.searchParams.set("application_ref","eq."+ref);
-  filesQ.searchParams.set("order","created_at.desc,id.desc");
-  const fr=await fetch(filesQ.toString(),{headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY}});
-  const files=await fr.json().catch(()=>[]);
 
-  return new Response(JSON.stringify({ok:true,linked:true,application:apps[0],approved,files}),{status:200,headers:h});
+  return new Response(JSON.stringify({ok:true,linked:true,application:apps[0],approved,store_accessible:approved&&!document_compliance.blocked,document_compliance,files}),{status:200,headers:h});
 });
