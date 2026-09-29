@@ -18,9 +18,10 @@ async function run(rows,complete=true){let handler,patches=0;
 }
 (async()=>{
  let r=await run([]);assert.equal(r.status,400);assert.equal(r.body.missing_types.length,3);assert.equal(r.patches,0);
- const complete=types.map(document_type=>({document_type,review_status:'submitted'}));
+ const complete=types.map(document_type=>({document_type,review_status:'submitted',original_filename:'test.pdf'}));
  r=await run(complete);assert.equal(r.status,200);assert.equal(r.patches,1);
- r=await run([{document_type:'identity_document',review_status:'rejected'},...complete]);assert.equal(r.status,400);assert.deepEqual(r.body.missing_types,['identity_document']);assert.equal(r.patches,0);
+ r=await run([{document_type:'identity_document',review_status:'rejected',original_filename:'test.pptx'},...complete]);assert.equal(r.status,200);assert.equal(r.patches,1);
+ r=await run([{document_type:'identity_document',review_status:'submitted',original_filename:'bad.exe'},...complete]);assert.equal(r.status,400);assert.deepEqual(r.body.missing_types,['identity_document']);assert.equal(r.patches,0);
  r=await run(complete,false);assert.equal(r.status,400);assert.equal(r.patches,0);
- console.log('PASS 4 server scenarios: missing documents, valid submission, latest rejection, incomplete business information. No live writes.');
+ console.log('PASS 5 server scenarios: missing documents, valid submission, supported prior rejection, unsupported format, incomplete business information. No live writes.');
 })().catch(e=>{console.error(e);process.exit(1)});
