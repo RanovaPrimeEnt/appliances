@@ -69,9 +69,13 @@ if(installHelp)installHelp.addEventListener("click",e=>{if(e.target===installHel
 syncButtons();
 
 if("serviceWorker" in navigator){
+  // RANOVA_SW_FORCE_UPDATE_20260929
+  navigator.serviceWorker.getRegistration("./").then(reg=>{
+    if(reg){reg.update().catch(()=>{});if(reg.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"})}
+  }).catch(()=>{});
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./rpe-v2-sw.js",{scope:"./",updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register("./rpe-v2-sw.js?v=20260929-08",{scope:"./",updateViaCache:"none"});
       reg.update().catch(()=>{});
       setInterval(()=>reg.update().catch(()=>{}),5*60*1000);
       if(reg.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});
