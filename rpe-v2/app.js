@@ -28,8 +28,6 @@ let orderFilter = null;
 let signUpMode = false;
 let incomingCartHandled = false;
 let realtimeChannels = [];
-let marketStores = [];
-let marketSellerProducts = [];
 let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null;
 const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 
@@ -58,7 +56,6 @@ function showPanel(id){
   if(id==="notifPanel") markNotificationsRead();
   if(id==="ordersPanel") renderOrders();
   if(id==="messagesPanel") loadMessageConversations().catch(()=>{});
-  if(id==="marketplaceHomePanel"){if(marketStores.length||marketSellerProducts.length)renderMarketplaceHome();else loadMarketplaceHomeData().catch(()=>{})}
   window.scrollTo({top:0,behavior:"smooth"});
 }
 document.addEventListener("click",e=>{
@@ -169,7 +166,6 @@ async function loadAll(){
   cartId=cart.data?.id||null;orders=ord.data||[];notifications=noti.data||[];addresses=addr.data||[];returns=ret.data||[];
   await loadCartItems();
   renderAll();
-  loadMarketplaceHomeData().catch(console.error);
 }
 async function loadCartItems(){
   if(!cartId){cartItems=[];return}
@@ -292,13 +288,6 @@ async function openProduct(id){
 }
 
 
-if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>renderMarketplaceHome($("marketHomeSearch").value);
-if($("marketHomeSearch"))$("marketHomeSearch").addEventListener("input",e=>renderMarketplaceHome(e.target.value));
-document.addEventListener("click",async e=>{
-  const p=e.target.closest("[data-market-product]");if(p){const product=marketSellerProducts.find(x=>x.id===p.dataset.marketProduct);if(product){try{const out=await messageApi({action:"start",product_id:product.id,subject:product.name});messageCurrent=out.conversation;messageRole="buyer";showPanel("messagesPanel");await openMessageConversation(messageCurrent.id)}catch(err){showToast(err.message||"Could not open seller chat")}}return}
-  const m=e.target.closest("[data-market-message-store]");if(m){try{const out=await messageApi({action:"start",store_id:m.dataset.marketMessageStore,subject:"Store enquiry"});messageCurrent=out.conversation;messageRole="buyer";showPanel("messagesPanel");await openMessageConversation(messageCurrent.id)}catch(err){showToast(err.message||"Could not open seller chat")}return}
-  const s=e.target.closest("[data-market-store]");if(s){location.href="../all/marketplace.html?store="+encodeURIComponent(s.dataset.marketStore);return}
-});
 async function handleIncomingCartLink(){
   if(incomingCartHandled)return;
   const sku=new URLSearchParams(location.search).get("add");
