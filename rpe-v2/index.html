@@ -136,12 +136,6 @@ body{background:var(--r-page);color:var(--r-text)}
 .pdetail-related{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pdetail-related button{border:0;background:#fff;text-align:left;padding:0;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px #0000000a}.pdetail-related img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f3f3f3}.pdetail-related .copy{padding:7px}.pdetail-related b{display:block;font-size:10px;line-height:1.3}.pdetail-related strong{display:block;color:#ff5a20;font-size:13px;margin-top:4px}
 .pdetail-actions{position:fixed;left:50%;bottom:max(0px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:65;width:min(100%,620px);display:grid;grid-template-columns:48px 48px 1fr 1fr;gap:6px;padding:8px;background:#fff;border-top:1px solid #e8e8e8}.pdetail-actions button{height:44px;border:0;border-radius:10px;font-size:9px;font-weight:900}.pdetail-actions .ico{background:#f2f2f2;font-size:18px}.pdetail-actions .quote{background:#fff1e9;color:#ef5d25}.pdetail-actions .buy{background:#ff5d25;color:#fff}
 @media(min-width:760px){.product-discovery-panel,.product-detail-panel{border-radius:18px!important;overflow:hidden}.pd-feed{padding-left:12px;padding-right:12px}.pd-card{border:1px solid #eee;border-radius:15px}.pdetail-actions{bottom:8px;border:1px solid #eee;border-radius:14px}}
-
-/* performance containment v2 */
-.panel:not(.active){display:none!important}
-#productsGrid .product,#savedGrid .product,#recentGrid .product,#homeProducts .product{content-visibility:auto;contain-intrinsic-size:250px}
-#marketFactoryFeed .mh-store,.pay-order{content-visibility:auto;contain-intrinsic-size:220px}
-.pdetail-related button{content-visibility:auto;contain-intrinsic-size:180px}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 </head>
@@ -312,6 +306,6 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20260929-10"></script>
+<script src="./app.js?v=20260929-11"></script>
 <script src="./customer-pwa.js?v=20260929-03"></script>
 </body></html>
