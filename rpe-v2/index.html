@@ -142,11 +142,16 @@ body{background:var(--r-page);color:var(--r-text)}
 /* rotating-home-recommendations */
 #homeProducts .product{animation:rpeRecommendIn .18s ease-out}
 @keyframes rpeRecommendIn{from{opacity:.72;transform:translateY(2px)}to{opacity:1;transform:none}}
+
+/* home-install-button */
+.home-orders-head{gap:10px}
+.home-orders-actions{display:flex;align-items:center;gap:7px}
+.home-install-btn{border:0!important;border-radius:999px!important;background:#ff7a00!important;color:#fff!important;padding:8px 11px!important;font-size:10px!important;font-weight:900!important;white-space:nowrap}
+@media(max-width:380px){.home-install-btn{padding:7px 9px!important;font-size:9px!important}}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 </head>
 <body>
-<button id="globalInstallRanova" type="button" style="position:fixed;right:12px;bottom:82px;z-index:90;border:0;border-radius:999px;background:#ff7a00;color:#fff;padding:11px 14px;font-weight:900;box-shadow:0 8px 22px rgba(0,0,0,.16);display:inline-flex;align-items:center;gap:7px">Install RANOVA</button>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
   <div style="width:min(100%,430px);background:#fff;border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.24)">
     <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 data-install-title style="margin:0;font-size:20px">Install RANOVA</h2><button id="closeInstallHelp" type="button" style="border:0;background:#f2f2f2;border-radius:50%;width:34px;height:34px;font-size:20px">×</button></div>
@@ -223,7 +228,7 @@ body{background:var(--r-page);color:var(--r-text)}
   </div>
 </section><section id="homePanel" class="panel active">
   <div class="card">
-    <div class="section-head"><h2>My Orders</h2><button data-panel="ordersPanel">All ›</button></div>
+    <div class="section-head home-orders-head"><h2>My Orders</h2><div class="home-orders-actions"><button id="installCustomerHome" class="home-install-btn" type="button">Install RANOVA</button><button data-panel="ordersPanel">All ›</button></div></div>
     <div class="order-statuses">
       <button class="status" data-panel="toPayPanel"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h3"/></svg></span><span id="payN" class="n hide">0</span><b>To Pay</b></button>
       <button class="status" data-order-filter="preparing"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16l-1 5H5L4 5Z"/><path d="M6 10v10h12V10M9 20v-6h6v6"/></svg></span><span id="prepN" class="n hide">0</span><b>To Ship</b></button>
@@ -325,5 +330,5 @@ function iconSvg(k){return""}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <script src="./app.js?v=20260929-recommend01"></script>
-<script src="./customer-pwa.js?v=20260929-03"></script>
+<script src="./customer-pwa.js?v=20260929-04"></script>
 </body></html>
