@@ -169,3 +169,24 @@ html[data-ranova-page="seller-admin-messages"]{--ranova-font:var(--ranova-produc
 /* Keep prices, live totals and cart actions in the requested bright orange. */
 html:root body :is(.product .price,.product-card .price,.ranova-product-price,.pay-product .price,.rch-price,.rpe-price-value,.detail-price,#detailProductTotal,#productTotal){color:#f05a21!important}
 html:root body :is(.product .buy,.product .add,.detail-actions [data-detail-add],.product-purchase #buyNow){background:#f05a21;color:#fff}
+
+/* Product names are the Georgia exception; controls and descriptions retain Inter. */
+:is(.product h3,.product-name,.rch-name,.product-card h3,.rpe-seller-product-card h3,.rpe-compare-product h3,.rpe-related-card b,.rpe-mini-card b,.product-row b,#simpleDiscoveryName,#detailName,#productTitle,#productName,#productModal h3,.rpe-essential-name,#sellerProductDetail h2,#productsList .row>div:first-child>b,#sellerProductsList .review-head h2){--ranova-font:Georgia,"Times New Roman",serif;font-weight:700!important}
+html[data-ranova-page="marketplace"] .card h3{--ranova-font:Georgia,"Times New Roman",serif;font-weight:700!important}
+html:root body :is(.product [data-save],.product [data-fav]){font-size:22px!important;line-height:1;flex-shrink:0;color:#116a52}
+html:root body :is(.product [data-save],.product [data-fav]):hover{background:#fff4ec;color:#c44813}
+html:root body .rpe-round-tool.rpe-heart svg{width:22px;height:22px}
+html:root body .product-tools .saved{color:#116a52;border-color:#b8d5c8}
+@media(max-width:760px){
+ html[data-ranova-page="messages"] .chathead{flex-direction:column;align-items:stretch;gap:8px}
+ html[data-ranova-page="messages"] .chathead>div:first-child{width:100%;flex:none;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;align-items:center}
+ html[data-ranova-page="messages"] #back{grid-column:1;grid-row:1 / 3;align-self:center}
+ html[data-ranova-page="messages"] :is(#chatTitle,#chatSub){grid-column:2;overflow-wrap:break-word;word-break:normal}
+ html[data-ranova-page="messages"] .chathead .toolbar{width:100%;flex:none;justify-content:flex-start}
+ html[data-ranova-page="messages"] .chathead .toolbar .btn{flex:0 0 auto;max-width:100%;white-space:normal}
+}
+@media(max-width:900px){
+ html[data-ranova-page="seller-dashboard"] .side{gap:5px;overflow-x:auto;overflow-y:hidden;align-items:center}
+ html[data-ranova-page="seller-dashboard"] .side :is(button,a){flex:0 0 auto;width:auto;min-width:max-content;white-space:nowrap;overflow-wrap:normal}
+}
+html[data-ranova-page="product"] #name{--ranova-font:Georgia,"Times New Roman",serif;font-weight:700!important}

@@ -1,4 +1,4 @@
-const CACHE="rpe-shell-v30";
+const CACHE="rpe-shell-v31";
 const SHELL=[
   "./fonts/inter-0.woff2",
   "./fonts/inter-1.woff2",
@@ -34,7 +34,7 @@ const SHELL=[
 ];
 self.addEventListener("install",event=>{
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then(cache=>Promise.all(SHELL.map(url=>cache.add(url).catch(()=>null)))));
+  event.waitUntil(caches.open(CACHE).then(cache=>Promise.all(SHELL.map(url=>cache.add(new Request(url,{cache:"reload"})).catch(()=>null)))));
 });
 self.addEventListener("activate",event=>{
   event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));

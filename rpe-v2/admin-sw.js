@@ -1,4 +1,4 @@
-const CACHE="ranova-admin-shell-v9";
+const CACHE="ranova-admin-shell-v10";
 const CORE=[
   "../all/fonts/inter-0.woff2",
   "../all/fonts/inter-1.woff2",
@@ -20,7 +20,7 @@ const CORE=[
 
 self.addEventListener("install",event=>{
   event.waitUntil(
-    caches.open(CACHE).then(cache=>cache.addAll(CORE)).catch(()=>{})
+    caches.open(CACHE).then(cache=>cache.addAll(CORE.map(url=>new Request(url,{cache:"reload"})))).catch(()=>{})
       .then(()=>self.skipWaiting())
   );
 });
