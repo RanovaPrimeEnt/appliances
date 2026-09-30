@@ -411,7 +411,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
           <div id="paymentAccountEditor" class="form-grid">
             <input id="payAccountId" type="hidden">
             <div class="field"><label>Payment method</label><select id="payAccountMethod"><option>Mobile Money</option><option>Bank Transfer</option></select></div>
-            <div class="field"><label>Provider / bank</label><input id="payAccountProvider" placeholder="MTN MoMo, Telecel Cash, Bank name"></div>
+            <div class="field"><label id="payAccountProviderLabel" for="payAccountProvider">Mobile Money network</label><select id="payAccountProvider"><option value="">Choose network</option></select><small id="payAccountProviderHelp">Choose the network that owns the receiving MoMo account.</small></div>
             <div class="field"><label>Account name</label><input id="payAccountName"></div>
             <div class="field"><label>Account / MoMo number</label><input id="payAccountReference"></div>
             <div class="field full"><label>Customer instructions</label><textarea id="payAccountInstructions" rows="3" placeholder="Example: Use the RANOVA order reference as your payment reference."></textarea></div>
