@@ -368,9 +368,9 @@ function setApprovedSellerView(approved){
     if(side)side.style.display="none";
     if(progress)progress.style.display="none";
     if(title)title.textContent="DO YOU WANT TO UPDATE ANY DOCUMENT?";
-    if(intro)intro.textContent="Upload and change documents about this store here.";
-    if(finalTitle)finalTitle.textContent="Submit document updates";
-    if(dashboardButton)dashboardButton.style.display="flex";
+    if(intro)intro.textContent="Upload and Change documents about this store here.";
+    if(finalTitle)finalTitle.textContent="DO YOU WANT TO UPDATE ANY DOCUMENT?";
+    if(dashboardButton){dashboardButton.style.display="flex";dashboardButton.textContent="OPEN SELLER DASHBOARD →";}
     if(storeCard)storeCard.style.display="none";
     document.getElementById("sellerOnboardingGrid").style.gridTemplateColumns="1fr";
   }else{
