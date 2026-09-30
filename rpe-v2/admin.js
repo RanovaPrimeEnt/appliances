@@ -755,6 +755,28 @@ function renderFinance(){
   $("fPayoutsPaid").textContent=fmtMoney(c.payouts_paid_total||0);
   const provider=market.payment_provider||{configured:false,mode:"not_configured",name:"Paystack"};
   $("fProviderStatus").textContent=provider.configured?(provider.name+" · "+pretty(provider.mode)):"Not configured";
+  const collectionAccounts=(market.payment_accounts||[]).filter(x=>x.active);
+  const receivingReady=provider.configured||collectionAccounts.length>0;
+  const sendingReady=provider.configured;
+  if($("financeReceiveStatus"))$("financeReceiveStatus").textContent=receivingReady?(provider.configured?"Enabled through "+provider.name:"Enabled for manual collection"):"Not enabled";
+  if($("financeReceiveHelp"))$("financeReceiveHelp").textContent=provider.configured
+    ?"Customer Pay Now can initialize secure provider payments."
+    :collectionAccounts.length
+      ?"Customers can receive RANOVA collection instructions and unique payment references."
+      :"Add one primary RANOVA collection account below.";
+  if($("financeSendStatus"))$("financeSendStatus").textContent=sendingReady?"Provider payouts available":"Manual payout recording only";
+  if($("financeSendHelp"))$("financeSendHelp").textContent=sendingReady
+    ?"Eligible sellers can be paid securely from the payout queue after all protection checks pass."
+    :"Connect Paystack before automated seller transfers can be initiated.";
+  if($("financeSettlementMode"))$("financeSettlementMode").textContent=provider.configured?pretty(provider.mode)+" provider settlement":"Manual collection / manual payout";
+  const activation=$("financeActivationOverall");
+  if(activation){
+    activation.textContent=provider.configured?"Provider connected":receivingReady?"Receiving ready":"Setup required";
+    activation.className="chip "+(provider.configured?"status-approved":receivingReady?"status-under_review":"status-under_review");
+  }
+  if($("financeActivationNotice"))$("financeActivationNotice").innerHTML=provider.configured
+    ?"<b>Provider connected:</b> secure customer collection and protected seller transfer controls are available. Seller payout still requires an eligible order and a verified seller destination."
+    :"<b>Final live step:</b> add the Paystack live secret key in Supabase Edge Function secrets and configure the Paystack webhook. Until then, use the primary RANOVA collection account for verified manual payments.";
   $("fProviderStatus").style.color=provider.configured?"var(--rpe-green-700)":"#9a5c14";
   $("providerFinanceNotice").querySelector(".notice").innerHTML=provider.configured
     ?'<b>Protected settlement active:</b> '+esc(provider.name)+' is connected in '+esc(pretty(provider.mode))+' mode. Online customer payments are verified server-side; supplier payout remains pending until all release conditions pass.'
