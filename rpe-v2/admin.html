@@ -283,6 +283,8 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 
       <div id="providerFinanceNotice" class="card"><div class="body"><div class="notice" style="margin-top:0"><b>Protected settlement:</b> customer payment and supplier payout are separate. Provider-backed seller transfers can only start after the payout becomes automatically eligible. Until Paystack is configured, live online payment and automated transfers remain disabled.</div></div></div>
 
+      <div class="card"><div class="card-head"><div><h2>Money movement</h2><small style="color:var(--rpe-muted)">The app records ownership and status; the licensed payment provider moves the actual money.</small></div></div><div class="body"><div class="review-meta"><div><span>1 · Customer</span><b>Pays RANOVA checkout</b><span>Unique order/payment reference.</span></div><div><span>2 · Protected</span><b>Payment confirmed & held in settlement flow</b><span>Seller cannot withdraw yet.</span></div><div><span>3 · Eligible</span><b>Delivery/protection checks pass</b><span>Seller amount becomes payable.</span></div><div><span>4 · Seller</span><b>Provider sends payout</b><span>To the seller’s verified bank or MoMo destination.</span></div></div></div></div>
+
       <div class="card">
         <div class="card-head"><div><h2>Financial reconciliation</h2><small style="color:var(--rpe-muted)">Independent checks compare orders, payments, payouts, refunds and ledger entries. Mismatches create review alerts; the checker never changes money balances automatically.</small></div><button id="runFinanceReconciliation" class="primary">Run check now</button></div>
         <div class="body">
@@ -360,7 +362,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       </div>
 
       <div id="paymentAccountsCard" class="card">
-        <div class="card-head"><div><h2>Customer payment destinations</h2><small style="color:var(--rpe-muted)">These details stay private until a confirmed order reaches the payment stage.</small></div></div>
+        <div class="card-head"><div><h2>Primary customer collection account</h2><small style="color:var(--rpe-muted)">For Ghana/GHC, use one primary RANOVA collection destination for customer payments. Every order still receives its own unique payment reference and ledger record. Seller payout accounts remain separate.</small></div><span class="chip status-approved">ONE PRIMARY ACCOUNT</span></div>
         <div class="body">
           <div id="paymentAccountEditor" class="form-grid">
             <input id="payAccountId" type="hidden">
@@ -370,7 +372,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
             <div class="field"><label>Account / MoMo number</label><input id="payAccountReference"></div>
             <div class="field full"><label>Customer instructions</label><textarea id="payAccountInstructions" rows="3" placeholder="Example: Use the RANOVA order reference as your payment reference."></textarea></div>
           </div>
-          <div class="actions"><button id="savePaymentAccount" class="primary">Save payment destination</button><button id="clearPaymentAccount">Clear form</button></div>
+          <div class="notice" style="margin-top:12px"><b>Recommended structure:</b> Customer money enters one provider-controlled RANOVA collection flow. RANOVA tracks each order separately in the ledger, then releases eligible seller payouts to each seller’s verified payout destination. Do not create a different receiving bank account for every customer or order.</div><div class="actions"><button id="savePaymentAccount" class="primary">Save primary collection account</button><button id="clearPaymentAccount">Clear form</button></div>
           <div id="paymentAccountsList" class="market-list" style="margin-top:12px"></div>
         </div>
       </div>
