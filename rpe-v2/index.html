@@ -120,7 +120,7 @@ body{background:var(--r-page);color:var(--r-text)}
 .mpd-counter{position:absolute;right:12px;bottom:12px;background:rgba(24,31,29,.72);color:#fff;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:900;z-index:3}
 .mpd-swipe-hint{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(255,255,255,.9);color:#56635f;border:1px solid #e7e9e8;border-radius:999px;padding:5px 8px;font-size:8px;z-index:2;pointer-events:none}
 .mpd-slide:not(.current) img{background:#fff}
-.mpd-main{background:#fff;padding:14px 14px 18px}.mpd-price{font-size:24px;line-height:1;font-weight:950;color:#ff5a00}.mpd-main h1{font-size:17px;line-height:1.35;margin:9px 0 5px;color:#202925}.mpd-meta{font-size:10px;color:#78827f}.mpd-description{font-size:12px;line-height:1.55;color:#586762;margin:14px 0}
+.mpd-main{background:#fff;padding:14px 14px 18px}.mpd-title-block{padding:2px 0 4px}.mpd-category{font-size:13px;color:#315248;margin-bottom:5px}.mpd-main h1{font-size:21px;line-height:1.25;margin:0 0 12px;color:#173d32;font-weight:900}.mpd-price{font-size:24px;line-height:1;font-weight:950;color:#ff5a00;margin-bottom:14px}.mpd-meta{font-size:10px;color:#78827f;margin-top:14px}.mpd-description{font-size:12px;line-height:1.55;color:#586762;margin:14px 0}
 .mpd-trust{display:flex;gap:6px;overflow:auto;padding:3px 0 12px;scrollbar-width:none}.mpd-trust::-webkit-scrollbar{display:none}.mpd-trust span{white-space:nowrap;background:#f3f7f5;border:1px solid #e3ebe7;border-radius:999px;padding:6px 9px;font-size:9px;font-weight:800;color:#315248}
 .mpd-facts{margin:0;border-top:1px solid #eee}.mpd-facts div{display:grid;grid-template-columns:115px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}.mpd-facts dt{font-size:10px;color:#8a9591}.mpd-facts dd{margin:0;font-size:10px;color:#273b35;text-align:right;overflow-wrap:anywhere}
 .mpd-qty-card{margin-top:14px;padding:12px;border-radius:14px;background:#fafafa;border:1px solid #ececec;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.mpd-qty-card b{display:block;font-size:11px}.mpd-qty-card small{display:block;color:#8c9692;font-size:9px;margin-top:2px}
@@ -369,12 +369,11 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
   </header>
   <div class="mpd-media"><div id="marketProductImage" class="mpd-image"></div></div>
   <div class="mpd-main">
-    <div id="marketProductPrice" class="mpd-price"></div>
-    <h1 id="marketProductName"></h1>
-    <div id="marketProductMeta" class="mpd-meta"></div>
-    <p id="marketProductDescription" class="mpd-description"></p>
-    <div id="marketProductTrust" class="mpd-trust"></div>
-    <dl id="marketProductFacts" class="mpd-facts"></dl>
+    <div class="mpd-title-block">
+      <div id="marketProductCategory" class="mpd-category"></div>
+      <h1 id="marketProductName"></h1>
+      <div id="marketProductPrice" class="mpd-price"></div>
+    </div>
     <div class="mpd-qty-card">
       <div><b>Quantity</b><small id="marketProductMoq"></small></div>
       <div class="mpd-qty">
@@ -384,6 +383,10 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
       </div>
       <div id="marketProductTotal" class="mpd-total"></div>
     </div>
+    <div id="marketProductMeta" class="mpd-meta"></div>
+    <p id="marketProductDescription" class="mpd-description"></p>
+    <div id="marketProductTrust" class="mpd-trust"></div>
+    <dl id="marketProductFacts" class="mpd-facts"></dl>
   </div>
   <div class="mpd-actions">
     <button id="marketProductMessage" class="mpd-secondary" type="button">Message seller</button>
