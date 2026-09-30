@@ -762,7 +762,7 @@ function renderFinance(){
   $("fPayoutsPending").textContent=c.payouts_pending||0;
   $("fCommissionTotal").textContent=fmtMoney(c.commission_total||0);
   $("fPayoutsPaid").textContent=fmtMoney(c.payouts_paid_total||0);
-  const provider=market.payment_provider||{configured:false,mode:"not_configured",name:"Paystack"};
+  const provider=market.payment_provider||{configured:false,mode:"awaiting_credentials",name:"Hubtel"};
   $("fProviderStatus").textContent=provider.configured?(provider.name+" · "+pretty(provider.mode)):"Not configured";
   const collectionAccounts=(market.payment_accounts||[]).filter(x=>x.active);
   const receivingReady=provider.configured||collectionAccounts.length>0;
@@ -776,7 +776,7 @@ function renderFinance(){
   if($("financeSendStatus"))$("financeSendStatus").textContent=sendingReady?"Provider payouts available":"Manual payout recording only";
   if($("financeSendHelp"))$("financeSendHelp").textContent=sendingReady
     ?"Eligible sellers can be paid securely from the payout queue after all protection checks pass."
-    :"Connect Paystack before automated seller transfers can be initiated.";
+    :"Hubtel is the planned Ghana-first provider. Automated seller transfers stay disabled until Hubtel credentials and the live transfer API are activated.";
   if($("financeSettlementMode"))$("financeSettlementMode").textContent=provider.configured?pretty(provider.mode)+" provider settlement":"Manual collection / manual payout";
   const activation=$("financeActivationOverall");
   if(activation){
@@ -785,11 +785,11 @@ function renderFinance(){
   }
   if($("financeActivationNotice"))$("financeActivationNotice").innerHTML=provider.configured
     ?"<b>Provider connected:</b> secure customer collection and protected seller transfer controls are available. Seller payout still requires an eligible order and a verified seller destination."
-    :"<b>Final live step:</b> add the Paystack live secret key in Supabase Edge Function secrets and configure the Paystack webhook. Until then, use the primary RANOVA collection account for verified manual payments.";
+    :"<b>Hubtel preparation mode:</b> the RANOVA ledger, buyer-payment flow and seller payout controls are prepared. Add the approved Hubtel credentials to Supabase Edge Function secrets and activate the verified Hubtel callback/transfer integration before real-money automation is enabled.";
   $("fProviderStatus").style.color=provider.configured?"var(--rpe-green-700)":"#9a5c14";
   $("providerFinanceNotice").querySelector(".notice").innerHTML=provider.configured
     ?'<b>Protected settlement active:</b> '+esc(provider.name)+' is connected in '+esc(pretty(provider.mode))+' mode. Online customer payments are verified server-side; supplier payout remains pending until all release conditions pass.'
-    :'<b>Protected settlement ready, provider not connected:</b> live online payment and automated supplier transfer are disabled until the Paystack secret is added to Supabase. Manual corporate-account confirmation remains auditable.';
+    :'<b>Protected settlement ready, Hubtel not live yet:</b> live online payment and automated supplier transfer remain disabled until the approved Hubtel credentials and callback/transfer integration are activated. Manual corporate-account confirmation remains auditable.';
 
   $("financeCommission").value=settings.default_commission_rate??0;
   $("financeHoldDays").value=settings.payout_hold_days??0;
