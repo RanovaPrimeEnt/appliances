@@ -1349,7 +1349,7 @@ function renderFinance(){
   el("payoutAccountReference").value="";
   el("payoutVerified").textContent=profile.payout_account_verified
     ?"Verified payout destination: "+(profile.provider_name||"Provider")+" · "+(profile.payout_account_masked||profile.account_reference||"masked")
-    :(payoutChannels.provider_configured?"No verified payout destination yet.":"Paystack payout setup is not configured yet.");
+    :(payoutChannels.provider_configured?"No verified payout destination yet.":"Hubtel payout setup is not live yet.");
 
   var host=el("payoutList");
   if(!payouts.length){host.innerHTML='<div class="empty">No payouts have been created yet. My Money are created after RANOVA confirms customer payment.</div>';return}
@@ -1362,7 +1362,7 @@ el("payoutMethod").onchange=setPayoutProviders;
 el("savePayoutProfile").onclick=async function(){
   clearMsg(el("payoutMsg"));
   if(!state.store){msg(el("payoutMsg"),"Create your store profile before adding payout details.");return}
-  if(!payoutChannels.provider_configured){msg(el("payoutMsg"),"RANOVA must connect Paystack before payout destinations can be verified.");return}
+  if(!payoutChannels.provider_configured){msg(el("payoutMsg"),"RANOVA must activate the approved Hubtel payout connection before payout destinations can be verified automatically.");return}
   var sel=el("payoutProvider"),providerName=sel.options[sel.selectedIndex]?.text||"",account=el("payoutAccountReference").value.trim();
   if(!sel.value||!account)return msg(el("payoutMsg"),"Choose the provider and enter the account/MoMo number.");
   var b=this,old=b.textContent;b.disabled=true;b.textContent="Verifying…";
