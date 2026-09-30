@@ -808,7 +808,30 @@ function paintMarketplaceProductDetails(p,store){
   if(!p)return;
   store=store||marketStores.find(s=>s.id===p.store_id)||{};
   marketProductCurrent=p;
-  paintMarketplaceProductDetails(p,store);
+  $("marketProductName").textContent=p.name||"Product";
+  $("marketProductPrice").textContent=p.price==null?"Ask for price":money(p.price,p.currency||"GHS");
+  if($("marketProductCategory"))$("marketProductCategory").textContent=p.category||"RANOVA Product";
+  $("marketProductMeta").textContent=[store.store_name,p.sku&&("SKU "+p.sku)].filter(Boolean).join(" · ");
+  $("marketProductDescription").textContent=p.description||p.short_description||"Contact the seller for additional product information.";
+  const badges=["✓ RANOVA seller",store.business_location||store.country_name,marketStockLabel(p)].filter(Boolean);
+  $("marketProductTrust").innerHTML=badges.map(x=>'<span>'+esc(x)+'</span>').join("");
+  const facts=[];
+  if(p.sku)facts.push(["Model / SKU",p.sku]);
+  if(p.category)facts.push(["Category",p.category]);
+  facts.push(["Availability",marketStockLabel(p)]);
+  if(Number(p.moq||1)>1)facts.push(["Minimum order",String(p.moq)+(p.unit_label?" "+p.unit_label:"")]);
+  if(p.stock_quantity!=null)facts.push(["Stock",String(p.stock_quantity)+(p.unit_label?" "+p.unit_label:"")]);
+  if(store.fulfilment_summary)facts.push(["Delivery",store.fulfilment_summary]);
+  if(store.return_policy_summary)facts.push(["Returns",store.return_policy_summary]);
+  const specs=p.specifications&&typeof p.specifications==="object"?p.specifications:{};
+  Object.keys(specs).slice(0,8).forEach(k=>{const v=specs[k];if(v!=null&&v!==""&&typeof v!=="object")facts.push([prettyKey(k),String(v)])});
+  $("marketProductFacts").innerHTML=facts.map(r=>'<div><dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd></div>').join("");
+  const min=marketProductMinimum(p);
+  $("marketProductMoq").textContent=min>1?"Minimum "+min+(p.unit_label?" "+p.unit_label:""):"No bulk minimum";
+  $("marketProductQty").min=String(min);
+  $("marketProductQty").value=String(min);
+  if(p.stock_quantity!=null)$("marketProductQty").max=String(Math.max(0,Number(p.stock_quantity)||0));else $("marketProductQty").removeAttribute("max");
+  updateMarketProductTotal();
 }
 function openMarketplaceProduct(id){
   const p=marketSellerProducts.find(x=>x.id===id);if(!p)return;
