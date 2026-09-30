@@ -790,6 +790,13 @@ function renderFinance(){
   renderCountryRules();
 
   const accounts=market.payment_accounts||[];
+  const saveCollectionBtn=$("savePaymentAccount");
+  if(saveCollectionBtn){
+    const accountAdded=accounts.some(a=>a.active);
+    saveCollectionBtn.classList.toggle("collection-added",accountAdded);
+    saveCollectionBtn.classList.toggle("collection-empty",!accountAdded);
+    saveCollectionBtn.textContent=accountAdded?"Update primary collection account":"Save primary collection account";
+  }
   $("paymentAccountsList").innerHTML=accounts.length?accounts.map(a=>'<div class="market-row"><div><b>'+esc(a.payment_method)+' • '+esc(a.provider_name)+'</b><small>'+esc(a.account_name)+' • <span class="finance-ref">'+esc(a.account_reference)+'</span></small>'+(a.instructions?'<small>'+esc(a.instructions)+'</small>':'')+'</div><span class="chip '+(a.active?'status-approved':'status-paused')+'">'+(a.active?'PRIMARY':'Inactive')+'</span><div><small>Updated</small><b>'+new Date(a.updated_at).toLocaleString()+'</b></div><div class="actions"><button data-edit-pay-account="'+a.id+'">Edit</button><button data-toggle-pay-account="'+a.id+'" data-active="'+(!a.active)+'">'+(a.active?'Disable':'Make primary')+'</button></div></div>').join(""):'<div class="empty">No customer payment destination has been added yet.</div>';
 
   $("paymentAccountsList").querySelectorAll("[data-edit-pay-account]").forEach(b=>b.onclick=()=>{
