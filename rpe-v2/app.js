@@ -804,6 +804,12 @@ function updateMarketProductTotal(){
   if(total)total.textContent=p.price==null?"Price will be confirmed by the seller":"Product total: "+money(Number(p.price)*q,p.currency||"GHS");
   if(buy){buy.disabled=unavailable;buy.textContent=unavailable?"Unavailable":"Buy now"}
 }
+function paintMarketplaceProductDetails(p,store){
+  if(!p)return;
+  store=store||marketStores.find(s=>s.id===p.store_id)||{};
+  marketProductCurrent=p;
+  paintMarketplaceProductDetails(p,store);
+}
 function openMarketplaceProduct(id){
   const p=marketSellerProducts.find(x=>x.id===id);if(!p)return;
   const store=marketStores.find(s=>s.id===p.store_id)||{};
@@ -835,6 +841,16 @@ function openMarketplaceProduct(id){
         const w=swipe.clientWidth||1;
         const index=Math.max(0,Math.min(slides.length-1,Math.round(swipe.scrollLeft/w)));
         const counter=$("marketProductCounter");if(counter)counter.textContent=(index+1)+" / "+slides.length;
+        const visible=slides[index];
+        if(visible&&visible.id&&visible.id!==marketProductCurrent?.id){
+          const nextProduct=marketSellerProducts.find(x=>x.id===visible.id);
+          if(nextProduct){
+            const nextStore=marketStores.find(s=>s.id===nextProduct.store_id)||{};
+            paintMarketplaceProductDetails(nextProduct,nextStore);
+          }
+        }else if(visible&&visible.id===p.id&&marketProductCurrent?.id!==p.id){
+          paintMarketplaceProductDetails(p,store);
+        }
       },60);
     },{passive:true});
   }
