@@ -6,6 +6,10 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const PAYSTACK_SECRET_KEY=Deno.env.get("PAYSTACK_SECRET_KEY")||"";
+const HUBTEL_CLIENT_ID=Deno.env.get("HUBTEL_CLIENT_ID")||"";
+const HUBTEL_CLIENT_SECRET=Deno.env.get("HUBTEL_CLIENT_SECRET")||"";
+const HUBTEL_MERCHANT_ID=Deno.env.get("HUBTEL_MERCHANT_ID")||"";
+const HUBTEL_READY=!!(HUBTEL_CLIENT_ID&&HUBTEL_CLIENT_SECRET&&HUBTEL_MERCHANT_ID);
 const ALLOWED_ORIGIN="https://ranovaprimeent.github.io";
 
 const admin=createClient(SUPABASE_URL,SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -99,7 +103,7 @@ function accepted(v:any){
   return ["approved","complete","verified"].includes(String(v||"").toLowerCase());
 }
 async function dashboard(role:string){
-  const out:any={ok:true,role,payment_provider:{name:"Paystack",configured:!!PAYSTACK_SECRET_KEY,mode:PAYSTACK_SECRET_KEY.startsWith("sk_live_")?"live":PAYSTACK_SECRET_KEY?"test":"not_configured"},applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],reconciliation_runs:[],reconciliation_issues:[],finance_snapshots:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],risk_flags:[],safety_reports:[],report_evidence:[],store_cases:[],admin_seller_threads:[],admin_seller_messages:[],risk_review_events:[],counts:{}};
+  const out:any={ok:true,role,payment_provider:HUBTEL_READY?{name:"Hubtel",configured:false,mode:"credentials_received_activation_pending",primary:true,credentials_present:true}:{name:"Hubtel",configured:false,mode:"awaiting_credentials",primary:true,credentials_present:false,paystack_fallback_configured:!!PAYSTACK_SECRET_KEY},applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],reconciliation_runs:[],reconciliation_issues:[],finance_snapshots:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],risk_flags:[],safety_reports:[],report_evidence:[],store_cases:[],admin_seller_threads:[],admin_seller_messages:[],risk_review_events:[],counts:{}};
   if(canSellerReview(role)){
     const [{data:apps},{data:files},{data:accounts}]=await Promise.all([
       admin.from("ranova_seller_applications")
