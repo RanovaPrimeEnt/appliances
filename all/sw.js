@@ -1,4 +1,4 @@
-const CACHE="rpe-shell-v31";
+const CACHE="rpe-shell-v32";
 const SHELL=[
   "./fonts/inter-0.woff2",
   "./fonts/inter-1.woff2",
@@ -7,7 +7,7 @@ const SHELL=[
   "./fonts/inter-4.woff2",
   "./fonts/inter-5.woff2",
   "./fonts/inter-6.woff2",
-  "./ranova-typography.css?v=20260930-5",
+  "./ranova-typography.css?v=20260930-6",
   "./ranova-typography.js?v=20260930-5",
   "./",
   "./site.html",

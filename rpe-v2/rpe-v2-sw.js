@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v15";
+const CACHE="ranova-rpe-v2-shell-v16";
 const CORE=[
   "../all/fonts/inter-0.woff2",
   "../all/fonts/inter-1.woff2",
@@ -7,7 +7,7 @@ const CORE=[
   "../all/fonts/inter-4.woff2",
   "../all/fonts/inter-5.woff2",
   "../all/fonts/inter-6.woff2",
-  "../all/ranova-typography.css?v=20260930-5",
+  "../all/ranova-typography.css?v=20260930-6",
   "../all/ranova-typography.js?v=20260930-5",
   "./",
   "./index.html",
