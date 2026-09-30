@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 /* Shared RANOVA reading style, matching the serif reference. */
 :root{--ranova-font:Georgia,"Times New Roman",serif;--font-ui:var(--ranova-font)!important;--font-display:var(--ranova-font)!important;--seller-chat-font:var(--ranova-font)!important;--text-xs:.875rem!important;--text-sm:.875rem!important;--text-base:1rem!important}
 html{font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -101,3 +102,14 @@ html[data-ranova-page="product"] .product-total{font-size:20px}
  html[data-ranova-page="rfq"] .actions button{width:100%;white-space:normal}
  html[data-ranova-page="seller-store"] .detail-content>div{min-width:0}
 }
+
+/* Inter is scoped to products and conversations; photo geometry is untouched. */
+:root{--ranova-product-font:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+:is(.product,.product-card,.product-row,.market-product,.rch-card,.rpe-seller-product-card,.rpe-compare-product,.rpe-related-card,.pay-product,.mh-product,.promo,.factory,.sim,#productDetail,.product-purchase,.buybox,#productModal,.seller-inbox,.seller-chat,.seller-admin-chat,#messagesPanel,.case-message){--ranova-font:var(--ranova-product-font)}
+html[data-ranova-page="marketplace"] .card,
+html[data-ranova-page="messages"],
+html[data-ranova-page="seller-admin-messages"]{--ranova-font:var(--ranova-product-font)}
+:is(.seller-inbox,.seller-chat,.seller-admin-chat,#messagesPanel){--font-ui:var(--ranova-product-font);--seller-chat-font:var(--ranova-product-font)}
+/* Keep prices, live totals and cart actions in the requested bright orange. */
+html:root body :is(.product .price,.product-card .price,.ranova-product-price,.pay-product .price,.rch-price,.rpe-price-value,.detail-price,#detailProductTotal,#productTotal){color:#f05a21!important}
+html:root body :is(.product .buy,.product .add,.detail-actions [data-detail-add],.product-purchase #buyNow){background:#f05a21;color:#fff}
