@@ -49,6 +49,11 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
 .approved-launch-btn:hover{background:#0d5a46}
 @media(max-width:620px){.approved-launch{padding:12px;border-radius:18px}.approved-launch-card{grid-template-columns:1fr;text-align:center;padding:20px 16px}.approved-launch-logo{margin:auto;width:96px;height:96px}.approved-launch-logo img{width:76px;height:76px}.approved-launch-copy h2{font-size:26px}.approved-launch-copy p{font-size:15px}.approved-launch-btn{min-height:54px;font-size:15px}}
 
+
+/* Approved seller: only the top Build Your Store CTA may link to the dashboard. */
+#storeSetupCard a[href="./seller-dashboard.html"],
+#verificationChecklist a[href="./seller-dashboard.html"]{display:none!important}
+
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -422,7 +427,7 @@ function setApprovedSellerView(approved){
     if(intro)intro.textContent="Upload and Change documents about this store here.";
     if(finalTitle)finalTitle.textContent="DO YOU WANT TO UPDATE ANY DOCUMENT?";
     if(dashboardButton)dashboardButton.style.display="none";
-    if(storeCard)storeCard.style.display="none";
+    if(storeCard){storeCard.style.display="none";storeCard.setAttribute("aria-hidden","true");}
     document.getElementById("sellerOnboardingGrid").style.gridTemplateColumns="1fr";
     if(toggle)toggle.style.display=complete?"block":"none";
     if(complete)setApprovedDocumentExpanded(false);
@@ -437,7 +442,7 @@ function setApprovedSellerView(approved){
     if(intro)intro.textContent="Do one step at a time. Choose the requested file, upload it, then move to the next step. RANOVA Admin will review the real document securely.";
     if(finalTitle)finalTitle.textContent="Final step · Send to RANOVA Admin";
     if(dashboardButton)dashboardButton.style.display="none";
-    if(storeCard)storeCard.style.display="";
+    if(storeCard){storeCard.style.display="";storeCard.removeAttribute("aria-hidden");}
     if(toggle)toggle.style.display="none";
     setApprovedDocumentExpanded(true);
     document.getElementById("sellerOnboardingGrid").style.gridTemplateColumns="";
@@ -493,7 +498,7 @@ async function loadWorkspace(){
     var dashboardLink=document.getElementById("dashboardLink"),storeBox=document.getElementById("storeSetupBox");
     if(approved&&currentApplication.store_accessible){
       dashboardLink.style.display="inline-flex";
-      storeBox.innerHTML='<b>Your seller account is approved.</b><br>Store Builder is ready. Create your storefront, upload your logo/banner, add products, set MOQ/pricing/stock and prepare listings for RANOVA review.<div style="margin-top:12px"><a href="./seller-dashboard.html" style="display:inline-flex;min-height:40px;align-items:center;padding:0 14px;border-radius:999px;background:#116a52;color:#fff;text-decoration:none;font-size:16px;font-weight:900">Open Seller Dashboard →</a></div>';
+      storeBox.innerHTML='<b>Your seller account is approved.</b><br>Store Builder is ready. Use the dashboard button at the top of this page to manage your store.';
       storeBox.style.borderStyle="solid";
       storeBox.style.borderColor="#b8ddcd";
       storeBox.style.background="#f0faf5";
