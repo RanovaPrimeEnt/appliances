@@ -122,7 +122,7 @@ function showPanel(id){
       if(Date.now()-toPayLoadedAt>30000)loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"));
     }else if(id==="marketplaceHomePanel"){
       if(!panelIsPainted(id)){renderMarketplaceHome($("marketHomeSearch")?.value||"");markPanelPainted(id)}
-      if(Date.now()-marketLoadedAt>60000)loadMarketplaceHomeData().catch(()=>{});
+      if(Date.now()-marketLoadedAt>60000)loadMarketplaceHomeData().catch(()=>{renderMarketplaceHome($("marketHomeSearch")?.value||"")});
     }
   });
 }
@@ -278,7 +278,7 @@ async function applySession(session,initial=false){
     handleIncomingCartLink().catch(()=>{});
     afterPaint(()=>loadMessageConversations(true).catch(()=>{}));
     setTimeout(()=>loadToPayOrders(true).catch(()=>{}),80);
-    setTimeout(()=>loadMarketplaceHomeData().catch(()=>{}),140);
+    setTimeout(()=>loadMarketplaceHomeData().catch(()=>{renderMarketplaceHome($("marketHomeSearch")?.value||"")}),140);
   }catch(e){
     console.error(e);
     // Do not blank an already-open app because one refresh call failed.
@@ -700,14 +700,22 @@ function cleanupRealtime(){realtimeChannels.forEach(ch=>sb.removeChannel(ch));re
 
 
 async function loadMarketplaceHomeData(){
-  const [a,b]=await Promise.all([
+  // Never let the Marketplace sit on a loading screen while seller data is refreshing.
+  // Paint the regular customer catalogue immediately, then enhance it with live seller data.
+  renderMarketplaceHome($("marketHomeSearch")?.value||"");
+  const [storeResult,productResult]=await Promise.allSettled([
     sb.from("ranova_seller_stores").select("*").eq("store_status","active").limit(60),
-    sb.from("ranova_seller_products").select("*").eq("product_status","active").limit(120)
+    sb.from("ranova_seller_products").select("*").eq("product_status","active").limit(240)
   ]);
-  if(a.error)throw a.error;if(b.error)throw b.error;
-  marketStores=a.data||[];marketSellerProducts=b.data||[];marketLoadedAt=Date.now();
+  const a=storeResult.status==="fulfilled"?storeResult.value:null;
+  const b=productResult.status==="fulfilled"?productResult.value:null;
+  if(a&&!a.error)marketStores=a.data||[];
+  if(b&&!b.error)marketSellerProducts=b.data||[];
+  marketLoadedAt=Date.now();
   populateMarketplaceFilters();
-  renderMarketplaceHome($("marketHomeSearch")?.value||"");renderHomeProducts();markPanelPainted("marketplaceHomePanel");
+  renderMarketplaceHome($("marketHomeSearch")?.value||"");
+  renderHomeProducts();
+  markPanelPainted("marketplaceHomePanel");
 }
 function marketStoreProducts(id){return marketSellerProducts.filter(p=>p.store_id===id)}
 function populateMarketplaceFilters(){
@@ -821,10 +829,21 @@ function renderMarketplaceHome(filter=""){
   if(!promo||!feed)return;
   const q=String(filter||"").trim().toLowerCase();
   if(!marketStores.length&&!marketSellerProducts.length){
-    promo.innerHTML='<div style="grid-column:1/-1;padding:18px;text-align:center;color:#888">Loading marketplace…</div>';
-    if(productHost)productHost.innerHTML="";
-    if(summary)summary.textContent="";
-    feed.innerHTML="";
+    const qLegacy=String(filter||"").trim().toLowerCase();
+    const legacyRows=products.filter(p=>!qLegacy||[
+      p.name,p.sku,p.legacy_id,p.brand,p.categories?.name,p.short_description
+    ].some(x=>String(x||"").toLowerCase().includes(qLegacy))).slice(0,36);
+    promo.innerHTML=legacyRows.length
+      ? '<div style="grid-column:1/-1;padding:10px 12px;border-radius:14px;background:#fff7ef;color:#92501c;font-size:10px">Showing available RANOVA products while live seller stores refresh.</div>'
+      : '';
+    if(summary)summary.textContent=legacyRows.length+" product"+(legacyRows.length===1?"":"s");
+    if(productHost)productHost.innerHTML=legacyRows.length?legacyRows.map(p=>{
+      const image=imageFor(p);
+      return '<button class="market-product-card" type="button" data-legacy-market-product="'+esc(p.id)+'">'+
+        (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy">':'<span class="market-product-placeholder">Product image</span>')+
+        '<span class="market-product-copy"><b>'+esc(p.name||"Product")+'</b><small>'+esc(p.categories?.name||p.brand||"RANOVA Marketplace")+'</small><strong>'+esc(money(p.price,p.currency||"GHS"))+'</strong></span></button>';
+    }).join(""):'<div class="market-empty"><b>No products available yet</b>Please try again shortly.</div>';
+    feed.innerHTML='<div class="market-empty"><b>Stores are refreshing</b>You can continue browsing products now.</div>';
     return;
   }
   const storeById=new Map(marketStores.map(s=>[s.id,s]));
@@ -900,6 +919,7 @@ document.querySelectorAll("[data-market-focus]").forEach(btn=>btn.addEventListen
 if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>refreshMarketplaceFilters();
 if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>renderMarketplaceHome(e.target.value);
 document.addEventListener("click",async e=>{
+ const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
  const p=e.target.closest("[data-mh-product]");if(p){openMarketplaceProduct(p.dataset.mhProduct);return}
  const m=e.target.closest("[data-mh-message]");if(m){try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
  const v=e.target.closest("[data-mh-store]");if(v){location.href="../all/seller-store.html?store="+encodeURIComponent(v.dataset.mhStore);return}
