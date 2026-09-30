@@ -1040,6 +1040,32 @@ function renderToPayOrders(filter=""){
 
   host.innerHTML=pendingHtml+recommendationSections;
 }
+function showManualPayment(out){
+  const a=out.collection_account||{};
+  $("manualPayAmount").textContent="GHC "+Number(out.amount||0).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2});
+  $("manualPayMethod").textContent=a.payment_method||"Payment";
+  $("manualPayProvider").textContent=a.provider_name||"RANOVA";
+  $("manualPayName").textContent=a.account_name||"RANOVA";
+  $("manualPayAccount").textContent=a.account_reference||"—";
+  $("manualPayReference").textContent=out.reference||"—";
+  $("manualPayInstructions").textContent=a.instructions||"Use the RANOVA payment reference when making payment.";
+  $("manualPaymentOverlay").classList.add("show");
+  $("manualPaymentOverlay").setAttribute("aria-hidden","false");
+}
+if($("manualPayClose"))$("manualPayClose").onclick=()=>{$("manualPaymentOverlay").classList.remove("show");$("manualPaymentOverlay").setAttribute("aria-hidden","true")};
+if($("manualPaymentOverlay"))$("manualPaymentOverlay").addEventListener("click",e=>{if(e.target===$("manualPaymentOverlay"))$("manualPayClose").click()});
+if($("manualPayCopy"))$("manualPayCopy").onclick=async()=>{
+  const text=[
+    "RANOVA CUSTOMER PAYMENT",
+    "Amount: "+$("manualPayAmount").textContent,
+    "Method: "+$("manualPayMethod").textContent,
+    "Provider: "+$("manualPayProvider").textContent,
+    "Account name: "+$("manualPayName").textContent,
+    "Account: "+$("manualPayAccount").textContent,
+    "Reference: "+$("manualPayReference").textContent
+  ].join("\n");
+  try{await navigator.clipboard.writeText(text);showToast("Payment details copied")}catch{showToast("Could not copy automatically")}
+};
 if($("toPayBack"))$("toPayBack").onclick=()=>showPanel("homePanel");
 if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>renderToPayOrders(e.target.value));
 document.addEventListener("click",async e=>{
@@ -1052,6 +1078,7 @@ document.addEventListener("click",async e=>{
     try{
       const out=await paymentApi({action:"initialize",order_ref:order.order_ref});
       if(out.authorization_url){location.href=out.authorization_url;return}
+      if(out.payment_mode==="manual_collection_account"){showManualPayment(out);return}
       if(out.payment_mode==="mobile_money_prompt"){
         showToast(out.display_text||"Check your phone and authorize the Mobile Money payment.");
         setTimeout(()=>loadToPayOrders().catch(()=>{}),3500);
