@@ -173,7 +173,6 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
             <h3 id="submitReviewTitle">Final step · Send to RANOVA Admin</h3>
             <p id="submitReviewHelp" role="status" aria-live="polite">Upload the three required items above. When they are ready, submit the application for review.</p>
             <button id="submitForReview" type="button">Submit for RANOVA Review</button>
-            <a id="approvedDashboardButton" href="./seller-dashboard.html" style="display:none;margin-top:12px;min-height:46px;align-items:center;justify-content:center;border-radius:12px;background:#116a52;color:#fff;text-decoration:none;font-size:15px;font-weight:900">OPEN SELLER DASHBOARD →</a>
           </div>
         </div>
 
@@ -422,7 +421,7 @@ function setApprovedSellerView(approved){
     if(title)title.textContent="DO YOU WANT TO UPDATE ANY DOCUMENT?";
     if(intro)intro.textContent="Upload and Change documents about this store here.";
     if(finalTitle)finalTitle.textContent="DO YOU WANT TO UPDATE ANY DOCUMENT?";
-    if(dashboardButton){dashboardButton.style.display="flex";dashboardButton.textContent="OPEN SELLER DASHBOARD →";}
+    if(dashboardButton)dashboardButton.style.display="none";
     if(storeCard)storeCard.style.display="none";
     document.getElementById("sellerOnboardingGrid").style.gridTemplateColumns="1fr";
     if(toggle)toggle.style.display=complete?"block":"none";
