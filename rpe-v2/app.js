@@ -346,7 +346,7 @@ function productCard(p){
   return `<article class="product" data-product="${p.id}">
     <button class="product-open" data-open-product="${p.id}" style="display:block;width:100%;padding:0;border:0;background:#fff;text-align:left">
       ${image?'<img src="'+esc(image)+'" loading="lazy" alt="'+esc(p.name)+'">':'<div style="height:155px;display:grid;place-items:center;background:#f5f7f6;color:#93a49e;font-size:10px">RPE Product</div>'}
-      <div class="product-copy"><h3>${esc(p.name)}</h3><small>${esc(cat)} • ${esc(p.sku||p.legacy_id||"RPE")}</small><small style="font-weight:800;color:#0e5b43">${esc(money(p.price,p.currency))}</small></div>
+      <div class="product-copy"><h3>${esc(p.name)}</h3><small>${esc(cat)} • ${esc(p.sku||p.legacy_id||"RPE")}</small><small class="ranova-product-price" style="font-weight:800;color:#f05a21">${esc(money(p.price,p.currency))}</small></div>
     </button>
     <div class="product-copy" style="padding-top:0"><div class="product-actions"><button class="add" data-add="${p.id}">Add to cart</button><button class="fav" data-fav="${p.id}" aria-label="Save product">${favorites.has(p.id)?"♥":"♡"}</button></div></div>
   </article>`;
@@ -359,7 +359,7 @@ function homeSellerCard(p){
   return '<article class="product home-seller-product">'+
     '<button class="product-open" data-home-seller-product="'+esc(p.id)+'" style="display:block;width:100%;padding:0;border:0;background:#fff;text-align:left">'+
       (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" loading="lazy" decoding="async" alt="'+esc(p.name)+'">':'<div style="height:155px;display:grid;place-items:center;background:#f5f7f6;color:#93a49e;font-size:10px">Marketplace Product</div>')+
-      '<div class="product-copy"><h3>'+esc(p.name||"Product")+'</h3><small>'+esc(store.store_name||p.category||"Marketplace Store")+'</small><small style="font-weight:800;color:#0e5b43">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</small></div>'+
+      '<div class="product-copy"><h3>'+esc(p.name||"Product")+'</h3><small>'+esc(store.store_name||p.category||"Marketplace Store")+'</small><small class="ranova-product-price" style="font-weight:800;color:#f05a21">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</small></div>'+
     '</button>'+
   '</article>';
 }
