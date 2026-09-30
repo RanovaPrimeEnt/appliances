@@ -43,7 +43,7 @@ let activePanelId="homePanel";
 let simpleDiscoveryOrigin="homePanel";
 let simpleDiscoveryProductId=null;
 let recommendationRotation=0,recommendationTimer=null;
-let homeRecommendationLimit=16,homeRecommendationObserver=null;
+let homeRecommendationLimit=20,homeRecommendationObserver=null;
 const panelPainted=new Set();
 function afterPaint(fn){requestAnimationFrame(()=>setTimeout(fn,0))}
 function markPanelPainted(id){panelPainted.add(id)}
@@ -358,11 +358,15 @@ function renderProducts(list){
   $("productsGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>No matching products</b>Try another search.</div>';
 }
 function homeSellerCard(p){
-  const store=marketStores.find(s=>s.id===p.store_id)||{};
+  const store=marketStores.find(s=>s.id===p.store_id)||{},moq=Math.max(1,Number(p.moq||1));
   return '<article class="product home-seller-product">'+
     '<button class="product-open" data-home-seller-product="'+esc(p.id)+'" style="display:block;width:100%;padding:0;border:0;background:#fff;text-align:left">'+
       (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" loading="lazy" decoding="async" alt="'+esc(p.name)+'">':'<div style="height:155px;display:grid;place-items:center;background:#f5f7f6;color:#93a49e;font-size:10px">Marketplace Product</div>')+
-      '<div class="product-copy"><h3>'+esc(p.name||"Product")+'</h3><small>'+esc(store.store_name||p.category||"Marketplace Store")+'</small><small class="ranova-product-price" style="font-weight:800;color:#f05a21">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</small></div>'+
+      '<div class="product-copy"><h3>'+esc(p.name||"Product")+'</h3>'+
+      '<small class="home-store-name">'+esc(store.store_name||p.category||"Marketplace Store")+'</small>'+
+      '<small class="ranova-product-price" style="font-weight:800;color:#f05a21">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</small>'+
+      (moq>1?'<span class="home-moq">MOQ '+esc(moq)+(p.unit_label?" "+esc(p.unit_label):"")+'</span>':'')+
+      '</div>'+
     '</button>'+
   '</article>';
 }
@@ -436,7 +440,7 @@ function observeMoreHomeRecommendations(){
   if(!sentinel||!("IntersectionObserver" in window))return;
   homeRecommendationObserver=new IntersectionObserver(entries=>{
     if(!entries.some(x=>x.isIntersecting))return;
-    const total=Math.min(60,homeRecommendationPoolSize());
+    const total=Math.min(100,homeRecommendationPoolSize());
     if(homeRecommendationLimit>=total)return;
     homeRecommendationLimit=Math.min(total,homeRecommendationLimit+8);
     renderHomeProducts();
@@ -445,7 +449,7 @@ function observeMoreHomeRecommendations(){
 }
 function renderHomeProducts(){
   const host=$("homeProducts");if(!host)return;
-  const total=Math.min(60,homeRecommendationPoolSize());
+  const total=Math.min(100,homeRecommendationPoolSize());
   const picks=pickHomeRecommendations(Math.min(homeRecommendationLimit,total||homeRecommendationLimit));
   const hasMore=total>picks.length;
   host.innerHTML=picks.length
@@ -459,7 +463,7 @@ function startRecommendationRotation(){
   recommendationTimer=setInterval(()=>{
     if(document.hidden)return;
     recommendationRotation++;
-    homeRecommendationLimit=Math.max(homeRecommendationLimit,16);
+    homeRecommendationLimit=Math.max(homeRecommendationLimit,20);
     renderHomeProducts();
   },45000);
 }
