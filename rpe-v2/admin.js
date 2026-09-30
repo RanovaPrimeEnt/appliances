@@ -6,6 +6,7 @@ const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey
 const marketEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-admin-marketplace";
 const countryEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-country-service";
 const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
+const paymentGatewayEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-payment-gateway";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
 let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],risk_flags:[],safety_reports:[],risk_review_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
 let selectedSellerChatId=null,sellerChatFilter="";
@@ -801,7 +802,8 @@ function renderFinance(){
 
   $("paymentAccountsList").querySelectorAll("[data-edit-pay-account]").forEach(b=>b.onclick=()=>{
     const a=accounts.find(x=>x.id===b.dataset.editPayAccount);if(!a)return;
-    $("payAccountId").value=a.id;$("payAccountMethod").value=a.payment_method;$("payAccountProvider").value=a.provider_name||"";$("payAccountName").value=a.account_name||"";$("payAccountReference").value=a.account_reference||"";$("payAccountInstructions").value=a.instructions||"";
+    $("payAccountId").value=a.id;$("payAccountMethod").value=a.payment_method;$("payAccountName").value=a.account_name||"";$("payAccountReference").value=a.account_reference||"";$("payAccountInstructions").value=a.instructions||"";
+    populatePaymentProviderOptions(a.provider_name||"");
     $("paymentAccountsCard").scrollIntoView({behavior:"smooth",block:"start"});
   });
   $("paymentAccountsList").querySelectorAll("[data-toggle-pay-account]").forEach(b=>b.onclick=async()=>{
@@ -963,8 +965,53 @@ function renderCountryRules(){
     catch(err){alert(err.message)}finally{b.disabled=false}
   });
 }
+const GH_MOMO_NETWORKS=["MTN MoMo","Telecel Cash","ATMoney"];
+const GH_BANKS_FALLBACK=[
+  "Absa Bank Ghana","Access Bank Ghana","Agricultural Development Bank","Bank of Africa Ghana",
+  "CalBank","Consolidated Bank Ghana","Ecobank Ghana","FBNBank Ghana","Fidelity Bank Ghana",
+  "First Atlantic Bank","First National Bank Ghana","GCB Bank","Guaranty Trust Bank Ghana",
+  "National Investment Bank","OmniBSIC Bank","Prudential Bank","Republic Bank Ghana",
+  "Société Générale Ghana","Stanbic Bank Ghana","Standard Chartered Bank Ghana",
+  "United Bank for Africa Ghana","Universal Merchant Bank","Zenith Bank Ghana"
+];
+let ghLiveBanks=null;
+async function loadGhanaBanks(){
+  if(ghLiveBanks)return ghLiveBanks;
+  try{
+    const r=await fetch(paymentGatewayEndpoint,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":cfg.supabasePublishableKey},body:JSON.stringify({action:"list_ghana_banks"})});
+    const out=await r.json().catch(()=>({}));
+    if(r.ok&&out.ok&&Array.isArray(out.banks)&&out.banks.length){
+      ghLiveBanks=[...new Set(out.banks.map(x=>x.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+      return ghLiveBanks;
+    }
+  }catch{}
+  return GH_BANKS_FALLBACK;
+}
+async function populatePaymentProviderOptions(selected=""){
+  const method=$("payAccountMethod")?.value||"Mobile Money";
+  const select=$("payAccountProvider"),labelEl=$("payAccountProviderLabel"),help=$("payAccountProviderHelp");
+  if(!select)return;
+  if(method==="Mobile Money"){
+    if(labelEl)labelEl.textContent="Mobile Money network";
+    if(help)help.textContent="Choose the network that owns the receiving MoMo account.";
+    const values=GH_MOMO_NETWORKS;
+    select.innerHTML='<option value="">Choose network</option>'+values.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join("");
+    if(selected&&values.includes(selected))select.value=selected;
+  }else{
+    if(labelEl)labelEl.textContent="Bank";
+    if(help)help.textContent="Choose the bank where the RANOVA receiving account is held.";
+    select.innerHTML='<option value="">Loading banks…</option>';
+    const values=await loadGhanaBanks();
+    select.innerHTML='<option value="">Choose bank</option>'+values.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join("");
+    if(selected&&values.includes(selected))select.value=selected;
+    else if(selected){
+      const opt=document.createElement("option");opt.value=selected;opt.textContent=selected;select.appendChild(opt);select.value=selected;
+    }
+  }
+}
 function clearPaymentAccountForm(){
-  $("payAccountId").value="";$("payAccountMethod").value="Mobile Money";$("payAccountProvider").value="";$("payAccountName").value="";$("payAccountReference").value="";$("payAccountInstructions").value="";
+  $("payAccountId").value="";$("payAccountMethod").value="Mobile Money";$("payAccountName").value="";$("payAccountReference").value="";$("payAccountInstructions").value="";
+  populatePaymentProviderOptions("");
 }
 
 function storeControlButton(store,status,labelText,color,current,disabled=false){
@@ -1403,10 +1450,13 @@ $("saveFinanceSettings").onclick=async()=>{
     $("financeChangeReason").value="";await reloadMarketplace();alert("Finance settings saved.");
   }catch(err){alert(err.message)}finally{b.disabled=false}
 };
+$("payAccountMethod").onchange=()=>populatePaymentProviderOptions("");
+populatePaymentProviderOptions("");
 $("savePaymentAccount").onclick=async()=>{
   if(!isOwner())return alert("Only the Owner can change payment destinations.");
   const b=$("savePaymentAccount");b.disabled=true;
   try{
+    if(!$("payAccountProvider").value)return alert($("payAccountMethod").value==="Mobile Money"?"Choose a Mobile Money network.":"Choose a bank.");
     await marketApi({
       action:"save_payment_account",
       id:$("payAccountId").value,
