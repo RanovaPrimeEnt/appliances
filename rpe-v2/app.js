@@ -281,6 +281,7 @@ async function applySession(session,initial=false){
     afterPaint(()=>loadMessageConversations(true).catch(()=>{}));
     setTimeout(()=>loadToPayOrders(true).catch(()=>{}),80);
     setTimeout(()=>loadMarketplaceHomeData().catch(()=>{renderMarketplaceHome($("marketHomeSearch")?.value||"")}),140);
+    handleDirectPaymentLink().catch(()=>{});
     handlePaymentReturn().catch(()=>{});
   }catch(e){
     console.error(e);
@@ -1166,6 +1167,20 @@ document.addEventListener("click",async e=>{
 });
 
 // RANOVA in-app buyer messenger 2026-09-29
+async function handleDirectPaymentLink(){
+  const qs=new URLSearchParams(location.search);
+  const orderRef=qs.get("pay_order_ref")||"";
+  if(!orderRef)return;
+  try{
+    await loadToPayOrders();
+    const found=toPayOrders.find(x=>x.order_ref===orderRef)||null;
+    showPanel("toPayPanel");
+    renderToPayOrders(orderRef);
+    if(found)setTimeout(()=>document.querySelector('[data-pay-order="'+CSS.escape(found.id)+'"]')?.scrollIntoView({behavior:"smooth",block:"start"}),80);
+    history.replaceState(null,"",location.pathname);
+  }catch(err){showToast(err.message||"Could not open payment for this order.")}
+}
+
 async function handlePaymentReturn(){
   const qs=new URLSearchParams(location.search);
   if(qs.get("payment_return")!=="1")return;
