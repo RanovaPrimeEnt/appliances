@@ -39,6 +39,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 @media(max-width:900px){.shell{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto}.side button{width:auto;white-space:nowrap}.metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.catalogue-preview{grid-template-columns:1fr}.payout-breakdown{grid-template-columns:1fr 1fr}.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
 [hidden]{display:none!important}#sellerDocumentNotice{margin:18px auto;max-width:1100px;border:2px solid #e4b55a;background:#fff8e8;color:#523b17}#sellerDocumentNotice a{color:#095e45;text-decoration:underline;overflow-wrap:anywhere}
+ .ranova-price{color:#ff5a00!important;font-weight:950}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -143,7 +144,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
               <div class="field"><label>SKU / seller code</label><input id="productSku" maxlength="100"></div>
               <div class="field"><label>Category</label><input id="productCategory" maxlength="100" placeholder="Example: Electrical & Lighting"></div>
               <div class="field"><label>Unit label</label><input id="productUnit" maxlength="60" placeholder="piece, carton, set, bag"></div>
-              <div class="field"><label>Price (GHS)</label><input id="productPrice" type="number" min="0" step="0.01" placeholder="Leave blank for enquiry pricing"></div>
+              <div class="field"><label>Price (GHC)</label><input id="productPrice" type="number" min="0" step="0.01" placeholder="Leave blank for enquiry pricing"></div>
               <div class="field"><label>Minimum order quantity</label><input id="productMoq" type="number" min="1" value="1"></div>
               <div class="field"><label>Stock quantity</label><input id="productStockQty" type="number" min="0" placeholder="Optional"></div>
               <div class="field"><label>Stock status</label><select id="productStockStatus"><option value="confirm_on_enquiry">Confirm on enquiry</option><option value="in_stock">In stock</option><option value="low_stock">Low stock</option><option value="out_of_stock">Out of stock</option><option value="preorder">Pre-order</option></select></div>
@@ -190,7 +191,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <div class="field full"><label>Area description</label><input id="zoneArea" maxlength="700" placeholder="Example: Accra Central, Osu, Ridge and nearby areas"></div>
             <div class="field"><label>Fulfilment method</label><select id="zoneMethod"><option value="seller_delivery">Seller delivery</option><option value="third_party_courier">Third-party courier</option><option value="ranova_delivery">RANOVA delivery</option><option value="pickup">Buyer pickup</option></select></div>
             <div class="field"><label>Delivery pricing</label><select id="zonePricing"><option value="quote">Quote per order</option><option value="fixed">Fixed fee</option><option value="free">Free delivery</option></select></div>
-            <div class="field"><label>Fixed fee (GHS)</label><input id="zoneFee" type="number" min="0" step="0.01" placeholder="Only for fixed pricing"></div>
+            <div class="field"><label>Fixed fee (GHC)</label><input id="zoneFee" type="number" min="0" step="0.01" placeholder="Only for fixed pricing"></div>
             <div class="field"><label>Estimated days</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><input id="zoneEtaMin" type="number" min="0" placeholder="Min"><input id="zoneEtaMax" type="number" min="0" placeholder="Max"></div></div>
           </div>
           <div class="actions"><button id="saveZone" class="btn green" type="button">Save delivery zone</button><button id="resetZone" class="btn" type="button">Clear</button></div>
@@ -213,7 +214,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <div class="form-grid">
               <div class="field"><label>Delivery zone</label><select id="deliveryZone"><option value="">No saved zone / custom quote</option></select></div>
               <div class="field"><label>Method</label><select id="deliveryMethod"><option value="seller_delivery">Seller delivery</option><option value="third_party_courier">Third-party courier</option><option value="ranova_delivery">RANOVA delivery</option><option value="pickup">Buyer pickup</option></select></div>
-              <div class="field"><label>Delivery fee (GHS)</label><input id="deliveryFee" type="number" min="0" step="0.01"></div>
+              <div class="field"><label>Delivery fee (GHC)</label><input id="deliveryFee" type="number" min="0" step="0.01"></div>
               <div class="field"><label>ETA</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><input id="deliveryEtaStart" type="date"><input id="deliveryEtaEnd" type="date"></div></div>
               <div class="field full"><label>Delivery note</label><textarea id="deliveryNote" maxlength="1000" placeholder="Useful delivery instructions or agreed arrangements"></textarea></div>
             </div>
@@ -297,11 +298,11 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           <h2>Seller wallet & payouts</h2><p>Your sales money moves through protected stages. A customer payment does not become withdrawable until RANOVA's delivery, hold, refund, dispute, after-sales and safety checks pass.</p>
           <div id="payoutMsg" class="msg"></div>
           <div class="metrics" style="margin-top:14px">
-            <div class="metric"><small>Pending</small><strong id="sellerWalletPending">GHS 0.00</strong></div>
-            <div class="metric"><small>Available</small><strong id="sellerWalletAvailable">GHS 0.00</strong></div>
-            <div class="metric"><small>Held</small><strong id="sellerWalletHeld">GHS 0.00</strong></div>
-            <div class="metric"><small>Processing</small><strong id="sellerWalletProcessing">GHS 0.00</strong></div>
-            <div class="metric"><small>Paid out</small><strong id="sellerPayoutPaid">GHS 0.00</strong></div>
+            <div class="metric"><small>Pending</small><strong id="sellerWalletPending">GHC 0.00</strong></div>
+            <div class="metric"><small>Available</small><strong id="sellerWalletAvailable">GHC 0.00</strong></div>
+            <div class="metric"><small>Held</small><strong id="sellerWalletHeld">GHC 0.00</strong></div>
+            <div class="metric"><small>Processing</small><strong id="sellerWalletProcessing">GHC 0.00</strong></div>
+            <div class="metric"><small>Paid out</small><strong id="sellerPayoutPaid">GHC 0.00</strong></div>
             <div class="metric"><small>Payout hold</small><strong id="sellerHoldDays">0 days</strong></div>
           </div>
           <div class="hint" style="margin:9px 0 14px">Pending = customer paid but protection conditions are not finished. Available = eligible for Owner-controlled payout. Held = refund/dispute/after-sales/safety review. Processing = transfer sent to provider. Paid = provider confirmed transfer success.</div>
@@ -344,7 +345,7 @@ function el(id){return document.getElementById(id)}
 function clean(v){return String(v==null?"":v)}
 function esc(v){return clean(v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function pretty(v){return clean(v).replace(/_/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
-function money(v){return v==null||v===""?"Ask for price":"GHS "+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function money(v){return v==null||v===""?"Ask for price":"GHC "+Number(v).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2})}
 function msg(host,text,good){host.textContent=text;host.classList.toggle("good",!!good);host.style.display="block"}
 function clearMsg(host){host.style.display="none";host.classList.remove("good")}
 function ext(name){var m=clean(name).match(/\.([a-zA-Z0-9]+)$/);return m?m[1].toLowerCase():"jpg"}
@@ -477,8 +478,8 @@ function renderProducts(){
     var submit=(p.product_status==="draft"||p.product_status==="paused"||p.product_status==="rejected")?'<button data-action="submit" data-id="'+p.id+'">Submit for review</button>':'';
     var pause=p.product_status==="active"?'<button data-action="pause" data-id="'+p.id+'">Pause</button>':'';
     var priceValue=p.price==null?"":String(p.price);
-    var priceControl='<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:7px"><span style="font-size:12px;font-weight:900">GHS</span><input data-price-input="'+esc(p.id)+'" type="number" min="0" step="0.01" value="'+esc(priceValue)+'" placeholder="Enquiry" style="width:105px;border:1px solid #d8e3df;border-radius:9px;padding:7px 8px"><button class="price-save-btn'+(p.price==null?"":" has-price")+'" data-action="price" data-id="'+esc(p.id)+'">'+(p.price==null?"Save price":"Update price")+'</button></div>';
-    return '<div class="product-row">'+img+'<div><b>'+esc(p.name)+'</b><small>'+esc(p.category)+' · '+esc(money(p.price))+' · MOQ '+esc(p.moq)+' · '+esc(pretty(p.stock_status))+'</small>'+statusChip(p.product_status)+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':'')+'</div><div class="row-actions">'+priceControl+'<button data-action="edit" data-id="'+p.id+'">Edit</button>'+submit+pause+'<button data-action="archive" data-id="'+p.id+'">Archive</button></div></div>'
+    var priceControl='<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:7px"><span style="font-size:12px;font-weight:900">GHC</span><input data-price-input="'+esc(p.id)+'" type="number" min="0" step="0.01" value="'+esc(priceValue)+'" placeholder="Enquiry" style="width:105px;border:1px solid #d8e3df;border-radius:9px;padding:7px 8px"><button class="price-save-btn'+(p.price==null?"":" has-price")+'" data-action="price" data-id="'+esc(p.id)+'">'+(p.price==null?"Save price":"Update price")+'</button></div>';
+    return '<div class="product-row">'+img+'<div><b>'+esc(p.name)+'</b><small>'+esc(p.category)+' · <span class="ranova-price">'+esc(money(p.price))+'</span> · MOQ '+esc(p.moq)+' · '+esc(pretty(p.stock_status))+'</small>'+statusChip(p.product_status)+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':'')+'</div><div class="row-actions">'+priceControl+'<button data-action="edit" data-id="'+p.id+'">Edit</button>'+submit+pause+'<button data-action="archive" data-id="'+p.id+'">Archive</button></div></div>'
   }).join("")||'<div class="empty">No current products.</div>';
 }
 function resetProduct(){
@@ -560,8 +561,8 @@ function inferCatalogueCategory(text){
 }
 function cataloguePrice(line){
   var t=String(line||"");
-  var m=t.match(/(?:GHS|GH₵|GH¢|GH\s*₵|₵)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i)||
-        t.match(/\b(?:price|unit\s*price|selling\s*price|amount)\b\s*[:\-]?\s*(?:GHS|GH₵|GH¢|₵)?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i);
+  var m=t.match(/(?:GHC|GH₵|GH¢|GH\s*₵|₵)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i)||
+        t.match(/\b(?:price|unit\s*price|selling\s*price|amount)\b\s*[:\-]?\s*(?:GHC|GH₵|GH¢|₵)?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i);
   if(!m)return null;
   var n=Number(m[1].replace(/,/g,""));return Number.isFinite(n)&&n>=0?n:null
 }
@@ -718,7 +719,7 @@ function renderCatalogueDrafts(){
       (d.duplicateExisting?'<div style="margin-top:7px;padding:7px;border-radius:8px;background:#fff1e9;color:#934927;font-size:12px;font-weight:850">Possible duplicate of an existing store product — skipped by default.</div>':'')+
       (d.imageKind==="page_crop"?'<div style="margin-top:7px;font-size:11px;color:#82642e">PDF image is a catalogue crop. Check it before product review.</div>':'')+
       '<label>Name<input data-cat-field="name" data-cat-index="'+i+'" value="'+esc(d.name||"")+'"></label>'+
-      '<div class="price-row"><label>Price (GHS)<input data-cat-field="price" data-cat-index="'+i+'" type="number" min="0" step="0.01" value="'+(d.price==null?"":esc(d.price))+'"></label><label>Category<input data-cat-field="category" data-cat-index="'+i+'" value="'+esc(d.category||"General")+'"></label></div>'+
+      '<div class="price-row"><label>Price (GHC)<input data-cat-field="price" data-cat-index="'+i+'" type="number" min="0" step="0.01" value="'+(d.price==null?"":esc(d.price))+'"></label><label>Category<input data-cat-field="category" data-cat-index="'+i+'" value="'+esc(d.category||"General")+'"></label></div>'+
       '<label>SKU / model<input data-cat-field="sku" data-cat-index="'+i+'" value="'+esc(d.sku||"")+'"></label>'+
       '<label>Description<textarea data-cat-field="description" data-cat-index="'+i+'">'+esc(d.description||"")+'</textarea></label>'+
       '<label style="display:flex;align-items:center;gap:8px;margin-top:9px"><input data-cat-include="'+i+'" type="checkbox" '+(d.duplicateExisting?"":"checked")+' style="width:auto"> Include this product</label>'+
@@ -825,9 +826,9 @@ function sellerRuleLabel(o){
   return a+" → "+b;
 }
 async function quoteOrder(o,button){
-  var subtotal=prompt("Product subtotal (GHS)",o.subtotal==null?"":o.subtotal);
+  var subtotal=prompt("Product subtotal (GHC)",o.subtotal==null?"":o.subtotal);
   if(subtotal===null)return;
-  var delivery=prompt("Delivery fee (GHS). Enter 0 if none. Use the Delivery tab when a saved fixed/free delivery zone applies.",o.delivery_fee==null?"0":o.delivery_fee);
+  var delivery=prompt("Delivery fee (GHC). Enter 0 if none. Use the Delivery tab when a saved fixed/free delivery zone applies.",o.delivery_fee==null?"0":o.delivery_fee);
   if(delivery===null)return;
   var note=prompt("Seller note (optional)",o.seller_note||"");
   var subNum=Number(subtotal),delNum=Number(delivery);
