@@ -9,3 +9,73 @@ button,a,summary{line-height:1.35}
 .product h3,.product p,.cart-line b,.message,.bubble{overflow-wrap:anywhere}
 /* Size floors for page content, including content inserted after loading. */
 [data-ranova-text-size]{font-size:var(--ranova-text-size)!important}
+
+/* Phone-only repairs, scoped by page so unrelated layouts retain their rules. */
+@media(max-width:620px){
+  html[data-ranova-surface="app"][data-ranova-page="index"] .topbar-in{height:auto;min-height:68px;padding-block:10px;gap:8px}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .brand{min-width:0}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .top-actions{flex-shrink:0}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .account-head{flex-wrap:wrap}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .account-tools{flex-basis:100%;justify-content:flex-end}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .account-name small{white-space:normal;overflow-wrap:anywhere}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .welcome{flex-wrap:wrap}
+  html[data-ranova-surface="app"][data-ranova-page="index"] :is(.section-head,.list-row){flex-wrap:wrap}
+  html[data-ranova-surface="app"][data-ranova-page="index"] :is(.list-row>div,.product-copy){min-width:0;overflow-wrap:anywhere}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .product-actions{grid-template-columns:minmax(0,1fr) auto}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .bottom{height:auto;min-height:70px}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .bottom button{min-width:0;white-space:normal}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .shell{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .cart-item{grid-template-columns:58px minmax(0,1fr) auto}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .cart-item>div{min-width:0;overflow-wrap:anywhere}
+  html[data-ranova-page="admin"] .admin-top-in{height:auto;min-height:72px;flex-wrap:wrap;padding-block:12px}
+  html[data-ranova-page="admin"] .admin-top-in>div{flex-basis:100%;justify-content:flex-start!important}
+  html[data-ranova-page="admin"] .actions select{max-width:100%;min-width:0}
+  html[data-ranova-page="admin"] .admin-wrap>*{min-width:0}
+  html[data-ranova-page="admin"] .side{max-width:100%;min-width:0}
+  html[data-ranova-page="admin"] :is(.card-head,.review-head){flex-wrap:wrap}
+  html[data-ranova-page="admin"] :is(.market-row,.row,.doc-row,.review-meta){overflow-wrap:anywhere;min-width:0}
+  html[data-ranova-page="seller-start"] .hero-top{flex-wrap:wrap}
+  html[data-ranova-page="seller-start"] .register-profile{max-width:100%}
+  html[data-ranova-page="seller-start"] .register-profile>span{min-width:0;overflow-wrap:anywhere}
+  html[data-ranova-page="seller-start"] .avatar{flex-shrink:0}
+  html[data-ranova-page="seller-start"] .benefit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  html[data-ranova-page="seller-start"] :is(.benefit,.steps b,.trust-line){overflow-wrap:anywhere}
+  html[data-ranova-page="seller-start"] .trust-line{flex-wrap:wrap}
+  html[data-ranova-page="seller-start"] .bottom-nav{padding-bottom:max(12px,env(safe-area-inset-bottom))}
+  html[data-ranova-page="seller-start"] .code-field button{width:auto;min-width:92px;padding-inline:8px}
+  html[data-ranova-page="seller-start"] .form-nav{flex-wrap:wrap}
+  html[data-ranova-page="seller-center"] .top .wrap{flex-wrap:wrap}
+  html[data-ranova-page="seller-center"] .nav{width:100%;flex-wrap:wrap}
+  html[data-ranova-page="seller-center"] .upload{grid-template-columns:minmax(0,1fr)}
+  html[data-ranova-page="seller-center"] .upload button{height:auto;min-height:46px;padding:10px;white-space:normal}
+  html[data-ranova-page="seller-center"] .file{grid-template-columns:minmax(0,1fr);overflow-wrap:anywhere}
+  html[data-ranova-page="seller-dashboard"] .top .wrap{height:auto;flex-wrap:wrap;padding-block:10px}
+  html[data-ranova-page="seller-dashboard"] .topnav{width:100%;flex-wrap:wrap}
+  html[data-ranova-page="seller-dashboard"] .topnav a{display:inline-flex;align-items:center}
+  html[data-ranova-page="seller-dashboard"] :is(.shell>*,.product-row>div){min-width:0;overflow-wrap:anywhere}
+  html[data-ranova-page="seller-store"] .top .wrap{flex-wrap:wrap}
+  html[data-ranova-page="seller-store"] .brand{min-width:0}
+  html[data-ranova-page="seller-store"] .product-tools{gap:6px;flex-wrap:wrap}
+  html[data-ranova-page="seller-store"] .product-tools button{padding-inline:6px;min-width:0}
+  html[data-ranova-page="seller-store"] .product-tools .details{white-space:normal;flex:1 1 100%}
+  html[data-ranova-page="seller-store"] .cart-line{grid-template-columns:48px minmax(0,1fr)}
+  html[data-ranova-page="seller-store"] .cart-line img{width:48px;height:48px}
+  html[data-ranova-page="seller-store"] .cart-line>div{min-width:0;overflow-wrap:anywhere}
+  html[data-ranova-page="seller-store"] .cart-line .remove{grid-column:2;justify-self:end;padding:8px}
+  html[data-ranova-page="seller-store"] .summary-row b{text-align:right;overflow-wrap:anywhere}
+  html[data-ranova-page="seller-store"] .detail-actions :is(button,a){max-width:100%;white-space:normal}
+  html[data-ranova-page="messages"] .chathead>div{min-width:0;overflow-wrap:anywhere}
+  html[data-ranova-page="messages"] .recording{gap:6px}
+  html[data-ranova-page="messages"] .recording .pause-record{min-width:0;white-space:normal;padding-inline:6px}
+  html[data-ranova-surface="app"][data-ranova-page="market-home"] .factory{grid-template-columns:minmax(80px,32%) minmax(0,1fr)}
+  html[data-ranova-surface="app"][data-ranova-page="market-home"] .actions{flex-wrap:wrap}
+  html[data-ranova-surface="app"][data-ranova-page="market-home"] .copy h3{white-space:normal;overflow-wrap:anywhere}
+  html[data-ranova-surface="app"][data-ranova-page="market-home"] .feature{flex-basis:80px}
+  html[data-ranova-surface="app"][data-ranova-page="market-home"] .bottom{height:auto;min-height:70px;padding-bottom:env(safe-area-inset-bottom)}
+}
+@media(max-width:400px){
+  html[data-ranova-surface="app"][data-ranova-page="index"] .password-wrap{grid-template-columns:minmax(0,1fr) auto}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .password-wrap input{min-width:0}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .auth .row{grid-template-columns:1fr}
+  html[data-ranova-surface="app"][data-ranova-page="index"] .cart-item .remove{grid-column:2;justify-self:end;padding:8px}
+}
