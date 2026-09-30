@@ -95,7 +95,19 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
       <div class="field"><label>Password</label><input id="password" type="password" required minlength="8" autocomplete="current-password" placeholder="At least 8 characters"></div>
       <button id="authSubmit" class="primary" type="submit">Sign in</button>
     </form>
-    <div class="small">Use the same email you used on the seller application whenever possible. If email confirmation is required, confirm it and return here to continue.</div>
+    <button id="forgotPassword" type="button" style="margin-top:10px;border:0;background:transparent;color:#116a52;font-weight:900;cursor:pointer;padding:6px 0">Forgot your password?</button>
+    <div class="small">Already have a seller account? Use <b>Sign in</b>. New seller? Submit the short seller application first, then create your seller account with the same email. Your progress is saved and returning sellers keep their existing approval.</div>
+  </section>
+
+  <section id="resetPanel" class="panel auth" style="display:none">
+    <h2 style="margin:0 0 6px">Choose a new password</h2>
+    <p style="margin:0;color:#687a74;font-size:15px;line-height:1.6">Enter a new password for your RANOVA Seller account.</p>
+    <div id="resetMsg" class="msg"></div>
+    <form id="resetForm" class="form">
+      <div class="field"><label>New password</label><input id="newPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></div>
+      <div class="field"><label>Confirm new password</label><input id="confirmNewPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="Type it again"></div>
+      <button id="resetSubmit" class="primary" type="submit">Save new password</button>
+    </form>
   </section>
 
   <section id="linkPanel" class="panel auth" style="display:none">
@@ -199,7 +211,8 @@ var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 var LINK_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-link";
 var WORKSPACE_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-workspace";
 var mode="login",currentSession=null,currentApplication=null,currentFiles=[],documentCompliance=null,complianceReceivedAt=0;
-var reviewBusy=false,uploadCount=0,validationAttempted=false;
+var reviewBusy=false,uploadCount=0,validationAttempted=false,autoLinkTried=false;
+var recoveryMode=location.hash.indexOf("type=recovery")>=0||location.search.indexOf("type=recovery")>=0;
 var requiredDocuments=[
   {type:"business_registration",input:"businessDoc",card:"businessUploadCard",name:"business proof"},
   {type:"identity_document",input:"identityDoc",card:"identityUploadCard",name:"identity ID"},
@@ -245,7 +258,7 @@ try{
 }catch(e){}
 
 
-var authPanel=document.getElementById("authPanel"),linkPanel=document.getElementById("linkPanel"),workspace=document.getElementById("workspace"),signOut=document.getElementById("signOut");
+var authPanel=document.getElementById("authPanel"),resetPanel=document.getElementById("resetPanel"),linkPanel=document.getElementById("linkPanel"),workspace=document.getElementById("workspace"),signOut=document.getElementById("signOut");
 var loginTab=document.getElementById("loginTab"),signupTab=document.getElementById("signupTab"),authSubmit=document.getElementById("authSubmit"),authMsg=document.getElementById("authMsg");
 if(savedEmail)document.getElementById("email").value=savedEmail;
 if(savedRef)document.getElementById("applicationRef").value=savedRef;
@@ -271,14 +284,24 @@ document.getElementById("authForm").addEventListener("submit",async function(e){
     if(mode==="signup"){
       var su=await sb.auth.signUp({email:email,password:password});
       if(su.error)throw su.error;
+      if(su.data.user&&Array.isArray(su.data.user.identities)&&su.data.user.identities.length===0){
+        showMsg(authMsg,"This email already has an account. Tap Sign in and use your existing password, or use Forgot your password.");
+        setMode("login");return;
+      }
       if(!su.data.session){
-        showMsg(authMsg,"Account created. Check your email to confirm it, then return here and sign in.");
+        showMsg(authMsg,"Seller account created. Check your email to confirm it, then come back and sign in.");
         setMode("login");return;
       }
     }else{
       var si=await sb.auth.signInWithPassword({email:email,password:password});
-      if(si.error)throw si.error;
+      if(si.error){
+        var text=String(si.error.message||"");
+        if(/invalid login credentials/i.test(text))throw new Error("Email or password is not correct. Try again, or use Forgot your password.");
+        if(/email not confirmed/i.test(text))throw new Error("Please confirm your email first, then return here and sign in.");
+        throw si.error;
+      }
     }
+    try{sessionStorage.setItem("ranovaSellerApplicationEmail",email)}catch(e){}
     await refreshSession();
   }catch(err){showMsg(authMsg,err.message||"Could not continue.")}
   finally{authSubmit.disabled=false;authSubmit.textContent=mode==="login"?"Sign in":"Create seller account"}
@@ -287,12 +310,43 @@ document.getElementById("authForm").addEventListener("submit",async function(e){
 async function refreshSession(){
   var gs=await sb.auth.getSession();currentSession=gs.data.session;
   if(!currentSession){
-    authPanel.style.display="block";linkPanel.style.display="none";workspace.style.display="none";signOut.style.display="none";return;
+    authPanel.style.display="block";resetPanel.style.display="none";linkPanel.style.display="none";workspace.style.display="none";signOut.style.display="none";return;
   }
-  authPanel.style.display="none";signOut.style.display="inline-block";
+  if(recoveryMode){
+    authPanel.style.display="none";linkPanel.style.display="none";workspace.style.display="none";resetPanel.style.display="block";signOut.style.display="none";return;
+  }
+  resetPanel.style.display="none";authPanel.style.display="none";signOut.style.display="inline-block";
   await loadWorkspace();
 }
 signOut.onclick=async function(){await sb.auth.signOut();location.reload()};
+
+document.getElementById("forgotPassword").onclick=async function(){
+  hideMsg(authMsg);
+  var email=document.getElementById("email").value.trim();
+  if(!email){showMsg(authMsg,"Enter your email above first, then tap Forgot your password.");document.getElementById("email").focus();return}
+  var btn=this,old=btn.textContent;btn.disabled=true;btn.textContent="Sending reset link…";
+  try{
+    var rr=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+    if(rr.error)throw rr.error;
+    showMsg(authMsg,"Password reset link sent. Open the email from RANOVA, choose a new password, then sign in.");
+  }catch(err){showMsg(authMsg,err.message||"Could not send the password reset email.")}
+  finally{btn.disabled=false;btn.textContent=old}
+};
+
+document.getElementById("resetForm").addEventListener("submit",async function(e){
+  e.preventDefault();var msg=document.getElementById("resetMsg"),btn=document.getElementById("resetSubmit");hideMsg(msg);
+  var p=document.getElementById("newPassword").value,c=document.getElementById("confirmNewPassword").value;
+  if(p.length<8){showMsg(msg,"Use at least 8 characters.");return}
+  if(p!==c){showMsg(msg,"The two passwords do not match.");return}
+  btn.disabled=true;btn.textContent="Saving…";
+  try{
+    var r=await sb.auth.updateUser({password:p});if(r.error)throw r.error;
+    recoveryMode=false;history.replaceState(null,"",location.pathname);
+    showMsg(msg,"Password changed successfully. Opening your Seller account…");
+    setTimeout(refreshSession,500);
+  }catch(err){showMsg(msg,err.message||"Could not change the password.")}
+  finally{btn.disabled=false;btn.textContent="Save new password"}
+});
 
 async function api(url,body){
   var token=currentSession&&currentSession.access_token;
@@ -305,9 +359,11 @@ async function api(url,body){
 document.getElementById("linkForm").addEventListener("submit",async function(e){
   e.preventDefault();var msg=document.getElementById("linkMsg"),btn=document.getElementById("linkSubmit");hideMsg(msg);btn.disabled=true;btn.textContent="Linking…";
   try{
-    await api(LINK_ENDPOINT,{application_ref:document.getElementById("applicationRef").value.trim(),phone:document.getElementById("applicationPhone").value.trim()});
+    var ref=document.getElementById("applicationRef").value.trim(),phone=document.getElementById("applicationPhone").value.trim();
+    await api(LINK_ENDPOINT,{application_ref:ref,phone:phone});
+    try{sessionStorage.setItem("ranovaSellerApplicationRef",ref);sessionStorage.setItem("ranovaSellerApplicationPhone",phone)}catch(e){}
     await loadWorkspace();
-  }catch(err){showMsg(msg,err.message||"Could not link application.")}
+  }catch(err){showMsg(msg,err.message||"Could not connect this seller application.")}
   finally{btn.disabled=false;btn.textContent="Connect & continue"}
 });
 
@@ -466,7 +522,18 @@ async function loadWorkspace(){
   try{
     var out=await api(WORKSPACE_ENDPOINT,{});
     if(!out.linked){
-      linkPanel.style.display="block";workspace.style.display="none";
+      if(savedRef&&savedPhone&&!autoLinkTried){
+        autoLinkTried=true;
+        try{
+          await api(LINK_ENDPOINT,{application_ref:savedRef,phone:savedPhone});
+          return await loadWorkspace();
+        }catch(linkErr){
+          linkPanel.style.display="block";workspace.style.display="none";
+          showMsg(document.getElementById("linkMsg"),linkErr.message||"We could not connect this application automatically. Check the details below.");
+        }
+      }else{
+        linkPanel.style.display="block";workspace.style.display="none";
+      }
       if(savedRef&&!document.getElementById("applicationRef").value)document.getElementById("applicationRef").value=savedRef;
       if(savedPhone&&!document.getElementById("applicationPhone").value)document.getElementById("applicationPhone").value=savedPhone;
       return
@@ -603,7 +670,13 @@ document.getElementById("submitForReview").addEventListener("click",async functi
   });
 });
 
-sb.auth.onAuthStateChange(function(){setTimeout(refreshSession,0)});
+sb.auth.onAuthStateChange(function(event,nextSession){
+  if(event==="PASSWORD_RECOVERY"){
+    recoveryMode=true;currentSession=nextSession||currentSession;
+    setTimeout(refreshSession,0);return;
+  }
+  setTimeout(refreshSession,0);
+});
 refreshSession();
 })();
 </script>
