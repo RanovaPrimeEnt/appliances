@@ -1,7 +1,14 @@
-const CACHE="ranova-admin-shell-v8";
+const CACHE="ranova-admin-shell-v9";
 const CORE=[
-  "../all/ranova-typography.css?v=20260930-4",
-  "../all/ranova-typography.js?v=20260930-4",
+  "../all/fonts/inter-0.woff2",
+  "../all/fonts/inter-1.woff2",
+  "../all/fonts/inter-2.woff2",
+  "../all/fonts/inter-3.woff2",
+  "../all/fonts/inter-4.woff2",
+  "../all/fonts/inter-5.woff2",
+  "../all/fonts/inter-6.woff2",
+  "../all/ranova-typography.css?v=20260930-5",
+  "../all/ranova-typography.js?v=20260930-5",
   "./admin.html",
   "./admin.js",
   "./config.js",
@@ -45,7 +52,7 @@ self.addEventListener("fetch",event=>{
   if(req.method!=="GET")return;
   const url=new URL(req.url);
   if(url.origin!==location.origin)return;
-  if(!url.pathname.startsWith("/appliances/rpe-v2/"))return;
+  if(!url.pathname.startsWith("/appliances/rpe-v2/")&&!url.pathname.startsWith("/appliances/all/fonts/")&&!url.pathname.startsWith("/appliances/all/ranova-typography."))return;
   event.respondWith(networkFirst(req));
 });
 
