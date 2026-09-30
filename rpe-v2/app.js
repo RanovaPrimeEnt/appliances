@@ -48,7 +48,7 @@ function panelIsPainted(id){return panelPainted.has(id)}
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-const money = (n,c='GHS') => n == null ? "Ask for price" : new Intl.NumberFormat("en-GH",{style:"currency",currency:c}).format(Number(n));
+const money = (n,c='GHS') => n == null ? "Ask for price" : "GHC " + Number(n).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2});
 const imageFor = (p) => {
   const imgs = (p.product_images || []).slice().sort((a,b)=>(b.is_primary?1:0)-(a.is_primary?1:0)||(a.sort_order||0)-(b.sort_order||0));
   return imgs[0]?.image_url || "";
@@ -722,7 +722,7 @@ function renderToPayOrders(filter=""){
   }
 
   const pendingHtml=rows.map(o=>{
-    const store=payStore(o.store_id)||{},items=Array.isArray(o.items)?o.items:[],currency=o.currency||"GHS";
+    const store=payStore(o.store_id)||{},items=Array.isArray(o.items)?o.items:[],currency="GHS";
     const subtotal=o.subtotal==null?items.reduce((a,i)=>a+Number(i.line_total||0),0):Number(o.subtotal||0);
     const delivery=Number(o.delivery_fee||0);
     const total=o.total==null?(subtotal||0)+delivery:Number(o.total||0);
