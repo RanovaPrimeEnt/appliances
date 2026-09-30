@@ -36,6 +36,7 @@ let incomingCartHandled = false;
 let realtimeChannels = [];
 let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null;
 const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
+const PAYMENT_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-payment-gateway";
 const FAST_CACHE_TTL=5*60*1000;
 let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 let initializedUserId=null,sessionApplyInFlight=false;
@@ -1014,7 +1015,7 @@ function renderToPayOrders(filter=""){
         (payItemImage(i)?'<img class="pay-item-img" src="'+esc(payItemImage(i))+'" alt="'+esc(i.product_name||"Product")+'">':'<div class="pay-item-img" style="display:grid;place-items:center;color:#999">Product</div>')+
         '<div class="pay-item-copy"><div class="pay-item-title">'+esc(i.product_name||"Product")+'</div><div class="pay-item-meta">'+esc(i.sku||i.unit_label||"")+'</div><div class="pay-price">'+esc(i.unit_price==null?"Price pending":money(i.unit_price,currency))+'</div><span class="pay-qty">×'+esc(i.quantity||1)+'</span><div class="pay-benefit">RANOVA protected marketplace order</div></div></div>').join("")
         :'<div class="pay-item"><div class="pay-item-img"></div><div class="pay-item-copy"><div class="pay-item-title">Marketplace order</div></div></div>')+
-      '<div class="pay-total-row"><span>Delivery '+esc(money(delivery,currency))+'</span><span>Amount due</span><strong>'+esc(total?money(total,currency):"Awaiting quote")+'</strong></div>'+
+      '<div class="pay-total-row"><span>Delivery '+esc(money(delivery,currency))+'</span><span>Amount due</span><strong>'+esc(total?money(total,currency):"Awaiting quote")+'</strong></div><div style="margin:8px 11px;padding:9px 10px;border-radius:10px;background:#fff7ef;color:#75401f;font-size:9px;line-height:1.45"><b>RANOVA Buyer Protection</b><br>Your payment is recorded against this order. The seller is not paid immediately; payout waits for the required delivery and protection checks.</div>'+
       '<div class="pay-actions"><button type="button" data-pay-close="'+esc(o.id)+'">Close</button><button type="button" data-pay-address="'+esc(o.id)+'">Modify Address</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'">Pay Now</button></div>'+
     '</article>';
   }).join("");
@@ -1043,11 +1044,31 @@ if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>renderToPayOrde
 document.addEventListener("click",async e=>{
   const close=e.target.closest("[data-pay-close]");if(close){const card=close.closest(".pay-order");if(card)card.style.display="none";return}
   const address=e.target.closest("[data-pay-address]");if(address){showPanel("addressPanel");return}
-  const pay=e.target.closest("[data-pay-now]");if(pay){const order=toPayOrders.find(x=>x.id===pay.dataset.payNow);if(!order)return;showToast(order.total==null?"The seller must confirm the final amount before payment.":"Secure payment checkout is being connected for this order.");return}
+  const pay=e.target.closest("[data-pay-now]");if(pay){
+    const order=toPayOrders.find(x=>x.id===pay.dataset.payNow);if(!order)return;
+    if(order.total==null){showToast("The seller must confirm the final amount before payment.");return}
+    pay.disabled=true;pay.textContent="Opening secure payment…";
+    try{
+      const out=await paymentApi({action:"initialize",order_ref:order.order_ref});
+      if(out.authorization_url){location.href=out.authorization_url;return}
+      if(out.payment_mode==="mobile_money_prompt"){
+        showToast(out.display_text||"Check your phone and authorize the Mobile Money payment.");
+        setTimeout(()=>loadToPayOrders().catch(()=>{}),3500);
+      }else showToast("Payment started securely.");
+    }catch(err){showToast(err.message||"Could not start payment.")}
+    finally{pay.disabled=false;pay.textContent="Pay Now"}
+    return
+  }
   const product=e.target.closest("[data-pay-product]");if(product){const p=toPayRecommendations.find(x=>x.id===product.dataset.payProduct);if(!p)return;const store=toPayStores.find(s=>s.id===p.store_id);if(store?.slug){location.href="../all/seller-store.html?store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(p.id)}else showToast("This seller store is not available right now.");return}
 });
 
 // RANOVA in-app buyer messenger 2026-09-29
+async function paymentApi(body){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)throw Error("Sign in before paying.");
+  const r=await fetch(PAYMENT_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":cfg.supabasePublishableKey,"Authorization":"Bearer "+session.access_token},body:JSON.stringify(body)});
+  const out=await r.json().catch(()=>({}));if(!r.ok||!out.ok)throw Error(out.error||"Secure payment request failed.");return out;
+}
 async function messageApi(body){
   const {data:{session}}=await sb.auth.getSession();
   if(!session)throw Error("Sign in to use messages.");
