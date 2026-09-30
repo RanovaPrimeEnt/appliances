@@ -40,6 +40,18 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 @media(max-width:620px){.catalogue-preview{grid-template-columns:1fr}.payout-breakdown{grid-template-columns:1fr 1fr}.top .wrap{height:auto;min-height:64px;padding:9px 0}.topnav a:nth-child(2){display:none}.hero{padding-top:25px}.shell{padding-top:14px}.form-grid,.assets,.image-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.banner{align-items:flex-start;flex-direction:column}.banner a{width:100%;text-align:center}.product-row{grid-template-columns:52px minmax(0,1fr)}.product-row img{width:52px;height:52px}.row-actions{grid-column:1/-1;justify-content:flex-start}.order-row{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:15px}}
 [hidden]{display:none!important}#sellerDocumentNotice{margin:18px auto;max-width:1100px;border:2px solid #e4b55a;background:#fff8e8;color:#523b17}#sellerDocumentNotice a{color:#095e45;text-decoration:underline;overflow-wrap:anywhere}
  .ranova-price{color:#ff5a00!important;font-weight:950}
+.seller-toolbar{display:grid;grid-template-columns:minmax(180px,1.4fr) repeat(2,minmax(130px,.75fr)) auto;gap:9px;align-items:center;margin:14px 0;padding:11px;border:1px solid var(--line);border-radius:15px;background:#fafcfb}
+.seller-toolbar input,.seller-toolbar select{width:100%;min-height:42px;border:1px solid #d7e3de;border-radius:10px;background:#fff;padding:8px 10px;color:var(--ink)}
+.seller-action-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:13px}
+.seller-action{border:1px solid var(--line);background:#fff;border-radius:16px;padding:14px;text-align:left;min-height:112px;transition:.15s ease}
+.seller-action:hover{transform:translateY(-1px);box-shadow:0 9px 22px rgba(11,70,53,.08)}
+.seller-action strong{display:block;font-size:25px;line-height:1;margin-bottom:7px;color:var(--green2)}
+.seller-action b{display:block;font-size:14px}.seller-action small{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.4}
+.seller-syncbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 0 0}
+.seller-syncbar small{color:var(--muted)}.seller-sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#1c9d68;margin-right:6px}.seller-sync-dot.offline{background:#d67b37}
+.seller-stock-alert{font-weight:900}.seller-stock-alert.low{color:#9a5c13}.seller-stock-alert.out{color:#a33f35}
+@media(max-width:820px){.seller-action-grid{grid-template-columns:1fr 1fr}.seller-toolbar{grid-template-columns:1fr 1fr}.seller-toolbar .wide{grid-column:1/-1}}
+@media(max-width:520px){.seller-action-grid{grid-template-columns:1fr 1fr}.seller-toolbar{grid-template-columns:1fr}.seller-toolbar .wide{grid-column:auto}.seller-action{min-height:102px;padding:12px}.seller-action strong{font-size:22px}.seller-syncbar .btn{width:100%}}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -81,6 +93,16 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           <div class="metric"><small>Awaiting review</small><strong id="mPending">0</strong></div>
           <div class="metric"><small>Open orders</small><strong id="mOrders">0</strong></div>
         </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h2>Seller Action Center</h2><p>See what needs attention first and jump straight to the work.</p></div><button id="sellerRefresh" class="btn soft" type="button">Refresh dashboard</button></div>
+          <div class="seller-action-grid">
+            <button class="seller-action" type="button" data-seller-jump="orders"><strong id="actionOrders">0</strong><b>Orders needing action</b><small>Confirm, prepare, dispatch or update active orders.</small></button>
+            <button class="seller-action" type="button" data-seller-jump="products" data-product-filter="low_stock"><strong id="actionLowStock">0</strong><b>Low-stock products</b><small>Restock or update availability before customers order.</small></button>
+            <button class="seller-action" type="button" data-seller-jump="products" data-product-filter="out_of_stock"><strong id="actionOutStock">0</strong><b>Out of stock</b><small>Keep unavailable products accurate to protect buyer trust.</small></button>
+            <button class="seller-action" type="button" data-seller-jump="support"><strong id="actionUnread">0</strong><b>Unread updates</b><small>Review RANOVA notices, refunds and disputes.</small></button>
+          </div>
+          <div class="seller-syncbar"><small id="sellerSyncStatus"><span class="seller-sync-dot"></span>Connected · waiting for refresh</small><div class="actions" style="margin:0"><button id="exportProductsOverview" class="btn" type="button">Export products</button><button id="exportOrdersOverview" class="btn" type="button">Export orders</button></div></div>
+        </div>
         <div class="card"><h2>Seller checklist</h2><p>Your verification has to remain approved. Build your store profile, add clear product information, upload genuine product photos and submit products for review before they become public.</p></div>
       </div>
 
@@ -114,6 +136,12 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
         <div class="card">
           <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Products & Price Manager</h2><p>Use this list to set or change product prices at any time. Saved products remain here so you can update their prices whenever needed.</p></div><button id="newProduct" class="btn green" type="button">+ Add product manually</button></div>
           <div id="productMsg" class="msg" style="margin-top:12px"></div>
+          <div class="seller-toolbar">
+            <input id="productSearch" class="wide" type="search" placeholder="Search product name, SKU or category">
+            <select id="productStatusFilter"><option value="">All product states</option><option value="active">Live</option><option value="pending_review">Awaiting review</option><option value="draft">Draft</option><option value="paused">Paused</option><option value="rejected">Needs correction</option></select>
+            <select id="productStockFilter"><option value="">All stock states</option><option value="in_stock">In stock</option><option value="low_stock">Low stock</option><option value="out_of_stock">Out of stock</option><option value="preorder">Pre-order</option><option value="confirm_on_enquiry">Confirm on enquiry</option></select>
+            <select id="productSort"><option value="newest">Newest first</option><option value="name">Name A–Z</option><option value="price_low">Price low–high</option><option value="price_high">Price high–low</option><option value="stock_low">Lowest stock first</option></select>
+          </div>
 
           <div class="catalogue-import">
             <h3>Upload your product catalogue</h3>
@@ -172,12 +200,25 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <div class="metric"><small>Restored lines</small><strong id="mInventoryRestored">0</strong></div>
             <div class="metric"><small>Inventory events</small><strong id="mInventoryEvents">0</strong></div>
           </div>
+          <div class="metrics" style="margin-top:10px">
+            <div class="metric"><small>Low stock products</small><strong id="mStockLow">0</strong></div>
+            <div class="metric"><small>Out of stock products</small><strong id="mStockOut">0</strong></div>
+          </div>
           <div id="inventoryList" class="order-list"><div class="empty">No inventory activity yet.</div></div>
         </div>
       </div>
 
       <div id="panel-orders" class="panel">
-        <div class="card"><h2>Orders</h2><p>Confirm the final amount first, then move each order through preparation and delivery. Payment status is controlled separately by RANOVA and cannot be marked paid by the seller.</p><div id="orderMsg" class="msg"></div><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div></div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h2>Orders</h2><p>Confirm the final amount first, then move each order through preparation and delivery. Payment status is controlled separately by RANOVA and cannot be marked paid by the seller.</p></div><button id="exportOrders" class="btn" type="button">Export orders</button></div>
+          <div class="seller-toolbar">
+            <input id="orderSearch" class="wide" type="search" placeholder="Search order reference, customer, phone or location">
+            <select id="orderStatusFilter"><option value="">All order states</option><option value="new">New</option><option value="confirmed">Confirmed</option><option value="preparing">Preparing</option><option value="ready_for_delivery">Ready for delivery</option><option value="shipped">Shipped</option><option value="out_for_delivery">Out for delivery</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select>
+            <select id="orderSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="amount_high">Highest amount</option><option value="amount_low">Lowest amount</option></select>
+            <button id="clearOrderFilters" class="btn" type="button">Clear filters</button>
+          </div>
+          <div id="orderMsg" class="msg"></div><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div>
+        </div>
       </div>
 
       <div id="panel-delivery" class="panel">
@@ -432,7 +473,7 @@ async function refresh(){
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
   try{payoutChannels=await api({action:"payout_channels"})}catch(e){payoutChannels={banks:[],mobile_money:[],provider_configured:false}}
-  renderOverview();fillStore();renderProducts();renderInventory();renderOrders();renderDelivery();renderTrust();renderFinance();renderSupport();
+  renderOverview();fillStore();renderProducts();renderInventory();renderOrders();renderDelivery();renderTrust();renderFinance();renderSupport();renderSellerActionCenter();
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
@@ -471,8 +512,20 @@ el("uploadBanner").onclick=async function(){var b=this,old=b.textContent;b.disab
 
 function statusChip(status){return '<span class="chip '+esc(status)+'">'+esc(pretty(status))+'</span>'}
 function renderProducts(){
-  var list=el("productList"),all=state.products||[],ps=all;
-  if(!ps.length){list.innerHTML='<div class="empty">No seller products yet. Use “Add product” to create your first listing.</div>';return}
+  var list=el("productList"),all=state.products||[],ps=all.slice();
+  var search=el("productSearch")?el("productSearch").value.trim().toLowerCase():"";
+  var statusFilter=el("productStatusFilter")?el("productStatusFilter").value:"";
+  var stockFilter=el("productStockFilter")?el("productStockFilter").value:"";
+  var sort=el("productSort")?el("productSort").value:"newest";
+  if(search)ps=ps.filter(function(p){return [p.name,p.sku,p.category].some(function(v){return clean(v).toLowerCase().includes(search)})});
+  if(statusFilter)ps=ps.filter(function(p){return clean(p.product_status)===statusFilter});
+  if(stockFilter)ps=ps.filter(function(p){return clean(p.stock_status)===stockFilter});
+  if(sort==="name")ps.sort(function(a,b){return clean(a.name).localeCompare(clean(b.name))});
+  else if(sort==="price_low")ps.sort(function(a,b){return (a.price==null?Number.MAX_SAFE_INTEGER:Number(a.price))-(b.price==null?Number.MAX_SAFE_INTEGER:Number(b.price))});
+  else if(sort==="price_high")ps.sort(function(a,b){return (b.price==null?-1:Number(b.price))-(a.price==null?-1:Number(a.price))});
+  else if(sort==="stock_low")ps.sort(function(a,b){return (a.stock_quantity==null?Number.MAX_SAFE_INTEGER:Number(a.stock_quantity))-(b.stock_quantity==null?Number.MAX_SAFE_INTEGER:Number(b.stock_quantity))});
+  if(!all.length){list.innerHTML='<div class="empty">No seller products yet. Use “Add product” to create your first listing.</div>';return}
+  if(!ps.length){list.innerHTML='<div class="empty">No products match your current search or filters.</div>';return}
   list.innerHTML=ps.map(function(p){
     var img=p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="">':'<img alt="">';
     var submit=(p.product_status==="draft"||p.product_status==="paused"||p.product_status==="rejected")?'<button data-action="submit" data-id="'+p.id+'">Submit for review</button>':'';
@@ -873,8 +926,19 @@ function renderInventory(){
 }
 
 function renderOrders(){
-  var host=el("orderList"),orders=state.orders||[];
-  if(!orders.length){host.innerHTML='<div class="empty">No marketplace orders have been routed to this store yet.</div>';return}
+  var host=el("orderList"),allOrders=state.orders||[],orders=allOrders.slice();
+  var search=el("orderSearch")?el("orderSearch").value.trim().toLowerCase():"";
+  var statusFilter=el("orderStatusFilter")?el("orderStatusFilter").value:"";
+  var sort=el("orderSort")?el("orderSort").value:"newest";
+  if(search)orders=orders.filter(function(o){return [o.platform_order_ref,o.order_ref,o.buyer_name,o.buyer_phone,o.delivery_location].some(function(v){return clean(v).toLowerCase().includes(search)})});
+  if(statusFilter)orders=orders.filter(function(o){return clean(o.order_status)===statusFilter});
+  var orderTime=function(o){return Date.parse(o.created_at||o.updated_at||0)||0};
+  if(sort==="oldest")orders.sort(function(a,b){return orderTime(a)-orderTime(b)});
+  else if(sort==="amount_high")orders.sort(function(a,b){return Number(b.subtotal||0)-Number(a.subtotal||0)});
+  else if(sort==="amount_low")orders.sort(function(a,b){return Number(a.subtotal||0)-Number(b.subtotal||0)});
+  else orders.sort(function(a,b){return orderTime(b)-orderTime(a)});
+  if(!allOrders.length){host.innerHTML='<div class="empty">No marketplace orders have been routed to this store yet.</div>';return}
+  if(!orders.length){host.innerHTML='<div class="empty">No orders match your current search or filters.</div>';return}
   host.innerHTML=orders.map(function(o){
     var items=Array.isArray(o.items)?o.items:[];
     var itemHtml=items.slice(0,5).map(function(i){return '<span>• '+esc(i.product_name||"Product")+' × '+esc(i.quantity||1)+'</span>'}).join("");
@@ -1152,6 +1216,56 @@ el("savePayoutProfile").onclick=async function(){
 };
 
 
+function csvCell(v){var x=clean(v);return '"'+x.replace(/"/g,'""')+'"'}
+function downloadCsv(filename,rows){
+  var body=rows.map(function(r){return r.map(csvCell).join(",")}).join("\n");
+  var blob=new Blob(["\ufeff"+body],{type:"text/csv;charset=utf-8"});
+  var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000);
+}
+function exportProductsCsv(){
+  var products=state&&state.products||[];
+  var rows=[["Product","SKU","Category","Price GHC","MOQ","Stock quantity","Stock status","Product status"]];
+  products.forEach(function(p){rows.push([p.name,p.sku,p.category,p.price==null?"":p.price,p.moq,p.stock_quantity==null?"":p.stock_quantity,p.stock_status,p.product_status])});
+  downloadCsv("ranova-seller-products.csv",rows);
+}
+function exportOrdersCsv(){
+  var orders=state&&state.orders||[];
+  var rows=[["Order reference","Customer","Phone","Delivery location","Items","Subtotal GHC","Delivery GHC","Status","Created"]];
+  orders.forEach(function(o){rows.push([o.platform_order_ref||o.order_ref,o.buyer_name,o.buyer_phone,o.delivery_location,o.item_count,o.subtotal==null?"":o.subtotal,o.delivery_fee==null?"":o.delivery_fee,o.order_status,o.created_at||""])});
+  downloadCsv("ranova-seller-orders.csv",rows);
+}
+function renderSellerActionCenter(){
+  if(!state)return;
+  var products=state.products||[],orders=state.orders||[],notes=state.notifications||[];
+  var low=products.filter(function(p){return p.stock_status==="low_stock"||(p.stock_quantity!=null&&Number(p.stock_quantity)>0&&Number(p.stock_quantity)<=5)}).length;
+  var out=products.filter(function(p){return p.stock_status==="out_of_stock"||(p.stock_quantity!=null&&Number(p.stock_quantity)<=0)}).length;
+  var finalStates=["delivered","cancelled","refunded","closed"];
+  var attention=orders.filter(function(o){return !finalStates.includes(clean(o.order_status).toLowerCase())}).length;
+  var unread=notes.filter(function(n){return !n.read_at}).length;
+  if(el("actionOrders"))el("actionOrders").textContent=attention;
+  if(el("actionLowStock"))el("actionLowStock").textContent=low;
+  if(el("actionOutStock"))el("actionOutStock").textContent=out;
+  if(el("actionUnread"))el("actionUnread").textContent=unread;
+  if(el("mStockLow"))el("mStockLow").textContent=low;
+  if(el("mStockOut"))el("mStockOut").textContent=out;
+  var sync=el("sellerSyncStatus");
+  if(sync){var online=navigator.onLine;sync.innerHTML='<span class="seller-sync-dot'+(online?'':' offline')+'"></span>'+(online?'Connected':'Offline')+' · last refreshed '+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});}
+}
+function bindSellerPowerTools(){
+  ["productSearch","productStatusFilter","productStockFilter","productSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="productSearch"?"input":"change",renderProducts)});
+  ["orderSearch","orderStatusFilter","orderSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="orderSearch"?"input":"change",renderOrders)});
+  var clear=el("clearOrderFilters");if(clear)clear.onclick=function(){el("orderSearch").value="";el("orderStatusFilter").value="";el("orderSort").value="newest";renderOrders()};
+  document.querySelectorAll("[data-seller-jump]").forEach(function(b){b.onclick=function(){
+    var panel=b.dataset.sellerJump;
+    if(panel==="products"&&b.dataset.productFilter&&el("productStockFilter"))el("productStockFilter").value=b.dataset.productFilter;
+    setPanel(panel);if(panel==="products")renderProducts();
+  }});
+  var refreshBtn=el("sellerRefresh");if(refreshBtn)refreshBtn.onclick=async function(){var old=this.textContent;this.disabled=true;this.textContent="Refreshing…";try{await refresh()}finally{this.disabled=false;this.textContent=old}};
+  [el("exportProductsOverview")].filter(Boolean).forEach(function(b){b.onclick=exportProductsCsv});
+  [el("exportOrdersOverview"),el("exportOrders")].filter(Boolean).forEach(function(b){b.onclick=exportOrdersCsv});
+  addEventListener("online",renderSellerActionCenter);addEventListener("offline",renderSellerActionCenter);
+}
+
 function renderSupport(){
   var notes=state.notifications||[],refunds=state.refunds||[],disputes=state.disputes||[];
   var nHost=el("sellerNotifications");
@@ -1182,6 +1296,7 @@ function renderSupport(){
   }});
 }
 
+bindSellerPowerTools();
 el("sellerMarkAllRead").onclick=async function(){await api({action:"mark_notifications_read"});await refresh();setPanel("support")};
 el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./seller-center.html"};
 async function boot(){
