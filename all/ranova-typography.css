@@ -1,0 +1,11 @@
+/* Shared RANOVA reading style, matching the serif reference. */
+:root{--ranova-font:Georgia,"Times New Roman",serif;--font-ui:var(--ranova-font)!important;--font-display:var(--ranova-font)!important;--seller-chat-font:var(--ranova-font)!important;--text-xs:.875rem!important;--text-sm:.875rem!important;--text-base:1rem!important}
+html{font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html:root body,html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(.material-icons):not(.material-symbols-outlined){font-family:var(--ranova-font)!important}
+body{font-size:16px;line-height:1.5}
+p,li,dd,label{line-height:1.55}input,select,textarea{font-size:16px!important;line-height:1.4}
+h1,h2,h3,h4{line-height:1.25;letter-spacing:normal}
+button,a,summary{line-height:1.35}
+.product h3,.product p,.cart-line b,.message,.bubble{overflow-wrap:anywhere}
+/* Size floors for page content, including content inserted after loading. */
+[data-ranova-text-size]{font-size:var(--ranova-text-size)!important}
