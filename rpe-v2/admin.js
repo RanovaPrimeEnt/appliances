@@ -791,14 +791,30 @@ function renderFinance(){
   renderCountryRules();
 
   const accounts=market.payment_accounts||[];
+  const activeCollectionAccount=accounts.find(a=>a.active&&a.payment_method&&a.provider_name&&a.account_name&&a.account_reference)||null;
+  const receivingReady=!!activeCollectionAccount;
   const saveCollectionBtn=$("savePaymentAccount");
   if(saveCollectionBtn){
-    const accountAdded=accounts.some(a=>a.active);
-    saveCollectionBtn.classList.toggle("collection-added",accountAdded);
-    saveCollectionBtn.classList.toggle("collection-empty",!accountAdded);
-    saveCollectionBtn.textContent=accountAdded?"Update primary collection account":"Save primary collection account";
+    saveCollectionBtn.classList.toggle("collection-added",receivingReady);
+    saveCollectionBtn.classList.toggle("collection-empty",!receivingReady);
+    saveCollectionBtn.textContent=receivingReady?"Update active receiving account":"Save primary collection account";
+    saveCollectionBtn.title=receivingReady
+      ?"This account is active and is the current RANOVA buyer-payment receiving destination."
+      :"No active complete receiving account is configured yet.";
   }
-  $("paymentAccountsList").innerHTML=accounts.length?accounts.map(a=>'<div class="market-row"><div><b>'+esc(a.payment_method)+' • '+esc(a.provider_name)+'</b><small>'+esc(a.account_name)+' • <span class="finance-ref">'+esc(a.account_reference)+'</span></small>'+(a.instructions?'<small>'+esc(a.instructions)+'</small>':'')+'</div><span class="chip '+(a.active?'status-approved':'status-paused')+'">'+(a.active?'PRIMARY':'Inactive')+'</span><div><small>Updated</small><b>'+new Date(a.updated_at).toLocaleString()+'</b></div><div class="actions"><button data-edit-pay-account="'+a.id+'">Edit</button><button data-toggle-pay-account="'+a.id+'" data-active="'+(!a.active)+'">'+(a.active?'Disable':'Make primary')+'</button></div></div>').join(""):'<div class="empty">No customer payment destination has been added yet.</div>';
+  $("paymentAccountsList").innerHTML=accounts.length?accounts.map(a=>{
+    const ready=!!(a.active&&a.payment_method&&a.provider_name&&a.account_name&&a.account_reference);
+    return '<div class="market-row"><div><b>'+esc(a.payment_method)+' • '+esc(a.provider_name)+'</b><small>'+esc(a.account_name)+' • <span class="finance-ref">'+esc(a.account_reference)+'</span></small>'+(a.instructions?'<small>'+esc(a.instructions)+'</small>':'')+'</div><span class="chip '+(ready?'finance-receiving-active':'finance-receiving-inactive')+'">'+(ready?'ACTIVE • RECEIVING BUYER PAYMENTS':'NOT ACTIVE')+'</span><div><small>Updated</small><b>'+new Date(a.updated_at).toLocaleString()+'</b></div><div class="actions"><button data-edit-pay-account="'+a.id+'">Edit</button><button data-toggle-pay-account="'+a.id+'" data-active="'+(!a.active)+'">'+(a.active?'Disable':'Make primary')+'</button></div></div>';
+  }).join(""):'<div class="empty">No customer payment destination has been added yet.</div>';
+
+  if(activeCollectionAccount&&!$("payAccountId").value){
+    $("payAccountId").value=activeCollectionAccount.id;
+    $("payAccountMethod").value=activeCollectionAccount.payment_method||"Mobile Money";
+    $("payAccountName").value=activeCollectionAccount.account_name||"";
+    $("payAccountReference").value=activeCollectionAccount.account_reference||"";
+    $("payAccountInstructions").value=activeCollectionAccount.instructions||"";
+    populatePaymentProviderOptions(activeCollectionAccount.provider_name||"");
+  }
 
   $("paymentAccountsList").querySelectorAll("[data-edit-pay-account]").forEach(b=>b.onclick=()=>{
     const a=accounts.find(x=>x.id===b.dataset.editPayAccount);if(!a)return;
@@ -1457,18 +1473,29 @@ $("savePaymentAccount").onclick=async()=>{
   const b=$("savePaymentAccount");b.disabled=true;
   try{
     if(!$("payAccountProvider").value)return alert($("payAccountMethod").value==="Mobile Money"?"Choose a Mobile Money network.":"Choose a bank.");
-    await marketApi({
+    if(!$("payAccountName").value.trim())return alert("Enter the account name.");
+    if(!$("payAccountReference").value.trim())return alert($("payAccountMethod").value==="Mobile Money"?"Enter the MoMo number.":"Enter the bank account number.");
+    const active=(market.payment_accounts||[]).find(a=>a.active);
+    const targetId=$("payAccountId").value||active?.id||"";
+    const out=await marketApi({
       action:"save_payment_account",
-      id:$("payAccountId").value,
+      id:targetId,
       payment_method:$("payAccountMethod").value,
       provider_name:$("payAccountProvider").value,
-      account_name:$("payAccountName").value,
-      account_reference:$("payAccountReference").value,
+      account_name:$("payAccountName").value.trim(),
+      account_reference:$("payAccountReference").value.trim(),
       instructions:$("payAccountInstructions").value,
       active:true
     });
-    clearPaymentAccountForm();await reloadMarketplace();alert("Payment destination saved.");
-  }catch(err){alert(err.message)}finally{b.disabled=false}
+    if(out.account){
+      const others=(market.payment_accounts||[]).filter(a=>a.id!==out.account.id).map(a=>({...a,active:false}));
+      market.payment_accounts=[out.account,...others];
+    }
+    renderFinance();
+    clearPaymentAccountForm();
+    alert("Receiving account updated and active.");
+    reloadMarketplace().catch(()=>{});
+  }catch(err){alert(err.message||"Could not update the receiving account.")}finally{b.disabled=false}
 };
 $("clearPaymentAccount").onclick=clearPaymentAccountForm;
 $("refreshMarketplace").onclick=async()=>{
