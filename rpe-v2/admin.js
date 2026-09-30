@@ -203,7 +203,8 @@ function renderMarketplaceSummary(){
   box.classList.toggle("hide",!allowed);
   if(!allowed)return;
   const c=market.counts||{};
-  $("mSellerPending").textContent=canSellerReview()?(c.seller_pending||0):"—";
+  const reviewApps=(market.applications||[]).filter(sellerReadyForAdminReview);
+  $("mSellerPending").textContent=canSellerReview()?reviewApps.filter(a=>!["approved","rejected","suspended"].includes(appStatus(a))).length:"—";
   $("mDocsPending").textContent=canSellerReview()?(c.documents_pending||0):"—";
   $("mSellerProductsPending").textContent=canProductReview()?(c.products_pending||0):"—";
   $("mSellerOrdersOpen").textContent=canOrderReview()?(c.seller_orders_open||0):"—";
@@ -211,13 +212,20 @@ function renderMarketplaceSummary(){
   $("mDisputesOpen").textContent=canOrderReview()?(c.disputes_open||0):"—";if($("mAfterSalesOpen"))$("mAfterSalesOpen").textContent=canOrderReview()?(c.after_sales_open||0):"—";
 }
 function appStatus(a){return String(a.verification_status||a.status||"submitted").toLowerCase()}
+function sellerReadyForAdminReview(a){
+  const status=String(a?.status||"").toLowerCase();
+  const verification=String(a?.verification_status||"").toLowerCase();
+  return ["under_review","approved","rejected","suspended"].includes(status)
+    || ["under_review","needs_information","approved","rejected","suspended"].includes(verification)
+    || !!a?.reviewed_at;
+}
 function filesFor(ref){return (market.files||[]).filter(f=>f.application_ref===ref)}
 function storeForRef(ref){return (market.stores||[]).find(s=>s.application_ref===ref)}
 function renderSellerApplications(){
   const host=$("sellerApplicationsList");if(!host)return;
   if(!canSellerReview()){host.innerHTML='<div class="empty">Your admin role does not include seller verification.</div>';return}
   if(marketError){host.innerHTML='<div class="empty">Marketplace moderation could not load. Refresh and try again.</div>';return}
-  const apps=market.applications||[];
+  const apps=(market.applications||[]).filter(sellerReadyForAdminReview);
   host.innerHTML=apps.length?apps.map(a=>{
     const st=appStatus(a),fc=filesFor(a.application_ref).length,store=storeForRef(a.application_ref);
     return `<div class="market-row"><div><b>${esc(a.business_name)}</b><small>${esc(a.application_ref)} • ${esc(a.supplier_type||"Seller")} • ${esc(a.business_location||"Location not provided")}</small></div><span class="chip ${statusClass(st)}">${esc(label(st))}</span><div><small>Verification files</small><b>${fc}</b><small>${a.linked_user_id?"Seller account linked":"Not linked yet"}${store?" • Store created":""}</small></div><div class="actions"><button class="primary" data-review-seller="${esc(a.application_ref)}">Review</button></div></div>`;
