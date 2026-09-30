@@ -30,6 +30,7 @@ let toPayRecommendations = [];
 let marketStores=[],marketSellerProducts=[],marketLoadedAt=0;
 let marketCategory="",marketLocation="",marketSort="recommended",marketMoqOne=false;
 let marketProductCurrent=null,marketProductOrigin="marketplaceHomePanel";
+let manualPaymentOrderRef="",paymentStatusTimer=null;
 let orderFilter = null;
 let signUpMode = false;
 let incomingCartHandled = false;
@@ -63,7 +64,7 @@ function hidePreparationScreen(){
 }
 function showToast(msg){toast.textContent=msg;toast.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove("show"),1700)}
 function statusLabel(s){return ({
-  quote_pending:"Quote pending",awaiting_confirmation:"Awaiting confirmation",awaiting_payment:"To pay",
+  quote_pending:"Quote pending",awaiting_confirmation:"To pay",awaiting_payment:"To pay",
   payment_confirmed:"Payment confirmed",preparing:"Preparing",ready_for_dispatch:"Ready for dispatch",
   dispatched:"Dispatched",out_for_delivery:"On the way",delivered:"Delivered",cancelled:"Cancelled",
   return_requested:"Return requested",returned:"Returned",refund_pending:"Refund pending",refunded:"Refunded"
@@ -280,6 +281,7 @@ async function applySession(session,initial=false){
     afterPaint(()=>loadMessageConversations(true).catch(()=>{}));
     setTimeout(()=>loadToPayOrders(true).catch(()=>{}),80);
     setTimeout(()=>loadMarketplaceHomeData().catch(()=>{renderMarketplaceHome($("marketHomeSearch")?.value||"")}),140);
+    handlePaymentReturn().catch(()=>{});
   }catch(e){
     console.error(e);
     // Do not blank an already-open app because one refresh call failed.
@@ -1079,8 +1081,35 @@ function renderToPayOrders(filter=""){
 
   host.innerHTML=pendingHtml+recommendationSections;
 }
+function showPaymentReceived(orderRef=""){
+  clearInterval(paymentStatusTimer);paymentStatusTimer=null;
+  $("manualPaymentOverlay")?.classList.remove("show");$("manualPaymentOverlay")?.setAttribute("aria-hidden","true");
+  if($("paymentReceivedRef"))$("paymentReceivedRef").textContent=orderRef||"RANOVA order";
+  $("paymentReceivedOverlay")?.classList.add("show");$("paymentReceivedOverlay")?.setAttribute("aria-hidden","false");
+  loadToPayOrders().catch(()=>{});
+}
+async function checkOrderPayment(orderRef,{silent=false}={}){
+  if(!orderRef)return false;
+  try{
+    const out=await paymentApi({action:"status",order_ref:orderRef});
+    const paid=String(out.order_payment_status||"").toLowerCase()==="paid"||String(out.payment?.payment_status||"").toLowerCase()==="confirmed";
+    if(paid){showPaymentReceived(orderRef);return true}
+    if(!silent)showToast("Payment has not been confirmed yet.");
+  }catch(err){if(!silent)showToast(err.message||"Could not check payment.")}
+  return false;
+}
+function watchPaymentStatus(orderRef){
+  clearInterval(paymentStatusTimer);
+  let checks=0;
+  paymentStatusTimer=setInterval(async()=>{
+    checks++;
+    const paid=await checkOrderPayment(orderRef,{silent:true});
+    if(paid||checks>=40){clearInterval(paymentStatusTimer);paymentStatusTimer=null}
+  },3000);
+}
 function showManualPayment(out){
   const a=out.collection_account||{};
+  manualPaymentOrderRef=out.order_ref||"";
   $("manualPayAmount").textContent="GHC "+Number(out.amount||0).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2});
   $("manualPayMethod").textContent=a.payment_method||"Payment";
   $("manualPayProvider").textContent=a.provider_name||"RANOVA";
@@ -1090,6 +1119,7 @@ function showManualPayment(out){
   $("manualPayInstructions").textContent=a.instructions||"Use the RANOVA payment reference when making payment.";
   $("manualPaymentOverlay").classList.add("show");
   $("manualPaymentOverlay").setAttribute("aria-hidden","false");
+  watchPaymentStatus(manualPaymentOrderRef);
 }
 document.addEventListener("click",async e=>{
   if(e.target.closest("#manualPayClose")||e.target===$("manualPaymentOverlay")){
@@ -1107,6 +1137,10 @@ document.addEventListener("click",async e=>{
   ].join("\n");
   try{await navigator.clipboard.writeText(text);showToast("Payment details copied")}catch{showToast("Could not copy automatically")}
 });
+if($("manualPayCheck"))$("manualPayCheck").onclick=()=>checkOrderPayment(manualPaymentOrderRef);
+if($("paymentReceivedClose"))$("paymentReceivedClose").onclick=()=>{
+  $("paymentReceivedOverlay")?.classList.remove("show");$("paymentReceivedOverlay")?.setAttribute("aria-hidden","true");showPanel("ordersPanel");
+};
 if($("toPayBack"))$("toPayBack").onclick=()=>showPanel("homePanel");
 if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>renderToPayOrders(e.target.value));
 document.addEventListener("click",async e=>{
@@ -1114,7 +1148,7 @@ document.addEventListener("click",async e=>{
   const address=e.target.closest("[data-pay-address]");if(address){showPanel("addressPanel");return}
   const pay=e.target.closest("[data-pay-now]");if(pay){
     const order=toPayOrders.find(x=>x.id===pay.dataset.payNow);if(!order)return;
-    if(order.total==null){showToast("The seller must confirm the final amount before payment.");return}
+    if(order.total==null){showToast("This order total is not ready for payment yet.");return}
     pay.disabled=true;pay.textContent="Opening secure payment…";
     try{
       const out=await paymentApi({action:"initialize",order_ref:order.order_ref});
@@ -1122,7 +1156,7 @@ document.addEventListener("click",async e=>{
       if(out.payment_mode==="manual_collection_account"){showManualPayment(out);return}
       if(out.payment_mode==="mobile_money_prompt"){
         showToast(out.display_text||"Check your phone and authorize the Mobile Money payment.");
-        setTimeout(()=>loadToPayOrders().catch(()=>{}),3500);
+        watchPaymentStatus(out.order_ref||order.order_ref);
       }else showToast("Payment started securely.");
     }catch(err){showToast(err.message||"Could not start payment.")}
     finally{pay.disabled=false;pay.textContent="Pay Now"}
@@ -1132,6 +1166,25 @@ document.addEventListener("click",async e=>{
 });
 
 // RANOVA in-app buyer messenger 2026-09-29
+async function handlePaymentReturn(){
+  const qs=new URLSearchParams(location.search);
+  if(qs.get("payment_return")!=="1")return;
+  const orderRef=qs.get("order_ref")||"";
+  const reference=qs.get("reference")||qs.get("trxref")||"";
+  if(!orderRef)return;
+  try{
+    const out=await paymentApi({action:"verify",order_ref:orderRef,reference});
+    const paid=String(out.order_payment_status||out.payment_status||out.status||"").toLowerCase();
+    if(out.ok&&(paid==="paid"||paid==="confirmed"||out.confirmed===true))showPaymentReceived(orderRef);
+    else if(await checkOrderPayment(orderRef,{silent:true})){}
+    else showToast("Payment verification is still processing.");
+  }catch(err){
+    if(!(await checkOrderPayment(orderRef,{silent:true})))showToast(err.message||"Payment verification is still processing.");
+  }finally{
+    history.replaceState(null,"",location.pathname);
+  }
+}
+
 async function paymentApi(body){
   const {data:{session}}=await sb.auth.getSession();
   if(!session)throw Error("Sign in before paying.");
