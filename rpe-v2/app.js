@@ -683,16 +683,62 @@ function matchingSellerProduct(product){
   })||null;
 }
 function renderMarketplaceHome(filter=""){
-  const promo=$("marketPromoGrid"),feed=$("marketFactoryFeed");if(!promo||!feed)return;
+  const promo=$("marketPromoGrid"),feed=$("marketFactoryFeed"),productHost=$("marketProductResults"),summary=$("marketResultSummary");
+  if(!promo||!feed)return;
   const q=String(filter||"").trim().toLowerCase();
   if(!marketStores.length&&!marketSellerProducts.length){
     promo.innerHTML='<div style="grid-column:1/-1;padding:18px;text-align:center;color:#888">Loading marketplace…</div>';
-    feed.innerHTML="";return;
+    if(productHost)productHost.innerHTML="";
+    if(summary)summary.textContent="";
+    feed.innerHTML="";
+    return;
   }
-  const ps=marketSellerProducts.filter(p=>!q||[p.name,p.category,p.short_description,p.sku].some(x=>String(x||"").toLowerCase().includes(q)));
-  const ss=marketStores.filter(s=>!q||[s.store_name,s.tagline,s.description,s.business_location,s.country_name].some(x=>String(x||"").toLowerCase().includes(q))||marketStoreProducts(s.id).some(p=>[p.name,p.category].some(x=>String(x||"").toLowerCase().includes(q))));
-  promo.innerHTML=[0,2,4,6].map((n,i)=>{const pair=(ps.length?ps:marketSellerProducts).slice(n,n+2);if(!pair.length)return"";return'<div class="mh-promo"><h3>'+["Trending Picks","New Arrivals","Factory Deals","Popular Today"][i]+'</h3><div class="mh-mini">'+pair.map(p=>'<button type="button" data-mh-product="'+esc(p.id)+'">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'" loading="lazy">':'')+'<div style="font-size:10px;font-weight:900;color:#e84e31;margin-top:4px">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</div></button>').join("")+'</div></div>'}).join("");
-  feed.innerHTML=(ss.length?ss:marketStores).map(s=>{const p=marketStoreProducts(s.id),img=p.find(x=>x.primary_image_url)?.primary_image_url||s.banner_url||"";return'<article class="mh-store"><div class="mh-store-media">'+(img?'<img src="'+esc(img)+'" alt="" loading="lazy">':'<div style="display:grid;place-items:center;height:100%;font-size:38px">🏭</div>')+'</div><div style="min-width:0"><h3>'+esc(s.store_name||"RANOVA Store")+'</h3><div class="mh-meta">'+esc(s.business_location||s.country_name||"Marketplace seller")+' · '+p.length+' products</div><div style="font-size:9px;color:#888;margin-top:6px;line-height:1.4">'+esc(s.tagline||s.description||"Contact this store for product details and bulk pricing.")+'</div><div class="mh-actions"><button class="mh-ask" type="button" data-mh-message="'+esc(s.id)+'">Message Store</button><button class="mh-view" type="button" data-mh-store="'+esc(s.slug||s.id)+'">View Store</button></div></div></article>'}).join("");
+  const storeById=new Map(marketStores.map(s=>[s.id,s]));
+  const matchesProduct=p=>{
+    const store=storeById.get(p.store_id);
+    return !q||[
+      p.name,p.category,p.short_description,p.sku,
+      store?.store_name,store?.business_location,store?.country_name
+    ].some(x=>String(x||"").toLowerCase().includes(q));
+  };
+  const ps=marketSellerProducts.filter(matchesProduct);
+  const ss=marketStores.filter(s=>!q||
+    [s.store_name,s.tagline,s.description,s.business_location,s.country_name].some(x=>String(x||"").toLowerCase().includes(q))||
+    marketStoreProducts(s.id).some(matchesProduct)
+  );
+  const promoPool=ps.length?ps:(!q?marketSellerProducts:[]);
+  promo.innerHTML=[0,2,4,6].map((n,i)=>{
+    const pair=promoPool.slice(n,n+2);if(!pair.length)return"";
+    return '<div class="mh-promo"><h3>'+["Trending Picks","New Arrivals","Store Deals","Popular Today"][i]+'</h3><div class="mh-mini">'+pair.map(p=>
+      '<button type="button" data-mh-product="'+esc(p.id)+'">'+
+      (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'" loading="lazy">':'')+
+      '<div style="font-size:10px;font-weight:900;color:#e84e31;margin-top:4px">'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</div></button>'
+    ).join("")+'</div></div>';
+  }).join("");
+
+  if(summary)summary.textContent=q?(ps.length+" product"+(ps.length===1?"":"s")+" found"):(marketSellerProducts.length+" live products");
+  if(productHost){
+    const productRows=(q?ps:marketSellerProducts).slice(0,24);
+    productHost.innerHTML=productRows.length?productRows.map(p=>{
+      const store=storeById.get(p.store_id)||{};
+      const moq=Number(p.moq||1);
+      return '<button class="market-product-card" type="button" data-mh-product="'+esc(p.id)+'">'+
+        (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name||"Product")+'" loading="lazy">':'<span class="market-product-placeholder">Product image</span>')+
+        '<span class="market-product-copy"><b>'+esc(p.name||"Product")+'</b><small>'+esc(store.store_name||p.category||"RANOVA Store")+'</small><strong>'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</strong>'+
+        (moq>1?'<em>MOQ '+esc(moq)+(p.unit_label?" "+esc(p.unit_label):"")+'</em>':"")+
+        '</span></button>';
+    }).join(""):'<div class="market-empty"><b>No matching products</b>Try another product, store, category or location.</div>';
+  }
+
+  const storeRows=q?ss:marketStores;
+  feed.innerHTML=storeRows.length?storeRows.map(s=>{
+    const p=marketStoreProducts(s.id),img=s.logo_url||p.find(x=>x.primary_image_url)?.primary_image_url||s.banner_url||"";
+    return '<article class="mh-store"><div class="mh-store-media">'+
+      (img?'<img src="'+esc(img)+'" alt="'+esc(s.store_name||"Store")+'" loading="lazy">':'<div style="display:grid;place-items:center;height:100%;font-size:38px">🏪</div>')+
+      '</div><div style="min-width:0"><h3>'+esc(s.store_name||"RANOVA Store")+'</h3><div class="mh-meta">'+esc(s.business_location||s.country_name||"Marketplace seller")+' · '+p.length+' product'+(p.length===1?"":"s")+'</div>'+
+      '<div style="font-size:9px;color:#888;margin-top:6px;line-height:1.4">'+esc(s.tagline||s.description||"Browse products and contact this seller through RANOVA.")+'</div>'+
+      '<div class="mh-actions"><button class="mh-ask" type="button" data-mh-message="'+esc(s.id)+'">Message Store</button><button class="mh-view" type="button" data-mh-store="'+esc(s.slug||s.id)+'">View Store</button></div></div></article>';
+  }).join(""):'<div class="market-empty"><b>No matching stores</b>Try a different search.</div>';
 }
 if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>renderMarketplaceHome($("marketHomeSearch").value);
 if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>renderMarketplaceHome(e.target.value);
