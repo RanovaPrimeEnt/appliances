@@ -29,6 +29,7 @@ let toPayStores = [];
 let toPayRecommendations = [];
 let marketStores=[],marketSellerProducts=[],marketLoadedAt=0;
 let marketCategory="",marketLocation="",marketSort="recommended",marketMoqOne=false;
+let marketProductCurrent=null,marketProductOrigin="marketplaceHomePanel";
 let orderFilter = null;
 let signUpMode = false;
 let incomingCartHandled = false;
@@ -660,8 +661,8 @@ function cleanupRealtime(){realtimeChannels.forEach(ch=>sb.removeChannel(ch));re
 
 async function loadMarketplaceHomeData(){
   const [a,b]=await Promise.all([
-    sb.from("ranova_seller_stores").select("id,store_name,slug,tagline,description,logo_url,banner_url,business_location,country_name").eq("store_status","active").limit(60),
-    sb.from("ranova_seller_products").select("id,store_id,name,sku,category,short_description,price,currency,moq,unit_label,primary_image_url").eq("product_status","active").limit(120)
+    sb.from("ranova_seller_stores").select("*").eq("store_status","active").limit(60),
+    sb.from("ranova_seller_products").select("*").eq("product_status","active").limit(120)
   ]);
   if(a.error)throw a.error;if(b.error)throw b.error;
   marketStores=a.data||[];marketSellerProducts=b.data||[];marketLoadedAt=Date.now();
@@ -719,6 +720,61 @@ function matchingSellerProduct(product){
     const pname=String(p.name||"").trim().toLowerCase();
     return (sku&&psku===sku)||(name&&pname===name);
   })||null;
+}
+function marketStockLabel(p){
+  return ({in_stock:"In stock",out_of_stock:"Out of stock",pre_order:"Pre-order",limited_stock:"Limited stock",confirm_on_enquiry:"Check availability"})[String(p?.stock_status||"")]||"Check availability";
+}
+function marketProductMinimum(p){return Math.max(1,Math.floor(Number(p?.moq)||1))}
+function marketProductQuantity(p,value){
+  const min=marketProductMinimum(p),stock=p?.stock_quantity==null?null:Math.max(0,Math.floor(Number(p.stock_quantity)||0));
+  let q=Math.max(min,Math.floor(Number(value)||min));
+  if(stock!=null)q=Math.min(q,stock);
+  return q;
+}
+function updateMarketProductTotal(){
+  const p=marketProductCurrent,input=$("marketProductQty"),total=$("marketProductTotal"),buy=$("marketProductBuy");if(!p||!input)return;
+  const min=marketProductMinimum(p),stock=p.stock_quantity==null?null:Math.max(0,Number(p.stock_quantity)||0),q=marketProductQuantity(p,input.value);
+  input.value=q;
+  const unavailable=String(p.stock_status||"")==="out_of_stock"||(stock!=null&&stock<min);
+  if(total)total.textContent=p.price==null?"Price will be confirmed by the seller":"Product total: "+money(Number(p.price)*q,p.currency||"GHS");
+  if(buy){buy.disabled=unavailable;buy.textContent=unavailable?"Unavailable":"Buy now"}
+}
+function openMarketplaceProduct(id){
+  const p=marketSellerProducts.find(x=>x.id===id);if(!p)return;
+  const store=marketStores.find(s=>s.id===p.store_id)||{};
+  marketProductCurrent=p;marketProductOrigin=activePanelId||"marketplaceHomePanel";
+  const image=p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls.find(Boolean):"")||"";
+  $("marketProductImage").innerHTML=image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="eager" decoding="async">':'Product image unavailable';
+  $("marketProductName").textContent=p.name||"Product";
+  $("marketProductPrice").textContent=p.price==null?"Ask for price":money(p.price,p.currency||"GHS");
+  $("marketProductMeta").textContent=[store.store_name,p.category,p.sku&&("SKU "+p.sku)].filter(Boolean).join(" · ");
+  $("marketProductDescription").textContent=p.description||p.short_description||"Contact the seller for additional product information.";
+  const badges=["✓ RANOVA seller",store.business_location||store.country_name,marketStockLabel(p)].filter(Boolean);
+  $("marketProductTrust").innerHTML=badges.map(x=>'<span>'+esc(x)+'</span>').join("");
+  const facts=[];
+  if(p.sku)facts.push(["Model / SKU",p.sku]);
+  if(p.category)facts.push(["Category",p.category]);
+  facts.push(["Availability",marketStockLabel(p)]);
+  if(Number(p.moq||1)>1)facts.push(["Minimum order",String(p.moq)+(p.unit_label?" "+p.unit_label:"")]);
+  if(p.stock_quantity!=null)facts.push(["Stock",String(p.stock_quantity)+(p.unit_label?" "+p.unit_label:"")]);
+  if(store.fulfilment_summary)facts.push(["Delivery",store.fulfilment_summary]);
+  if(store.return_policy_summary)facts.push(["Returns",store.return_policy_summary]);
+  const specs=p.specifications&&typeof p.specifications==="object"?p.specifications:{};
+  Object.keys(specs).slice(0,8).forEach(k=>{const v=specs[k];if(v!=null&&v!==""&&typeof v!=="object")facts.push([prettyKey(k),String(v)])});
+  $("marketProductFacts").innerHTML=facts.map(r=>'<div><dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd></div>').join("");
+  const min=marketProductMinimum(p);
+  $("marketProductMoq").textContent=min>1?"Minimum "+min+(p.unit_label?" "+p.unit_label:""):"No bulk minimum";
+  $("marketProductQty").min=String(min);$("marketProductQty").value=String(min);
+  if(p.stock_quantity!=null)$("marketProductQty").max=String(Math.max(0,Number(p.stock_quantity)||0));else $("marketProductQty").removeAttribute("max");
+  updateMarketProductTotal();
+  showPanel("marketProductPanel");
+}
+function shareMarketplaceProduct(){
+  const p=marketProductCurrent;if(!p)return;
+  const url=sellerStoreProductUrl(p);if(!url)return;
+  const absolute=new URL(url,location.href).href;
+  if(navigator.share)navigator.share({title:p.name||"RANOVA product",url:absolute}).catch(()=>{});
+  else if(navigator.clipboard)navigator.clipboard.writeText(absolute).then(()=>showToast("Product link copied")).catch(()=>{});
 }
 function renderMarketplaceHome(filter=""){
   const promo=$("marketPromoGrid"),feed=$("marketFactoryFeed"),productHost=$("marketProductResults"),summary=$("marketResultSummary");
@@ -804,10 +860,24 @@ document.querySelectorAll("[data-market-focus]").forEach(btn=>btn.addEventListen
 if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>refreshMarketplaceFilters();
 if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>renderMarketplaceHome(e.target.value);
 document.addEventListener("click",async e=>{
- const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct),url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
+ const p=e.target.closest("[data-mh-product]");if(p){openMarketplaceProduct(p.dataset.mhProduct);return}
  const m=e.target.closest("[data-mh-message]");if(m){try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
  const v=e.target.closest("[data-mh-store]");if(v){location.href="../all/seller-store.html?store="+encodeURIComponent(v.dataset.mhStore);return}
 });
+if($("marketProductBack"))$("marketProductBack").onclick=()=>showPanel(marketProductOrigin||"marketplaceHomePanel");
+if($("marketProductMinus"))$("marketProductMinus").onclick=()=>{if(!marketProductCurrent)return;$("marketProductQty").value=marketProductQuantity(marketProductCurrent,Number($("marketProductQty").value)-1);updateMarketProductTotal()};
+if($("marketProductPlus"))$("marketProductPlus").onclick=()=>{if(!marketProductCurrent)return;$("marketProductQty").value=marketProductQuantity(marketProductCurrent,Number($("marketProductQty").value)+1);updateMarketProductTotal()};
+if($("marketProductQty"))$("marketProductQty").onchange=()=>updateMarketProductTotal();
+if($("marketProductShare"))$("marketProductShare").onclick=shareMarketplaceProduct;
+if($("marketProductStore"))$("marketProductStore").onclick=()=>{const url=sellerStoreProductUrl(marketProductCurrent);if(url)location.href=url;else showToast("Store unavailable")};
+if($("marketProductBuy"))$("marketProductBuy").onclick=()=>{const p=marketProductCurrent,url=sellerStoreProductUrl(p);if(!p||!url)return showToast("Store unavailable");const q=marketProductQuantity(p,$("marketProductQty").value);location.href=url+"&qty="+encodeURIComponent(q)};
+if($("marketProductMessage"))$("marketProductMessage").onclick=async()=>{
+  const p=marketProductCurrent;if(!p)return;
+  try{
+    const out=await messageApi({action:"start",store_id:p.store_id,subject:"Product enquiry: "+(p.name||"Product"),product_id:p.id});
+    showPanel("messagesPanel");await openMessageConversation(out.conversation.id);
+  }catch(err){showToast(err.message||"Could not open seller chat")}
+};
 async function loadToPayOrders(prefetch=false){
   if(prefetch&&toPayOrders.length&&Date.now()-toPayLoadedAt<30000)return;
   const out=await messageApi({action:"buyer_payment_orders"});
