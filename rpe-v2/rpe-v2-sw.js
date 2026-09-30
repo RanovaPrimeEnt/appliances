@@ -1,7 +1,7 @@
-const CACHE="ranova-rpe-v2-shell-v9";
+const CACHE="ranova-rpe-v2-shell-v10";
 const CORE=[
-  "../all/ranova-typography.css?v=20260930-1",
-  "../all/ranova-typography.js?v=20260930-1",
+  "../all/ranova-typography.css?v=20260930-2",
+  "../all/ranova-typography.js?v=20260930-2",
   "./",
   "./index.html",
   "./app.js",

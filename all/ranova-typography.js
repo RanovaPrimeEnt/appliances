@@ -1,6 +1,10 @@
 /* Apply readable size floors without replacing larger, page-specific sizes. */
 (function(){
   'use strict';
+  var path=window.location.pathname,part=path.split('/').filter(Boolean).pop()||'index';
+  if(!part.includes('.'))part='index';else part=part.replace(/\.html$/,'');
+  document.documentElement.setAttribute('data-ranova-page',part);
+  document.documentElement.setAttribute('data-ranova-surface',path.includes('/rpe-v2/')?'app':'site');
   var roots=new Set(),scheduled=false;
   var ignored='SCRIPT,STYLE,NOSCRIPT,SVG,PATH,META,LINK';
   function apply(element){
