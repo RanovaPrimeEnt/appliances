@@ -1052,9 +1052,11 @@ function showManualPayment(out){
   $("manualPaymentOverlay").classList.add("show");
   $("manualPaymentOverlay").setAttribute("aria-hidden","false");
 }
-if($("manualPayClose"))$("manualPayClose").onclick=()=>{$("manualPaymentOverlay").classList.remove("show");$("manualPaymentOverlay").setAttribute("aria-hidden","true")};
-if($("manualPaymentOverlay"))$("manualPaymentOverlay").addEventListener("click",e=>{if(e.target===$("manualPaymentOverlay"))$("manualPayClose").click()});
-if($("manualPayCopy"))$("manualPayCopy").onclick=async()=>{
+document.addEventListener("click",async e=>{
+  if(e.target.closest("#manualPayClose")||e.target===$("manualPaymentOverlay")){
+    $("manualPaymentOverlay")?.classList.remove("show");$("manualPaymentOverlay")?.setAttribute("aria-hidden","true");return;
+  }
+  if(!e.target.closest("#manualPayCopy"))return;
   const text=[
     "RANOVA CUSTOMER PAYMENT",
     "Amount: "+$("manualPayAmount").textContent,
@@ -1065,7 +1067,7 @@ if($("manualPayCopy"))$("manualPayCopy").onclick=async()=>{
     "Reference: "+$("manualPayReference").textContent
   ].join("\n");
   try{await navigator.clipboard.writeText(text);showToast("Payment details copied")}catch{showToast("Could not copy automatically")}
-};
+});
 if($("toPayBack"))$("toPayBack").onclick=()=>showPanel("homePanel");
 if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>renderToPayOrders(e.target.value));
 document.addEventListener("click",async e=>{
