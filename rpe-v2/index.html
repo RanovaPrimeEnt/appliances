@@ -229,6 +229,8 @@ body{background:var(--r-page);color:var(--r-text)}
 .market-product-copy b{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:35px}
 .market-product-card:active{transform:scale(.992)}
 @media(max-width:380px){.market-filter-row select{max-width:126px}.market-search button{padding:0 14px}}
+
+.rpe-pay-overlay{position:fixed;inset:0;z-index:180;background:rgba(8,30,24,.55);display:none;place-items:center;padding:18px}.rpe-pay-overlay.show{display:grid}.rpe-pay-card{width:min(100%,430px);max-height:88vh;overflow:auto;background:#fff;border-radius:22px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.24)}.rpe-pay-card h2{margin:0;font-family:Georgia,serif;color:#183330}.rpe-pay-card p{font-size:11px;line-height:1.55;color:#6E7E7A}.rpe-pay-info{display:grid;gap:8px;margin-top:14px}.rpe-pay-line{padding:11px 12px;border:1px solid #E0E8E4;border-radius:12px}.rpe-pay-line small{display:block;color:#7b8884;font-size:9px}.rpe-pay-line b{display:block;margin-top:2px;font-size:13px;overflow-wrap:anywhere}.rpe-pay-ref{background:#fff7ef;border-color:#ffd8be}.rpe-pay-ref b{color:#ff5a00}.rpe-pay-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.rpe-pay-actions button{min-height:43px;border:0;border-radius:12px;font-weight:900}.rpe-pay-actions .close{background:#eef3f1;color:#1b4037}.rpe-pay-actions .copy{background:#ff5a00;color:#fff}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 <link rel="stylesheet" href="../all/ranova-typography.css?v=20260930-7">
@@ -468,4 +470,22 @@ function iconSvg(k){return""}
 <script src="./config.js"></script>
 <script src="./app.js?v=20260930-card02"></script>
 <script src="./customer-pwa.js?v=20260930-01"></script>
+
+<div id="manualPaymentOverlay" class="rpe-pay-overlay" aria-hidden="true">
+  <div class="rpe-pay-card" role="dialog" aria-modal="true" aria-labelledby="manualPaymentTitle">
+    <h2 id="manualPaymentTitle">Pay RANOVA</h2>
+    <p>Send the exact amount to the RANOVA customer collection account below. Use the payment reference exactly as shown so Admin can match the payment to your order.</p>
+    <div class="rpe-pay-info">
+      <div class="rpe-pay-line"><small>Amount</small><b id="manualPayAmount">—</b></div>
+      <div class="rpe-pay-line"><small>Payment method</small><b id="manualPayMethod">—</b></div>
+      <div class="rpe-pay-line"><small>Bank / provider</small><b id="manualPayProvider">—</b></div>
+      <div class="rpe-pay-line"><small>Account name</small><b id="manualPayName">—</b></div>
+      <div class="rpe-pay-line"><small>Account / MoMo number</small><b id="manualPayAccount">—</b></div>
+      <div class="rpe-pay-line rpe-pay-ref"><small>RANOVA payment reference</small><b id="manualPayReference">—</b></div>
+      <div class="rpe-pay-line"><small>Instructions</small><b id="manualPayInstructions">Use your RANOVA reference when paying.</b></div>
+    </div>
+    <p><b>Buyer Protection:</b> seller payout remains protected until RANOVA confirms payment and the required delivery/protection conditions are completed.</p>
+    <div class="rpe-pay-actions"><button id="manualPayClose" class="close" type="button">Close</button><button id="manualPayCopy" class="copy" type="button">Copy payment details</button></div>
+  </div>
+</div>
 </body></html>
