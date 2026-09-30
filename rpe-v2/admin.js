@@ -156,7 +156,7 @@ function wireOrderRows(root){
   });
 }
 function renderProducts(){
-  $("productsList").innerHTML=products.length?products.map(p=>`<div class="row"><div><b>${esc(p.name)}</b><small>${esc(p.sku||"No SKU")} • ${esc(p.categories?.name||"Uncategorised")}</small></div><span class="chip">${esc(label(p.stock_status))}</span><div><small>Price</small><b>${p.price==null?"Unconfirmed":"GHS "+Number(p.price).toFixed(2)}</b></div><div class="actions"><button data-toggle-product="${p.id}" class="primary">${p.active?"Hide":"Show"}</button></div></div>`).join(""):'<div class="empty">No products in the new database yet.</div>';
+  $("productsList").innerHTML=products.length?products.map(p=>`<div class="row"><div><b>${esc(p.name)}</b><small>${esc(p.sku||"No SKU")} • ${esc(p.categories?.name||"Uncategorised")}</small></div><span class="chip">${esc(label(p.stock_status))}</span><div><small>Price</small><b>${p.price==null?"Unconfirmed":"GHC "+Number(p.price).toFixed(2)}</b></div><div class="actions"><button data-toggle-product="${p.id}" class="primary">${p.active?"Hide":"Show"}</button></div></div>`).join(""):'<div class="empty">No products in the new database yet.</div>';
   $("productsList").querySelectorAll("[data-toggle-product]").forEach(b=>b.onclick=async()=>{
     const p=products.find(x=>x.id===b.dataset.toggleProduct);
     const {error}=await sb.from("products").update({active:!p.active}).eq("id",p.id);
@@ -338,7 +338,7 @@ function renderSellerProducts(){
     const store=stores.get(p.store_id),st=p.product_status;
     const actions=['<button class="primary" data-product-review="'+p.id+'">Review listing</button>'];
     if(st==="active")actions.push('<button data-product-decision="paused" data-product-id="'+p.id+'">Pause</button>');
-    return '<div class="market-row market-product"><img src="'+esc(p.primary_image_url||"")+'" alt=""><div><b>'+esc(p.name)+'</b><small>'+esc(store?.store_name||"Seller store")+' • '+esc(p.category)+' • SKU '+esc(p.sku||"—")+'</small>'+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':"")+'</div><span class="chip '+statusClass(st)+'">'+esc(label(st))+'</span><div><small>Price / MOQ</small><b>'+(p.price==null?"Ask for price":"GHS "+Number(p.price).toFixed(2))+' / '+esc(p.moq||1)+'</b><small>'+esc(label(p.stock_status))+'</small></div><div class="actions">'+actions.join("")+'</div></div>';
+    return '<div class="market-row market-product"><img src="'+esc(p.primary_image_url||"")+'" alt=""><div><b>'+esc(p.name)+'</b><small>'+esc(store?.store_name||"Seller store")+' • '+esc(p.category)+' • SKU '+esc(p.sku||"—")+'</small>'+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':"")+'</div><span class="chip '+statusClass(st)+'">'+esc(label(st))+'</span><div><small>Price / MOQ</small><b>'+(p.price==null?"Ask for price":"GHC "+Number(p.price).toFixed(2))+' / '+esc(p.moq||1)+'</b><small>'+esc(label(p.stock_status))+'</small></div><div class="actions">'+actions.join("")+'</div></div>';
   }).join(""):'<div class="empty">No seller products yet.</div>';
 
   host.querySelectorAll("[data-product-review]").forEach(b=>b.onclick=()=>renderSellerProductDetail(b.dataset.productReview));
@@ -370,7 +370,7 @@ function renderSellerProductDetail(id){
   if(st==="active")actions.push('<button class="danger" data-product-decision="paused" data-product-id="'+p.id+'">Pause product</button>');
   if(st==="paused")actions.push('<button class="approve" data-product-decision="approved" data-product-id="'+p.id+'">Reactivate product</button>');
   host.classList.remove("hide");
-  host.innerHTML='<div class="review-head"><div><h2>'+esc(p.name)+'</h2><p>'+esc(store?.store_name||"Seller store")+' • '+esc(p.category)+' • SKU '+esc(p.sku||"—")+'</p></div><span class="chip '+statusClass(st)+'">'+esc(label(st))+'</span></div><div class="review-body"><div class="review-meta"><div><span>Price</span><b>'+(p.price==null?"Ask for price":"GHS "+Number(p.price).toFixed(2))+'</b></div><div><span>MOQ / unit</span><b>'+esc(p.moq||1)+' '+esc(p.unit_label||"unit(s)")+'</b></div><div><span>Stock</span><b>'+esc(label(p.stock_status))+'</b><span>'+esc(p.stock_quantity==null?"Quantity not set":p.stock_quantity+" available")+'</span></div></div><div class="detail-copy"><b style="color:var(--rpe-ink)">Short description</b><br>'+esc(p.short_description||"—")+'<br><br><b style="color:var(--rpe-ink)">Full description</b><br>'+esc(p.description||"No full description supplied.")+'</div><div class="product-review-gallery">'+(imgs.length?imgs.map((u,i)=>'<a href="'+esc(u)+'" target="_blank" rel="noopener"><img src="'+esc(u)+'" alt="Product image '+(i+1)+'"></a>').join(""):'<div class="empty">No product images.</div>')+'</div>'+(p.moderation_note?'<div class="detail-copy" style="margin-top:10px"><b style="color:var(--rpe-ink)">Current moderation note</b><br>'+esc(p.moderation_note)+'</div>':"")+'<div class="decision-actions">'+actions.join("")+'</div></div>';
+  host.innerHTML='<div class="review-head"><div><h2>'+esc(p.name)+'</h2><p>'+esc(store?.store_name||"Seller store")+' • '+esc(p.category)+' • SKU '+esc(p.sku||"—")+'</p></div><span class="chip '+statusClass(st)+'">'+esc(label(st))+'</span></div><div class="review-body"><div class="review-meta"><div><span>Price</span><b>'+(p.price==null?"Ask for price":"GHC "+Number(p.price).toFixed(2))+'</b></div><div><span>MOQ / unit</span><b>'+esc(p.moq||1)+' '+esc(p.unit_label||"unit(s)")+'</b></div><div><span>Stock</span><b>'+esc(label(p.stock_status))+'</b><span>'+esc(p.stock_quantity==null?"Quantity not set":p.stock_quantity+" available")+'</span></div></div><div class="detail-copy"><b style="color:var(--rpe-ink)">Short description</b><br>'+esc(p.short_description||"—")+'<br><br><b style="color:var(--rpe-ink)">Full description</b><br>'+esc(p.description||"No full description supplied.")+'</div><div class="product-review-gallery">'+(imgs.length?imgs.map((u,i)=>'<a href="'+esc(u)+'" target="_blank" rel="noopener"><img src="'+esc(u)+'" alt="Product image '+(i+1)+'"></a>').join(""):'<div class="empty">No product images.</div>')+'</div>'+(p.moderation_note?'<div class="detail-copy" style="margin-top:10px"><b style="color:var(--rpe-ink)">Current moderation note</b><br>'+esc(p.moderation_note)+'</div>':"")+'<div class="decision-actions">'+actions.join("")+'</div></div>';
   wireProductDecisionButtons(host);
   host.scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -538,7 +538,7 @@ function renderSellerOrders(){
   const list=market.seller_orders||[];
   host.innerHTML=list.length?list.map(o=>{
     const st=stores.get(o.store_id);
-    const total=o.total==null?"Pending quote":"GHS "+Number(o.total).toFixed(2);
+    const total=o.total==null?"Pending quote":"GHC "+Number(o.total).toFixed(2);
     return '<div class="market-row"><div><b>'+esc(o.platform_order_ref||o.order_ref)+'</b><small>'+esc(st?.store_name||"Seller store")+' • '+esc(o.buyer_name||"Customer")+' • '+new Date(o.created_at).toLocaleString()+'</small><small>'+esc(o.delivery_location||"Delivery location pending")+'</small></div><span class="chip '+statusClass(o.order_status)+'">'+esc(label(o.order_status))+'</span><div><small>Payment</small><b>'+esc(label(o.payment_status))+'</b><small>'+esc(o.payment_method||"Not selected")+'</small></div><div><small>Seller total</small><b>'+esc(total)+'</b><small>'+esc(o.item_count||0)+' product line(s)</small></div></div>';
   }).join(""):'<div class="empty">No seller-routed marketplace orders yet.</div>';
 }
@@ -653,7 +653,7 @@ function renderCases(){
     const action=b.dataset.refundAction,r=refunds.find(x=>x.id===b.dataset.refundId);if(!r)return;
     let approved_amount="",refund_reference="",note="";
     if(action==="approved"){
-      approved_amount=prompt("Approved refund amount (GHS)",String(r.approved_amount??r.requested_amount??""))||"";
+      approved_amount=prompt("Approved refund amount (GHC)",String(r.approved_amount??r.requested_amount??""))||"";
       if(!approved_amount)return;
       note=prompt("Reason / review note","Approved after reviewing the order and case evidence.")||"";
     }else if(action==="refunded"){
@@ -743,7 +743,7 @@ function renderSafetyRisk(){
   });
 }
 
-function fmtMoney(v){return "GHS "+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtMoney(v){return "GHC "+Number(v||0).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2})}
 function renderFinance(){
   const panel=$("finance");if(!panel)return;
   if(!canFinance())return;
