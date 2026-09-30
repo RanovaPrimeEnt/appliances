@@ -305,6 +305,23 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
         <div class="metric"><small>Payment provider</small><strong id="fProviderStatus" style="font-size:14px">Not configured</strong></div>
       </div>
 
+      <div id="financeActivationCard" class="card">
+        <div class="card-head"><div><h2>Receive & Send Money</h2><small style="color:var(--rpe-muted)">This is the activation center for customer collections and seller payouts.</small></div><span id="financeActivationOverall" class="chip status-under_review">Setup required</span></div>
+        <div class="body">
+          <div class="review-meta">
+            <div><span>Customer payments</span><b id="financeReceiveStatus">Not enabled</b><span id="financeReceiveHelp">Add one RANOVA collection account or connect Paystack.</span></div>
+            <div><span>Seller payouts</span><b id="financeSendStatus">Not enabled</b><span id="financeSendHelp">Connect Paystack and verify seller payout destinations.</span></div>
+            <div><span>Settlement mode</span><b id="financeSettlementMode">Manual</b><span>Customer collection and seller payout remain separate and auditable.</span></div>
+          </div>
+          <div class="finance-action-strip">
+            <a class="primary" href="#paymentAccountsCard">Set receiving account</a>
+            <a href="#financePayouts">Open payout queue</a>
+            <a href="#financeReconciliationCard">Run reconciliation</a>
+          </div>
+          <div id="financeActivationNotice" class="notice" style="margin-top:12px">Live provider payments require a configured Paystack business account and secure server-side key. Never place a secret key in the browser or page source.</div>
+        </div>
+      </div>
+
       <div id="providerFinanceNotice" class="card"><div class="body"><div class="notice" style="margin-top:0"><b>Protected settlement:</b> customer payment and supplier payout are separate. Provider-backed seller transfers can only start after the payout becomes automatically eligible. Until Paystack is configured, live online payment and automated transfers remain disabled.</div></div></div>
 
       <div id="financeMoneyFlow" class="card"><div class="card-head"><div><h2>Money movement</h2><small style="color:var(--rpe-muted)">The app records ownership and status; the licensed payment provider moves the actual money.</small></div></div><div class="body"><div class="review-meta"><div><span>1 · Customer</span><b>Pays RANOVA checkout</b><span>Unique order/payment reference.</span></div><div><span>2 · Protected</span><b>Payment confirmed & held in settlement flow</b><span>Seller cannot withdraw yet.</span></div><div><span>3 · Eligible</span><b>Delivery/protection checks pass</b><span>Seller amount becomes payable.</span></div><div><span>4 · Seller</span><b>Provider sends payout</b><span>To the seller’s verified bank or MoMo destination.</span></div></div></div></div>
@@ -407,7 +424,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h2>Seller payout ledger</h2><small style="color:var(--rpe-muted)">Eligibility is automatic. When Paystack is connected, only the Owner can initiate the protected provider transfer.</small></div></div>
+        <div class="card-head"><div><h2 id="financePayouts">Seller payout ledger</h2><small style="color:var(--rpe-muted)">Eligibility is automatic. When Paystack is connected, only the Owner can initiate the protected provider transfer.</small></div></div>
         <div id="financePayoutsList" class="body market-list"></div>
       </div>
     </section>
