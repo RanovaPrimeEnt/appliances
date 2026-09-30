@@ -840,7 +840,8 @@ function openMarketplaceProduct(id){
   }
   $("marketProductName").textContent=p.name||"Product";
   $("marketProductPrice").textContent=p.price==null?"Ask for price":money(p.price,p.currency||"GHS");
-  $("marketProductMeta").textContent=[store.store_name,p.category,p.sku&&("SKU "+p.sku)].filter(Boolean).join(" · ");
+  if($("marketProductCategory"))$("marketProductCategory").textContent=p.category||"RANOVA Product";
+  $("marketProductMeta").textContent=[store.store_name,p.sku&&("SKU "+p.sku)].filter(Boolean).join(" · ");
   $("marketProductDescription").textContent=p.description||p.short_description||"Contact the seller for additional product information.";
   const badges=["✓ RANOVA seller",store.business_location||store.country_name,marketStockLabel(p)].filter(Boolean);
   $("marketProductTrust").innerHTML=badges.map(x=>'<span>'+esc(x)+'</span>').join("");
