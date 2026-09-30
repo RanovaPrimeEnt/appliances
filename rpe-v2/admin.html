@@ -27,6 +27,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
 .market-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.market-metrics button{border:1px solid var(--rpe-line);border-radius:15px;background:linear-gradient(145deg,#f7fbf9,#faf8ff);padding:14px;text-align:left;color:var(--rpe-ink)}.market-metrics small{display:block;color:var(--rpe-muted);font-weight:700}.market-metrics strong{display:block;font-size:1.6rem;margin-top:5px}.market-list{display:grid;gap:10px}.market-row{display:grid;grid-template-columns:minmax(0,1.35fr) .8fr .75fr auto;gap:12px;align-items:center;border:1px solid var(--rpe-line);border-radius:14px;padding:13px}.market-row b{font-size:var(--text-sm)}.market-row small{display:block;color:var(--rpe-muted);line-height:1.45}.market-product{grid-template-columns:64px minmax(0,1.2fr) .75fr .65fr auto}.market-product img{width:64px;height:64px;object-fit:contain;border-radius:11px;background:#f5f8f6;border:1px solid var(--rpe-line)}.review-head{padding:18px;border-bottom:1px solid var(--rpe-line);display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.review-head h2{margin:0}.review-head p{margin:5px 0 0;color:var(--rpe-muted);font-size:var(--text-sm)}.review-body{padding:18px}.review-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}.review-meta div,.stage-card,.doc-row{border:1px solid var(--rpe-line);border-radius:13px;padding:11px;background:#fff}.review-meta span,.stage-card small,.doc-row small{display:block;color:var(--rpe-muted);font-size:var(--text-xs)}.review-meta b{display:block;margin-top:3px;font-size:var(--text-sm)}.stage-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stage-card b{display:block;font-size:var(--text-xs);margin-bottom:7px}.stage-card select{width:100%;border:1px solid var(--rpe-line);border-radius:9px;padding:8px;font-size:var(--text-xs);background:#fff}.stage-card button{width:100%;margin-top:6px;border:0;border-radius:9px;background:var(--rpe-green-100);color:var(--rpe-green-800);padding:8px;font-size:var(--text-xs);font-weight:800}.docs{display:grid;gap:8px;margin-top:10px}.doc-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}.review-note{width:100%;min-height:88px;border:1px solid var(--rpe-line);border-radius:11px;padding:10px;margin-top:8px;resize:vertical}.decision-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.decision-actions button{border:1px solid var(--rpe-line);background:#fff;border-radius:10px;padding:9px 11px;font-size:var(--text-xs);font-weight:900}.decision-actions .approve{background:#e8f7ef;color:#0b6a45;border-color:#b9dfcb}.decision-actions .warn{background:#fff7e9;color:#8a5c18;border-color:#f0d39e}.decision-actions .danger{background:#fff0ee;color:#a0443b;border-color:#efc5c0}.product-review-gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}.product-review-gallery a{display:block;aspect-ratio:1/1;border:1px solid var(--rpe-line);border-radius:11px;overflow:hidden;background:#f5f8f6}.product-review-gallery img{width:100%;height:100%;object-fit:contain}.detail-copy{padding:12px;border:1px solid var(--rpe-line);border-radius:12px;background:#fafcfb;color:var(--rpe-muted);font-size:var(--text-sm);line-height:1.6}.status-approved{background:#e8f7ef!important;color:#0b6a45!important}.status-rejected,.status-suspended{background:#fff0ee!important;color:#a0443b!important}.status-needs_information,.status-under_review,.status-pending_review,.status-submitted{background:#fff5e8!important;color:#8d5c17!important}.finance-ref{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:var(--text-xs)}.finance-money{font-weight:900}.finance-row-note{margin-top:4px;color:var(--rpe-muted);font-size:var(--text-xs)}
 @media(max-width:900px){.admin-wrap{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto}.side button{min-width:max-content}.metrics{grid-template-columns:repeat(2,1fr)}.stage-grid{grid-template-columns:repeat(2,1fr)}.review-meta{grid-template-columns:1fr 1fr}.market-metrics{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:620px){.metrics{grid-template-columns:1fr 1fr}.row,.market-row,.market-product{grid-template-columns:1fr}.market-product img{width:72px;height:72px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.stage-grid,.review-meta,.market-metrics{grid-template-columns:1fr}.doc-row{grid-template-columns:1fr}.actions{justify-content:flex-start}.product-review-gallery{grid-template-columns:repeat(3,1fr)}}
+ .ranova-price,.price,[class*="price"]{color:#ff5a00!important}
 </style>
 <link rel="stylesheet" href="../all/ranova-typography.css?v=20260930-7">
 <script defer src="../all/ranova-typography.js?v=20260930-5"></script>
@@ -106,7 +107,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
           <div class="field"><label>SKU / model</label><input id="pSku"></div>
           <div class="field"><label>Brand</label><input id="pBrand"></div>
           <div class="field"><label>Category</label><select id="pCategory"><option value="">No category</option></select></div>
-          <div class="field"><label>Price (GHS)</label><input id="pPrice" type="number" min="0" step="0.01" placeholder="Leave blank if unconfirmed"></div>
+          <div class="field"><label>Price (GHC)</label><input id="pPrice" type="number" min="0" step="0.01" placeholder="Leave blank if unconfirmed"></div>
           <div class="field"><label>Stock status</label><select id="pStock"><option value="confirm_on_enquiry">Confirm on enquiry</option><option value="in_stock">In stock</option><option value="low_stock">Low stock</option><option value="out_of_stock">Out of stock</option><option value="preorder">Pre-order</option></select></div>
           <div class="field full"><label>Short description</label><textarea id="pDesc" rows="3"></textarea></div>
         </div>
@@ -275,8 +276,8 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
       <div class="metrics">
         <div class="metric"><small>Payments due</small><strong id="fPaymentsDue">0</strong></div>
         <div class="metric"><small>Payouts awaiting action</small><strong id="fPayoutsPending">0</strong></div>
-        <div class="metric"><small>Commission recorded</small><strong id="fCommissionTotal">GHS 0.00</strong></div>
-        <div class="metric"><small>Seller payouts paid</small><strong id="fPayoutsPaid">GHS 0.00</strong></div>
+        <div class="metric"><small>Commission recorded</small><strong id="fCommissionTotal">GHC 0.00</strong></div>
+        <div class="metric"><small>Seller payouts paid</small><strong id="fPayoutsPaid">GHC 0.00</strong></div>
         <div class="metric"><small>Payment provider</small><strong id="fProviderStatus" style="font-size:14px">Not configured</strong></div>
       </div>
 
@@ -288,7 +289,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
           <div class="review-meta">
             <div><span>Latest run</span><b id="reconLatestStatus">Not run</b><span id="reconLatestTime">—</span></div>
             <div><span>Open issues</span><b id="reconOpenIssues">0</b><span>Critical mismatches require finance review.</span></div>
-            <div><span>Daily snapshot</span><b id="reconSnapshotDate">—</b><span id="reconSnapshotTotal">GHS 0.00 confirmed</span></div>
+            <div><span>Daily snapshot</span><b id="reconSnapshotDate">—</b><span id="reconSnapshotTotal">GHC 0.00 confirmed</span></div>
           </div>
           <div id="reconciliationIssuesList" class="market-list" style="margin-top:12px"></div>
         </div>
@@ -329,7 +330,7 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
             <div class="field"><label>Buyer country</label><select id="ruleBuyerCountry"><option value="">Any country</option></select></div>
             <div class="field"><label>Seller commission to RANOVA (%)</label><input id="ruleCommission" type="number" min="0" max="100" step="0.01" value="0"><small>Calculated from product subtotal only. Delivery is excluded.</small></div>
             <div class="field"><label>Official payment-provider fee (%)</label><input id="rulePaymentRate" type="number" min="0" max="100" step="0.01" value="0"><small>Keep separate from RANOVA commission.</small></div>
-            <div class="field"><label>Fixed payment fee (GHS)</label><input id="ruleFixedFee" type="number" min="0" step="0.01" value="0"></div>
+            <div class="field"><label>Fixed payment fee (GHC)</label><input id="ruleFixedFee" type="number" min="0" step="0.01" value="0"></div>
             <div class="field"><label>Who absorbs the provider fee?</label><select id="ruleFeePayer"><option value="platform">RANOVA platform</option><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
             <div class="field"><label>Rate source type</label><select id="ruleSourceKind"><option value="owner_policy">RANOVA owner policy</option><option value="payment_provider">Official payment provider</option><option value="tax_authority">Official tax authority</option><option value="other_official">Other official source</option></select></div>
             <div class="field"><label>Source name</label><input id="ruleSourceName" placeholder="Example: Provider pricing API"></div>
@@ -343,12 +344,12 @@ body{margin:0;background:linear-gradient(180deg,#F8FAF9,#F6F7FB);color:var(--rpe
             <p>Compare the active country policy with the unsaved rate in the form above. This preview does not charge a buyer or change a seller’s rate.</p>
             <div class="form-grid">
               <div class="field"><label for="commissionMode">Policy to preview</label><select id="commissionMode"><option value="active">Current active country policy</option><option value="draft">Unsaved rate from the form above</option></select></div>
-              <div class="field"><label for="commissionCurrency">Settlement currency</label><select id="commissionCurrency"><option value="GHS">Ghana cedi (GHS)</option></select><small>Other currencies require a connected settlement provider and a confirmed exchange-rate quote. Changing a currency label does not convert money.</small></div>
+              <div class="field"><label for="commissionCurrency">Settlement currency</label><select id="commissionCurrency"><option value="GHC">Ghana cedi (GHC)</option></select><small>Other currencies require a connected settlement provider and a confirmed exchange-rate quote. Changing a currency label does not convert money.</small></div>
               <div class="field"><label for="commissionSellerCountry">Seller country</label><select id="commissionSellerCountry"></select></div>
               <div class="field"><label for="commissionBuyerCountry">Buyer country</label><select id="commissionBuyerCountry"></select></div>
               <div class="field"><label for="commissionMethod">Payment method</label><select id="commissionMethod"><option>Mobile Money</option><option>Bank Transfer</option></select></div>
-              <div class="field"><label for="commissionSubtotal">Products after discounts (GHS)</label><input id="commissionSubtotal" type="number" min="0" step="0.01" value="600"></div>
-              <div class="field"><label for="commissionDelivery">Delivery (GHS, excluded from commission)</label><input id="commissionDelivery" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="commissionSubtotal">Products after discounts (GHC)</label><input id="commissionSubtotal" type="number" min="0" step="0.01" value="600"></div>
+              <div class="field"><label for="commissionDelivery">Delivery (GHC, excluded from commission)</label><input id="commissionDelivery" type="number" min="0" step="0.01" value="0"></div>
             </div>
             <div class="actions"><button id="previewCommission">Calculate earnings</button><button id="suggestCommission">Load 8.5% Ghana example</button></div>
             <p id="commissionPreviewStatus" role="status"></p><div id="commissionPreviewResult"></div>
