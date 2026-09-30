@@ -786,7 +786,7 @@ function marketRelatedVariants(p){
     if(String(x.name||"").toLowerCase().includes(String(p.name||"").toLowerCase().split(/\s+/)[0]||""))n+=1;
     return n;
   };
-  return marketSellerProducts.map(x=>({p:x,s:score(x)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,7).map(x=>x.p);
+  return marketSellerProducts.map(x=>({p:x,s:score(x)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,9).map(x=>x.p);
 }
 function marketProductMinimum(p){return Math.max(1,Math.floor(Number(p?.moq)||1))}
 function marketProductQuantity(p,value){
