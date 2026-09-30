@@ -792,13 +792,13 @@ function renderFinance(){
 
   const accounts=market.payment_accounts||[];
   const activeCollectionAccount=accounts.find(a=>a.active&&a.payment_method&&a.provider_name&&a.account_name&&a.account_reference)||null;
-  const receivingReady=!!activeCollectionAccount;
+  const activeReceivingAccountReady=!!activeCollectionAccount;
   const saveCollectionBtn=$("savePaymentAccount");
   if(saveCollectionBtn){
-    saveCollectionBtn.classList.toggle("collection-added",receivingReady);
-    saveCollectionBtn.classList.toggle("collection-empty",!receivingReady);
-    saveCollectionBtn.textContent=receivingReady?"Update active receiving account":"Save primary collection account";
-    saveCollectionBtn.title=receivingReady
+    saveCollectionBtn.classList.toggle("collection-added",activeReceivingAccountReady);
+    saveCollectionBtn.classList.toggle("collection-empty",!activeReceivingAccountReady);
+    saveCollectionBtn.textContent=activeReceivingAccountReady?"Update active receiving account":"Save primary collection account";
+    saveCollectionBtn.title=activeReceivingAccountReady
       ?"This account is active and is the current RANOVA buyer-payment receiving destination."
       :"No active complete receiving account is configured yet.";
   }
