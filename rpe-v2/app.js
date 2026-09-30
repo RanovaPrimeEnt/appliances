@@ -43,6 +43,7 @@ let activePanelId="homePanel";
 let simpleDiscoveryOrigin="homePanel";
 let simpleDiscoveryProductId=null;
 let recommendationRotation=0,recommendationTimer=null;
+let homeRecommendationLimit=16,homeRecommendationObserver=null;
 const panelPainted=new Set();
 function afterPaint(fn){requestAnimationFrame(()=>setTimeout(fn,0))}
 function markPanelPainted(id){panelPainted.add(id)}
@@ -365,16 +366,23 @@ function homeSellerCard(p){
     '</button>'+
   '</article>';
 }
-function pickHomeRecommendations(){
+function homeRecommendationPoolSize(){
+  return marketSellerProducts.filter(p=>p&&p.id).length||products.length;
+}
+function pickHomeRecommendations(limit=homeRecommendationLimit){
   const sellerPool=marketSellerProducts.filter(p=>p&&p.id);
   if(sellerPool.length){
     const storeBuckets=new Map();
-    sellerPool.forEach(p=>{const key=p.store_id||"unknown";if(!storeBuckets.has(key))storeBuckets.set(key,[]);storeBuckets.get(key).push(p)});
+    sellerPool.forEach(p=>{
+      const key=p.store_id||"unknown";
+      if(!storeBuckets.has(key))storeBuckets.set(key,[]);
+      storeBuckets.get(key).push(p);
+    });
     const stores=[...storeBuckets.keys()];
     const chosen=[],used=new Set();
     let round=0;
-    while(chosen.length<4&&round<sellerPool.length+stores.length){
-      for(let i=0;i<stores.length&&chosen.length<4;i++){
+    while(chosen.length<limit&&round<sellerPool.length+stores.length+4){
+      for(let i=0;i<stores.length&&chosen.length<limit;i++){
         const storeKey=stores[(i+recommendationRotation)%stores.length];
         const arr=storeBuckets.get(storeKey)||[];
         if(!arr.length)continue;
@@ -383,47 +391,75 @@ function pickHomeRecommendations(){
       }
       round++;
     }
-    // If there are fewer stores, fill remaining slots with different products/categories.
+    // Fill the rest with products from the complete marketplace catalogue,
+    // while keeping duplicates out and preserving variety.
     const ordered=sellerPool.slice().sort((a,b)=>{
       const ac=String(a.category||""),bc=String(b.category||"");
       return ac.localeCompare(bc)||String(a.name||"").localeCompare(String(b.name||""));
     });
-    for(let i=0;i<ordered.length&&chosen.length<4;i++){
+    for(let i=0;i<ordered.length&&chosen.length<limit;i++){
       const p=ordered[(i+recommendationRotation*3)%ordered.length];
-      if(!used.has(p.id)){used.add(p.id);chosen.push({kind:"seller",p})}
+      if(p&&!used.has(p.id)){used.add(p.id);chosen.push({kind:"seller",p})}
     }
     if(chosen.length)return chosen;
   }
 
-  // Fallback: deliberately mix catalogue categories instead of taking the first four records.
+  // Fallback catalogue: mix categories first, then fill from the full catalogue.
   const byCategory=new Map();
-  products.forEach(p=>{const key=p.categories?.name||p.brand||"Other";if(!byCategory.has(key))byCategory.set(key,[]);byCategory.get(key).push(p)});
-  const cats=[...byCategory.keys()],chosen=[];
+  products.forEach(p=>{
+    const key=p.categories?.name||p.brand||"Other";
+    if(!byCategory.has(key))byCategory.set(key,[]);
+    byCategory.get(key).push(p);
+  });
+  const cats=[...byCategory.keys()],chosen=[],used=new Set();
   if(cats.length){
-    for(let i=0;i<cats.length&&chosen.length<4;i++){
-      const arr=byCategory.get(cats[(i+recommendationRotation)%cats.length])||[];
-      const p=arr[recommendationRotation%Math.max(1,arr.length)];
-      if(p)chosen.push({kind:"legacy",p});
+    let round=0;
+    while(chosen.length<limit&&round<products.length+cats.length){
+      for(let i=0;i<cats.length&&chosen.length<limit;i++){
+        const arr=byCategory.get(cats[(i+recommendationRotation)%cats.length])||[];
+        if(!arr.length)continue;
+        const p=arr[(recommendationRotation+round+i)%arr.length];
+        if(p&&!used.has(p.id)){used.add(p.id);chosen.push({kind:"legacy",p})}
+      }
+      round++;
     }
   }
-  for(let i=0;i<products.length&&chosen.length<4;i++){
+  for(let i=0;i<products.length&&chosen.length<limit;i++){
     const p=products[(i+recommendationRotation)%products.length];
-    if(p&&!chosen.some(x=>x.p.id===p.id))chosen.push({kind:"legacy",p});
+    if(p&&!used.has(p.id)){used.add(p.id);chosen.push({kind:"legacy",p})}
   }
   return chosen;
 }
+function observeMoreHomeRecommendations(){
+  if(homeRecommendationObserver){homeRecommendationObserver.disconnect();homeRecommendationObserver=null}
+  const sentinel=$("homeRecommendationsMore");
+  if(!sentinel||!("IntersectionObserver" in window))return;
+  homeRecommendationObserver=new IntersectionObserver(entries=>{
+    if(!entries.some(x=>x.isIntersecting))return;
+    const total=Math.min(60,homeRecommendationPoolSize());
+    if(homeRecommendationLimit>=total)return;
+    homeRecommendationLimit=Math.min(total,homeRecommendationLimit+8);
+    renderHomeProducts();
+  },{rootMargin:"500px 0px"});
+  homeRecommendationObserver.observe(sentinel);
+}
 function renderHomeProducts(){
   const host=$("homeProducts");if(!host)return;
-  const picks=pickHomeRecommendations();
+  const total=Math.min(60,homeRecommendationPoolSize());
+  const picks=pickHomeRecommendations(Math.min(homeRecommendationLimit,total||homeRecommendationLimit));
+  const hasMore=total>picks.length;
   host.innerHTML=picks.length
-    ? picks.map(x=>x.kind==="seller"?homeSellerCard(x.p):productCard(x.p)).join("")
+    ? picks.map(x=>x.kind==="seller"?homeSellerCard(x.p):productCard(x.p)).join("")+
+      (hasMore?'<div id="homeRecommendationsMore" class="home-recommend-more"><span>More products loading…</span></div>':'<div class="home-recommend-end">You’re all caught up for now.</div>')
     : '<div class="empty" style="grid-column:1/-1">Products will appear here when the RPE catalogue is connected.</div>';
+  observeMoreHomeRecommendations();
 }
 function startRecommendationRotation(){
   if(recommendationTimer)return;
   recommendationTimer=setInterval(()=>{
     if(document.hidden)return;
     recommendationRotation++;
+    homeRecommendationLimit=Math.max(homeRecommendationLimit,16);
     renderHomeProducts();
   },45000);
 }
