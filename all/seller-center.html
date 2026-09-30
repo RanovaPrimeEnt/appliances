@@ -51,7 +51,7 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
   </div>
 </div>
 <div class="top"><div class="wrap"><div class="brand">RANOVA SELLER CENTER</div><div class="nav"><a href="./seller-status.html">Application status</a><a id="dashboardLink" href="./seller-dashboard.html" style="display:none">Seller dashboard</a><a href="./">Marketplace</a><button id="signOut" style="display:none">Sign out</button></div></div></div>
-<section class="hero"><div class="wrap"><div class="kicker">SELLER ACCOUNT</div><h1>Verify your business and build your store.</h1><p>Your Seller Center keeps verification, documents and future store-management tools in one protected workspace.</p></div></section>
+<section class="hero" id="sellerHero"><div class="wrap"><div class="kicker">SELLER ACCOUNT</div><h1 id="sellerHeroTitle">Verify your business and build your store.</h1><p id="sellerHeroText">Your Seller Center keeps verification, documents and future store-management tools in one protected workspace.</p></div></section>
 
 <main class="wrap">
   <section id="authPanel" class="panel auth">
@@ -85,8 +85,8 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
 
   <section id="workspace" class="workspace">
     <div id="sellerReviewAlert" class="seller-review-alert" role="status" hidden><strong id="sellerReviewHeading">RANOVA Admin requests more information</strong><p id="sellerReviewNote"></p><a id="sellerReviewAction" href="#verificationChecklist">Review and resubmit documents →</a></div>
-    <div class="grid">
-      <aside class="side">
+    <div class="grid" id="sellerOnboardingGrid">
+      <aside class="side" id="sellerOnboardingSide">
         <div class="card">
           <h2 id="businessName">Seller</h2>
           <p id="applicationMeta"></p>
@@ -103,15 +103,15 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
       </aside>
 
       <section>
-        <div class="progress-summary">
+        <div class="progress-summary" id="sellerProgressSummary">
           <h2>Complete your seller registration</h2>
           <p id="progressText">Finish the required steps below. You can leave and come back later.</p>
           <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
           <div id="nextAction" class="next-action">Loading your next step…</div>
         </div>
         <div class="card" id="verificationChecklist">
-          <h2>Your verification checklist</h2>
-          <p>Do one step at a time. Choose the requested file, upload it, then move to the next step. RANOVA Admin will review the real document securely.</p>
+          <h2 id="verificationChecklistTitle">Your verification checklist</h2>
+          <p id="verificationChecklistIntro">Do one step at a time. Choose the requested file, upload it, then move to the next step. RANOVA Admin will review the real document securely.</p>
           <div style="margin-top:12px;padding:12px 14px;border:1px solid #dce8e3;border-radius:13px;background:#f8fbf9;font-size:14px;line-height:1.6;color:#61736c">
             <b style="color:#15342e">Before uploading:</b> use clear PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), or image files, make sure names/numbers are readable, do not crop important details, and only submit documents that genuinely belong to the business or its authorized representative. Maximum file size: 10 MB each.
           </div>
@@ -147,13 +147,14 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
           <h3 style="margin-top:20px">Your uploaded documents</h3>
           <div id="files" class="files"><div class="locked-box">No documents submitted yet.</div></div>
           <div class="submit-review">
-            <h3>Final step · Send to RANOVA Admin</h3>
+            <h3 id="submitReviewTitle">Final step · Send to RANOVA Admin</h3>
             <p id="submitReviewHelp" role="status" aria-live="polite">Upload the three required items above. When they are ready, submit the application for review.</p>
             <button id="submitForReview" type="button">Submit for RANOVA Review</button>
+            <a id="approvedDashboardButton" href="./seller-dashboard.html" style="display:none;margin-top:12px;min-height:46px;align-items:center;justify-content:center;border-radius:12px;background:#116a52;color:#fff;text-decoration:none;font-size:15px;font-weight:900">OPEN SELLER DASHBOARD →</a>
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="storeSetupCard">
           <h2>Step 5 · Create your RANOVA Store</h2>
           <div id="storeSetupBox" class="locked-box"><b>Available after approval.</b><br>You do not need to do this now. After RANOVA approves your seller application, this section opens so you can add your store name, logo, banner, products, prices, stock and delivery settings.</div>
         </div>
@@ -337,7 +338,7 @@ function renderProgress(files){
   if(submit)submit.disabled=reviewBusy;
   if(validationAttempted)showMissingDocuments(false);
   if(submit)submit.textContent=app.dashboard_approved?"Submit document updates":"Submit for RANOVA Review";
-  if(help&&app.dashboard_approved){help.textContent=app.store_accessible?"Your dashboard is unlocked. Upload any outstanding documents below.":"Upload the outstanding documents below to restore store access.";renderDocumentReminder();return}
+  if(help&&app.dashboard_approved){help.textContent=app.store_accessible?"Upload or replace any store document above whenever your business information changes.":"Upload the outstanding documents above to restore store access.";renderDocumentReminder();return}
   renderDocumentReminder();
   if(help)help.textContent=ready?"Everything required is present. Submit when you are ready for RANOVA Admin to review it.":"Complete the missing required steps above first.";
 }
@@ -355,6 +356,36 @@ function renderDocumentReminder(){
   next.innerHTML='<strong>Outstanding documents</strong><p>'+message+'</p><p><b>Still needed:</b> '+missing.map(function(type){return names[type]||type}).join(', ')+'</p><p><b>Final deadline:</b> '+new Date(deadline).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</p><a href="#verificationChecklist">Upload documents →</a><p>Need help? <a href="mailto:ranovaprimeenterprise360@gmail.com">ranovaprimeenterprise360@gmail.com</a></p>';
 }
 setInterval(function(){if(document.visibilityState==="visible")renderDocumentReminder()},60000);
+function setApprovedSellerView(approved){
+  var heroTitle=document.getElementById("sellerHeroTitle"),heroText=document.getElementById("sellerHeroText");
+  var side=document.getElementById("sellerOnboardingSide"),progress=document.getElementById("sellerProgressSummary");
+  var title=document.getElementById("verificationChecklistTitle"),intro=document.getElementById("verificationChecklistIntro");
+  var finalTitle=document.getElementById("submitReviewTitle"),dashboardButton=document.getElementById("approvedDashboardButton");
+  var storeCard=document.getElementById("storeSetupCard");
+  if(approved){
+    if(heroTitle)heroTitle.textContent="SELLER ACCOUNT";
+    if(heroText)heroText.textContent="";
+    if(side)side.style.display="none";
+    if(progress)progress.style.display="none";
+    if(title)title.textContent="DO YOU WANT TO UPDATE ANY DOCUMENT?";
+    if(intro)intro.textContent="Upload and change documents about this store here.";
+    if(finalTitle)finalTitle.textContent="Submit document updates";
+    if(dashboardButton)dashboardButton.style.display="flex";
+    if(storeCard)storeCard.style.display="none";
+    document.getElementById("sellerOnboardingGrid").style.gridTemplateColumns="1fr";
+  }else{
+    if(heroTitle)heroTitle.textContent="Verify your business and build your store.";
+    if(heroText)heroText.textContent="Your Seller Center keeps verification, documents and future store-management tools in one protected workspace.";
+    if(side)side.style.display="";
+    if(progress)progress.style.display="";
+    if(title)title.textContent="Your verification checklist";
+    if(intro)intro.textContent="Do one step at a time. Choose the requested file, upload it, then move to the next step. RANOVA Admin will review the real document securely.";
+    if(finalTitle)finalTitle.textContent="Final step · Send to RANOVA Admin";
+    if(dashboardButton)dashboardButton.style.display="none";
+    if(storeCard)storeCard.style.display="";
+    document.getElementById("sellerOnboardingGrid").style.gridTemplateColumns="";
+  }
+}
 function renderFiles(files){
   var host=document.getElementById("files");
   if(!files||!files.length){host.innerHTML='<div class="locked-box">No documents uploaded yet.</div>';renderProgress([]);return}
@@ -382,6 +413,7 @@ async function loadWorkspace(){
     var approved=out.approved===true;
     currentApplication.dashboard_approved=approved;
     currentApplication.store_accessible=out.store_accessible===true;
+    setApprovedSellerView(approved);
     var pill=document.getElementById("statusPill");
     pill.textContent=pretty(approvalStatus);
     pill.classList.toggle("approved",approved);
