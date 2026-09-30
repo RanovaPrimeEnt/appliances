@@ -1041,8 +1041,13 @@ function clearPaymentAccountForm(){
 function storeControlButton(store,status,labelText,color,current,disabled=false){
   const active=!!store&&store.store_status===status;
   const names={suspended:"Remove store",paused:"Pause store",active:"Activate store"};
-  const title=!store?"The seller must create a store first":disabled?"Approve this seller’s application before activating the store":names[status];
-  return '<button type="button" class="store-control '+status+(active?' is-current':'')+'" data-store-control="'+status+'" data-store-id="'+esc(store?.id||"")+'" aria-pressed="'+active+'" title="'+esc(title)+'" '+(disabled?'disabled':'')+'><b>'+labelText+(active?' ✓':'')+'</b><small>'+names[status]+'</small></button>';
+  const unavailable=!store||disabled;
+  const title=!store?"No store exists yet. Review/approve the seller first; controls become available after the seller creates a store.":names[status];
+  const bg=unavailable?"#f2f4f3":active?color:"#fff";
+  const fg=unavailable?"#9aa5a1":active?"#fff":color;
+  const border=unavailable?"#d9dfdc":color;
+  const style="min-height:78px;border:2px solid "+border+";border-radius:14px;background:"+bg+";color:"+fg+";padding:9px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-weight:900;cursor:"+(unavailable?"not-allowed":"pointer")+";opacity:"+(unavailable?".65":"1")+";";
+  return '<button type="button" class="store-control '+status+(active?' is-current':'')+'" data-store-control="'+status+'" data-store-id="'+esc(store?.id||"")+'" data-store-unavailable="'+(unavailable?"1":"0")+'" aria-disabled="'+unavailable+'" aria-pressed="'+active+'" title="'+esc(title)+'" style="'+style+'"><b>'+labelText+(active?' ✓':'')+'</b><small style="font-size:11px;font-weight:800">'+(unavailable?"Not available yet":names[status])+'</small></button>';
 }
 function ensureStoreRegistryModal(){
   let modal=document.getElementById("storeRegistryModal");
@@ -1346,7 +1351,7 @@ function renderSellerStores(){
               storeControlButton(store,"suspended","Red","#c62828",st==="suspended",!store)+
               storeControlButton(store,"paused","Yellow","#d19a00",st==="paused",!store)+
               storeControlButton(store,"active","Green","#16824b",st==="active",disabled)+
-              (!store?'<div class="store-control-help">No store created yet. <button type="button" data-control-review="'+esc(a.application_ref)+'">Review seller →</button></div>':disabled?'<div class="store-control-help">Approve the seller before activating this store.</div>':'')+
+              (!store?'<div class="store-control-help" style="grid-column:1/-1;padding-top:5px;color:#667871;font-size:12px"><b>No store created yet.</b> Red, Yellow and Green will work after this seller is approved and creates a store. <button type="button" data-control-review="'+esc(a.application_ref)+'" style="border:0;background:transparent;color:#08765b;font-weight:900;cursor:pointer">Review seller →</button></div>':'')+
             '</div>'+
           '</div>';
         }).join("")+
@@ -1361,8 +1366,16 @@ function renderSellerStores(){
   host.querySelectorAll("[data-control-review]").forEach(b=>b.onclick=e=>{e.stopPropagation();selectedApplicationRef=b.dataset.controlReview;renderSellerDetail(selectedApplicationRef);$("sellerReviewDetail").scrollIntoView({behavior:"smooth",block:"start"})});
   host.querySelectorAll("[data-store-control]").forEach(b=>b.onclick=async e=>{
     e.stopPropagation();
-    if(b.disabled||!b.dataset.storeId)return;
+    if(b.dataset.storeUnavailable==="1"||!b.dataset.storeId){
+      alert("This seller has not created a store yet. Review/approve the seller first. Red, Yellow and Green become available after the store is created.");
+      return;
+    }
     const status=b.dataset.storeControl;
+    const currentStore=(market.stores||[]).find(x=>x.id===b.dataset.storeId);
+    if(currentStore&&currentStore.store_status===status){
+      alert(status==="active"?"This store is already Green / Active.":status==="paused"?"This store is already Yellow / Paused.":"This store is already Red / Removed.");
+      return;
+    }
     let note="";
     if(status==="paused"){
       note=prompt("Reason for temporary investigation / yellow status:","")||"";
@@ -1386,7 +1399,9 @@ function renderSellerStores(){
       renderSellerStores();
       showSellerSendConfirmation(status==="active"?"✓ Green · Store active":status==="paused"?"✓ Yellow · Store paused":"✓ Red · Store removed from the marketplace");
       await reloadMarketplace().catch(()=>{});
-    }catch(err){alert(err.message)}finally{controls.forEach((control,i)=>control.disabled=previousDisabled[i])}
+    }catch(err){
+      alert("Store control could not be changed: "+(err&&err.message?err.message:"Please refresh and try again."));
+    }finally{controls.forEach((control,i)=>control.disabled=previousDisabled[i])}
   });
 }
 
