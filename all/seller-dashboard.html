@@ -110,8 +110,10 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <div class="metric"><small>Store status</small><strong id="snapshotStoreStatus" style="font-size:17px">Draft</strong></div>
           </div>
           <div id="storeReadinessBox" class="catalogue-summary" style="margin-top:12px"></div>
+          <div id="sellerAttentionBox" class="catalogue-summary" style="margin-top:10px"></div>
           <div class="seller-syncbar"><small id="sellerSyncStatus"><span class="seller-sync-dot"></span>Connected · waiting for refresh</small><div class="actions" style="margin:0"><button id="exportProductsOverview" class="btn" type="button">Export products</button><button id="exportOrdersOverview" class="btn" type="button">Export orders</button></div></div>
         </div>
+        <div class="card"><h2>Recent seller activity</h2><p>The latest meaningful events across orders, inventory, notifications and payouts.</p><div id="recentSellerActivity" class="order-list"><div class="empty">No recent seller activity yet.</div></div></div>
         <div class="card"><h2>Seller checklist</h2><p>Your verification has to remain approved. Build your store profile, add clear product information, upload genuine product photos and submit products for review before they become public.</p></div>
       </div>
 
@@ -119,6 +121,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
         <div class="card">
           <h2>Store Builder</h2><p>Create the public identity customers will see when they visit your RANOVA store.</p>
           <div id="storeMsg" class="msg"></div>
+          <div id="storeDraftNotice" class="catalogue-summary" style="display:none;margin-top:12px"><b>Unsaved store draft found.</b> Restore the work saved on this device or discard it.<div class="actions" style="margin-top:8px"><button id="restoreStoreDraft" class="btn green" type="button">Restore draft</button><button id="discardStoreDraft" class="btn" type="button">Discard draft</button></div></div>
           <form id="storeForm" class="form-grid" style="margin-top:14px">
             <div class="field"><label>Store name</label><input id="storeName" required maxlength="120"></div>
             <div class="field"><label>Store web address</label><input id="storeSlug" maxlength="80" placeholder="your-store-name"></div>
@@ -185,6 +188,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 
           <div id="productEditor" class="product-editor">
             <h3 id="productEditorTitle">Add product</h3>
+            <div id="productDraftNotice" class="catalogue-summary" style="display:none;margin-bottom:12px"><b>Unsaved new-product draft found.</b><div class="actions" style="margin-top:8px"><button id="restoreProductDraft" class="btn green" type="button">Restore draft</button><button id="discardProductDraft" class="btn" type="button">Discard draft</button></div></div>
             <input id="productId" type="hidden">
             <div class="form-grid">
               <div class="field"><label>Product name</label><input id="productName" maxlength="180"></div>
@@ -498,7 +502,7 @@ async function refresh(){
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
   try{payoutChannels=await api({action:"payout_channels"})}catch(e){payoutChannels={banks:[],mobile_money:[],provider_configured:false}}
-  renderOverview();fillStore();renderProducts();renderInventory();renderOrders();renderDelivery();renderTrust();renderFinance();renderSupport();renderSellerActionCenter();
+  renderOverview();fillStore();renderProducts();renderInventory();renderOrders();renderDelivery();renderTrust();renderFinance();renderSupport();renderSellerActionCenter();renderRecentSellerActivity();renderSellerAttention();syncDraftNotices();
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
@@ -518,14 +522,14 @@ function fillStore(){
   el("storeLocation").value=s.business_location||a.business_location||"";
   el("storeCountry").value=s.country_code||"";storeCountryName=s.country_name||countryMap[s.country_code]||"";storeGooglePlaceId=s.google_place_id||"";storeCountrySource=s.country_source||"";
   el("storeFulfilment").value=s.fulfilment_summary||"";el("storeReturns").value=s.return_policy_summary||"";el("storeMinimum").value=s.minimum_order_note||"";
-  logoUrl=s.logo_url||"";bannerUrl=s.banner_url||"";preview(el("logoPreview"),logoUrl,true);preview(el("bannerPreview"),bannerUrl,false);
+  logoUrl=s.logo_url||"";bannerUrl=s.banner_url||"";preview(el("logoPreview"),logoUrl,true);preview(el("bannerPreview"),bannerUrl,false);syncDraftNotices();
 }
 function storePayload(status){
   return{action:"save_store",store_status:status,store_name:el("storeName").value,slug:el("storeSlug").value,tagline:el("storeTagline").value,description:el("storeDescription").value,public_phone:el("storePhone").value,public_email:el("storeEmail").value,business_location:el("storeLocation").value,country_code:el("storeCountry").value,country_name:storeCountryName||countryMap[el("storeCountry").value]||"",google_place_id:storeGooglePlaceId,country_source:storeCountrySource||"selected_country",fulfilment_summary:el("storeFulfilment").value,return_policy_summary:el("storeReturns").value,minimum_order_note:el("storeMinimum").value,logo_url:logoUrl,banner_url:bannerUrl};
 }
 async function saveStore(status,button){
   clearMsg(el("storeMsg"));var old=button.textContent;button.disabled=true;button.textContent="Saving…";
-  try{var resolvedCode=await resolveStoreCountry();el("storeCountry").value=resolvedCode;await api(storePayload(status));msg(el("storeMsg"),status==="active"?"Store published successfully.":"Store saved successfully.",true);await refresh();setPanel("store")}
+  try{var resolvedCode=await resolveStoreCountry();el("storeCountry").value=resolvedCode;await api(storePayload(status));clearDraft("store");syncDraftNotices();msg(el("storeMsg"),status==="active"?"Store published successfully.":"Store saved successfully.",true);await refresh();setPanel("store")}
   catch(e){msg(el("storeMsg"),e.message||"Could not save store.")}
   finally{button.disabled=false;button.textContent=old}
 }
@@ -658,6 +662,7 @@ el("saveProduct").onclick=async function(){
     el("productSpecs").value.split(/\r?\n/).forEach(function(line){var i=line.indexOf(":");if(i>0){var k=line.slice(0,i).trim(),v=line.slice(i+1).trim();if(k&&v)specifications[k]=v}});
     var pricing_tiers=el("productTiers").value.split(/\r?\n/).map(function(line){var p=line.split(":");return p.length>=2?{min_qty:Number(p[0].trim()),unit_price:Number(p.slice(1).join(":").trim())}:null}).filter(function(x){return x&&Number.isFinite(x.min_qty)&&x.min_qty>=1&&Number.isFinite(x.unit_price)&&x.unit_price>=0});
     await api({action:"save_product",id:el("productId").value,name:el("productName").value,sku:el("productSku").value,category:el("productCategory").value,unit_label:el("productUnit").value,price:el("productPrice").value,moq:el("productMoq").value,stock_quantity:el("productStockQty").value,stock_status:el("productStockStatus").value,short_description:el("productShort").value,description:el("productDescription").value,specifications:specifications,pricing_tiers:pricing_tiers,primary_image_url:productMainUrl,image_urls:productGalleryUrls});
+    if(!el("productId").value)clearDraft("product");syncDraftNotices();
     msg(el("productMsg"),"Product saved. Submit it for review when the information and images are ready.",true);el("productEditor").classList.remove("open");resetProduct();await refresh();setPanel("products");
   }catch(e){msg(el("productMsg"),e.message)}
   finally{b.disabled=false;b.textContent=old}
@@ -1342,6 +1347,53 @@ function exportOrdersCsv(){
   orders.forEach(function(o){rows.push([o.platform_order_ref||o.order_ref,o.buyer_name,o.buyer_phone,o.delivery_location,o.item_count,o.subtotal==null?"":o.subtotal,o.delivery_fee==null?"":o.delivery_fee,o.order_status,o.created_at||""])});
   downloadCsv("ranova-seller-orders.csv",rows);
 }
+function sellerDraftKey(kind){return "ranova_seller_"+kind+"_draft_"+(session&&session.user?session.user.id:"guest")}
+function readDraft(kind){try{var raw=localStorage.getItem(sellerDraftKey(kind));return raw?JSON.parse(raw):null}catch(e){return null}}
+function writeDraft(kind,data){try{localStorage.setItem(sellerDraftKey(kind),JSON.stringify({saved_at:Date.now(),data:data}))}catch(e){}}
+function clearDraft(kind){try{localStorage.removeItem(sellerDraftKey(kind))}catch(e){}}
+function storeDraftData(){
+  return{storeName:el("storeName").value,storeSlug:el("storeSlug").value,storeTagline:el("storeTagline").value,storeDescription:el("storeDescription").value,storePhone:el("storePhone").value,storeEmail:el("storeEmail").value,storeCountry:el("storeCountry").value,storeLocation:el("storeLocation").value,storeFulfilment:el("storeFulfilment").value,storeReturns:el("storeReturns").value,storeMinimum:el("storeMinimum").value};
+}
+function applyStoreDraft(d){
+  if(!d)return;Object.keys(d).forEach(function(id){if(el(id))el(id).value=d[id]==null?"":d[id]});
+  msg(el("storeMsg"),"Unsaved store draft restored from this device. Review it and tap Save store when ready.",true);
+}
+function productDraftData(){
+  return{productName:el("productName").value,productSku:el("productSku").value,productCategory:el("productCategory").value,productUnit:el("productUnit").value,productPrice:el("productPrice").value,productMoq:el("productMoq").value,productStockQty:el("productStockQty").value,productStockStatus:el("productStockStatus").value,productShort:el("productShort").value,productDescription:el("productDescription").value,productSpecs:el("productSpecs").value,productTiers:el("productTiers").value};
+}
+function applyProductDraft(d){
+  if(!d)return;Object.keys(d).forEach(function(id){if(el(id))el(id).value=d[id]==null?"":d[id]});
+  msg(el("productMsg"),"Unsaved product draft restored. Add any images you still need, then save the product.",true);
+}
+function syncDraftNotices(){
+  var sd=readDraft("store"),pd=readDraft("product");
+  if(el("storeDraftNotice"))el("storeDraftNotice").style.display=sd&&sd.data?"block":"none";
+  if(el("productDraftNotice"))el("productDraftNotice").style.display=pd&&pd.data?"block":"none";
+}
+function renderRecentSellerActivity(){
+  var host=el("recentSellerActivity");if(!host||!state)return;
+  var rows=[];
+  (state.notifications||[]).slice(0,5).forEach(function(n){rows.push({ts:n.created_at||0,title:n.title||"Notification",detail:n.message||"",type:"Notice"})});
+  (state.inventory_events||[]).slice(0,5).forEach(function(e){rows.push({ts:e.created_at||0,title:"Inventory · "+pretty(e.event_type||"update"),detail:(e.order_ref?e.order_ref+" · ":"")+(e.note||""),type:"Stock"})});
+  (state.orders||[]).slice(0,5).forEach(function(o){rows.push({ts:o.updated_at||o.created_at||0,title:"Order · "+(o.platform_order_ref||o.order_ref||"Order"),detail:pretty(o.order_status||"new")+" · "+money(o.total||o.subtotal||0),type:"Order"})});
+  (state.payouts||[]).slice(0,5).forEach(function(p){rows.push({ts:p.updated_at||p.created_at||0,title:"Payout · "+(p.platform_order_ref||p.seller_order_ref||"Payout"),detail:pretty(p.payout_status||"pending")+" · "+money(p.payout_amount||0),type:"Finance"})});
+  rows.sort(function(a,b){return (Date.parse(b.ts)||0)-(Date.parse(a.ts)||0)});rows=rows.slice(0,8);
+  host.innerHTML=rows.length?rows.map(function(x){return '<div class="order-row"><div><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></div><div><span class="status">'+esc(x.type)+'</span></div><div><small>'+esc(x.ts?new Date(x.ts).toLocaleString():"")+'</small></div></div>'}).join(""):'<div class="empty">No recent seller activity yet.</div>';
+}
+function renderSellerAttention(){
+  var box=el("sellerAttentionBox");if(!box||!state)return;
+  var products=state.products||[],orders=state.orders||[],notes=state.notifications||[],alerts=[];
+  var urgentOrders=orders.filter(function(o){var h=Math.floor(Math.max(0,Date.now()-(Date.parse(o.created_at||o.updated_at||Date.now())||Date.now()))/3600000);return h>=48&&!["delivered","cancelled","returned","closed","refunded"].includes(clean(o.order_status).toLowerCase())}).length;
+  var rejected=products.filter(function(p){return p.product_status==="rejected"}).length;
+  var out=products.filter(function(p){return p.stock_status==="out_of_stock"||(p.stock_quantity!=null&&Number(p.stock_quantity)<=0)}).length;
+  var unread=notes.filter(function(n){return !n.read_at}).length;
+  if(urgentOrders)alerts.push(urgentOrders+" urgent order"+(urgentOrders===1?"":"s"));
+  if(rejected)alerts.push(rejected+" rejected listing"+(rejected===1?"":"s"));
+  if(out)alerts.push(out+" out-of-stock product"+(out===1?"":"s"));
+  if(unread)alerts.push(unread+" unread update"+(unread===1?"":"s"));
+  box.innerHTML=alerts.length?'<b>Needs attention:</b> '+alerts.map(esc).join(" · "):'<b>Seller operations look clear.</b> No urgent orders, rejected listings, out-of-stock products or unread updates detected.';
+}
+
 function renderSellerActionCenter(){
   if(!state)return;
   var products=state.products||[],orders=state.orders||[],notes=state.notifications||[];
@@ -1416,6 +1468,13 @@ function bindProductSelection(){
 
 function bindSellerPowerTools(){
   bindProductSelection();
+  var storeForm=el("storeForm");if(storeForm)storeForm.addEventListener("input",function(){writeDraft("store",storeDraftData());syncDraftNotices()});
+  ["productName","productSku","productCategory","productUnit","productPrice","productMoq","productStockQty","productStockStatus","productShort","productDescription","productSpecs","productTiers"].forEach(function(id){var node=el(id);if(node)node.addEventListener("input",function(){if(!el("productId").value){writeDraft("product",productDraftData());syncDraftNotices()}})});
+  if(el("restoreStoreDraft"))el("restoreStoreDraft").onclick=function(){var d=readDraft("store");if(d&&d.data)applyStoreDraft(d.data)};
+  if(el("discardStoreDraft"))el("discardStoreDraft").onclick=function(){clearDraft("store");syncDraftNotices()};
+  if(el("restoreProductDraft"))el("restoreProductDraft").onclick=function(){var d=readDraft("product");if(d&&d.data){openEditor(null);applyProductDraft(d.data)}};
+  if(el("discardProductDraft"))el("discardProductDraft").onclick=function(){clearDraft("product");syncDraftNotices()};
+
   ["productSearch","productStatusFilter","productStockFilter","productSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="productSearch"?"input":"change",renderProducts)});
   ["orderSearch","orderStatusFilter","orderPriorityFilter","orderSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="orderSearch"?"input":"change",renderOrders)});
   var clear=el("clearOrderFilters");if(clear)clear.onclick=function(){el("orderSearch").value="";el("orderStatusFilter").value="";el("orderPriorityFilter").value="";el("orderSort").value="newest";renderOrders()};
