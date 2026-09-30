@@ -91,12 +91,12 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           <div class="metric"><small>Products</small><strong id="mProducts">0</strong></div>
           <div class="metric"><small>Live products</small><strong id="mActive">0</strong></div>
           <div class="metric"><small>Waiting for RANOVA approval</small><strong id="mPending">0</strong></div>
-          <div class="metric"><small>Open orders</small><strong id="mMy Orders">0</strong></div>
+          <div class="metric"><small>Open orders</small><strong id="mMyOrders">0</strong></div>
         </div>
         <div class="card">
           <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h2>Seller Action Center</h2><p>See the important things you should check or do now.</p></div><button id="sellerRefresh" class="btn soft" type="button">Refresh dashboard</button></div>
           <div class="seller-action-grid">
-            <button class="seller-action" type="button" data-seller-jump="orders"><strong id="actionMy Orders">0</strong><b>My Orders to work on</b><small>Open these orders and take the next step.</small></button>
+            <button class="seller-action" type="button" data-seller-jump="orders"><strong id="actionMyOrders">0</strong><b>My Orders to work on</b><small>Open these orders and take the next step.</small></button>
             <button class="seller-action" type="button" data-seller-jump="products" data-product-filter="low_stock"><strong id="actionLowStock">0</strong><b>Products running low</b><small>Add more stock before the product finishes.</small></button>
             <button class="seller-action" type="button" data-seller-jump="products" data-product-filter="out_of_stock"><strong id="actionOutStock">0</strong><b>Out of stock</b><small>Add stock or keep this product unavailable until you have more.</small></button>
             <button class="seller-action" type="button" data-seller-jump="products" data-product-status="rejected"><strong id="actionRejected">0</strong><b>Products to fix</b><small>Correct these products and send them to RANOVA again.</small></button>
@@ -111,7 +111,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           </div>
           <div id="storeReadinessBox" class="catalogue-summary" style="margin-top:12px"></div>
           <div id="sellerAttentionBox" class="catalogue-summary" style="margin-top:10px"></div>
-          <div class="seller-syncbar"><small id="sellerSyncStatus"><span class="seller-sync-dot"></span>Connected · waiting for refresh</small><div class="actions" style="margin:0"><button id="exportProductsOverview" class="btn" type="button">Export products</button><button id="exportMy OrdersOverview" class="btn" type="button">Export orders</button></div></div>
+          <div class="seller-syncbar"><small id="sellerSyncStatus"><span class="seller-sync-dot"></span>Connected · waiting for refresh</small><div class="actions" style="margin:0"><button id="exportProductsOverview" class="btn" type="button">Export products</button><button id="exportMyOrdersOverview" class="btn" type="button">Export orders</button></div></div>
         </div>
         <div class="card"><h2>What happened recently</h2><p>Recent changes in your orders, stock, messages and money.</p><div id="recentSellerActivity" class="order-list"><div class="empty">No recent seller activity yet.</div></div></div>
         <div class="card"><h2>Before You Start Selling</h2><p>Keep your seller account approved. Add your store details, clear product information and real product photos. Send products to RANOVA for approval before customers can see them.</p></div>
@@ -162,7 +162,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           </div>
           <div id="productBulkBar" class="seller-syncbar" style="display:none;padding:10px 12px;border:1px solid var(--line);border-radius:13px;background:#fff8ef">
             <small><b id="productBulkCount">0</b> product(s) selected</small>
-            <div class="actions" style="margin:0"><button id="bulkSubmitProducts" class="btn green" type="button">Send selected for approval</button><button id="bulkPauseProducts" class="btn" type="button">Pause selected</button><button id="bulkRemove from useProducts" class="btn" type="button">Remove selected from use</button><button id="bulkClearProducts" class="btn" type="button">Clear</button></div>
+            <div class="actions" style="margin:0"><button id="bulkSubmitProducts" class="btn green" type="button">Send selected for approval</button><button id="bulkPauseProducts" class="btn" type="button">Pause selected</button><button id="bulkArchiveProducts" class="btn" type="button">Remove selected from use</button><button id="bulkClearProducts" class="btn" type="button">Clear</button></div>
           </div>
 
           <div class="catalogue-import">
@@ -170,7 +170,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <p>Upload a product file and RANOVA will try to prepare the products for you. Check everything before saving them.</p>
             <div class="catalogue-drop">
               <b>Product file</b>
-              <div style="font-size:12px;color:var(--muted);margin:4px 0 9px">Help & Issuesed: PDF, Word (.docx), Excel (.xlsx), CSV and TXT. Maximum 35 MB.</div>
+              <div style="font-size:12px;color:var(--muted);margin:4px 0 9px">Supported: PDF, Word (.docx), Excel (.xlsx), CSV and TXT. Maximum 35 MB.</div>
               <input id="catalogueFile" type="file" accept=".pdf,.docx,.xlsx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain">
               <div class="catalogue-actions">
                 <button id="readCatalogue" class="btn green" type="button">Read product file</button>
@@ -237,14 +237,14 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 
       <div id="panel-orders" class="panel">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h2>My Orders</h2><p>Check each order, confirm the amount, prepare it and arrange delivery. Only RANOVA can confirm that a customer has paid.</p></div><button id="exportMy Orders" class="btn" type="button">Export orders</button></div>
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h2>My Orders</h2><p>Check each order, confirm the amount, prepare it and arrange delivery. Only RANOVA can confirm that a customer has paid.</p></div><button id="exportMyOrders" class="btn" type="button">Export orders</button></div>
           <div class="seller-toolbar">
             <input id="orderSearch" class="wide" type="search" placeholder="Search order reference, customer, phone or location">
             <select id="orderStatusFilter"><option value="">All order stages</option><option value="new">New</option><option value="confirmed">Confirmed</option><option value="preparing">Preparing</option><option value="ready_for_dispatch">Ready for dispatch</option><option value="dispatched">Dispatched</option><option value="return_requested">Return requested</option><option value="returned">Returned</option><option value="cancelled">Cancelled</option></select>
             <select id="orderPriorityFilter"><option value="">All urgency levels</option><option value="urgent">Urgent - waiting 2 days or more</option><option value="due">Waiting 1 to 2 days</option><option value="normal">Normal (&lt;24h)</option></select>
             <select id="orderSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="amount_high">Highest amount</option><option value="amount_low">Lowest amount</option></select>
           </div>
-          <div class="actions" style="margin:0 0 12px"><button id="clearOrderFilters" class="btn" type="button">Show all orders</button><button id="showUrgentMy Orders" class="btn soft" type="button">Show urgent orders</button></div>
+          <div class="actions" style="margin:0 0 12px"><button id="clearOrderFilters" class="btn" type="button">Show all orders</button><button id="showUrgentMyOrders" class="btn soft" type="button">Show urgent orders</button></div>
           <div id="orderMsg" class="msg"></div><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div>
         </div>
       </div>
@@ -342,7 +342,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <span>Cancellation rate<b id="perfCancelRate">0%</b></span>
             <span>Late-delivery rate<b id="perfLateRate">0%</b></span>
             <span>Return rate<b id="perfReturnRate">0%</b></span>
-            <span>Total orders<b id="perfMy Orders">0</b></span>
+            <span>Total orders<b id="perfMyOrders">0</b></span>
           </div>
           <div id="perfReasons" class="hint" style="margin-top:10px"></div>
           <div id="enforcementNotice" class="msg" style="display:none;margin-top:12px"></div>
@@ -391,7 +391,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
       </div>
 
       <div id="panel-support" class="panel">
-        <div class="card"><h2>Help & Issues & disputes</h2><p>Refund and dispute cases are tied to the original RANOVA order. My Money may be held while a case is reviewed so neither buyer nor seller is disadvantaged before a decision is made.</p><div id="supportMsg" class="msg"></div></div>
+        <div class="card"><h2>Help, refunds & disputes</h2><p>Refund and dispute cases are tied to the original RANOVA order. My Money may be held while a case is reviewed so neither buyer nor seller is disadvantaged before a decision is made.</p><div id="supportMsg" class="msg"></div></div>
         <div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h2>Notifications</h2><p>Operational marketplace updates for your seller account.</p></div><button id="sellerMarkAllRead" class="btn" type="button">Mark all read</button></div><div id="sellerNotifications" class="order-list"><div class="empty">No notifications yet.</div></div></div>
         <div class="card"><h2>Refund requests</h2><div id="sellerRefunds" class="order-list"><div class="empty">No refund requests linked to your orders.</div></div></div>
         <div class="card"><h2>Disputes</h2><div id="sellerDisputes" class="order-list"><div class="empty">No disputes linked to your orders.</div></div></div>
@@ -502,13 +502,13 @@ async function refresh(){
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
   try{payoutChannels=await api({action:"payout_channels"})}catch(e){payoutChannels={banks:[],mobile_money:[],provider_configured:false}}
-  renderOverview();fillStore();renderProducts();renderInventory();renderMy Orders();renderDelivery();renderTrust();renderFinance();renderHelp & Issues();renderSellerActionCenter();renderRecentSellerActivity();renderSellerAttention();syncDraftNotices();
+  renderOverview();fillStore();renderProducts();renderInventory();renderMyOrders();renderDelivery();renderTrust();renderFinance();renderHelpIssues();renderSellerActionCenter();renderRecentSellerActivity();renderSellerAttention();syncDraftNotices();
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
   el("welcomeName").textContent=store.store_name||app.business_name||"Seller Dashboard";
   el("welcomeText").textContent=store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your seller account is approved. Finish the Set Up Your Store and prepare products for review.";
-  el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mMy Orders").textContent=c.open_orders||0;
+  el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mMyOrders").textContent=c.open_orders||0;
   var unreadNotes=(state.notifications||[]).filter(function(n){return !n.read_at}).length,attention=(c.open_support_cases||0)+unreadNotes;
   el("supportNav").textContent=attention>0?"Help & Issues ("+attention+")":"Help & Issues";el("deliveryNav").textContent=(c.awaiting_delivery_confirmation||0)>0?"Delivery ("+(c.awaiting_delivery_confirmation||0)+")":"Delivery";
   if(store.slug&&store.store_status==="active"){el("previewStore").href="./seller-store.html?store="+encodeURIComponent(store.slug);el("previewStore").style.display="inline-flex"}else el("previewStore").style.display="none";
@@ -1016,8 +1016,8 @@ function renderInventory(){
   }).join(""):'<div class="empty">No inventory reservations or stock movements yet.</div>';
 }
 
-function renderMy Orders(){
-  var host=el("orderList"),allMy Orders=state.orders||[],orders=allMy Orders.slice();
+function renderMyOrders(){
+  var host=el("orderList"),allMyOrders=state.orders||[],orders=allMyOrders.slice();
   var search=el("orderSearch")?el("orderSearch").value.trim().toLowerCase():"";
   var statusFilter=el("orderStatusFilter")?el("orderStatusFilter").value:"";
   var priorityFilter=el("orderPriorityFilter")?el("orderPriorityFilter").value:"";
@@ -1030,7 +1030,7 @@ function renderMy Orders(){
   else if(sort==="amount_high")orders.sort(function(a,b){return Number(b.subtotal||0)-Number(a.subtotal||0)});
   else if(sort==="amount_low")orders.sort(function(a,b){return Number(a.subtotal||0)-Number(b.subtotal||0)});
   else orders.sort(function(a,b){return orderTime(b)-orderTime(a)});
-  if(!allMy Orders.length){host.innerHTML='<div class="empty">No marketplace orders have been routed to this store yet.</div>';return}
+  if(!allMyOrders.length){host.innerHTML='<div class="empty">No marketplace orders have been routed to this store yet.</div>';return}
   if(!orders.length){host.innerHTML='<div class="empty">No orders match your current search or filters.</div>';return}
   host.innerHTML=orders.map(function(o){
     var items=Array.isArray(o.items)?o.items:[];
@@ -1092,7 +1092,7 @@ function renderDelivery(){
   }});
   zHost.querySelectorAll("[data-zone-archive]").forEach(function(b){b.onclick=async function(){
     if(!confirm("Remove from use this delivery zone? Existing orders keep their delivery record."))return;b.disabled=true;
-    try{await api({action:"archive_delivery_zone",id:b.dataset.zoneRemove from use});await refresh();setPanel("delivery")}
+    try{await api({action:"archive_delivery_zone",id:b.dataset.zoneArchive});await refresh();setPanel("delivery")}
     catch(e){msg(el("deliveryMsg"),e.message||"Could not archive zone.")}finally{b.disabled=false}
   }});
 
@@ -1229,7 +1229,7 @@ function renderTrust(){
   el("perfCancelRate").textContent=Number(p.cancellation_rate||0).toFixed(2)+"%";
   el("perfLateRate").textContent=Number(p.late_delivery_rate||0).toFixed(2)+"%";
   el("perfReturnRate").textContent=Number(p.return_rate||0).toFixed(2)+"%";
-  el("perfMy Orders").textContent=p.total_orders||0;
+  el("perfMyOrders").textContent=p.total_orders||0;
   var reasons=Array.isArray(p.automated_reasons)?p.automated_reasons:[];
   el("perfReasons").innerHTML=reasons.length?"<b>Why this level:</b> "+reasons.map(esc).join(" "):"Performance will become more meaningful as real orders are completed.";
   var activeEnforcement=!["","good_standing"].includes(String(e.enforcement_status||"good_standing"));
@@ -1341,7 +1341,7 @@ function exportProductsCsv(){
   products.forEach(function(p){rows.push([p.name,p.sku,p.category,p.price==null?"":p.price,p.moq,p.stock_quantity==null?"":p.stock_quantity,p.stock_status,p.product_status])});
   downloadCsv("ranova-seller-products.csv",rows);
 }
-function exportMy OrdersCsv(){
+function exportMyOrdersCsv(){
   var orders=state&&state.orders||[];
   var rows=[["Order reference","Customer","Phone","Delivery location","Items","Subtotal GHC","Delivery GHC","Status","Created"]];
   orders.forEach(function(o){rows.push([o.platform_order_ref||o.order_ref,o.buyer_name,o.buyer_phone,o.delivery_location,o.item_count,o.subtotal==null?"":o.subtotal,o.delivery_fee==null?"":o.delivery_fee,o.order_status,o.created_at||""])});
@@ -1383,11 +1383,11 @@ function renderRecentSellerActivity(){
 function renderSellerAttention(){
   var box=el("sellerAttentionBox");if(!box||!state)return;
   var products=state.products||[],orders=state.orders||[],notes=state.notifications||[],alerts=[];
-  var urgentMy Orders=orders.filter(function(o){var h=Math.floor(Math.max(0,Date.now()-(Date.parse(o.created_at||o.updated_at||Date.now())||Date.now()))/3600000);return h>=48&&!["delivered","cancelled","returned","closed","refunded"].includes(clean(o.order_status).toLowerCase())}).length;
+  var urgentMyOrders=orders.filter(function(o){var h=Math.floor(Math.max(0,Date.now()-(Date.parse(o.created_at||o.updated_at||Date.now())||Date.now()))/3600000);return h>=48&&!["delivered","cancelled","returned","closed","refunded"].includes(clean(o.order_status).toLowerCase())}).length;
   var rejected=products.filter(function(p){return p.product_status==="rejected"}).length;
   var out=products.filter(function(p){return p.stock_status==="out_of_stock"||(p.stock_quantity!=null&&Number(p.stock_quantity)<=0)}).length;
   var unread=notes.filter(function(n){return !n.read_at}).length;
-  if(urgentMy Orders)alerts.push(urgentMy Orders+" urgent order"+(urgentMy Orders===1?"":"s"));
+  if(urgentMyOrders)alerts.push(urgentMyOrders+" urgent order"+(urgentMyOrders===1?"":"s"));
   if(rejected)alerts.push(rejected+" rejected listing"+(rejected===1?"":"s"));
   if(out)alerts.push(out+" out-of-stock product"+(out===1?"":"s"));
   if(unread)alerts.push(unread+" unread update"+(unread===1?"":"s"));
@@ -1405,7 +1405,7 @@ function renderSellerActionCenter(){
   var rejected=products.filter(function(p){return p.product_status==="rejected"}).length;
   var wallet=state.wallet_summary||{},trust=state.trust_metrics||{},perf=state.performance||{},store=state.store||{};
   var openValue=orders.filter(function(o){return !finalStates.includes(clean(o.order_status).toLowerCase())}).reduce(function(sum,o){return sum+Number(o.total||o.subtotal||0)},0);
-  if(el("actionMy Orders"))el("actionMy Orders").textContent=attention;
+  if(el("actionMyOrders"))el("actionMyOrders").textContent=attention;
   if(el("actionLowStock"))el("actionLowStock").textContent=low;
   if(el("actionOutStock"))el("actionOutStock").textContent=out;
   if(el("actionRejected"))el("actionRejected").textContent=rejected;
@@ -1441,7 +1441,7 @@ async function runProductBulk(action){
   var ids=[...window.ranovaSelectedProducts];if(!ids.length)return;
   var label=action==="submit_product"?"submit":action==="pause_product"?"pause":"archive";
   if(action==="archive_product"&&!confirm("Remove from use "+ids.length+" selected product(s)?"))return;
-  var buttons=["bulkSubmitProducts","bulkPauseProducts","bulkRemove from useProducts"].map(el).filter(Boolean);
+  var buttons=["bulkSubmitProducts","bulkPauseProducts","bulkArchiveProducts"].map(el).filter(Boolean);
   buttons.forEach(function(b){b.disabled=true});
   try{
     var ok=0,fail=0;
@@ -1461,7 +1461,7 @@ function bindProductSelection(){
   });
   if(el("bulkSubmitProducts"))el("bulkSubmitProducts").onclick=function(){runProductBulk("submit_product")};
   if(el("bulkPauseProducts"))el("bulkPauseProducts").onclick=function(){runProductBulk("pause_product")};
-  if(el("bulkRemove from useProducts"))el("bulkRemove from useProducts").onclick=function(){runProductBulk("archive_product")};
+  if(el("bulkArchiveProducts"))el("bulkArchiveProducts").onclick=function(){runProductBulk("archive_product")};
   if(el("bulkClearProducts"))el("bulkClearProducts").onclick=function(){window.ranovaSelectedProducts.clear();renderProducts();syncProductBulkBar()};
   syncProductBulkBar();
 }
@@ -1476,9 +1476,9 @@ function bindSellerPowerTools(){
   if(el("discardProductDraft"))el("discardProductDraft").onclick=function(){clearDraft("product");syncDraftNotices()};
 
   ["productSearch","productStatusFilter","productStockFilter","productSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="productSearch"?"input":"change",renderProducts)});
-  ["orderSearch","orderStatusFilter","orderPriorityFilter","orderSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="orderSearch"?"input":"change",renderMy Orders)});
-  var clear=el("clearOrderFilters");if(clear)clear.onclick=function(){el("orderSearch").value="";el("orderStatusFilter").value="";el("orderPriorityFilter").value="";el("orderSort").value="newest";renderMy Orders()};
-  var urgent=el("showUrgentMy Orders");if(urgent)urgent.onclick=function(){el("orderPriorityFilter").value="urgent";setPanel("orders");renderMy Orders()};
+  ["orderSearch","orderStatusFilter","orderPriorityFilter","orderSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="orderSearch"?"input":"change",renderMyOrders)});
+  var clear=el("clearOrderFilters");if(clear)clear.onclick=function(){el("orderSearch").value="";el("orderStatusFilter").value="";el("orderPriorityFilter").value="";el("orderSort").value="newest";renderMyOrders()};
+  var urgent=el("showUrgentMyOrders");if(urgent)urgent.onclick=function(){el("orderPriorityFilter").value="urgent";setPanel("orders");renderMyOrders()};
   document.querySelectorAll("[data-seller-jump]").forEach(function(b){b.onclick=function(){
     var panel=b.dataset.sellerJump;
     if(panel==="products"&&b.dataset.productFilter&&el("productStockFilter"))el("productStockFilter").value=b.dataset.productFilter;
@@ -1487,11 +1487,11 @@ function bindSellerPowerTools(){
   }});
   var refreshBtn=el("sellerRefresh");if(refreshBtn)refreshBtn.onclick=async function(){var old=this.textContent;this.disabled=true;this.textContent="Refreshing…";try{await refresh()}finally{this.disabled=false;this.textContent=old}};
   [el("exportProductsOverview")].filter(Boolean).forEach(function(b){b.onclick=exportProductsCsv});
-  [el("exportMy OrdersOverview"),el("exportMy Orders")].filter(Boolean).forEach(function(b){b.onclick=exportMy OrdersCsv});
+  [el("exportMyOrdersOverview"),el("exportMyOrders")].filter(Boolean).forEach(function(b){b.onclick=exportMyOrdersCsv});
   addEventListener("online",renderSellerActionCenter);addEventListener("offline",renderSellerActionCenter);
 }
 
-function renderHelp & Issues(){
+function renderHelpIssues(){
   var notes=state.notifications||[],refunds=state.refunds||[],disputes=state.disputes||[];
   var nHost=el("sellerNotifications");
   nHost.innerHTML=notes.length?notes.map(function(n){
