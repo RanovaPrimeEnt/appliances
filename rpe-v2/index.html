@@ -159,6 +159,20 @@ body{background:var(--r-page);color:var(--r-text)}
   .home-orders-head{padding:16px 12px 8px!important}
 }
  .ranova-product-price,.sd-price,.pay-price,.pay-product-copy .price,.pay-total-row strong{color:#ff5a00!important}
+
+/* Customer marketplace discovery: product-first mobile results */
+.market-discovery-head{display:flex;align-items:end;justify-content:space-between;gap:10px;padding:10px 12px 4px}
+.market-discovery-head b{font-size:16px;color:#173d32}.market-discovery-head small{font-size:11px;color:#73817c}
+.market-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:8px 9px 12px}
+.market-product-card{border:1px solid #e4e9e7;border-radius:14px;background:#fff;overflow:hidden;text-align:left;padding:0;box-shadow:0 3px 12px rgba(14,63,52,.04);min-width:0}
+.market-product-card img,.market-product-placeholder{width:100%;aspect-ratio:1/1;object-fit:contain;background:#f7f8f7;display:block}
+.market-product-placeholder{display:grid;place-items:center;color:#9aa6a1;font-size:11px}
+.market-product-copy{padding:9px}.market-product-copy b{display:block;font-size:13px;line-height:1.35;color:#173d32;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.market-product-copy small{display:block;margin-top:3px;font-size:10px;color:#788681;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.market-product-copy strong{display:block;margin-top:5px;font-size:14px;color:#ff5a00}.market-product-copy em{display:inline-block;margin-top:5px;font-size:9px;font-style:normal;color:#536a64;background:#f2f6f4;border-radius:999px;padding:3px 6px}
+.market-empty{grid-column:1/-1;padding:26px 14px;text-align:center;border:1px dashed #dce5e1;border-radius:14px;color:#70817a;background:#fafcfb}.market-empty b{display:block;color:#173d32;margin-bottom:4px}
+@media(min-width:760px){.market-product-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
 </style>
 <link rel="stylesheet" href="./design-system.css">
 <link rel="stylesheet" href="../all/ranova-typography.css?v=20260930-7">
@@ -243,7 +257,9 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
       </div>
     </div>
     <div id="marketPromoGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px"></div>
-    <div style="padding:8px 12px;font-weight:950">Factories & Stores for You</div>
+    <div class="market-discovery-head"><b>Products for You</b><small id="marketResultSummary"></small></div>
+    <div id="marketProductResults" class="market-product-grid"></div>
+    <div style="padding:8px 12px;font-weight:950">Stores for You</div>
     <div id="marketFactoryFeed" style="display:grid;gap:9px;padding:0 9px 14px"></div>
   </div>
 </section><section id="homePanel" class="panel active">
