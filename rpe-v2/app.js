@@ -139,7 +139,7 @@ if($("simpleDiscoveryAdd"))$("simpleDiscoveryAdd").onclick=async()=>{
 if($("simpleDiscoverySave"))$("simpleDiscoverySave").onclick=async()=>{
   const id=simpleDiscoveryProductId;if(!id)return;
   await toggleFavorite(id);
-  $("simpleDiscoverySave").textContent=favorites.has(id)?"♥ Saved":"♡ Save";
+  $("simpleDiscoverySave").textContent=favorites.has(id)?"★ Saved":"☆ Save";
 };
 if($("simpleDiscoveryStore"))$("simpleDiscoveryStore").onclick=()=>{
   const url=$("simpleDiscoveryStore").dataset.url;if(url)location.href=url;
@@ -348,7 +348,7 @@ function productCard(p){
       ${image?'<img src="'+esc(image)+'" loading="lazy" alt="'+esc(p.name)+'">':'<div style="height:155px;display:grid;place-items:center;background:#f5f7f6;color:#93a49e;font-size:10px">RPE Product</div>'}
       <div class="product-copy"><h3>${esc(p.name)}</h3><small>${esc(cat)} • ${esc(p.sku||p.legacy_id||"RPE")}</small><small class="ranova-product-price" style="font-weight:800;color:#f05a21">${esc(money(p.price,p.currency))}</small></div>
     </button>
-    <div class="product-copy" style="padding-top:0"><div class="product-actions"><button class="add" data-add="${p.id}">Add to cart</button><button class="fav" data-fav="${p.id}" aria-label="Save product">${favorites.has(p.id)?"♥":"♡"}</button></div></div>
+    <div class="product-copy" style="padding-top:0"><div class="product-actions"><button class="add" data-add="${p.id}">Add to cart</button><button class="fav" data-fav="${p.id}" aria-pressed="${favorites.has(p.id)}" aria-label="${favorites.has(p.id)?'Remove saved product':'Save product'}">${favorites.has(p.id)?"★":"☆"}</button></div></div>
   </article>`;
 }
 function renderProducts(list){
@@ -425,7 +425,7 @@ function startRecommendationRotation(){
     renderHomeProducts();
   },45000);
 }
-function renderSaved(){const list=products.filter(p=>favorites.has(p.id));$("savedGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>No saved products yet</b>Tap ♡ on a product you want to remember.</div>'}
+function renderSaved(){const list=products.filter(p=>favorites.has(p.id));$("savedGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>No saved products yet</b>Tap ☆ on a product you want to remember.</div>'}
 function renderRecent(){const map=new Map(products.map(p=>[p.id,p]));const list=recentIds.map(id=>map.get(id)).filter(Boolean);$("recentGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>Nothing viewed yet</b>Products you open will appear here automatically.</div>'}
 
 document.addEventListener("click",async e=>{
@@ -493,7 +493,7 @@ function renderSimpleDiscoveryProduct(p,keepOrigin=false){
     : "";
 
   const sellerProduct=matchingSellerProduct(p),storeUrl=sellerStoreProductUrl(sellerProduct);
-  $("simpleDiscoverySave").textContent=favorites.has(p.id)?"♥ Saved":"♡ Save";
+  $("simpleDiscoverySave").textContent=favorites.has(p.id)?"★ Saved":"☆ Save";
   $("simpleDiscoveryStore").classList.toggle("hide",!storeUrl);
   $("simpleDiscoveryStore").dataset.url=storeUrl||"";
   $("simpleDiscoveryAdd").dataset.productId=p.id;

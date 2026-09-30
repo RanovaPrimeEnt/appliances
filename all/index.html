@@ -178,7 +178,7 @@ function enhancePremiumExperience(){
 
   function icon(kind){
     var map={
-      heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.7a5.5 5.5 0 0 0-7.8 0L12 5.8l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.5 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
+      heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.78 5.63L21 9.54l-4.5 4.39L17.56 20 12 17.13 6.44 20l1.06-6.07L3 9.54l6.22-.91L12 3Z"/></svg>',
       share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></svg>',
       home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg>',
       search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
@@ -219,11 +219,11 @@ function enhancePremiumExperience(){
   var resultsRow=d.querySelector(".results-row"),favMode=false,emptyFav=d.createElement("div");emptyFav.className="rpe-empty-favs";emptyFav.textContent="You have not saved any favourite products yet.";
   if(grid&&!d.getElementById("rpeEmptyFav")){emptyFav.id="rpeEmptyFav";grid.appendChild(emptyFav)}
   if(resultsRow&&!d.getElementById("rpeFavFilter")){
-    var fb=d.createElement("button");fb.id="rpeFavFilter";fb.className="rpe-fav-filter";fb.type="button";fb.textContent="♡ Favourites (0)";
+    var fb=d.createElement("button");fb.id="rpeFavFilter";fb.className="rpe-fav-filter";fb.type="button";fb.textContent="☆ Favourites (0)";
     fb.addEventListener("click",function(){favMode=!favMode;fb.classList.toggle("active",favMode);if(favMode){var si=d.getElementById("search");if(si){si.value="";si.dispatchEvent(new Event("input",{bubbles:true}))}try{w.setActiveCategory("All")}catch(e){}setTimeout(function(){decoratePremium();applyFavFilter()},0);grid.scrollIntoView({behavior:"smooth",block:"start"})}else applyFavFilter()});
     resultsRow.appendChild(fb);
   }
-  function updateFavCount(){var b=d.getElementById("rpeFavFilter");if(b)b.textContent=(favMode?"♥":"♡")+" Favourites ("+favs.size+")";var mb=d.getElementById("rpeMobileFavCount");if(mb)mb.textContent=favs.size}
+  function updateFavCount(){var b=d.getElementById("rpeFavFilter");if(b)b.textContent=(favMode?"★":"☆")+" Favourites ("+favs.size+")";var mb=d.getElementById("rpeMobileFavCount");if(mb)mb.textContent=favs.size}
   function applyFavFilter(){
     var visible=0;[].slice.call(grid.querySelectorAll(".product")).forEach(function(card){var hide=favMode&&!favs.has(String(card.dataset.productId));card.classList.toggle("rpe-hide-fav",hide);if(!hide)visible++});
     var e=d.getElementById("rpeEmptyFav");if(e)e.classList.toggle("show",favMode&&visible===0);
