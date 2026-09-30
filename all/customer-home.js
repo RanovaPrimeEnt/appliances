@@ -75,8 +75,7 @@ function money(p){
   if(p.price==null||p.price==="")return "Ask seller";
   var n=Number(p.price);
   if(!isFinite(n))return esc(p.price);
-  var cur=String(p.currency||"GHS").toUpperCase();
-  return (cur==="GHS"?"GH₵ ":cur+" ")+n.toLocaleString(undefined,{maximumFractionDigits:2});
+  return "GHC "+n.toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 function productKey(p){return String(p.product_id||p.id||"")}
 var PRICE_REST="https://igaerssbzobutlwvjfwt.supabase.co/rest/v1/ranova_seller_products";
@@ -225,7 +224,7 @@ function addStyles(d){
 .rch-desc{font-size:8px;color:#74847e;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:23px}
 .rch-meta{display:flex;gap:5px;flex-wrap:wrap}
 .rch-meta span{font-size:7px;background:#f0f5f3;border-radius:999px;padding:4px 6px;color:#596c65}
-.rch-price{margin-top:auto;padding-top:3px;font-size:14px;font-weight:950;color:#e65529}
+.rch-price{margin-top:auto;padding-top:3px;font-size:14px;font-weight:950;color:#ff5a00}
 .rch-price small{font-size:7px;color:#819089;font-weight:750;margin-left:3px}
 .rch-sentinel{min-height:60px;display:grid;place-items:center;color:#7a8984;font-size:10px}
 .rch-status{text-align:center;padding:13px 0;color:#788983;font-size:9px}
@@ -404,7 +403,7 @@ function renderSponsored(){
   row.innerHTML=ads.map(function(p){
     return '<a class="rch-ad" href="./product.html?product='+encodeURIComponent(productKey(p))+'" target="_top">'+
       (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.product_name||"Product")+'" loading="lazy">':'<span></span>')+
-      '<div><b>'+esc(p.product_name||"Marketplace product")+'</b><small>Sponsored • '+esc(p.store_name||"RANOVA seller")+'</small><div style="margin-top:6px;font-size:11px;font-weight:950;color:#e65529">'+money(p)+'</div></div></a>';
+      '<div><b>'+esc(p.product_name||"Marketplace product")+'</b><small>Sponsored • '+esc(p.store_name||"RANOVA seller")+'</small><div style="margin-top:6px;font-size:11px;font-weight:950;color:#ff5a00">'+money(p)+'</div></div></a>';
   }).join("");
   sec.classList.add("show");
 }
