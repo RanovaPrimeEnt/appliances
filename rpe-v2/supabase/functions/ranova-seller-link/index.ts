@@ -37,7 +37,9 @@ Deno.serve(async(req:Request)=>{
 
   try{
     const b=await req.json();
-    const application_ref=clean(b.application_ref,80).toUpperCase();
+    const entered_ref=clean(b.application_ref,80).toUpperCase();
+    const legacyMatch=entered_ref.match(/^RNS[-_ ]?(\d{8})[-_ ]?([A-Z0-9]{6})$/);
+    const application_ref=legacyMatch?("RNV-SLR-"+legacyMatch[1]+"-"+legacyMatch[2]):entered_ref;
     const phone=normalPhone(clean(b.phone,40));
     if(!application_ref||!phone){
       return new Response(JSON.stringify({ok:false,error:"Enter your application reference and phone number."}),{status:400,headers:h});
@@ -50,7 +52,7 @@ Deno.serve(async(req:Request)=>{
     const appRes=await fetch(q.toString(),{headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY}});
     const apps=await appRes.json().catch(()=>[]);
     if(!appRes.ok||!apps.length){
-      return new Response(JSON.stringify({ok:false,error:"Application not found. Check the reference, or start a new seller application."}),{status:404,headers:h});
+      return new Response(JSON.stringify({ok:false,error:"Application not found. Check the RNV-SLR or RNS reference, or start a new seller application."}),{status:404,headers:h});
     }
     const app=apps[0];
 
