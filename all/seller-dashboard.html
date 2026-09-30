@@ -94,7 +94,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           <div class="metric"><small>Open orders</small><strong id="mMy Orders">0</strong></div>
         </div>
         <div class="card">
-          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h2>What You Need to Do</h2><p>See the important things you should check or do now.</p></div><button id="sellerRefresh" class="btn soft" type="button">Refresh dashboard</button></div>
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h2>Seller Action Center</h2><p>See the important things you should check or do now.</p></div><button id="sellerRefresh" class="btn soft" type="button">Refresh dashboard</button></div>
           <div class="seller-action-grid">
             <button class="seller-action" type="button" data-seller-jump="orders"><strong id="actionMy Orders">0</strong><b>My Orders to work on</b><small>Open these orders and take the next step.</small></button>
             <button class="seller-action" type="button" data-seller-jump="products" data-product-filter="low_stock"><strong id="actionLowStock">0</strong><b>Products running low</b><small>Add more stock before the product finishes.</small></button>
@@ -139,7 +139,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <div class="asset logo"><b>Store logo</b><small>PNG, JPG or WebP. Maximum 5 MB.</small><div id="logoPreview" class="asset-preview">No logo uploaded</div><input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadLogo" class="btn soft" type="button">Upload logo</button></div>
             <div class="asset"><b>Store banner</b><small>Wide landscape image works best. Maximum 5 MB.</small><div id="bannerPreview" class="asset-preview">No banner uploaded</div><input id="bannerFile" type="file" accept="image/png,image/jpeg,image/webp"><button id="uploadBanner" class="btn soft" type="button">Upload banner</button></div>
           </div>
-          <div class="actions"><button id="saveStore" class="btn green" type="button">Save store</button><button id="publishStore" class="btn primary" type="button">Publish store</button><button id="pauseStore" class="btn" type="button">Hide for now store</button></div>
+          <div class="actions"><button id="saveStore" class="btn green" type="button">Save store</button><button id="publishStore" class="btn primary" type="button">Publish store</button><button id="pauseStore" class="btn" type="button">Pause store</button></div>
           <div class="hint" style="margin-top:9px">Publishing only succeeds for approved sellers with a store description, location and public contact method.</div>
         </div>
       </div>
@@ -150,7 +150,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           <div id="productMsg" class="msg" style="margin-top:12px"></div>
           <div class="seller-toolbar">
             <input id="productSearch" class="wide" type="search" placeholder="Search product name, SKU or category">
-            <select id="productStatusFilter"><option value="">All product types</option><option value="active">Live</option><option value="pending_review">Waiting for RANOVA approval</option><option value="draft">Draft</option><option value="paused">Hide for nowd</option><option value="rejected">Needs fixing</option></select>
+            <select id="productStatusFilter"><option value="">All product types</option><option value="active">Live</option><option value="pending_review">Waiting for RANOVA approval</option><option value="draft">Draft</option><option value="paused">Paused</option><option value="rejected">Needs fixing</option></select>
             <select id="productStockFilter"><option value="">All stock states</option><option value="in_stock">In stock</option><option value="low_stock">Low stock</option><option value="out_of_stock">Out of stock</option><option value="preorder">Order before stock arrives</option><option value="confirm_on_enquiry">Ask seller first</option></select>
             <select id="productSort"><option value="newest">Newest first</option><option value="name">Name A–Z</option><option value="price_low">Price low–high</option><option value="price_high">Price high–low</option><option value="stock_low">Lowest stock first</option><option value="quality_low">Needs work first</option></select>
           </div>
@@ -162,7 +162,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           </div>
           <div id="productBulkBar" class="seller-syncbar" style="display:none;padding:10px 12px;border:1px solid var(--line);border-radius:13px;background:#fff8ef">
             <small><b id="productBulkCount">0</b> product(s) selected</small>
-            <div class="actions" style="margin:0"><button id="bulkSubmitProducts" class="btn green" type="button">Send selected for approval</button><button id="bulkHide for nowProducts" class="btn" type="button">Hide selected for now</button><button id="bulkRemove from useProducts" class="btn" type="button">Remove selected from use</button><button id="bulkClearProducts" class="btn" type="button">Clear</button></div>
+            <div class="actions" style="margin:0"><button id="bulkSubmitProducts" class="btn green" type="button">Send selected for approval</button><button id="bulkPauseProducts" class="btn" type="button">Pause selected</button><button id="bulkRemove from useProducts" class="btn" type="button">Remove selected from use</button><button id="bulkClearProducts" class="btn" type="button">Clear</button></div>
           </div>
 
           <div class="catalogue-import">
@@ -592,7 +592,7 @@ function renderProducts(){
   list.innerHTML=ps.map(function(p){
     var img=p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="">':'<img alt="">';
     var submit=(p.product_status==="draft"||p.product_status==="paused"||p.product_status==="rejected")?'<button data-action="submit" data-id="'+p.id+'">Send to RANOVA for approval</button>':'';
-    var pause=p.product_status==="active"?'<button data-action="pause" data-id="'+p.id+'">Hide for now</button>':'';
+    var pause=p.product_status==="active"?'<button data-action="pause" data-id="'+p.id+'">Pause</button>':'';
     var priceValue=p.price==null?"":String(p.price);
     var priceControl='<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:7px"><span style="font-size:12px;font-weight:900">GHC</span><input data-price-input="'+esc(p.id)+'" type="number" min="0" step="0.01" value="'+esc(priceValue)+'" placeholder="Enquiry" style="width:105px;border:1px solid #d8e3df;border-radius:9px;padding:7px 8px"><button class="price-save-btn'+(p.price==null?"":" has-price")+'" data-action="price" data-id="'+esc(p.id)+'">'+(p.price==null?"Save price":"Update price")+'</button></div>';
     var checked=(window.ranovaSelectedProducts&&window.ranovaSelectedProducts.has(String(p.id)))?" checked":"";
@@ -1441,7 +1441,7 @@ async function runProductBulk(action){
   var ids=[...window.ranovaSelectedProducts];if(!ids.length)return;
   var label=action==="submit_product"?"submit":action==="pause_product"?"pause":"archive";
   if(action==="archive_product"&&!confirm("Remove from use "+ids.length+" selected product(s)?"))return;
-  var buttons=["bulkSubmitProducts","bulkHide for nowProducts","bulkRemove from useProducts"].map(el).filter(Boolean);
+  var buttons=["bulkSubmitProducts","bulkPauseProducts","bulkRemove from useProducts"].map(el).filter(Boolean);
   buttons.forEach(function(b){b.disabled=true});
   try{
     var ok=0,fail=0;
@@ -1460,7 +1460,7 @@ function bindProductSelection(){
     var id=String(box.dataset.productSelect);if(box.checked)window.ranovaSelectedProducts.add(id);else window.ranovaSelectedProducts.delete(id);syncProductBulkBar();
   });
   if(el("bulkSubmitProducts"))el("bulkSubmitProducts").onclick=function(){runProductBulk("submit_product")};
-  if(el("bulkHide for nowProducts"))el("bulkHide for nowProducts").onclick=function(){runProductBulk("pause_product")};
+  if(el("bulkPauseProducts"))el("bulkPauseProducts").onclick=function(){runProductBulk("pause_product")};
   if(el("bulkRemove from useProducts"))el("bulkRemove from useProducts").onclick=function(){runProductBulk("archive_product")};
   if(el("bulkClearProducts"))el("bulkClearProducts").onclick=function(){window.ranovaSelectedProducts.clear();renderProducts();syncProductBulkBar()};
   syncProductBulkBar();
