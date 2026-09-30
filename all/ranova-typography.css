@@ -79,3 +79,25 @@ button,a,summary{line-height:1.35}
   html[data-ranova-surface="app"][data-ranova-page="index"] .auth .row{grid-template-columns:1fr}
   html[data-ranova-surface="app"][data-ranova-page="index"] .cart-item .remove{grid-column:2;justify-self:end;padding:8px}
 }
+
+/* Product controls follow the photo; keep their spacing consistent at every width. */
+.detail-purchase,.product-purchase{margin-top:18px;padding-top:14px;border-top:1px solid #dfe8e4}
+html[data-ranova-page="product"] :is(.price,.product-total){color:#f05a21;font-weight:950}
+html[data-ranova-page="product"] .product-total{font-size:20px}
+@media(max-width:620px){
+ html[data-ranova-page="account"] :is(.profile-card,.profile-left,.profile-head,.section-head,.row){min-width:0;flex-wrap:wrap}
+ html[data-ranova-page="account"] :is(.profile-name,.service-label,.shortcut span:last-child,.row b){white-space:normal;overflow-wrap:anywhere}
+ html[data-ranova-page="account"] .services-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 6px}
+ html[data-ranova-page="account"] .bottom-nav{height:auto;min-height:72px}
+ html[data-ranova-page="account"] .app{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+ html[data-ranova-page="product"] :is(.main>*,.grid2>*,.specs>div,.metric,.sim){min-width:0;overflow-wrap:anywhere}
+ html[data-ranova-page="product"] .qtyrow{grid-template-columns:minmax(90px,110px) minmax(0,1fr)}
+ html[data-ranova-page="product"] :is(.tiers,#tiers){overflow-x:auto}
+ html[data-ranova-page="cart"] :is(.seller-head,.seller-foot,.actions,.sumrow){flex-wrap:wrap;overflow-wrap:anywhere}
+ html[data-ranova-page="cart"] .item>div{min-width:0;overflow-wrap:anywhere}
+ html[data-ranova-page="documents"] :is(.grid>*,.dochead,.actions){min-width:0;flex-wrap:wrap;overflow-wrap:anywhere}
+ html[data-ranova-page="documents"] .paper{overflow-x:auto}
+ html[data-ranova-page="rfq"] .top .wrap{flex-wrap:wrap}
+ html[data-ranova-page="rfq"] .actions button{width:100%;white-space:normal}
+ html[data-ranova-page="seller-store"] .detail-content>div{min-width:0}
+}

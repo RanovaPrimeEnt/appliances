@@ -33,7 +33,7 @@
 @media(max-width:720px){.admin-wrap:has(#seller-messages.active){width:100%;margin:0;gap:0}.admin-wrap:has(#seller-messages.active) .side{border-radius:0;border-left:0;border-right:0}.admin-wrap:has(#seller-messages.active) main{min-width:0}.admin-wrap:has(#seller-messages.active) .seller-messenger{height:calc(100dvh - 142px)}}
 
 
-/* RANOVA WhatsApp-style messenger refinement 2026-09-29 */
+/* RANOVA chat-style messenger refinement 2026-09-29 */
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
 
 .seller-messenger{

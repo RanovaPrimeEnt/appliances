@@ -1,7 +1,7 @@
-const CACHE="rpe-shell-v27";
+const CACHE="rpe-shell-v28";
 const SHELL=[
-  "./ranova-typography.css?v=20260930-2",
-  "./ranova-typography.js?v=20260930-2",
+  "./ranova-typography.css?v=20260930-3",
+  "./ranova-typography.js?v=20260930-3",
   "./",
   "./site.html",
   "./about.html",

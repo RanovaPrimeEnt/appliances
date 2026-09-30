@@ -160,8 +160,8 @@ body{background:var(--r-page);color:var(--r-text)}
 }
 </style>
 <link rel="stylesheet" href="./design-system.css">
-<link rel="stylesheet" href="../all/ranova-typography.css?v=20260930-2">
-<script defer src="../all/ranova-typography.js?v=20260930-2"></script>
+<link rel="stylesheet" href="../all/ranova-typography.css?v=20260930-3">
+<script defer src="../all/ranova-typography.js?v=20260930-3"></script>
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
@@ -320,7 +320,7 @@ body{background:var(--r-page);color:var(--r-text)}
 <section id="recentPanel" class="panel card"><div class="section-head"><h2>Recently Viewed</h2><button data-panel="homePanel">Back</button></div><div id="recentGrid" class="panel-body grid"></div></section>
 <section id="addressPanel" class="panel card"><div class="section-head"><h2>Delivery Addresses</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><div id="addressList" class="list"></div><button id="addAddress" class="btn primary" style="margin-top:12px">Add address</button></div></section>
 <section id="notifPanel" class="panel card"><div class="section-head"><h2>Notifications</h2><button data-panel="homePanel">Back</button></div><div id="notifList" class="panel-body list"></div></section>
-<section id="helpPanel" class="panel card"><div class="section-head"><h2>Help Centre</h2><button data-panel="homePanel">Back</button></div><div class="panel-body list"><div class="list-row"><div><b>Ordering</b><small>Add products to your cart and send one order request.</small></div></div><div class="list-row"><div><b>Prices & availability</b><small>Until RPE publishes confirmed prices and stock, your order is sent as a quote request first.</small></div></div><div class="list-row"><div><b>Order updates</b><small>Your order status updates here automatically when RPE changes it.</small></div></div><div class="list-row"><div><b>Need a person?</b><small>WhatsApp or call RPE directly.</small></div><button id="helpContact" class="btn primary">Contact RPE</button></div></div></section>
+<section id="helpPanel" class="panel card"><div class="section-head"><h2>Help Centre</h2><button data-panel="homePanel">Back</button></div><div class="panel-body list"><div class="list-row"><div><b>Ordering</b><small>Add products to your cart and send one order request.</small></div></div><div class="list-row"><div><b>Prices & availability</b><small>Until RPE publishes confirmed prices and stock, your order is sent as a quote request first.</small></div></div><div class="list-row"><div><b>Order updates</b><small>Your order status updates here automatically when RPE changes it.</small></div></div><div class="list-row"><div><b>Need a person?</b><small>Send your enquiry through RANOVA Messages.</small></div><button id="helpContact" class="btn primary">Message RANOVA</button></div></div></section>
 <section id="profilePanel" class="panel card"><div class="section-head"><h2>My Details</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><label style="font-size:10px;font-weight:800">First name</label><input id="profileFirst" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Last name</label><input id="profileLast" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Phone</label><input id="profilePhone" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><button id="saveProfile" class="btn primary">Save details</button><div class="profile-actions"><button id="installCustomerApp" class="btn soft" type="button">Install RANOVA App</button><button class="btn soft" data-panel="messagesPanel" type="button">Messages</button><a class="btn soft" href="../all/documents.html">Documents</a><a class="btn soft" href="../all/after-sales.html">Returns & Refunds</a><button id="signOut" class="btn outline" type="button">Sign out</button></div><div id="customerUpdateNote" class="notice hide" style="margin-top:10px"></div></div></section>
 </main>
 
@@ -340,6 +340,6 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20260929-recommend01"></script>
+<script src="./app.js?v=20260930-messages01"></script>
 <script src="./customer-pwa.js?v=20260929-06"></script>
 </body></html>

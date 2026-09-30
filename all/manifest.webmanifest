@@ -1,7 +1,7 @@
 {
   "name": "Ranova Prime Enterprise",
   "short_name": "RPE",
-  "description": "Browse Ranova Prime Enterprise products and send enquiries directly by WhatsApp, Gmail or phone.",
+  "description": "Browse Ranova Prime Enterprise products and send enquiries directly through RANOVA Messages.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -447,7 +447,7 @@ async function integrateSolarProducts(){
     if(missing.length)console.warn("Missing solar catalogue products:",missing);
     installUi(d,solar,catalogue.length);
 
-    // Re-render the existing product section. Search, selection, WhatsApp and modal behavior stay native.
+    // Re-render the existing product section. Search, selection, RANOVA Messages and modal behavior stay native.
     if(typeof w.render==="function")w.render();
     return true;
   })().catch(function(e){
