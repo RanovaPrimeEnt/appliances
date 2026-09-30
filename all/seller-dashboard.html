@@ -56,10 +56,10 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 <section class="hero"><div class="wrap"><div class="kicker">STORE MANAGEMENT</div><h1>Build and manage your RANOVA store.</h1><p>Set up your public storefront, add products, control wholesale pricing and stock, and keep track of marketplace orders from one workspace.</p></div></section>
 
 <main class="wrap">
-  <div id="gate" class="card hide" style="margin-top:20px"></div>
+  <div id="gate" class="card" style="margin-top:20px"><div class="locked"><b>Checking your seller account…</b>Please wait while RANOVA verifies your Seller Center session.</div></div>
 
   <div id="sellerDocumentNotice" class="locked" style="font-size:16px;line-height:1.6" hidden></div>
-  <div id="dashboard" class="shell">
+  <div id="dashboard" class="shell hide">
     <aside class="side">
       <button class="navbtn active" data-panel="overview">Overview</button>
       <button class="navbtn" data-panel="store">Store Builder</button>
@@ -1186,19 +1186,8 @@ el("sellerMarkAllRead").onclick=async function(){await api({action:"mark_notific
 el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./seller-center.html"};
 async function boot(){
   var gs=await sb.auth.getSession();session=gs.data.session;
-  if(!session){
-    el("dashboard").classList.add("hide");
-    el("gate").classList.remove("hide");
-    el("gate").innerHTML='<div class="locked"><b>Sign in to Seller Center first.</b>Your seller dashboard uses the same protected seller account.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Open Seller Center →</a></div></div>';
-    return
-  }
-  el("gate").classList.add("hide");
-  el("dashboard").classList.remove("hide");
-  try{await loadCountries();await refresh()}catch(e){
-    el("dashboard").classList.add("hide");
-    el("gate").classList.remove("hide");
-    el("gate").innerHTML='<div class="locked"><b>Seller Dashboard could not load.</b>'+esc(e.message||"Return to Seller Center and try again.")+'</div>'
-  }
+  if(!session){el("gate").innerHTML='<div class="locked"><b>Sign in to Seller Center first.</b>Your seller dashboard uses the same protected seller account.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Open Seller Center →</a></div></div>';return}
+  try{await loadCountries();await refresh()}catch(e){el("gate").innerHTML='<div class="locked"><b>Seller Dashboard could not load.</b>'+esc(e.message||"Return to Seller Center and try again.")+'</div>'}
 }
 sb.auth.onAuthStateChange(function(_event,newSession){session=newSession;if(!session)location.href="./seller-center.html"});
 boot();
