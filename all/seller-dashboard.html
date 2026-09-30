@@ -109,6 +109,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <div class="metric"><small>Fulfilment score</small><strong id="snapshotFulfilment">—</strong></div>
             <div class="metric"><small>Store status</small><strong id="snapshotStoreStatus" style="font-size:17px">Draft</strong></div>
           </div>
+          <div id="storeReadinessBox" class="catalogue-summary" style="margin-top:12px"></div>
           <div class="seller-syncbar"><small id="sellerSyncStatus"><span class="seller-sync-dot"></span>Connected · waiting for refresh</small><div class="actions" style="margin:0"><button id="exportProductsOverview" class="btn" type="button">Export products</button><button id="exportOrdersOverview" class="btn" type="button">Export orders</button></div></div>
         </div>
         <div class="card"><h2>Seller checklist</h2><p>Your verification has to remain approved. Build your store profile, add clear product information, upload genuine product photos and submit products for review before they become public.</p></div>
@@ -148,7 +149,13 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
             <input id="productSearch" class="wide" type="search" placeholder="Search product name, SKU or category">
             <select id="productStatusFilter"><option value="">All product states</option><option value="active">Live</option><option value="pending_review">Awaiting review</option><option value="draft">Draft</option><option value="paused">Paused</option><option value="rejected">Needs correction</option></select>
             <select id="productStockFilter"><option value="">All stock states</option><option value="in_stock">In stock</option><option value="low_stock">Low stock</option><option value="out_of_stock">Out of stock</option><option value="preorder">Pre-order</option><option value="confirm_on_enquiry">Confirm on enquiry</option></select>
-            <select id="productSort"><option value="newest">Newest first</option><option value="name">Name A–Z</option><option value="price_low">Price low–high</option><option value="price_high">Price high–low</option><option value="stock_low">Lowest stock first</option></select>
+            <select id="productSort"><option value="newest">Newest first</option><option value="name">Name A–Z</option><option value="price_low">Price low–high</option><option value="price_high">Price high–low</option><option value="stock_low">Lowest stock first</option><option value="quality_low">Needs work first</option></select>
+          </div>
+          <div class="metrics" style="margin:0 0 14px">
+            <div class="metric"><small>Complete listings</small><strong id="productCompleteCount">0</strong></div>
+            <div class="metric"><small>Need improvement</small><strong id="productIncompleteCount">0</strong></div>
+            <div class="metric"><small>Missing main image</small><strong id="productMissingImageCount">0</strong></div>
+            <div class="metric"><small>Missing price</small><strong id="productMissingPriceCount">0</strong></div>
           </div>
           <div id="productBulkBar" class="seller-syncbar" style="display:none;padding:10px 12px;border:1px solid var(--line);border-radius:13px;background:#fff8ef">
             <small><b id="productBulkCount">0</b> product(s) selected</small>
@@ -229,10 +236,11 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h2>Orders</h2><p>Confirm the final amount first, then move each order through preparation and delivery. Payment status is controlled separately by RANOVA and cannot be marked paid by the seller.</p></div><button id="exportOrders" class="btn" type="button">Export orders</button></div>
           <div class="seller-toolbar">
             <input id="orderSearch" class="wide" type="search" placeholder="Search order reference, customer, phone or location">
-            <select id="orderStatusFilter"><option value="">All order states</option><option value="new">New</option><option value="confirmed">Confirmed</option><option value="preparing">Preparing</option><option value="ready_for_delivery">Ready for delivery</option><option value="shipped">Shipped</option><option value="out_for_delivery">Out for delivery</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select>
+            <select id="orderStatusFilter"><option value="">All order states</option><option value="new">New</option><option value="confirmed">Confirmed</option><option value="preparing">Preparing</option><option value="ready_for_dispatch">Ready for dispatch</option><option value="dispatched">Dispatched</option><option value="return_requested">Return requested</option><option value="returned">Returned</option><option value="cancelled">Cancelled</option></select>
+            <select id="orderPriorityFilter"><option value="">All priorities</option><option value="urgent">Urgent (48h+)</option><option value="due">Due soon (24–47h)</option><option value="normal">Normal (&lt;24h)</option></select>
             <select id="orderSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="amount_high">Highest amount</option><option value="amount_low">Lowest amount</option></select>
-            <button id="clearOrderFilters" class="btn" type="button">Clear filters</button>
           </div>
+          <div class="actions" style="margin:0 0 12px"><button id="clearOrderFilters" class="btn" type="button">Clear order filters</button><button id="showUrgentOrders" class="btn soft" type="button">Show urgent only</button></div>
           <div id="orderMsg" class="msg"></div><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div>
         </div>
       </div>
@@ -528,6 +536,38 @@ el("uploadLogo").onclick=async function(){var b=this,old=b.textContent;b.disable
 el("uploadBanner").onclick=async function(){var b=this,old=b.textContent;b.disabled=true;b.textContent="Uploading…";try{bannerUrl=await uploadAsset(el("bannerFile").files[0],"store");preview(el("bannerPreview"),bannerUrl,false);msg(el("storeMsg"),"Banner uploaded. Save the store to keep it.",true)}catch(e){msg(el("storeMsg"),e.message)}finally{b.disabled=false;b.textContent=old}};
 
 function statusChip(status){return '<span class="chip '+esc(status)+'">'+esc(pretty(status))+'</span>'}
+function productMissingFields(p){
+  var missing=[];
+  if(!clean(p.primary_image_url))missing.push("main image");
+  if(p.price==null||p.price==="")missing.push("price");
+  if(!clean(p.category))missing.push("category");
+  if(!clean(p.short_description))missing.push("short selling sentence");
+  if(!clean(p.description))missing.push("description");
+  if(!p.specifications||typeof p.specifications!=="object"||!Object.keys(p.specifications).length)missing.push("specifications");
+  if(!p.moq||Number(p.moq)<1)missing.push("MOQ");
+  return missing;
+}
+function productQualityScore(p){
+  var checks=[
+    !!clean(p.name),!!clean(p.primary_image_url),p.price!=null&&p.price!=="",!!clean(p.category),
+    !!clean(p.short_description),!!clean(p.description),
+    !!(p.specifications&&typeof p.specifications==="object"&&Object.keys(p.specifications).length),
+    !!(p.moq&&Number(p.moq)>=1),!!clean(p.stock_status)
+  ];
+  return Math.round(checks.filter(Boolean).length/checks.length*100);
+}
+function renderProductQualityMetrics(){
+  var products=state&&state.products||[];
+  var complete=products.filter(function(p){return productQualityScore(p)>=85}).length;
+  var incomplete=products.length-complete;
+  var noImage=products.filter(function(p){return !clean(p.primary_image_url)}).length;
+  var noPrice=products.filter(function(p){return p.price==null||p.price===""}).length;
+  if(el("productCompleteCount"))el("productCompleteCount").textContent=complete;
+  if(el("productIncompleteCount"))el("productIncompleteCount").textContent=incomplete;
+  if(el("productMissingImageCount"))el("productMissingImageCount").textContent=noImage;
+  if(el("productMissingPriceCount"))el("productMissingPriceCount").textContent=noPrice;
+}
+
 function renderProducts(){
   var list=el("productList"),all=state.products||[],ps=all.slice();
   var search=el("productSearch")?el("productSearch").value.trim().toLowerCase():"";
@@ -541,6 +581,8 @@ function renderProducts(){
   else if(sort==="price_low")ps.sort(function(a,b){return (a.price==null?Number.MAX_SAFE_INTEGER:Number(a.price))-(b.price==null?Number.MAX_SAFE_INTEGER:Number(b.price))});
   else if(sort==="price_high")ps.sort(function(a,b){return (b.price==null?-1:Number(b.price))-(a.price==null?-1:Number(a.price))});
   else if(sort==="stock_low")ps.sort(function(a,b){return (a.stock_quantity==null?Number.MAX_SAFE_INTEGER:Number(a.stock_quantity))-(b.stock_quantity==null?Number.MAX_SAFE_INTEGER:Number(b.stock_quantity))});
+  else if(sort==="quality_low")ps.sort(function(a,b){return productQualityScore(a)-productQualityScore(b)});
+  renderProductQualityMetrics();
   if(!all.length){list.innerHTML='<div class="empty">No seller products yet. Use “Add product” to create your first listing.</div>';return}
   if(!ps.length){list.innerHTML='<div class="empty">No products match your current search or filters.</div>';return}
   list.innerHTML=ps.map(function(p){
@@ -550,7 +592,9 @@ function renderProducts(){
     var priceValue=p.price==null?"":String(p.price);
     var priceControl='<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:7px"><span style="font-size:12px;font-weight:900">GHC</span><input data-price-input="'+esc(p.id)+'" type="number" min="0" step="0.01" value="'+esc(priceValue)+'" placeholder="Enquiry" style="width:105px;border:1px solid #d8e3df;border-radius:9px;padding:7px 8px"><button class="price-save-btn'+(p.price==null?"":" has-price")+'" data-action="price" data-id="'+esc(p.id)+'">'+(p.price==null?"Save price":"Update price")+'</button></div>';
     var checked=(window.ranovaSelectedProducts&&window.ranovaSelectedProducts.has(String(p.id)))?" checked":"";
-    return '<div class="product-row"><label style="display:grid;place-items:center"><input type="checkbox" data-product-select="'+esc(p.id)+'"'+checked+' aria-label="Select '+esc(p.name)+'"></label>'+img+'<div><b>'+esc(p.name)+'</b><small>'+esc(p.category)+' · <span class="ranova-price">'+esc(money(p.price))+'</span> · MOQ '+esc(p.moq)+' · '+esc(pretty(p.stock_status))+(p.stock_quantity==null?'':' · '+esc(p.stock_quantity)+' unit(s)')+'</small>'+statusChip(p.product_status)+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':'')+'</div><div class="row-actions">'+priceControl+'<button data-action="edit" data-id="'+p.id+'">Edit</button><button data-action="duplicate" data-id="'+p.id+'">Duplicate</button>'+submit+pause+'<button data-action="archive" data-id="'+p.id+'">Archive</button></div></div>'
+    var q=productQualityScore(p),qualityLabel=q>=85?"Strong listing":q>=65?"Good · add more detail":"Needs improvement";
+    var missing=productMissingFields(p);
+    return '<div class="product-row"><label style="display:grid;place-items:center"><input type="checkbox" data-product-select="'+esc(p.id)+'"'+checked+' aria-label="Select '+esc(p.name)+'"></label>'+img+'<div><b>'+esc(p.name)+'</b><small>'+esc(p.category)+' · <span class="ranova-price">'+esc(money(p.price))+'</span> · MOQ '+esc(p.moq)+' · '+esc(pretty(p.stock_status))+(p.stock_quantity==null?'':' · '+esc(p.stock_quantity)+' unit(s)')+'</small>'+statusChip(p.product_status)+' <span class="chip">'+q+'% · '+esc(qualityLabel)+'</span>'+(missing.length?'<small>Improve: '+missing.map(esc).join(', ')+'</small>':'')+(p.moderation_note?'<small>'+esc(p.moderation_note)+'</small>':'')+'</div><div class="row-actions">'+priceControl+'<button data-action="edit" data-id="'+p.id+'">Edit</button><button data-action="duplicate" data-id="'+p.id+'">Duplicate</button>'+submit+pause+'<button data-action="archive" data-id="'+p.id+'">Archive</button></div></div>'
   }).join("")||'<div class="empty">No current products.</div>';
 }
 function resetProduct(){
@@ -949,9 +993,16 @@ function renderInventory(){
     stockHost.innerHTML=sortedProducts.length?sortedProducts.map(function(p){
       var qty=p.stock_quantity==null?"Not tracked":esc(p.stock_quantity)+" unit(s)";
       var cls=p.stock_status==="out_of_stock"?"out":p.stock_status==="low_stock"||(p.stock_quantity!=null&&Number(p.stock_quantity)<=5)?"low":"";
-      return '<div class="order-row"><div><b>'+esc(p.name)+'</b><small>'+esc(p.sku||"No SKU")+' · '+esc(p.category||"Uncategorised")+'</small></div><div><span class="status">'+esc(pretty(p.stock_status||"confirm_on_enquiry"))+'</span><small class="seller-stock-alert '+cls+'">'+qty+'</small></div><div><div class="order-actions"><button data-stock-edit="'+p.id+'">Update stock</button></div></div></div>';
+      return '<div class="order-row"><div><b>'+esc(p.name)+'</b><small>'+esc(p.sku||"No SKU")+' · '+esc(p.category||"Uncategorised")+'</small></div><div><span class="status">'+esc(pretty(p.stock_status||"confirm_on_enquiry"))+'</span><small class="seller-stock-alert '+cls+'">'+qty+'</small></div><div><div class="order-actions"><button data-stock-edit="'+p.id+'">Update stock</button><button data-restock-product="'+p.id+'" data-restock="5">+5</button><button data-restock-product="'+p.id+'" data-restock="10">+10</button><button data-restock-product="'+p.id+'" data-restock="25">+25</button></div></div></div>';
     }).join(""):'<div class="empty">No products yet.</div>';
     stockHost.querySelectorAll("[data-stock-edit]").forEach(function(b){b.onclick=function(){var p=products.find(function(x){return x.id===b.dataset.stockEdit});if(!p)return;setPanel("products");openEditor(p);setTimeout(function(){el("productStockQty").focus()},250)}});
+    stockHost.querySelectorAll("[data-restock-product]").forEach(function(b){b.onclick=function(){
+      var p=products.find(function(x){return x.id===b.dataset.restockProduct});if(!p)return;
+      var add=Number(b.dataset.restock||0),current=p.stock_quantity==null?0:Number(p.stock_quantity||0);
+      setPanel("products");openEditor(p);el("productStockQty").value=current+add;el("productStockStatus").value="in_stock";
+      msg(el("productMsg"),"Stock prepared at "+(current+add)+" units. Review the product and tap Save product to confirm the change.",true);
+      setTimeout(function(){el("saveProduct").scrollIntoView({behavior:"smooth",block:"center"})},200);
+    }});
   }
   var host=el("inventoryList");
   host.innerHTML=events.length?events.map(function(e){
@@ -964,9 +1015,11 @@ function renderOrders(){
   var host=el("orderList"),allOrders=state.orders||[],orders=allOrders.slice();
   var search=el("orderSearch")?el("orderSearch").value.trim().toLowerCase():"";
   var statusFilter=el("orderStatusFilter")?el("orderStatusFilter").value:"";
+  var priorityFilter=el("orderPriorityFilter")?el("orderPriorityFilter").value:"";
   var sort=el("orderSort")?el("orderSort").value:"newest";
   if(search)orders=orders.filter(function(o){return [o.platform_order_ref,o.order_ref,o.buyer_name,o.buyer_phone,o.delivery_location].some(function(v){return clean(v).toLowerCase().includes(search)})});
   if(statusFilter)orders=orders.filter(function(o){return clean(o.order_status)===statusFilter});
+  if(priorityFilter)orders=orders.filter(function(o){var hours=Math.floor(Math.max(0,Date.now()-(Date.parse(o.created_at||o.updated_at||Date.now())||Date.now()))/3600000);return priorityFilter==="urgent"?hours>=48:priorityFilter==="due"?hours>=24&&hours<48:hours<24});
   var orderTime=function(o){return Date.parse(o.created_at||o.updated_at||0)||0};
   if(sort==="oldest")orders.sort(function(a,b){return orderTime(a)-orderTime(b)});
   else if(sort==="amount_high")orders.sort(function(a,b){return Number(b.subtotal||0)-Number(a.subtotal||0)});
@@ -1310,6 +1363,17 @@ function renderSellerActionCenter(){
   if(el("snapshotRating"))el("snapshotRating").textContent=trust.overall_rating==null?"—":Number(trust.overall_rating).toFixed(2)+"/5";
   if(el("snapshotFulfilment"))el("snapshotFulfilment").textContent=perf.fulfillment_score==null?"—":Number(perf.fulfillment_score).toFixed(0)+"/100";
   if(el("snapshotStoreStatus"))el("snapshotStoreStatus").textContent=pretty(store.store_status||"draft");
+  var readinessChecks=[
+    {ok:!!clean(store.store_name),label:"store name"},
+    {ok:!!clean(store.description),label:"description"},
+    {ok:!!clean(store.business_location),label:"location"},
+    {ok:!!(clean(store.public_phone)||clean(store.public_email)),label:"public contact"},
+    {ok:!!clean(store.logo_url),label:"logo"},
+    {ok:products.some(function(p){return p.product_status==="active"}),label:"live product"}
+  ];
+  var readyCount=readinessChecks.filter(function(x){return x.ok}).length;
+  var readiness=Math.round(readyCount/readinessChecks.length*100),missingReady=readinessChecks.filter(function(x){return !x.ok}).map(function(x){return x.label});
+  if(el("storeReadinessBox"))el("storeReadinessBox").innerHTML='<b>Store readiness: '+readiness+'%</b> · '+(missingReady.length?'Still improve: '+missingReady.map(esc).join(", "):'Your core seller storefront setup is complete.');
   if(el("mStockLow"))el("mStockLow").textContent=low;
   if(el("mStockOut"))el("mStockOut").textContent=out;
   var sync=el("sellerSyncStatus");
@@ -1353,8 +1417,9 @@ function bindProductSelection(){
 function bindSellerPowerTools(){
   bindProductSelection();
   ["productSearch","productStatusFilter","productStockFilter","productSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="productSearch"?"input":"change",renderProducts)});
-  ["orderSearch","orderStatusFilter","orderSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="orderSearch"?"input":"change",renderOrders)});
-  var clear=el("clearOrderFilters");if(clear)clear.onclick=function(){el("orderSearch").value="";el("orderStatusFilter").value="";el("orderSort").value="newest";renderOrders()};
+  ["orderSearch","orderStatusFilter","orderPriorityFilter","orderSort"].forEach(function(id){var node=el(id);if(node)node.addEventListener(id==="orderSearch"?"input":"change",renderOrders)});
+  var clear=el("clearOrderFilters");if(clear)clear.onclick=function(){el("orderSearch").value="";el("orderStatusFilter").value="";el("orderPriorityFilter").value="";el("orderSort").value="newest";renderOrders()};
+  var urgent=el("showUrgentOrders");if(urgent)urgent.onclick=function(){el("orderPriorityFilter").value="urgent";setPanel("orders");renderOrders()};
   document.querySelectorAll("[data-seller-jump]").forEach(function(b){b.onclick=function(){
     var panel=b.dataset.sellerJump;
     if(panel==="products"&&b.dataset.productFilter&&el("productStockFilter"))el("productStockFilter").value=b.dataset.productFilter;
