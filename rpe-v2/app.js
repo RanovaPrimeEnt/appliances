@@ -90,7 +90,9 @@ function restoreFastCache(){
   }catch{return false}
 }
 function idleRun(fn,timeout=1200){if("requestIdleCallback"in window)requestIdleCallback(fn,{timeout});else setTimeout(fn,250)}
-function contactRpe(){window.open("https://wa.me/233542846895?text="+encodeURIComponent("Hello Ranova Prime Enterprise, I need some help with my order or shopping."),"_blank","noopener")}
+async function contactRpe(subject="Shopping enquiry",draft="Hello Ranova Prime Enterprise, I need help with my order or shopping."){
+ try{const found=await sb.from("ranova_seller_stores").select("id").eq("slug","ranova-prime-enterprise").eq("store_status","active").maybeSingle();if(found.error)throw found.error;if(!found.data)throw Error("RANOVA Store is currently unavailable. Please try again later.");const out=await messageApi({action:"start",store_id:found.data.id,subject});showPanel("messagesPanel");await openMessageConversation(out.conversation.id);$("msgInput").value=draft;updateMsgAction();$("msgInput").focus()}catch(e){showToast(e.message||"Could not open messages")}
+}
 
 function showPanel(id){
   hidePreparationScreen();
@@ -152,8 +154,8 @@ document.addEventListener("click",e=>{
   sb.from("recently_viewed").upsert({user_id:user.id,product_id:p.id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"}).then(()=>saveFastCache()).catch(()=>{});
   window.scrollTo(0,0);
 });
-if($("contactShortcut"))$("contactShortcut").onclick=contactRpe;
-if($("helpContact"))$("helpContact").onclick=contactRpe;
+if($("contactShortcut"))$("contactShortcut").onclick=()=>contactRpe();
+if($("helpContact"))$("helpContact").onclick=()=>contactRpe();
 if($("notifBtn"))$("notifBtn").onclick=()=>showPanel("notifPanel");
 if($("cartBtn"))$("cartBtn").onclick=openCart;
 if($("bottomCart"))$("bottomCart").onclick=openCart;
@@ -583,7 +585,7 @@ function openOrder(id){
   </div><div class="drawer-foot"><button class="btn primary" data-order-help>Contact RPE about this order</button></div></aside>`;
   document.body.appendChild(overlay);overlay.addEventListener("click",e=>{
     if(e.target===overlay||e.target.closest("[data-close-order]"))overlay.remove();
-    if(e.target.closest("[data-order-help]"))window.open("https://wa.me/233542846895?text="+encodeURIComponent("Hello Ranova Prime Enterprise, I need help with order "+o.order_number+"."),"_blank","noopener");
+    if(e.target.closest("[data-order-help]"))contactRpe("Order support","Hello Ranova Prime Enterprise, I need help with order "+o.order_number+".");
   })
 }
 function renderCounts(){

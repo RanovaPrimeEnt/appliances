@@ -14,8 +14,8 @@ body{height:100vh;height:100dvh;display:flex;flex-direction:column}.top{flex-shr
 .quote strong{font-size:16px}.modalbox h2{font-size:24px}.message-field textarea{font-size:16px}
 .empty{font-size:16px}.top{height:auto;min-height:58px;padding-top:10px;padding-bottom:10px;gap:10px;flex-wrap:wrap}
 @media(max-width:760px){.top>div{display:flex;flex-wrap:wrap;gap:5px}.top a{margin-left:0;margin-right:8px}.shell{height:100%;min-height:0}.chathead{padding:12px}.toolbar{gap:5px}.messages{padding:12px}}
-</style><link rel="stylesheet" href="./ranova-typography.css?v=20260930-2">
-<script defer src="./ranova-typography.js?v=20260930-2"></script>
+</style><link rel="stylesheet" href="./ranova-typography.css?v=20260930-3">
+<script defer src="./ranova-typography.js?v=20260930-3"></script>
 </head><body>
 <header class="top"><a class="brand" href="./">RANOVA MESSAGES</a><div><a href="./marketplace.html">Marketplace</a><a href="./cart.html">Cart</a><a href="./documents.html">Documents</a><a href="./after-sales.html">After-sales</a><a href="./account.html">Buyer account</a><a href="./seller-dashboard.html">Seller dashboard</a></div></header>
 <main class="wrap"><div id="gate"></div><div id="shell" class="shell" style="display:none">
@@ -95,7 +95,21 @@ function negotiateQuote(id){var q=(current.quotes||[]).find(x=>x.id===id);if(!q)
 async function reportMessage(id){var category=prompt("Report reason: spam, fraud_suspected, off_platform_payment, harassment, misleading_product, counterfeit_suspected, or other","spam");if(!category)return;var description=prompt("Briefly explain why you are reporting this message.","")||"";if(description.trim().length<5){alert("Please add a short explanation.");return}try{var o=await api({action:"report_message",conversation_id:current.id,message_id:id,category:category.trim().toLowerCase(),description});alert("Report submitted"+(o.report_ref?" ("+o.report_ref+")":"")+". RANOVA will review the context before taking action.")}catch(e){alert(e.message)}}
 async function loadList(){var o=await api({action:"list"});list=o.conversations||[];renderList()}
 async function openConv(id,silent){var o=await api({action:"open",conversation_id:id});current=o.conversation;role=o.role;renderCurrent();if(!silent)history.replaceState(null,"","./messages.html?conversation="+encodeURIComponent(id));await loadList()}
-async function startFromUrl(){var q=new URLSearchParams(location.search),cid=q.get("conversation"),wantQuote=q.get("quote")==="1";if(cid){await openConv(cid);if(wantQuote&&role==="buyer"&&current?.product){el("rfqQty").value=current.product?.moq||1;el("rfqModal").classList.add("open")}return}var product=q.get("product"),store=q.get("store"),sellerOrder=q.get("seller_order");if(product||store||sellerOrder){var o=await api({action:"start",product_id:product,store_id:store,seller_order_id:sellerOrder,subject:q.get("subject")||""});current=o.conversation;role="buyer";history.replaceState(null,"","./messages.html?conversation="+encodeURIComponent(current.id)+(wantQuote?"&quote=1":""));renderCurrent();await loadList();if(wantQuote&&current?.product){el("rfqQty").value=current.product?.moq||1;el("rfqModal").classList.add("open")}}}
+async function startFromUrl(){
+ var q=new URLSearchParams(location.search);if(!q.toString()){try{q=new URLSearchParams(sessionStorage.getItem("ranova_pending_enquiry")||"")}catch(e){}}
+ var cid=q.get("conversation"),wantQuote=q.get("quote")==="1",draft=q.get("draft");
+ if(cid){await openConv(cid)}else{
+  var product=q.get("product"),store=q.get("store"),sellerOrder=q.get("seller_order"),slug=q.get("store_slug");
+  if(slug&&!store){var found=await sb.from("ranova_seller_stores").select("id").eq("slug",slug).eq("store_status","active").maybeSingle();if(found.error)throw found.error;if(!found.data)throw new Error("This store is currently unavailable. Please choose an active store from the marketplace.");store=found.data.id}
+  if(store&&q.get("sku")&&!product){var match=await sb.from("ranova_seller_products").select("id").eq("store_id",store).eq("sku",q.get("sku")).eq("product_status","active").limit(1);if(match.error)throw match.error;product=match.data?.[0]?.id||null}
+  if(product||store||sellerOrder){var o=await api({action:"start",product_id:product,store_id:store,seller_order_id:sellerOrder,subject:q.get("subject")||"Product enquiry"});current=o.conversation;role="buyer";renderCurrent();await loadList()}
+ }
+ if(!current)return;
+ if(draft){el("message").value=draft;updateComposerAction();el("message").focus()}
+ try{sessionStorage.removeItem("ranova_pending_enquiry")}catch(e){}
+ history.replaceState(null,"","./messages.html?conversation="+encodeURIComponent(current.id));
+ if(wantQuote&&role==="buyer"&&current.product){el("rfqQty").value=current.product.moq||1;el("rfqModal").classList.add("open")}
+}
 var attachment=null,recorder=null,mediaStream=null,recordChunks=[],recordStarted=0,recordPaused=0,recordPauseStarted=0,recordTimer=null;
 function updateComposerAction(){var hasText=!!el("message").value.trim(),hasAttachment=!!attachment;el("recordStart").hidden=hasText||hasAttachment;el("send").hidden=!(hasText||hasAttachment)}
 function previewAttachment(file){attachment=file;el("attachmentPreview").hidden=false;el("attachmentPreview").innerHTML='<span>'+esc(file.name)+' ('+Math.ceil(file.size/1024)+' KB)</span><button id="removeAttachment" type="button" aria-label="Remove attachment">×</button>';el("removeAttachment").onclick=function(){attachment=null;el("attachmentPreview").hidden=true;updateComposerAction()};updateComposerAction()}
@@ -122,6 +136,6 @@ el("submitQuote").onclick=async function(){try{await api({action:"submit_quote",
 async function respondQuote(id,decision){try{var o=await api({action:"respond_quote",conversation_id:current.id,quote_id:id,decision});await openConv(current.id,true);if(decision==="accepted"&&o.cart_url&&confirm("Quote accepted. Add it to your RANOVA cart now?"))location.href=o.cart_url}catch(e){alert(e.message)}}
 function useQuote(id){location.href="./cart.html?quote="+encodeURIComponent(id)}
 el("back").onclick=function(){el("shell").classList.remove("chat-open")};
-async function boot(){var gs=await sb.auth.getSession();session=gs.data.session;if(!session){el("gate").innerHTML='<div class="auth"><h2>Sign in to use RANOVA Messages</h2><p style="font-size:14px;color:var(--muted)">Messaging is tied to verified buyer and seller accounts so orders, quotes and agreements cannot be impersonated.</p><a class="send" style="display:inline-block" href="./account.html">Buyer sign in</a> <a class="btn" style="display:inline-block" href="./seller-center.html">Seller sign in</a></div>';return}el("shell").style.display="grid";if(innerWidth<=760)el("back").style.display="inline-block";await loadList();await startFromUrl();poll=setInterval(function(){if(current)openConv(current.id,true).catch(()=>{});else loadList().catch(()=>{})},5000)}
-boot();
+async function boot(){var gs=await sb.auth.getSession();session=gs.data.session;if(!session){try{if(location.search)sessionStorage.setItem("ranova_pending_enquiry",location.search)}catch(e){}el("gate").innerHTML='<div class="auth"><h2>Sign in to use RANOVA Messages</h2><p style="font-size:14px;color:var(--muted)">Messaging is tied to verified buyer and seller accounts so orders, quotes and agreements cannot be impersonated.</p><a class="send" style="display:inline-block" href="./account.html">Buyer sign in</a> <a class="btn" style="display:inline-block" href="./seller-center.html">Seller sign in</a></div>';return}el("shell").style.display="grid";if(innerWidth<=760)el("back").style.display="inline-block";await loadList();await startFromUrl();poll=setInterval(function(){if(current)openConv(current.id,true).catch(()=>{});else loadList().catch(()=>{})},5000)}
+boot().catch(function(e){el("gate").textContent=e.message||"Could not open messages. Please try again."});
 })();</script></body></html>

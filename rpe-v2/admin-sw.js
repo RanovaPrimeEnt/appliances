@@ -1,7 +1,7 @@
-const CACHE="ranova-admin-shell-v6";
+const CACHE="ranova-admin-shell-v7";
 const CORE=[
-  "../all/ranova-typography.css?v=20260930-2",
-  "../all/ranova-typography.js?v=20260930-2",
+  "../all/ranova-typography.css?v=20260930-3",
+  "../all/ranova-typography.js?v=20260930-3",
   "./admin.html",
   "./admin.js",
   "./config.js",

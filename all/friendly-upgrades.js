@@ -4,7 +4,7 @@
 var frame=document.getElementById("site");
 if(!frame)return;
 
-var RPE_PHONE="233542846895";
+
 var bootCount=0;
 var bootTimer=null;
 
@@ -23,10 +23,10 @@ function esc(v){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];
   });
 }
-function whatsappHref(p){
+function messageHref(p){
   var id=p.rpeSku||p.id||"";
   var msg="Hello Ranova Prime Enterprise, I am interested in "+p.name+(id?" ("+id+")":"")+". Please confirm the current price, availability, delivery information and important specifications.";
-  return "https://wa.me/"+RPE_PHONE+"?text="+encodeURIComponent(msg);
+  return "./messages.html?store_slug=ranova-prime-enterprise&sku="+encodeURIComponent(id)+"&subject="+encodeURIComponent(p.name)+"&draft="+encodeURIComponent(msg);
 }
 function getProductForCard(card,ps){
   if(!card)return null;
@@ -419,7 +419,7 @@ function installCompareAndCardActions(d,w,ps,grid){
     var items=compareIds.map(byId).filter(Boolean);
     if(items.length<2){showToast(d,"Choose at least 2 products to compare.");return}
     var html='<div class="rpe-compare-table">';
-    html+=row("Product",items.map(function(p){return '<div class="rpe-compare-product"><img src="'+esc(p.image)+'" alt=""><b>'+esc(p.name)+'</b><small>'+esc(p.category)+'</small><a href="'+whatsappHref(p)+'" target="_blank" rel="noopener">Ask on WhatsApp</a></div>'}));
+    html+=row("Product",items.map(function(p){return '<div class="rpe-compare-product"><img src="'+esc(p.image)+'" alt=""><b>'+esc(p.name)+'</b><small>'+esc(p.category)+'</small><a href="'+messageHref(p)+'" target="_top">Message seller</a></div>'}));
     html+=row("Product ID / Model",items.map(function(p){return esc(p.rpeSku||p.rpeModel||p.id)}));
     html+=row("Series",items.map(function(p){return esc(specVal(p,"series"))}));
     html+=row("LED",items.map(function(p){return esc(specVal(p,"led_beads"))}));
@@ -449,8 +449,8 @@ function installCompareAndCardActions(d,w,ps,grid){
       var row=card.querySelector(".rpe-card-quick");
       if(!row){
         row=d.createElement("div");row.className="rpe-card-quick";
-        var wa=d.createElement("a");wa.className="rpe-wa-card";wa.href=whatsappHref(p);wa.target="_blank";wa.rel="noopener";wa.textContent="WhatsApp";
-        wa.setAttribute("aria-label","Ask RPE about "+p.name+" on WhatsApp");wa.onclick=function(e){e.stopPropagation()};
+        var wa=d.createElement("a");wa.className="rpe-wa-card";wa.href=messageHref(p);wa.target="_top";wa.rel="noopener";wa.textContent="Message";
+        wa.setAttribute("aria-label","Ask RPE about "+p.name+" in RANOVA Messages");wa.onclick=function(e){e.stopPropagation()};
         var cmp=d.createElement("button");cmp.type="button";cmp.className="rpe-compare-card";cmp.dataset.id=String(p.id);cmp.textContent="Compare";cmp.setAttribute("aria-pressed","false");
         cmp.setAttribute("aria-label","Compare "+p.name);cmp.onclick=function(e){e.stopPropagation();toggle(p)};
         row.appendChild(wa);row.appendChild(cmp);card.appendChild(row);

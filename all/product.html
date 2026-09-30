@@ -14,8 +14,8 @@
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}.card{padding:17px}.card h2{margin:0 0 10px;font-size:16px}.specs{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden}.specs div{padding:9px;border-bottom:1px solid var(--line);font-size:10px}.specs div:nth-last-child(-n+2){border-bottom:0}.specs b{background:#f7faf8}.tiers table{width:100%;border-collapse:collapse;font-size:10px}.tiers th,.tiers td{padding:8px;border-bottom:1px solid var(--line);text-align:left}.trustgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.metric{padding:10px;background:#f5f8f7;border-radius:11px}.metric small{display:block;color:var(--muted);font-size:8px}.metric b{display:block;margin-top:3px;font-size:12px}.reviews{display:grid;gap:8px}.review{padding:11px;border:1px solid var(--line);border-radius:11px}.review small{display:block;color:var(--muted);font-size:8px}.review p{font-size:10px;line-height:1.5}.sellerreply{margin-top:7px;padding:7px;border-left:3px solid #c8ded6;background:#f7faf8;font-size:9px}.similar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sim{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.sim img{width:100%;aspect-ratio:1.2/1;object-fit:contain;background:#f4f7f5}.sim div{padding:10px}.sim b{font-size:11px}.sim small{display:block;color:var(--muted);margin-top:4px}.empty{padding:20px;text-align:center;color:var(--muted);font-size:10px;border:1px dashed var(--line);border-radius:11px}
 @media(max-width:800px){.main,.grid2{grid-template-columns:1fr}.trustgrid{grid-template-columns:1fr 1fr}.similar{grid-template-columns:repeat(2,1fr)}.cta{grid-template-columns:1fr}.topin{padding:12px}.nav{display:none}.wrap{padding:14px 10px 50px}}
 </style>
-<link rel="stylesheet" href="./ranova-typography.css?v=20260930-2">
-<script defer src="./ranova-typography.js?v=20260930-2"></script>
+<link rel="stylesheet" href="./ranova-typography.css?v=20260930-3">
+<script defer src="./ranova-typography.js?v=20260930-3"></script>
 </head>
 <body>
 <header class="top"><div class="topin"><a class="brand" href="./">RANOVA</a><nav class="nav"><a href="./marketplace.html">Marketplace</a><a href="./messages.html">Messages</a><a href="./account.html">Buyer account</a><a href="./order-status.html">Track order</a><a href="./sell.html">Sell on RANOVA</a></nav></div></header>
@@ -24,12 +24,12 @@
 <div id="loading" class="empty">Loading product details…</div>
 <div id="page" style="display:none">
 <section class="main">
-  <div class="gallery"><div id="mainImage" class="mainimg"></div><div id="thumbs" class="thumbs"></div></div>
+  <div class="gallery"><div id="mainImage" class="mainimg"></div><div id="thumbs" class="thumbs"></div><section class="product-purchase" aria-label="Product ordering">    <div class="qtyrow"><div class="field"><label>Quantity</label><input id="qty" type="number" min="0" value="0"></div><div id="tierHint" class="notice" style="margin:0">Quantity pricing will appear here when available.</div></div>
+    <div class="cta"><a id="buyNow" class="buy" href="#">Add to order</a><button id="saveBtn" class="save" type="button">♡ Save product</button></div><div class="cta"><a id="messageSeller" class="save" href="#">Message seller / Request quote</a><button id="shareBtn" class="save" type="button">Share product</button></div><p id="productTotal" class="product-total" role="status" aria-live="polite"></p></section></div>
   <div class="buybox">
     <div id="category" class="eyebrow"></div><h1 id="name"></h1><p id="short" class="desc"></p>
     <div id="chips" class="chips"></div><div id="price" class="price"></div>
-    <div class="qtyrow"><div class="field"><label>Quantity</label><input id="qty" type="number" min="1" value="1"></div><div id="tierHint" class="notice" style="margin:0">Quantity pricing will appear here when available.</div></div>
-    <div class="cta"><a id="buyNow" class="buy" href="#">Add to order</a><button id="saveBtn" class="save" type="button">♡ Save product</button></div><div class="cta"><a id="messageSeller" class="save" href="#">Message seller / Request quote</a><button id="shareBtn" class="save" type="button">Share product</button></div>
+
     <div id="buyerProtect" class="notice">RANOVA payment and delivery protections remain in force. Final payment and delivery confirmation happen through the protected order flow.</div>
   </div>
 </section>
@@ -67,8 +67,7 @@ async function refreshCurrentPrice(){
   var r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_products?select=id,price,currency,pricing_tiers&id=eq."+encodeURIComponent(productId)+"&limit=1",{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY},cache:"no-store"});
   if(!r.ok)return;var rows=await r.json(),x=rows&&rows[0];if(!x)return;
   current.product.price=x.price==null?null:Number(x.price);if(x.currency)current.product.currency=x.currency;if(Array.isArray(x.pricing_tiers))current.product.pricing_tiers=x.pricing_tiers;
-  var q=Math.max(Number(current.product.moq||1),Number(el("qty").value||current.product.moq||1));
-  el("price").innerHTML=money(priceForQty(current.product,q))+'<small>per '+esc(current.product.unit_label||"unit")+'</small>';
+  updateProductPurchase();
  }catch(e){}
 }
 function priceForQty(p,q){
@@ -82,7 +81,7 @@ function render(out){
  function showImage(url){el("mainImage").innerHTML=url?'<img src="'+esc(url)+'" alt="'+esc(p.name)+'">':'<div class="empty">No image available</div>'}
  showImage(imgs[0]||"");el("thumbs").innerHTML=imgs.map(function(x,i){return '<button data-img="'+i+'"><img src="'+esc(x)+'" alt=""></button>'}).join("");
  el("thumbs").querySelectorAll("[data-img]").forEach(function(b){b.onclick=function(){showImage(imgs[Number(b.dataset.img)])}});
- el("qty").min=p.moq||1;el("qty").value=p.moq||1;
+ el("qty").min=0;el("qty").value=0;
  el("chips").innerHTML='<span class="chip">MOQ '+esc(p.moq||1)+'</span><span class="chip">'+esc(String(p.stock_status||"confirm_on_enquiry").replace(/_/g," "))+'</span>'+(pf.trusted_badge?'<span class="chip">✓ Trusted seller</span>':'<span class="chip">'+esc(String(pf.performance_level||"probation").replace(/_/g," "))+'</span>')+(p.sku?'<span class="chip">SKU '+esc(p.sku)+'</span>':'');
  el("price").innerHTML=money(priceForQty(p,Number(el("qty").value)))+'<small>per '+esc(p.unit_label||"unit")+'</small>';
  var specs=p.specifications&&typeof p.specifications==="object"&&!Array.isArray(p.specifications)?p.specifications:{};
@@ -98,11 +97,21 @@ function render(out){
  var rev=out.reviews||[];el("reviews").innerHTML=rev.length?rev.map(function(r){return '<div class="review"><b>'+esc(r.buyer_display_name||"Verified buyer")+' · '+esc(stars(r.overall_rating))+'</b><small>Verified purchase'+(r.published_at?" · "+new Date(r.published_at).toLocaleDateString():"")+'</small>'+(r.review_title?'<p><b>'+esc(r.review_title)+'</b></p>':'')+(r.review_text?'<p>'+esc(r.review_text)+'</p>':'')+(r.seller_response?'<div class="sellerreply"><b>Seller response:</b> '+esc(r.seller_response)+'</div>':'')+'</div>'}).join(""):'<div class="empty">No published verified seller/order reviews yet.</div>';
  var sim=out.similar||[];el("similar").innerHTML=sim.length?sim.map(function(x){return '<a class="sim" href="./product.html?product='+encodeURIComponent(x.product_id)+'">'+(x.primary_image_url?'<img src="'+esc(x.primary_image_url)+'" alt="'+esc(x.product_name)+'">':'')+'<div><b>'+esc(x.product_name)+'</b><small>'+esc(money(x.price))+' · '+esc(x.store_name)+'</small></div></a>'}).join(""):'<div class="empty" style="grid-column:1/-1">No similar marketplace products yet.</div>';
  el("delivery").innerHTML=deliveryHtml(out.delivery_options||[]);
+ updateProductPurchase();
  el("loading").style.display="none";el("page").style.display="block";
 }
 function deliveryHtml(zones){return zones.length?zones.map(function(z){var price=z.pricing_type==="free"?"Free":z.pricing_type==="fixed"?money(z.fixed_fee):"Quoted per order";var eta=(z.eta_min_days!=null||z.eta_max_days!=null)?(" · "+(z.eta_min_days??z.eta_max_days)+"–"+(z.eta_max_days??z.eta_min_days)+" days"):"";return '<div class="review"><b>'+esc(z.zone_name)+'</b><small>'+esc(z.country_code)+' · '+esc(String(z.fulfilment_method||"").replace(/_/g," "))+'</small><p>'+esc(z.area_description||"")+'</p><small>'+esc(price+eta)+'</small></div>'}).join(""):'<div class="empty">No delivery zone is published for this destination yet. The seller can still confirm a custom delivery quote during ordering.</div>'}
 async function load(country){try{render(await api(country))}catch(e){el("loading").textContent=e.message||"This product is unavailable."}}
-el("qty").oninput=function(){if(!current)return;var p=current.product,q=Math.max(Number(p.moq||1),Number(this.value||p.moq||1));el("price").innerHTML=money(priceForQty(p,q))+'<small>per '+esc(p.unit_label||"unit")+'</small>';el("buyNow").href="./cart.html?add="+encodeURIComponent(p.id)+"&qty="+encodeURIComponent(q);var tiers=p.pricing_tiers||[];var next=tiers.filter(function(t){return Number(t.min_qty)>q}).sort(function(a,b){return Number(a.min_qty)-Number(b.min_qty)})[0];el("tierHint").textContent=next?"Buy "+next.min_qty+"+ for "+money(next.unit_price)+" per "+(p.unit_label||"unit")+".":"Current quantity uses the best published tier available."};
+function updateProductPurchase(){
+ if(!current)return;var p=current.product,q=Math.max(0,Math.floor(Number(el("qty").value)||0)),minimum=Math.max(1,Number(p.moq)||1);if(p.stock_quantity!=null)q=Math.min(q,Math.max(0,Number(p.stock_quantity)||0));el("qty").value=q;
+ var unit=priceForQty(p,q),allowed=q>=minimum&&p.stock_status!=="out_of_stock";
+ el("price").innerHTML=money(unit)+'<small>per '+esc(p.unit_label||"unit")+'</small>';
+ el("productTotal").textContent="Product total: "+(unit==null?(q?"Request seller price":money(0)):money(Number(unit)*q));
+ el("buyNow").href=allowed?"./cart.html?add="+encodeURIComponent(p.id)+"&qty="+encodeURIComponent(q):"#";el("buyNow").setAttribute("aria-disabled",String(!allowed));el("buyNow").style.opacity=allowed?"1":".5";
+ var next=(p.pricing_tiers||[]).filter(function(t){return Number(t.min_qty)>q}).sort(function(a,b){return Number(a.min_qty)-Number(b.min_qty)})[0];el("tierHint").textContent=q<minimum?"Choose at least "+minimum+" unit(s) to add to your order.":next?"Buy "+next.min_qty+"+ for "+money(next.unit_price)+" per "+(p.unit_label||"unit")+".":"Current quantity uses the best published tier available.";
+}
+el("qty").oninput=updateProductPurchase;
+el("buyNow").onclick=function(e){if(this.getAttribute("aria-disabled")==="true")e.preventDefault()};
 el("saveBtn").onclick=async function(){
   if(!current)return;
   if(buyerSession){
