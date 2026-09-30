@@ -171,7 +171,7 @@ html:root body :is(.product .price,.product-card .price,.ranova-product-price,.p
 html:root body :is(.product .buy,.product .add,.detail-actions [data-detail-add],.product-purchase #buyNow){background:#f05a21;color:#fff}
 
 /* Product names are the Georgia exception; controls and descriptions retain Inter. */
-:is(.product h3,.product-name,.rch-name,.product-card h3,.rpe-seller-product-card h3,.rpe-compare-product h3,.rpe-related-card b,.rpe-mini-card b,.product-row b,#simpleDiscoveryName,#detailName,#productTitle,#productName,#productModal h3,.rpe-essential-name,#sellerProductDetail h2,#productsList .row>div:first-child>b,#sellerProductsList .review-head h2){--ranova-font:Georgia,"Times New Roman",serif;font-weight:700!important}
+:is(.product h3,.product-name,.rch-name,.product-card h3,.rpe-seller-product-card h3,.rpe-seller-product-card h4,.rpe-compare-product h3,.rpe-compare-product b,.pay-product-copy>b,.sim b,.rpe-related-card b,.rpe-mini-card b,.product-row b,#simpleDiscoveryName,#detailName,#productTitle,#productName,#productModal h3,.rpe-essential-name,#sellerProductDetail h2,#productsList .row>div:first-child>b,#sellerProductsList .review-head h2){--ranova-font:Georgia,"Times New Roman",serif;font-weight:700!important}
 html[data-ranova-page="marketplace"] .card h3{--ranova-font:Georgia,"Times New Roman",serif;font-weight:700!important}
 html:root body :is(.product [data-save],.product [data-fav]){font-size:22px!important;line-height:1;flex-shrink:0;color:#116a52}
 html:root body :is(.product [data-save],.product [data-fav]):hover{background:#fff4ec;color:#c44813}
