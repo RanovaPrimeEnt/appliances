@@ -112,12 +112,13 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
         <div class="card" id="verificationChecklist">
           <h2 id="verificationChecklistTitle">Your verification checklist</h2>
           <p id="verificationChecklistIntro">Do one step at a time. Choose the requested file, upload it, then move to the next step. RANOVA Admin will review the real document securely.</p>
-          <div style="margin-top:12px;padding:12px 14px;border:1px solid #dce8e3;border-radius:13px;background:#f8fbf9;font-size:14px;line-height:1.6;color:#61736c">
+          <div id="uploadGuidance" style="margin-top:12px;padding:12px 14px;border:1px solid #dce8e3;border-radius:13px;background:#f8fbf9;font-size:14px;line-height:1.6;color:#61736c">
             <b style="color:#15342e">Before uploading:</b> use clear PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), or image files, make sure names/numbers are readable, do not crop important details, and only submit documents that genuinely belong to the business or its authorized representative. Maximum file size: 10 MB each.
           </div>
           <div id="verifyMsg" class="msg"></div>
+          <button id="approvedDocumentToggle" type="button" style="display:none;width:100%;margin-top:14px;min-height:48px;border:0;border-radius:12px;background:#ff5a2d;color:#fff;font-size:15px;font-weight:950;cursor:pointer">Submit document updates</button>
 
-          <div class="verify-grid">
+          <div class="verify-grid" id="approvedDocumentUpdateArea">
             <div id="businessUploadCard" class="verify-card required">
               <span class="step-tag">STEP 2 · REQUIRED</span><span id="businessDocStatus" class="doc-status">Not uploaded</span>
               <b style="display:block">Verify your business</b>
@@ -144,7 +145,7 @@ a{color:inherit}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}.top{paddi
             </div>
           </div>
 
-          <h3 style="margin-top:20px">Your uploaded documents</h3>
+          <h3 id="uploadedDocumentsTitle" style="margin-top:20px">Your uploaded documents</h3>
           <div id="files" class="files"><div class="locked-box">No documents submitted yet.</div></div>
           <div class="submit-review">
             <h3 id="submitReviewTitle">Final step · Send to RANOVA Admin</h3>
@@ -356,12 +357,39 @@ function renderDocumentReminder(){
   next.innerHTML='<strong>Outstanding documents</strong><p>'+message+'</p><p><b>Still needed:</b> '+missing.map(function(type){return names[type]||type}).join(', ')+'</p><p><b>Final deadline:</b> '+new Date(deadline).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</p><a href="#verificationChecklist">Upload documents →</a><p>Need help? <a href="mailto:ranovaprimeenterprise360@gmail.com">ranovaprimeenterprise360@gmail.com</a></p>';
 }
 setInterval(function(){if(document.visibilityState==="visible")renderDocumentReminder()},60000);
+function approvedSellerHasAllDocuments(){
+  return ["business_registration","identity_document","location_proof","fulfilment_evidence"].every(function(type){
+    return acceptableDocument(latestFile(currentFiles,type));
+  });
+}
+function setApprovedDocumentExpanded(expanded){
+  var updateArea=document.getElementById("approvedDocumentUpdateArea");
+  var guidance=document.getElementById("uploadGuidance");
+  var files=document.getElementById("files");
+  var filesTitle=document.getElementById("uploadedDocumentsTitle");
+  var finalTitle=document.getElementById("submitReviewTitle");
+  var finalHelp=document.getElementById("submitReviewHelp");
+  var submit=document.getElementById("submitForReview");
+  var toggle=document.getElementById("approvedDocumentToggle");
+  if(updateArea)updateArea.style.display=expanded?"grid":"none";
+  if(guidance)guidance.style.display=expanded?"":"none";
+  if(files)files.style.display=expanded?"grid":"none";
+  if(filesTitle)filesTitle.style.display=expanded?"":"none";
+  if(finalTitle)finalTitle.style.display=expanded?"":"none";
+  if(finalHelp)finalHelp.style.display=expanded?"":"none";
+  if(submit)submit.style.display=expanded?"":"none";
+  if(toggle){
+    toggle.setAttribute("aria-expanded",expanded?"true":"false");
+    toggle.textContent=expanded?"Close document updates":"Submit document updates";
+  }
+}
 function setApprovedSellerView(approved){
   var heroTitle=document.getElementById("sellerHeroTitle"),heroText=document.getElementById("sellerHeroText");
   var side=document.getElementById("sellerOnboardingSide"),progress=document.getElementById("sellerProgressSummary");
   var title=document.getElementById("verificationChecklistTitle"),intro=document.getElementById("verificationChecklistIntro");
   var finalTitle=document.getElementById("submitReviewTitle"),dashboardButton=document.getElementById("approvedDashboardButton");
-  var storeCard=document.getElementById("storeSetupCard");
+  var storeCard=document.getElementById("storeSetupCard"),toggle=document.getElementById("approvedDocumentToggle");
+  var complete=approved&&approvedSellerHasAllDocuments();
   if(approved){
     if(heroTitle)heroTitle.textContent="SELLER ACCOUNT";
     if(heroText)heroText.textContent="";
@@ -373,6 +401,9 @@ function setApprovedSellerView(approved){
     if(dashboardButton){dashboardButton.style.display="flex";dashboardButton.textContent="OPEN SELLER DASHBOARD →";}
     if(storeCard)storeCard.style.display="none";
     document.getElementById("sellerOnboardingGrid").style.gridTemplateColumns="1fr";
+    if(toggle)toggle.style.display=complete?"block":"none";
+    if(complete)setApprovedDocumentExpanded(false);
+    else setApprovedDocumentExpanded(true);
   }else{
     if(heroTitle)heroTitle.textContent="Verify your business and build your store.";
     if(heroText)heroText.textContent="Your Seller Center keeps verification, documents and future store-management tools in one protected workspace.";
@@ -383,9 +414,16 @@ function setApprovedSellerView(approved){
     if(finalTitle)finalTitle.textContent="Final step · Send to RANOVA Admin";
     if(dashboardButton)dashboardButton.style.display="none";
     if(storeCard)storeCard.style.display="";
+    if(toggle)toggle.style.display="none";
+    setApprovedDocumentExpanded(true);
     document.getElementById("sellerOnboardingGrid").style.gridTemplateColumns="";
   }
 }
+var approvedDocumentToggle=document.getElementById("approvedDocumentToggle");
+if(approvedDocumentToggle)approvedDocumentToggle.addEventListener("click",function(){
+  var expanded=this.getAttribute("aria-expanded")==="true";
+  setApprovedDocumentExpanded(!expanded);
+});
 function renderFiles(files){
   var host=document.getElementById("files");
   if(!files||!files.length){host.innerHTML='<div class="locked-box">No documents uploaded yet.</div>';renderProgress([]);return}
@@ -406,6 +444,7 @@ async function loadWorkspace(){
     }
     linkPanel.style.display="none";workspace.style.display="block";
     currentApplication=out.application;
+    currentFiles=out.files||[];
     documentCompliance=out.document_compliance;complianceReceivedAt=Date.now();
     document.getElementById("businessName").textContent=currentApplication.business_name||"Seller";
     document.getElementById("applicationMeta").textContent=(currentApplication.application_ref||"")+" · "+(currentApplication.supplier_type||"Seller")+" · "+(currentApplication.business_location||"");
@@ -418,7 +457,7 @@ async function loadWorkspace(){
     pill.textContent=pretty(approvalStatus);
     pill.classList.toggle("approved",approved);
     var reviewAlert=document.getElementById("sellerReviewAlert");
-    reviewAlert.hidden=!currentApplication.reviewed_at;
+    reviewAlert.hidden=!currentApplication.reviewed_at||(approved&&approvedSellerHasAllDocuments());
     document.getElementById("sellerReviewHeading").textContent=({needs_information:"RANOVA Admin requests more information",approved:"Your seller account is approved",rejected:"RANOVA has reviewed your application",under_review:"Your application is under review",suspended:"RANOVA seller account update"})[approvalStatus]||"RANOVA Admin review update";
     document.getElementById("sellerReviewAction").hidden=approvalStatus!=="needs_information";
     document.getElementById("sellerReviewNote").textContent=currentApplication.verification_notes||"Please review the notes beside your uploaded documents, make the requested corrections, and submit again.";
@@ -445,7 +484,8 @@ async function loadWorkspace(){
       sessionStorage.setItem("ranovaSellerApplicationRef",currentApplication.application_ref||"");
       if(document.getElementById("applicationPhone").value)sessionStorage.setItem("ranovaSellerApplicationPhone",document.getElementById("applicationPhone").value);
     }catch(e){}
-    renderFiles(out.files||[]);
+    renderFiles(currentFiles);
+    setApprovedSellerView(approved);
     acknowledgeReview();
   }catch(err){
     showMsg(authMsg,err.message||"Could not load Seller Center.");authPanel.style.display="block";workspace.style.display="none";
