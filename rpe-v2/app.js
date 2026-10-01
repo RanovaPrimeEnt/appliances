@@ -196,6 +196,11 @@ if($("helpContact"))$("helpContact").onclick=()=>contactRpe();
 if($("notifBtn"))$("notifBtn").onclick=()=>showPanel("notifPanel");
 if($("cartBtn"))$("cartBtn").onclick=openCart;
 if($("bottomCart"))$("bottomCart").onclick=openCart;
+if($("bottomMe"))$("bottomMe").onclick=e=>{
+  e.preventDefault();
+  orderFilter=null;
+  showPanel("homePanel");
+};
 if($("openCartShortcut"))$("openCartShortcut").onclick=openCart;
 $("closeCart").onclick=closeCart;
 $("cartDrawer").addEventListener("click",e=>{if(e.target===$("cartDrawer"))closeCart()});
