@@ -176,3 +176,8 @@ boot().catch(function(e){el("gate").textContent=e.message||"Could not open messa
 /* Desktop metadata hierarchy: message first, time/receipt secondary */
 @media(min-width:721px){.bubble small.message-meta{font-size:9px!important;line-height:1.1!important;margin-top:2px!important;font-weight:500!important;opacity:.78}.bubble .message-receipt,.bubble .receipt,.bubble [class*="receipt"]{font-size:9px!important;line-height:1.1!important;margin-top:2px!important;font-weight:500!important;opacity:.78}}
 </style>
+
+<style>
+/* Mobile metadata hierarchy: message first, time/receipt secondary */
+@media(max-width:720px){.bubble small.message-meta{font-size:9px!important;line-height:1.1!important;margin-top:2px!important;font-weight:500!important;opacity:.78}.bubble .message-receipt,.bubble .receipt,.bubble [class*="receipt"]{font-size:9px!important;line-height:1.1!important;margin-top:2px!important;font-weight:500!important;opacity:.78}}
+</style>
