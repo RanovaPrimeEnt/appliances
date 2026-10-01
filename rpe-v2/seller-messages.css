@@ -489,3 +489,6 @@
 /* Responsive flag/emoji sizing: compact native emoji scale with in-panel mobile scrolling */
 .seller-emoji-grid button{font-size:1.75rem;line-height:1;min-width:40px;min-height:40px;padding:6px}
 @media(max-width:720px){.seller-emoji-panel{max-height:58vh;overscroll-behavior:contain}.seller-emoji-grid{grid-template-columns:repeat(7,minmax(36px,1fr));gap:2px}.seller-emoji-grid button{font-size:1.7rem;min-width:36px;min-height:38px;padding:4px}}
+
+/* Mobile emoji tray: compact half-screen panel with internal scrolling */
+@media(max-width:720px){.seller-emoji-panel{height:50dvh;max-height:50dvh;min-height:4cm;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.seller-emoji-tabs{position:sticky;top:0;background:#fff;z-index:2}.seller-emoji-panel input{position:sticky;top:48px;background:#fff;z-index:2}}
