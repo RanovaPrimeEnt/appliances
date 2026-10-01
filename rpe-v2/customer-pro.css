@@ -155,3 +155,31 @@ body{padding-bottom:calc(var(--rpe-nav-h) + env(safe-area-inset-bottom))}
   .compact-account-head .account-name b{font-size:11.5px}
   .compact-account-head .seller-switch{font-size:8px;padding:7px 5px}
 }
+
+
+/* Bottom navigation geometry + Me reliability fix */
+.bottom{
+  left:0!important;
+  right:0!important;
+  transform:none!important;
+  width:100%!important;
+  max-width:620px!important;
+  margin:0 auto!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  box-sizing:border-box!important;
+}
+.bottom>button{
+  width:100%!important;
+  min-width:0!important;
+  justify-self:stretch!important;
+}
+#bottomMe{cursor:pointer}
+@media(min-width:760px){
+  .bottom{
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:min(620px,calc(100% - 36px))!important;
+    margin:0!important;
+  }
+}
