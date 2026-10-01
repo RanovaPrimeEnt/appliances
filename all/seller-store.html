@@ -108,6 +108,182 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
 .cart-line b,.summary-row{font-size:14px}.cart-line small,.remove{font-size:12px}.qty input{font-size:14px}.summary-row.total{font-size:16px}
 /* Match the catalogue's bright orange price and total typography. */
 .product .price,.detail-price,.cart-unit-price,.summary-row.total b,#fairSubtotal,#fairBuyerTotal,.detail-content .detail-product-total{color:#f05a21;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-weight:950}
+
+/* 2026-10 shared storefront identity redesign — applies to every seller store */
+.top{box-shadow:0 1px 0 rgba(255,255,255,.08);backdrop-filter:saturate(140%) blur(8px)}
+.top .wrap{width:min(1240px,calc(100% - 32px));height:68px}
+.brand{font-family:Georgia,"Times New Roman",serif;font-size:1.18rem;font-weight:800;letter-spacing:.015em}
+.toplinks{gap:10px}.top a,.cart-top{border-radius:14px;font-weight:800}
+.cart-top{padding-inline:17px}
+
+.hero{overflow:visible;background:#f4f8f6;padding-bottom:30px}
+.banner{height:310px;position:relative;background:#dfeae5}
+.banner:after{content:"";position:absolute;inset:auto 0 0;height:84px;background:linear-gradient(to bottom,rgba(16,63,52,0),rgba(16,63,52,.12));pointer-events:none}
+.banner img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+
+.store-head{
+  width:min(1180px,calc(100% - 36px));
+  margin:-58px auto 0;
+  padding:22px 24px;
+  border:1px solid rgba(211,225,219,.95);
+  border-radius:24px;
+  background:rgba(255,255,255,.97);
+  box-shadow:0 18px 55px rgba(16,63,52,.12);
+  display:grid;
+  grid-template-columns:116px minmax(0,1fr);
+  grid-template-areas:
+    "logo copy"
+    "logo actions";
+  gap:10px 22px;
+  align-items:center;
+  position:relative;
+  z-index:4;
+}
+.logo{
+  grid-area:logo;
+  width:116px;height:116px;
+  border-radius:22px;
+  border:1px solid #e3ebe7;
+  background:#fff;
+  box-shadow:0 8px 24px rgba(16,63,52,.08);
+  padding:8px;
+}
+.logo img{border-radius:14px}
+.store-copy{grid-area:copy;padding:0;min-width:0}
+.verified{
+  display:inline-flex;align-items:center;gap:5px;
+  margin:0 0 7px;
+  padding:6px 10px;
+  border:1px solid #bfe3d2;
+  background:#ecf8f2;
+  color:#096044;
+  font-size:.72rem;
+  font-weight:850;
+  letter-spacing:.02em;
+}
+.store-copy h1{
+  margin:0;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(1.85rem,3vw,2.65rem);
+  line-height:1.08;
+  letter-spacing:-.025em;
+  color:#123f32;
+  overflow-wrap:anywhere;
+}
+.store-copy p{margin:7px 0 0;font-size:.98rem;line-height:1.5;color:#5b7068}
+
+.contact{
+  grid-area:actions;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-start;
+  align-items:center;
+  padding-top:4px;
+}
+.contact a,.contact button{
+  min-height:42px;
+  padding:0 14px;
+  border-radius:12px;
+  border:1px solid #d7e3de;
+  background:#fff;
+  color:#173f34;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:.8rem;
+  line-height:1.15;
+  font-weight:800;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:transform .15s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease;
+}
+.contact a:hover,.contact button:hover{transform:translateY(-1px);border-color:#aaccc0;box-shadow:0 5px 14px rgba(16,63,52,.07)}
+.contact .contact-primary{background:#116a52;color:#fff;border-color:#116a52;padding-inline:18px}
+.contact .contact-primary:hover{background:#0d5b46;border-color:#0d5b46}
+.contact .contact-save{color:#0d644b;background:#f4fbf7;border-color:#c8e2d7}
+.contact .contact-account{background:#f7f9f8}
+.contact .contact-report{color:#9b482f;background:#fffaf8;border-color:#efd0c5;margin-left:auto}
+.contact .contact-report:hover{border-color:#dda995;background:#fff5f1}
+
+.about{padding:22px 0 8px}
+.about-grid,.trust .wrap,.products .wrap{width:min(1180px,calc(100% - 36px))}
+.about-grid{gap:14px}
+.info{border-radius:16px;box-shadow:none}
+.trust-card{border-radius:18px;box-shadow:0 5px 20px rgba(16,63,52,.035)}
+
+@media(max-width:900px){
+  .banner{height:260px}
+  .store-head{
+    margin-top:-44px;
+    grid-template-columns:94px minmax(0,1fr);
+    grid-template-areas:"logo copy" "actions actions";
+    gap:12px 16px;
+    padding:18px;
+  }
+  .logo{width:94px;height:94px;border-radius:20px}
+  .contact{padding-top:6px}
+  .contact .contact-report{margin-left:0}
+}
+
+@media(max-width:620px){
+  .top .wrap{width:min(100% - 22px,1180px);min-height:60px;height:60px;padding:0}
+  .brand{font-size:1rem;white-space:nowrap}
+  .toplinks{gap:6px}
+  .toplinks>a{display:inline-flex;font-size:.72rem;min-height:38px;padding-inline:10px}
+  .cart-top{min-height:38px;font-size:.76rem;padding-inline:11px}
+  .cart-count{min-width:20px;height:20px;font-size:.68rem}
+
+  .hero{padding-bottom:18px}
+  .banner{height:182px}
+  .banner img{object-position:center center}
+  .banner:after{height:52px}
+
+  .store-head{
+    width:calc(100% - 20px);
+    margin:-24px auto 0;
+    padding:14px;
+    border-radius:18px;
+    grid-template-columns:72px minmax(0,1fr);
+    grid-template-areas:"logo copy" "actions actions";
+    gap:10px 12px;
+    box-shadow:0 12px 32px rgba(16,63,52,.11);
+  }
+  .logo{width:72px;height:72px;border-radius:16px;padding:5px}
+  .logo img{border-radius:11px}
+  .verified{font-size:.61rem;padding:5px 7px;margin-bottom:5px}
+  .store-copy h1{font-size:clamp(1.35rem,6.3vw,1.8rem);line-height:1.08}
+  .store-copy p{font-size:.8rem;line-height:1.4;margin-top:5px}
+
+  .contact{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+    padding-top:5px;
+  }
+  .contact a,.contact button{
+    width:100%;
+    min-height:40px;
+    padding:0 8px;
+    border-radius:11px;
+    font-size:.73rem;
+    white-space:normal;
+    text-align:center;
+  }
+  .contact .contact-primary{grid-column:1/-1}
+  .contact .contact-report{margin-left:0;color:#95513b;background:#fff}
+  .contact .contact-save{order:2}
+  .contact .contact-account{order:3}
+  .contact .contact-report{order:5}
+
+  .about{padding-top:16px}
+  .about-grid,.trust .wrap,.products .wrap{width:calc(100% - 20px)}
+  .info{padding:15px;border-radius:14px}
+  .info b{font-size:.86rem}
+  .info span,.info p{font-size:.8rem;line-height:1.5}
+  .trust-card{border-radius:16px}
+}
 .product .price small{color:var(--muted);font-weight:600}.cart-unit-price{font-size:14px}.detail-price{font-size:20px}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
@@ -530,12 +706,12 @@ async function boot(){
   if(store.logo_url)el("logo").innerHTML='<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name)+' logo">';else el("logo").textContent=store.store_name.charAt(0).toUpperCase();
   if(store.banner_url)el("banner").innerHTML='<img src="'+esc(store.banner_url)+'" alt="">';
   var links=[],ph=phoneDigits(store.public_phone);
-  links.push('<a class="primary" href="./messages.html?store='+encodeURIComponent(store.id)+'">Message in RANOVA</a>');
-  if(store.public_phone)links.push('<a href="tel:'+esc(store.public_phone)+'">Call</a>');
-  if(store.public_email)links.push('<a href="mailto:'+esc(store.public_email)+'">Email</a>');
-  links.push('<a href="./report-store.html?store='+encodeURIComponent(store.id)+'" style="border-color:#e4b7a8;color:#9b3e22">Report this store</a>');
-  links.push('<button id="saveSellerBtn" type="button" style="border:1px solid #d8e4df;background:#fff;color:#0e5b43;border-radius:999px;padding:10px 13px;font-weight:900;cursor:pointer">☆ Save seller</button>');
-  links.push('<a href="./account.html">Buyer account</a>');
+  links.push('<a class="primary contact-primary" href="./messages.html?store='+encodeURIComponent(store.id)+'">Message in RANOVA</a>');
+  if(store.public_phone)links.push('<a class="contact-secondary" href="tel:'+esc(store.public_phone)+'">Call</a>');
+  if(store.public_email)links.push('<a class="contact-secondary" href="mailto:'+esc(store.public_email)+'">Email</a>');
+  links.push('<button id="saveSellerBtn" class="contact-save" type="button">☆ Save seller</button>');
+  links.push('<a class="contact-account" href="./account.html">Buyer account</a>');
+  links.push('<a class="contact-report" href="./report-store.html?store='+encodeURIComponent(store.id)+'">Report store</a>');
   el("contact").innerHTML=links.join("");
   var saveSellerBtn=document.getElementById("saveSellerBtn");
   if(saveSellerBtn){saveSellerBtn.dataset.saved=buyerStoreSaved?"1":"0";saveSellerBtn.textContent=buyerStoreSaved?"★ Seller saved":"☆ Save seller"}
