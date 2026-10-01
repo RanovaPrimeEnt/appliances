@@ -498,3 +498,6 @@
 
 /* Unified compact emoji category viewport: same visible length as Recents */
 @media(max-width:720px){.seller-emoji-grid{--emoji-cell:42px;height:calc(var(--emoji-cell)*3 + 8px);max-height:calc(var(--emoji-cell)*3 + 8px);min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;scrollbar-gutter:stable}.seller-emoji-grid button{height:var(--emoji-cell)}}
+
+/* Desktop metadata hierarchy: message first, time/receipt secondary */
+@media(min-width:721px){.seller-chat-bubble time,.seller-message-receipt{font-size:9px!important;line-height:1.1!important;margin-top:2px!important;font-weight:500!important;opacity:.78}}
