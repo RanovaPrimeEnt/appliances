@@ -715,9 +715,20 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
+
+<style id="customer-store-bottom-nav-style">
+:root{--customer-nav-orange:#f47a00}
+body{padding-bottom:84px}
+.customer-store-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:160;height:76px;padding:7px 10px max(7px,env(safe-area-inset-bottom));background:#fff;border-top:1px solid #ececec;box-shadow:0 -3px 16px rgba(0,0,0,.07);display:grid;grid-template-columns:repeat(4,1fr);align-items:center}
+.customer-store-bottom-nav a,.customer-store-bottom-nav button{border:0;background:transparent;color:#171717;text-decoration:none;height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:2px 6px;border-radius:12px;font:500 12px/1 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;position:relative}
+.customer-store-bottom-nav svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8}
+.customer-store-bottom-nav a.home{color:var(--customer-nav-orange)}
+.customer-store-bottom-nav button:active,.customer-store-bottom-nav a:active{transform:scale(.97)}
+@media(min-width:760px){.customer-store-bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(720px,calc(100% - 36px));border:1px solid #e9e9e9;border-bottom:0;border-radius:18px 18px 0 0}}
+</style>
 </head>
 <body>
-<div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="./">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
+<div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
 <div id="loading" class="wrap" style="padding:60px 0;text-align:center;color:#6b7d76">Loading seller store…</div>
 <div id="page" style="display:none">
   <section class="hero">
@@ -739,7 +750,7 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
     <div id="publicReviews" class="review-list"><div class="empty">No published verified reviews yet.</div></div>
   </div></div></section>
   <section class="products"><div class="wrap"><div class="head"><div><h2>Products by category</h2><p>Browse the same RANOVA Prime catalogue categories used on the main website.</p></div><input id="search" class="search" placeholder="Search this store"></div><div id="categoryNav" class="store-category-nav"></div><div id="grid" class="grid"></div></div></section>
-  <footer class="footer"><div class="wrap">RANOVA marketplace seller storefront • <a href="./">Browse the main marketplace</a></div></footer>
+  <footer class="footer"><div class="wrap">RANOVA marketplace seller storefront • <a href="../rpe-v2/?home=1">Browse the main marketplace</a></div></footer>
 </div>
 
 <button id="cartFab" class="cart-fab" type="button">Review order <span id="cartFabCount">0</span></button>
@@ -1173,6 +1184,34 @@ try{
  if("BroadcastChannel" in window){var storePriceChannel=new BroadcastChannel("ranova-marketplace-updates");storePriceChannel.addEventListener("message",function(e){if(e.data&&e.data.type==="product_price")refreshStoreProducts()})}
  window.addEventListener("storage",function(e){if(e.key==="ranova_price_update_v1")refreshStoreProducts()});
 }catch(e){}
+})();
+</script>
+
+<nav class="customer-store-bottom-nav" aria-label="Customer navigation">
+  <a class="home" href="../rpe-v2/?home=1" aria-label="Home">
+    <svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span>
+  </a>
+  <a href="../rpe-v2/?panel=messagesPanel" aria-label="Message">
+    <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span>
+  </a>
+  <button id="storeBottomCart" type="button" aria-label="Cart">
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart</span>
+  </button>
+  <a href="../rpe-v2/?panel=homePanel" aria-label="Me">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span>
+  </a>
+</nav>
+<script>
+(function(){
+  var b=document.getElementById("storeBottomCart");
+  if(!b)return;
+  b.addEventListener("click",function(){
+    var top=document.getElementById("topCart")||document.getElementById("cartFab");
+    if(top){top.click();return;}
+    var drawer=document.getElementById("cartDrawer"),backdrop=document.getElementById("cartBackdrop");
+    if(drawer)drawer.classList.add("open");
+    if(backdrop)backdrop.classList.add("open");
+  });
 })();
 </script>
 </body>
