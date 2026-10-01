@@ -485,3 +485,7 @@
 .store-control:hover:not(:disabled){filter:brightness(.94)}.store-control:focus-visible{outline:3px solid var(--control);outline-offset:3px}
 .store-control:disabled{background:#f1f4f2;border-color:#d8dfdb;color:#7c8982;cursor:not-allowed;box-shadow:none}
 .store-control-help{grid-column:1/-1;font-size:12px;color:#60736a;line-height:1.5}.store-control-help button{background:transparent;border:0;color:#126447;font-weight:750;padding:2px 4px;cursor:pointer;text-decoration:underline}
+
+/* Responsive flag/emoji sizing: compact native emoji scale with in-panel mobile scrolling */
+.seller-emoji-grid button{font-size:1.75rem;line-height:1;min-width:40px;min-height:40px;padding:6px}
+@media(max-width:720px){.seller-emoji-panel{max-height:58vh;overscroll-behavior:contain}.seller-emoji-grid{grid-template-columns:repeat(7,minmax(36px,1fr));gap:2px}.seller-emoji-grid button{font-size:1.7rem;min-width:36px;min-height:38px;padding:4px}}
