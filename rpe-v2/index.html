@@ -255,7 +255,7 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
 </div>
 <div id="setup" class="loading hide" aria-hidden="true"></div>
 
-<section id="auth" class="auth hide">
+<section id="auth" class="auth hide" autocomplete="off">
   <div class="brand"><span class="mark">RPE</span><span><b>Ranova Prime Enterprise</b><small>My RPE</small></span></div>
   <div class="auth-tabs" role="tablist" aria-label="Account options">
     <button id="signInTab" class="auth-tab active" type="button">Sign in</button>
@@ -268,7 +268,7 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
     <button id="authMethodPhone" class="auth-tab" type="button">Phone</button>
   </div>
   <div id="authEmailFields">
-    <label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+    <label>Email</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com">
   </div>
   <div id="authPhoneFields" class="hide">
     <label>Country code & phone number</label>
@@ -298,7 +298,7 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
         <option value="+91">🇮🇳 +91</option>
         <option value="+971">🇦🇪 +971</option>
       </select>
-      <input id="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="54 123 4567">
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="54 123 4567">
     </div>
   </div>
   <label>Password</label><div class="password-wrap"><input id="password" type="password" autocomplete="current-password" minlength="8"><button id="togglePassword" type="button" aria-label="Show password">Show</button></div>
