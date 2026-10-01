@@ -441,6 +441,88 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
 }
 .detail-product-total{margin-top:8px}
 
+
+/* Refined product pricing and primary purchase actions */
+.detail-unit-price{
+  margin-top:12px;
+  padding:11px 13px;
+  border-radius:12px;
+  background:linear-gradient(135deg,#fffaf6,#fff4eb);
+  border:1px solid #ffd8bf;
+  box-shadow:0 3px 12px rgba(240,90,33,.05);
+}
+.detail-unit-price span{
+  font-family:"Manrope","Segoe UI",Arial,sans-serif;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.02em;
+  color:#6d756f;
+  text-transform:uppercase;
+}
+.detail-unit-price strong{
+  font-size:19px;
+  color:#ef5b22;
+  letter-spacing:-.02em;
+}
+.detail-product-total{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:7px 0 0;
+  padding:2px 2px 0;
+  font-family:"Manrope","Segoe UI",Arial,sans-serif;
+}
+.detail-product-total span{
+  font-size:12px;
+  font-weight:700;
+  color:#65736e;
+}
+.detail-product-total strong{
+  font-size:17px;
+  font-weight:800;
+  color:#d94f1d;
+  letter-spacing:-.015em;
+  text-align:right;
+}
+.detail-primary-actions{
+  display:grid!important;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  width:100%;
+}
+.detail-primary-actions > *{
+  width:100%;
+  min-height:46px;
+  border-radius:12px!important;
+  display:flex!important;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  font-family:"Manrope","Segoe UI",Arial,sans-serif;
+  font-size:12px!important;
+  font-weight:800!important;
+  padding:0 12px!important;
+}
+.detail-buy-now{
+  border:1px solid #0f7258!important;
+  background:#0f7258!important;
+  color:#fff!important;
+  cursor:pointer;
+}
+.detail-request-price{
+  border:1px solid #0f7258!important;
+  background:#0f7258!important;
+  color:#fff!important;
+}
+@media(max-width:620px){
+  .detail-unit-price{padding:10px 12px}
+  .detail-unit-price strong{font-size:18px}
+  .detail-product-total strong{font-size:16px}
+  .detail-primary-actions{gap:7px}
+  .detail-primary-actions > *{min-height:44px;font-size:11px!important}
+}
+
 /* Product detail action hierarchy */
 .detail-actions{
   display:block;
@@ -725,7 +807,7 @@ function updateDetailTotal(p){
   var input=el("detailQuantity"),total=el("detailProductTotal");if(!input||!total)return;
   var quantity=detailQuantityValue(p,input.value);
   var button=el("productDetail").querySelector("[data-detail-add]");if(button)button.disabled=orderUnavailable(p)||quantity<Math.max(1,Number(p.moq)||1);
-  total.textContent=p.price==null?"Product total: Price to be confirmed":quantity==null?"Product total: Quantity unavailable":"Product total: "+money(Number(p.price)*quantity);
+  total.innerHTML=p.price==null?'<span>Product total</span><strong>Price to be confirmed</strong>':quantity==null?'<span>Product total</span><strong>Quantity unavailable</strong>':'<span>Product total</span><strong>'+esc(money(Number(p.price)*quantity))+'</strong>';
 }
 function renderComparison(id,otherId){
   var a=products.find(function(p){return p.id===id}),b=products.find(function(p){return p.id===otherId}),host=el("detailComparison");
@@ -774,7 +856,7 @@ function openProductDetail(id){
   facts.push(["Delivery",store.fulfilment_summary||"Ask seller for delivery options"],["Returns",store.return_policy_summary||"Confirm return terms with seller"]);
   var unavailable=orderUnavailable(p),minimum=Math.max(1,Math.floor(Number(p.moq)||1)),initial=0;
   var options=products.filter(function(x){return x.id!==id&&x.category===p.category});
-  el("detailContent").innerHTML='<div>'+ (photos.length?'<img class="detail-main-image" id="detailMainImage" src="'+esc(photos[0])+'" alt="'+esc(p.name)+'">':'<div class="detail-main-image empty">Image available on enquiry</div>')+(photos.length>1?'<div class="detail-gallery" aria-label="Product images">'+photos.map(function(src,i){return '<button type="button" class="'+(i===0?'selected':'')+'" data-detail-photo="'+i+'" aria-label="Show image '+(i+1)+'"><img src="'+esc(src)+'" alt=""></button>'}).join("")+'</div>':"")+'<section class="detail-purchase" aria-label="Product ordering"><label class="detail-quantity-label" for="detailQuantity">Quantity</label><div class="qty detail-quantity"><button type="button" id="detailMinus" aria-label="Decrease quantity" '+(unavailable?'disabled':'')+'>−</button><input id="detailQuantity" type="number" step="1" min="0" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(initial)+'" '+(unavailable?'disabled':'')+'><button type="button" id="detailPlus" aria-label="Increase quantity" '+(unavailable?'disabled':'')+'>+</button></div><div class="detail-unit-price"><span>Price</span><strong>'+esc(money(p.price))+'</strong></div><p id="detailProductTotal" class="detail-product-total" role="status" aria-live="polite"></p><div class="detail-actions"><div class="detail-primary-actions"><button type="button" class="buy" data-detail-add="'+esc(id)+'" '+(unavailable?'disabled':'')+'>'+(unavailable?'Ordering unavailable':p.price==null?'Add to cart':cart[id]!=null?'Update cart':'Add to cart')+'</button><a class="buy" style="background:#116a52;color:#fff" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'&quote=1">Request price</a></div><div class="detail-secondary-actions"><button type="button" class="detail-save-action" data-detail-save="'+esc(id)+'">'+(savedProducts.has(id)?'★ Saved':'☆ Save')+'</button><button type="button" class="detail-share-action" data-detail-share="'+esc(id)+'">Share</button><a class="detail-message-action" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div>'+'</section></div><div><small>'+esc(p.category||"Product")+'</small><h3 id="detailName">'+esc(p.name)+'</h3><p>'+esc(productDescription(p))+'</p><dl class="detail-facts">'+facts.map(function(row){return '<div><dt>'+esc(row[0])+'</dt><dd>'+esc(row[1])+'</dd></div>'}).join("")+'</dl><p class="detail-note">Confirm price, stock, important specifications, delivery and applicable warranty before payment.</p>'+(options.length?'<div class="detail-compare"><label for="compareProduct">Compare with another '+esc(p.category||'product')+'</label><select id="compareProduct"><option value="">Choose a product</option>'+options.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select><div id="detailComparison" aria-live="polite"></div></div>':'')+'</div>';
+  el("detailContent").innerHTML='<div>'+ (photos.length?'<img class="detail-main-image" id="detailMainImage" src="'+esc(photos[0])+'" alt="'+esc(p.name)+'">':'<div class="detail-main-image empty">Image available on enquiry</div>')+(photos.length>1?'<div class="detail-gallery" aria-label="Product images">'+photos.map(function(src,i){return '<button type="button" class="'+(i===0?'selected':'')+'" data-detail-photo="'+i+'" aria-label="Show image '+(i+1)+'"><img src="'+esc(src)+'" alt=""></button>'}).join("")+'</div>':"")+'<section class="detail-purchase" aria-label="Product ordering"><label class="detail-quantity-label" for="detailQuantity">Quantity</label><div class="qty detail-quantity"><button type="button" id="detailMinus" aria-label="Decrease quantity" '+(unavailable?'disabled':'')+'>−</button><input id="detailQuantity" type="number" step="1" min="0" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(initial)+'" '+(unavailable?'disabled':'')+'><button type="button" id="detailPlus" aria-label="Increase quantity" '+(unavailable?'disabled':'')+'>+</button></div><div class="detail-unit-price"><span>Price</span><strong>'+esc(money(p.price))+'</strong></div><p id="detailProductTotal" class="detail-product-total" role="status" aria-live="polite"></p><div class="detail-actions"><div class="detail-primary-actions"><button type="button" class="buy" data-detail-add="'+esc(id)+'" '+(unavailable?'disabled':'')+'>'+(unavailable?'Ordering unavailable':cart[id]!=null?'Update cart':'Add to cart')+'</button>'+(p.price==null?'<a class="detail-request-price" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'&quote=1">Request price</a>':'<button type="button" class="detail-buy-now" data-detail-buy-now="'+esc(id)+'" '+(unavailable?'disabled':'')+'>Buy now</button>')+'</div><div class="detail-secondary-actions"><button type="button" class="detail-save-action" data-detail-save="'+esc(id)+'">'+(savedProducts.has(id)?'★ Saved':'☆ Save')+'</button><button type="button" class="detail-share-action" data-detail-share="'+esc(id)+'">Share</button><a class="detail-message-action" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div>'+'</section></div><div><small>'+esc(p.category||"Product")+'</small><h3 id="detailName">'+esc(p.name)+'</h3><p>'+esc(productDescription(p))+'</p><dl class="detail-facts">'+facts.map(function(row){return '<div><dt>'+esc(row[0])+'</dt><dd>'+esc(row[1])+'</dd></div>'}).join("")+'</dl><p class="detail-note">Confirm price, stock, important specifications, delivery and applicable warranty before payment.</p>'+(options.length?'<div class="detail-compare"><label for="compareProduct">Compare with another '+esc(p.category||'product')+'</label><select id="compareProduct"><option value="">Choose a product</option>'+options.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select><div id="detailComparison" aria-live="polite"></div></div>':'')+'</div>';
   var dialog=el("productDetail");dialog.classList.add("open");dialog.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");el("closeDetail").focus();
   dialog.querySelectorAll("[data-detail-photo]").forEach(function(b){b.onclick=function(){el("detailMainImage").src=photos[Number(b.dataset.detailPhoto)];dialog.querySelectorAll("[data-detail-photo]").forEach(function(x){x.classList.toggle("selected",x===b)})}});
   var input=el("detailQuantity");
@@ -785,6 +867,8 @@ function openProductDetail(id){
   input.onchange=function(){updateDetailQuantity(input.value)};
   updateDetailTotal(p);
   dialog.querySelector("[data-detail-add]").onclick=function(){var q=detailQuantityValue(p,input.value);if(q<minimum||orderUnavailable(p))return;cart[id]=q;saveCart();closeProductDetail();render();renderCart();openCart()};
+  var buyNowButton=dialog.querySelector("[data-detail-buy-now]");
+  if(buyNowButton)buyNowButton.onclick=function(){var q=detailQuantityValue(p,input.value);if(q<minimum||orderUnavailable(p)||p.price==null)return;cart[id]=q;saveCart();closeProductDetail();render();renderCart();openCheckout()};
   if(el("compareProduct"))el("compareProduct").onchange=function(){renderComparison(id,this.value)};
   dialog.querySelector("[data-detail-save]").onclick=function(){toggleSaved(id)};
   dialog.querySelector("[data-detail-share]").onclick=function(){shareProduct(id)};
