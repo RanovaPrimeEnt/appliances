@@ -332,7 +332,7 @@ async function applySession(session,initial=false){
 async function loadAll(){
   const uid=user.id;
   const [prof,prod,cart,ord]=await Promise.all([
-    sb.from("profiles").select("user_id,first_name,last_name,phone,avatar_url").eq("user_id",uid).maybeSingle(),
+    sb.from("profiles").select("user_id,buyer_code,first_name,last_name,phone,avatar_url").eq("user_id",uid).maybeSingle(),
     sb.from("products").select("id,legacy_id,sku,name,slug,brand,short_description,description,price,currency,stock_status,category_id,dimensions,specifications,product_images(image_url,is_primary,sort_order),categories(name)").eq("active",true).order("created_at",{ascending:false}).limit(120),
     sb.from("carts").select("id").eq("user_id",uid).maybeSingle(),
     sb.from("orders").select("id,order_number,user_id,address_id,order_type,order_status,payment_status,subtotal,discount,delivery_fee,total,currency,created_at,updated_at,order_items(id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price,line_total)").eq("user_id",uid).order("created_at",{ascending:false}).limit(60)
@@ -369,10 +369,10 @@ async function loadCartItems(){
 
 
 function renderAll(){
-  const fallback=user?.user_metadata?.first_name || user?.email?.split("@")[0] || "Customer";
-  const fullName=[profile?.first_name,profile?.last_name].filter(Boolean).join(" ")||fallback;
-  $("helloName").textContent=fullName;
-  if($("accountAvatar"))$("accountAvatar").textContent=fullName.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]||"").join("").toUpperCase()||"R";
+  const buyerCode=profile?.buyer_code||"RNV-BYR";
+  $("helloName").textContent=buyerCode;
+  $("helloName").setAttribute("title",buyerCode);
+  if($("accountAvatar"))$("accountAvatar").textContent="R";
   $("profileFirst").value=profile?.first_name||"";
   $("profileLast").value=profile?.last_name||"";
   $("profilePhone").value=profile?.phone||"";
@@ -719,7 +719,7 @@ function openAddressForm(){
 $("saveProfile").onclick=async()=>{
   const patch={first_name:$("profileFirst").value.trim(),last_name:$("profileLast").value.trim(),phone:$("profilePhone").value.trim()};
   const {data,error}=await sb.from("profiles").update(patch).eq("user_id",user.id).select().single();
-  if(error)return showToast("Could not save details");profile=data;$("helloName").textContent=profile.first_name||"Customer";showToast("Details saved");
+  if(error)return showToast("Could not save details");profile=data;renderAll();showToast("Details saved");
 };
 
 function subscribeRealtime(){
