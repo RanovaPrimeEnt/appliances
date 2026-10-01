@@ -7,7 +7,8 @@ on:
       - ranova-mobile-v1
     paths:
       - "android-app/**"
-      - "rpe-v2/customer-1957.svg"\n      - "rpe-v2/customer-pwa.js"
+      - "rpe-v2/customer-1957.svg"
+      - "rpe-v2/customer-pwa.js"
       - ".github/workflows/build-ranova-apk.yml"
   workflow_dispatch:
 
