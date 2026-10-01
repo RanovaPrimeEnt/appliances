@@ -272,10 +272,11 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
     text-align:center;
   }
   .contact .contact-primary{grid-column:1/-1}
+  .contact .contact-secondary{grid-column:1/-1}
   .contact .contact-report{margin-left:0;color:#95513b;background:#fff}
-  .contact .contact-save{order:2}
-  .contact .contact-account{order:3}
-  .contact .contact-report{order:5}
+  .contact .contact-save{order:3}
+  .contact .contact-account{order:4}
+  .contact .contact-report{order:5;grid-column:1/-1}
 
   .about{padding-top:16px}
   .about-grid,.trust .wrap,.products .wrap{width:calc(100% - 20px)}
@@ -766,7 +767,6 @@ async function boot(){
   if(store.banner_url)el("banner").innerHTML='<img src="'+esc(store.banner_url)+'" alt="">';
   var links=[],ph=phoneDigits(store.public_phone);
   links.push('<a class="primary contact-primary" href="./messages.html?store='+encodeURIComponent(store.id)+'">Message in RANOVA</a>');
-  if(store.public_phone)links.push('<a class="contact-secondary" href="tel:'+esc(store.public_phone)+'">Call</a>');
   if(store.public_email)links.push('<a class="contact-secondary" href="mailto:'+esc(store.public_email)+'">Email</a>');
   links.push('<button id="saveSellerBtn" class="contact-save" type="button">☆ Save seller</button>');
   links.push('<a class="contact-account" href="./account.html">Buyer account</a>');
