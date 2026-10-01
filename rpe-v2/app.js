@@ -252,6 +252,7 @@ document.addEventListener("click",e=>{
   if(!guestBrowseMode)return;
   const restricted=e.target.closest([
     "[data-mh-product]",
+    "[data-mh-store]",
     "[data-legacy-market-product]",
     "[data-home-seller-product]",
     "[data-open-product]",
