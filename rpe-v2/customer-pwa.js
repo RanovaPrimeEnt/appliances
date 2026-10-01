@@ -12,8 +12,11 @@ function note(text){
   updateNote.textContent=text||"";
   updateNote.classList.toggle("hide",!text);
 }
+function nativeShell(){
+  return /RANOVA-(Android|iOS)\//i.test(navigator.userAgent);
+}
 function standalone(){
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone===true;
+  return nativeShell() || window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone===true;
 }
 function isiOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)}
 function isAndroid(){return /android/i.test(navigator.userAgent)}
@@ -22,11 +25,11 @@ function syncButtons(){
   [installBtn,globalBtn].forEach(btn=>{
     if(!btn)return;
     btn.style.display=installed?"none":"inline-flex";
-    btn.classList.remove("hide");
+    btn.classList.toggle("hide",installed);
   });
 }
 function openHelp(){
-  if(!installHelp)return;
+  if(!installHelp || nativeShell())return;
   const title=installHelp.querySelector("[data-install-title]");
   const body=installHelp.querySelector("[data-install-body]");
   if(isiOS()){
@@ -53,6 +56,7 @@ async function install(){
 }
 
 window.addEventListener("beforeinstallprompt",e=>{
+  if(nativeShell())return;
   e.preventDefault();
   deferredPrompt=e;
   syncButtons();
@@ -90,8 +94,6 @@ if("serviceWorker" in navigator){
         });
       });
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
-        // Update silently. Never reload the running app because an in-session
-        // reload triggers the installed-app splash screen and interrupts taps.
         note("");
       });
     }catch(err){console.error("RANOVA install/update setup failed",err)}
