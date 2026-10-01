@@ -234,7 +234,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
     <div data-body style="margin-top:12px;font-size:13px;line-height:1.75;color:#555"></div>
   </div>
 </div>
-<div class="top"><div class="wrap"><div class="topbar-mobile"><div class="brand">RANOVA SELLER DASHBOARD</div><button id="mobileTopnavToggle" class="mobile-topnav-toggle" type="button" aria-expanded="false" aria-controls="sellerTopnav"><span>Menu</span><b aria-hidden="true">⌄</b></button></div><div class="topnav" id="sellerTopnav"><a href="./seller-center.html">Verification</a><a href="./seller-admin-messages.html">Admin Messages</a><a href="./messages.html">Messages</a><a href="./documents.html">Documents</a><a href="./after-sales.html">After-sales</a><a href="./">Marketplace</a><button id="signOut">Sign out</button></div></div></div>
+<div class="top"><div class="wrap"><div class="topbar-mobile"><div class="brand">RANOVA SELLER DASHBOARD</div><button id="mobileTopnavToggle" class="mobile-topnav-toggle" type="button" aria-expanded="false" aria-controls="sellerTopnav"><span>Menu</span><b aria-hidden="true">⌄</b></button></div><div class="topnav" id="sellerTopnav"><a href="./seller-center.html">Verification</a><a href="./seller-admin-messages.html">Admin Messages</a><a href="./messages.html">Messages</a><a href="./documents.html">Documents</a><a href="./after-sales.html">After-sales</a><a id="sellerMarketplaceLink" href="./seller-store.html">Marketplace</a><button id="signOut">Sign out</button></div></div></div>
 <section class="hero"><div class="wrap"><div class="kicker">STORE MANAGEMENT</div><h1>Build and manage your RANOVA store.</h1><p>Set up your public storefront, add products, control wholesale pricing and stock, and keep track of marketplace orders from one workspace.</p></div></section>
 
 <main class="wrap">
@@ -681,7 +681,15 @@ function renderOverview(){
   el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mMyOrders").textContent=c.open_orders||0;
   var unreadNotes=(state.notifications||[]).filter(function(n){return !n.read_at}).length,attention=(c.open_support_cases||0)+unreadNotes;
   el("supportNav").textContent=attention>0?"Help & Issues ("+attention+")":"Help & Issues";el("deliveryNav").textContent=(c.awaiting_delivery_confirmation||0)>0?"Delivery ("+(c.awaiting_delivery_confirmation||0)+")":"Delivery";
-  if(store.slug&&store.store_status==="active"){el("previewStore").href="./seller-store.html?store="+encodeURIComponent(store.slug);el("previewStore").style.display="inline-flex"}else el("previewStore").style.display="none";
+  var marketplaceLink=el("sellerMarketplaceLink");
+  if(store.slug){
+    var sellerStoreUrl="./seller-store.html?store="+encodeURIComponent(store.slug);
+    if(marketplaceLink)marketplaceLink.href=sellerStoreUrl;
+    if(store.store_status==="active"){el("previewStore").href=sellerStoreUrl;el("previewStore").style.display="inline-flex"}else el("previewStore").style.display="none";
+  }else{
+    if(marketplaceLink)marketplaceLink.href="./seller-store.html";
+    el("previewStore").style.display="none";
+  }
 }
 function fillStore(){
   var s=state.store||{},a=state.application||{};
