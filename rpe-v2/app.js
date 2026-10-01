@@ -64,6 +64,7 @@ let marketProductCurrent=null,marketProductOrigin="marketplaceHomePanel";
 let manualPaymentOrderRef="",paymentStatusTimer=null;
 let orderFilter = null;
 let signUpMode = false;
+let authMethod = "email";
 let guestBrowseMode = false;
 const GUEST_BROWSE_CODE = "RNV-16032005";
 let incomingCartHandled = false;
@@ -282,49 +283,67 @@ document.addEventListener("click",e=>{
 },true);
 
 function authUI(){
-  $("authTitle").textContent=signUpMode?"Create your My RPE account":"Welcome back";
-  $("authText").textContent=signUpMode?"Create one simple account for saved products, your cart, delivery addresses and live order updates.":"Sign in to see your saved products, cart and live order updates.";
-  $("signupFields").classList.toggle("hide",!signUpMode);
-  $("confirmWrap").classList.toggle("hide",!signUpMode);
+  $("authTitle").textContent=signUpMode?"Create your RANOVA account":"Welcome back";
+  $("authText").textContent=signUpMode
+    ?"Register with your email address or phone number."
+    :"Sign in with the email address or phone number you used to register.";
   $("authFinePrint").classList.toggle("hide",!signUpMode);
   $("authSubmit").textContent=signUpMode?"Create my account":"Sign in";
   $("signInTab").classList.toggle("active",!signUpMode);
   $("createTab").classList.toggle("active",signUpMode);
+  $("authMethodEmail").classList.toggle("active",authMethod==="email");
+  $("authMethodPhone").classList.toggle("active",authMethod==="phone");
+  $("authEmailFields").classList.toggle("hide",authMethod!=="email");
+  $("authPhoneFields").classList.toggle("hide",authMethod!=="phone");
   $("password").autocomplete=signUpMode?"new-password":"current-password";
 }
 $("signInTab").onclick=()=>{signUpMode=false;$("authMsg").textContent="";authUI()};
 $("createTab").onclick=()=>{signUpMode=true;$("authMsg").textContent="";authUI()};
+$("authMethodEmail").onclick=()=>{authMethod="email";$("authMsg").textContent="";authUI()};
+$("authMethodPhone").onclick=()=>{authMethod="phone";$("authMsg").textContent="";authUI()};
 $("togglePassword").onclick=()=>{
   const p=$("password"),show=p.type==="password";p.type=show?"text":"password";
   $("togglePassword").textContent=show?"Hide":"Show";
   $("togglePassword").setAttribute("aria-label",show?"Hide password":"Show password");
 };
 $("authSubmit").onclick=async()=>{
-  const email=$("email").value.trim(),password=$("password").value;
+  const email=$("email").value.trim();
+  const password=$("password").value;
+  const countryCode=$("countryCode").value;
+  const localPhone=$("phone").value.trim().replace(/\D/g,"").replace(/^0+/,"");
+  const phone=countryCode+localPhone;
   $("authMsg").textContent="Working…";
   try{
+    if(password.length<8){$("authMsg").textContent="Use at least 8 characters for your password.";return}
     let error;
-    if(signUpMode){
-      const first=$("firstName").value.trim(),last=$("lastName").value.trim(),phone=$("phone").value.trim(),confirm=$("confirmPassword").value;
-      if(!first){$("authMsg").textContent="Please enter your first name.";return}
+    if(authMethod==="email"){
       if(!email){$("authMsg").textContent="Please enter your email address.";return}
-      if(password.length<8){$("authMsg").textContent="Use at least 8 characters for your password.";return}
-      if(password!==confirm){$("authMsg").textContent="The two passwords do not match.";return}
-      ({error}=await sb.auth.signUp({
-        email,password,
-        options:{
-          emailRedirectTo:location.origin+location.pathname+location.search,
-          data:{first_name:first,last_name:last,phone:phone}
-        }
-      }));
-      if(!error){
-        $("authMsg").textContent="Your account has been created. If RPE asks you to confirm your email, open the message in your inbox and tap the confirmation link.";
-        $("password").value="";$("confirmPassword").value="";
+      if(signUpMode){
+        ({error}=await sb.auth.signUp({
+          email,password,
+          options:{emailRedirectTo:location.origin+location.pathname+location.search}
+        }));
+      }else{
+        ({error}=await sb.auth.signInWithPassword({email,password}));
       }
     }else{
-      ({error}=await sb.auth.signInWithPassword({email,password}));
+      if(localPhone.length<7){$("authMsg").textContent="Please enter a valid phone number.";return}
+      if(signUpMode){
+        ({error}=await sb.auth.signUp({
+          phone,password,
+          options:{data:{phone}}
+        }));
+      }else{
+        ({error}=await sb.auth.signInWithPassword({phone,password}));
+      }
     }
-    if(error)$("authMsg").textContent=error.message;
+    if(error){$("authMsg").textContent=error.message;return}
+    if(signUpMode){
+      $("authMsg").textContent=authMethod==="email"
+        ?"Your account has been created. Check your email if confirmation is required."
+        :"Your account has been created. Complete phone verification if RANOVA asks for it.";
+      $("password").value="";
+    }
   }catch(e){$("authMsg").textContent="We couldn't complete that. Please try again."}
 };
 $("signOut").onclick=()=>sb.auth.signOut();
