@@ -1,0 +1,126 @@
+
+/* RANOVA Customer App — Pro UX layer (2026-10-01)
+   Additive styles only: preserves the existing app while tightening mobile/desktop UX. */
+:root{
+  --rpe-orange:#f47a00;
+  --rpe-orange-soft:#fff3e7;
+  --rpe-text:#151515;
+  --rpe-sub:#6b7280;
+  --rpe-line:#e7e9ec;
+  --rpe-success:#18794e;
+  --rpe-danger:#b42318;
+  --rpe-nav-h:76px;
+}
+body{padding-bottom:calc(var(--rpe-nav-h) + env(safe-area-inset-bottom))}
+.shell{padding-bottom:calc(var(--rpe-nav-h) + 18px + env(safe-area-inset-bottom))}
+
+/* Improvement 14: persistent 4-item navigation inspired by the supplied reference */
+.bottom{
+  position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:140!important;
+  height:calc(var(--rpe-nav-h) + env(safe-area-inset-bottom))!important;
+  padding:7px max(10px,env(safe-area-inset-left)) env(safe-area-inset-bottom) max(10px,env(safe-area-inset-right))!important;
+  background:#fff!important;border-top:1px solid #ececec!important;
+  box-shadow:0 -3px 16px rgba(0,0,0,.06)!important;
+  display:grid!important;grid-template-columns:repeat(4,1fr)!important;align-items:center!important;
+}
+.bottom>button{
+  border:0!important;background:transparent!important;color:#171717!important;min-width:0!important;
+  height:60px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  gap:3px!important;padding:2px 6px!important;border-radius:12px!important;font-weight:500!important;
+}
+.bottom>button svg{width:28px!important;height:28px!important;stroke-width:1.8!important}
+.bottom>button span:not(.bubble){font-size:13px!important;line-height:1!important}
+.bottom>button.active{color:var(--rpe-orange)!important;background:transparent!important}
+.bottom>button:active{transform:scale(.97)}
+.bottom .bubble{top:1px!important;right:calc(50% - 28px)!important}
+
+/* Improvement 2: image-first, consistent cards */
+.product,.market-product-card{
+  display:flex!important;flex-direction:column!important;min-width:0!important;
+  border-color:var(--rpe-line)!important;box-shadow:0 2px 10px rgba(24,32,40,.05)!important;
+}
+.product img,.market-product-card img,.market-product-image{
+  width:100%!important;aspect-ratio:1/1!important;height:auto!important;object-fit:contain!important;
+  background:#fff!important;padding:4px!important;
+}
+.product-copy,.market-product-copy{display:flex!important;flex-direction:column!important;flex:1!important}
+.product h3,.market-product-card h3{
+  font-family:Georgia,"Times New Roman",serif!important;font-weight:700!important;color:var(--rpe-text)!important;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.product-actions{margin-top:auto!important}
+.mpd-media{background:#fff!important}.mpd-image img{object-fit:contain!important}
+
+/* Improvement 8 + trust UX */
+.rpe-trust-row{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+.rpe-trust-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;background:#f5f7f7;color:#334155;font-size:10px;font-weight:800}
+.rpe-trust-chip.primary{background:var(--rpe-orange-soft);color:#a74800}
+.rpe-store-identity{border:1px solid var(--rpe-line);border-radius:14px;padding:11px;margin:10px 0;background:#fff}
+.rpe-store-identity strong{display:block;font-size:12px}.rpe-store-identity small{color:var(--rpe-sub);font-size:10px}
+
+/* Pro checkout/cart */
+.rpe-cart-groups{margin:4px 0 10px;border:1px solid var(--rpe-line);border-radius:13px;background:#fafafa;padding:10px}
+.rpe-cart-groups h4{margin:0 0 7px;font-size:11px}
+.rpe-cart-group{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px dashed #ddd;font-size:10px}
+.rpe-cart-group:first-of-type{border-top:0}
+.rpe-cart-safety{font-size:9px;color:var(--rpe-sub);line-height:1.45;margin-top:8px}
+#sendOrder{background:var(--rpe-orange)!important;color:#fff!important}
+
+/* Shared pro cards/modals */
+.rpe-pro-card{background:#fff;border:1px solid var(--rpe-line);border-radius:16px;padding:14px;margin:12px 0}
+.rpe-pro-card h3{margin:0 0 5px;font-size:13px}.rpe-pro-card p{margin:0;color:var(--rpe-sub);font-size:10px;line-height:1.55}
+.rpe-pro-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.rpe-pro-btn{border:0;border-radius:11px;padding:9px 12px;font-size:10px;font-weight:850;background:#f1f3f4;color:#202124}
+.rpe-pro-btn.primary{background:var(--rpe-orange);color:white}
+.rpe-pro-btn.outline{background:white;border:1px solid var(--rpe-line)}
+.rpe-pro-btn.danger{background:#fff0ef;color:var(--rpe-danger)}
+
+.rpe-pro-overlay{position:fixed;inset:0;z-index:220;background:rgba(0,0,0,.48);display:none;align-items:flex-end;justify-content:center}
+.rpe-pro-overlay.open{display:flex}
+.rpe-pro-sheet{width:min(620px,100%);max-height:min(86vh,760px);overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -12px 40px rgba(0,0,0,.16)}
+.rpe-pro-sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.rpe-pro-sheet-head h2{margin:0;font-size:17px}.rpe-pro-close{border:0;background:#f1f3f4;width:34px;height:34px;border-radius:50%;font-size:18px}
+.rpe-field{margin:10px 0}.rpe-field label{display:block;font-size:10px;font-weight:800;margin-bottom:5px}
+.rpe-field input,.rpe-field select,.rpe-field textarea{width:100%;border:1px solid #d9dde2;border-radius:11px;padding:11px;font-size:12px;background:#fff}
+.rpe-field textarea{min-height:90px;resize:vertical}
+.rpe-note{font-size:9px;color:var(--rpe-sub);line-height:1.45}
+.rpe-sep{height:1px;background:var(--rpe-line);margin:13px 0}
+
+/* Order timeline */
+.rpe-timeline{display:grid;gap:0;margin:12px 0}.rpe-step{display:grid;grid-template-columns:20px 1fr;gap:9px;min-height:47px}
+.rpe-step-marker{position:relative;width:14px;height:14px;border:2px solid #c9ced4;border-radius:50%;margin-top:2px;background:#fff}
+.rpe-step:not(:last-child) .rpe-step-marker:after{content:"";position:absolute;width:2px;height:34px;background:#dfe3e8;left:4px;top:12px}
+.rpe-step.done .rpe-step-marker{background:var(--rpe-success);border-color:var(--rpe-success)}
+.rpe-step.current .rpe-step-marker{background:var(--rpe-orange);border-color:var(--rpe-orange);box-shadow:0 0 0 4px var(--rpe-orange-soft)}
+.rpe-step b{font-size:11px}.rpe-step small{display:block;color:var(--rpe-sub);font-size:9px;margin-top:2px}
+
+/* Payment received */
+.rpe-payment-ok{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:#e9f7ef;color:var(--rpe-success);font-size:28px;margin:2px auto 10px}
+.rpe-payment-summary{border:1px solid var(--rpe-line);border-radius:13px;overflow:hidden}
+.rpe-payment-row{display:flex;justify-content:space-between;gap:12px;padding:9px 11px;border-top:1px solid var(--rpe-line);font-size:10px}
+.rpe-payment-row:first-child{border-top:0}.rpe-payment-row span{color:var(--rpe-sub)}.rpe-payment-row b{text-align:right}
+
+/* Security / guest / connectivity */
+.rpe-network{position:fixed;top:9px;left:50%;transform:translateX(-50%);z-index:300;padding:7px 11px;border-radius:999px;background:#222;color:#fff;font-size:9px;font-weight:800;display:none}
+.rpe-network.show{display:block}
+.rpe-guest{width:100%;margin-top:9px;border:1px solid var(--rpe-line);background:#fff;border-radius:12px;padding:11px;font-weight:800;color:#333}
+.rpe-security-status{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rpe-security-dot{width:9px;height:9px;border-radius:50%;background:var(--rpe-success);display:inline-block;margin-right:6px}
+
+/* Recommended feed affordance */
+.home-feed-note{line-height:1.4!important}
+.rpe-feed-live{display:inline-flex;align-items:center;gap:5px;margin-left:6px;color:var(--rpe-success);font-size:9px;font-weight:800}
+.rpe-feed-live:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* Desktop keeps same 4-item structure, centered like a native app dock */
+@media(min-width:760px){
+  .bottom{left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:min(720px,calc(100% - 36px))!important;border:1px solid #e9e9e9!important;border-bottom:0!important;border-radius:18px 18px 0 0!important}
+  .bottom>button span:not(.bubble){font-size:12px!important}
+  .rpe-pro-overlay{align-items:center}.rpe-pro-sheet{border-radius:22px;max-height:82vh}
+}
+@media(max-width:520px){
+  .grid{gap:8px!important}
+  .product-copy{padding:9px!important}
+  .product h3{font-size:12px!important}
+  .bottom>button span:not(.bubble){font-size:12px!important}
+}
