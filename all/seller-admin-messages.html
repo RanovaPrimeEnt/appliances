@@ -71,3 +71,8 @@ updateAction();
 /* Mobile emoji tray: compact half-screen panel with internal scrolling */
 @media(max-width:720px){.sa-emoji-panel{height:50dvh;max-height:50dvh;min-height:4cm;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.sa-emoji-tabs{position:sticky;top:0;background:#fff;z-index:2}.sa-emoji-panel input{position:sticky;top:48px;background:#fff;z-index:2}}
 </style>
+
+<style>
+/* Phone emoji picker: exactly three complete emoji rows visible; all categories scroll for more */
+@media(max-width:720px){.sa-emoji-panel{height:auto;max-height:none;overflow:hidden}.sa-emoji-tabs{position:static}.sa-emoji-panel input{position:static}.sa-emoji-grid{--emoji-cell:42px;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:var(--emoji-cell);height:calc(var(--emoji-cell)*3 + 8px);max-height:calc(var(--emoji-cell)*3 + 8px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start}.sa-emoji-grid button{height:var(--emoji-cell);min-height:var(--emoji-cell);font-size:1.7rem;padding:4px}}
+</style>
