@@ -124,3 +124,16 @@ body{padding-bottom:calc(var(--rpe-nav-h) + env(safe-area-inset-bottom))}
   .product h3{font-size:12px!important}
   .bottom>button span:not(.bubble){font-size:12px!important}
 }
+
+
+/* RANOVA marketplace resilient loading states */
+.market-loading-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;width:100%}
+.market-skeleton-card{display:grid;gap:7px;background:#fff;border-radius:14px;padding:8px;overflow:hidden}
+.market-skeleton-img,.market-skeleton-line,.market-store-skeleton-img,.market-store-skeleton-copy i{display:block;background:linear-gradient(90deg,#f1f1f1 25%,#fafafa 37%,#f1f1f1 63%);background-size:400% 100%;animation:ranovaShimmer 1.25s ease-in-out infinite}
+.market-skeleton-img{aspect-ratio:1/1;border-radius:10px}
+.market-skeleton-line{height:10px;border-radius:999px;width:65%}.market-skeleton-line.wide{width:90%}
+.market-store-skeleton{display:grid;grid-template-columns:112px 1fr;gap:12px;background:#fff;border-radius:14px;padding:10px;margin-bottom:9px}
+.market-store-skeleton-img{height:86px;border-radius:10px}
+.market-store-skeleton-copy{display:grid;align-content:center;gap:9px}.market-store-skeleton-copy i{height:10px;border-radius:999px}.market-store-skeleton-copy i:nth-child(1){width:70%}.market-store-skeleton-copy i:nth-child(2){width:48%}.market-store-skeleton-copy i:nth-child(3){width:82%}
+@keyframes ranovaShimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+@media(min-width:520px){.market-loading-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
