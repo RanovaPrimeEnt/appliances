@@ -263,16 +263,45 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
   </div>
   <h1 id="authTitle">Welcome back</h1>
   <p id="authText">Sign in to see your saved products, cart and live order updates.</p>
-  <div id="signupFields" class="hide">
-    <div class="row">
-      <div><label>First name</label><input id="firstName" autocomplete="given-name"></div>
-      <div><label>Last name</label><input id="lastName" autocomplete="family-name"></div>
-    </div>
-    <label>Phone number</label><input id="phone" type="tel" autocomplete="tel" placeholder="e.g. 054 123 4567">
+  <div class="auth-method-tabs" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 12px">
+    <button id="authMethodEmail" class="auth-tab active" type="button">Email</button>
+    <button id="authMethodPhone" class="auth-tab" type="button">Phone</button>
   </div>
-  <label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+  <div id="authEmailFields">
+    <label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+  </div>
+  <div id="authPhoneFields" class="hide">
+    <label>Country code & phone number</label>
+    <div style="display:grid;grid-template-columns:118px 1fr;gap:8px">
+      <select id="countryCode" aria-label="Country code" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff">
+        <option value="+233" selected>🇬🇭 +233</option>
+        <option value="+234">🇳🇬 +234</option>
+        <option value="+225">🇨🇮 +225</option>
+        <option value="+228">🇹🇬 +228</option>
+        <option value="+229">🇧🇯 +229</option>
+        <option value="+226">🇧🇫 +226</option>
+        <option value="+227">🇳🇪 +227</option>
+        <option value="+221">🇸🇳 +221</option>
+        <option value="+220">🇬🇲 +220</option>
+        <option value="+224">🇬🇳 +224</option>
+        <option value="+232">🇸🇱 +232</option>
+        <option value="+231">🇱🇷 +231</option>
+        <option value="+254">🇰🇪 +254</option>
+        <option value="+256">🇺🇬 +256</option>
+        <option value="+255">🇹🇿 +255</option>
+        <option value="+27">🇿🇦 +27</option>
+        <option value="+1">🇺🇸/🇨🇦 +1</option>
+        <option value="+44">🇬🇧 +44</option>
+        <option value="+33">🇫🇷 +33</option>
+        <option value="+49">🇩🇪 +49</option>
+        <option value="+86">🇨🇳 +86</option>
+        <option value="+91">🇮🇳 +91</option>
+        <option value="+971">🇦🇪 +971</option>
+      </select>
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="54 123 4567">
+    </div>
+  </div>
   <label>Password</label><div class="password-wrap"><input id="password" type="password" autocomplete="current-password" minlength="8"><button id="togglePassword" type="button" aria-label="Show password">Show</button></div>
-  <div id="confirmWrap" class="hide"><label>Confirm password</label><input id="confirmPassword" type="password" autocomplete="new-password" minlength="8"></div>
   <div class="actions"><button id="authSubmit" class="btn primary">Sign in</button></div>
   <div id="authMsg" class="auth-msg" role="status"></div>
   <p id="authFinePrint" class="auth-fine hide">By creating an account, you can save products, keep your cart, store delivery addresses and follow your RPE orders from one place.</p>
