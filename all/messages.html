@@ -153,3 +153,8 @@ boot().catch(function(e){el("gate").textContent=e.message||"Could not open messa
 /* Phone emoji picker: exactly three complete emoji rows visible; all categories scroll for more */
 @media(max-width:720px){.emoji-panel{height:auto;max-height:none;overflow:hidden}.emoji-tabs{position:static}.emoji-panel input{position:static}.emoji-grid{--emoji-cell:42px;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:var(--emoji-cell);height:calc(var(--emoji-cell)*3 + 8px);max-height:calc(var(--emoji-cell)*3 + 8px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start}.emoji-grid button{height:var(--emoji-cell);min-height:var(--emoji-cell);font-size:1.7rem;padding:4px}}
 </style>
+
+<style>
+/* Unified compact emoji category viewport: same visible length as Recents */
+@media(max-width:720px){.emoji-grid{--emoji-cell:42px;height:calc(var(--emoji-cell)*3 + 8px);max-height:calc(var(--emoji-cell)*3 + 8px);min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;scrollbar-gutter:stable}.emoji-grid button{height:var(--emoji-cell)}}
+</style>
