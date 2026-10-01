@@ -1213,8 +1213,11 @@ const RANOVA_FLAG_CODES="AD AE AF AG AL AM AO AR AT AU AZ BA BB BD BE BF BG BH B
 function ranovaFlagEmoji(code){return code.replace(/./g,c=>String.fromCodePoint(127397+c.charCodeAt(0)))}
 const RANOVA_FLAGS=RANOVA_FLAG_CODES.map(ranovaFlagEmoji).join(" ");
 
+const sellerDefaultRecent="😊 😂 🥰 ❤️ 👍 🙏 🔥 🎉 👋 😎";
+function sellerRecentEmojis(){try{return JSON.parse(localStorage.getItem("ranova-admin-chat-recent-emojis")||"[]")}catch(e){return []}}
+function rememberSellerEmoji(e){const a=sellerRecentEmojis().filter(x=>x!==e);a.unshift(e);localStorage.setItem("ranova-admin-chat-recent-emojis",JSON.stringify(a.slice(0,30)))}
 const sellerEmojiGroups={
-  "Recent":"😊 😂 🥰 ❤️ 👍 🙏 🔥 🎉 👋 😎",
+  "Recent":sellerDefaultRecent,
   "Smileys":"😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😍 🥰 😘 😋 😎 🤩 🥳 😔 😭 😤 😱",
   "People":"👋 🤝 👍 👎 🙌 👏 🙏 💪 👨‍💼 👩‍💼 🧑‍💻",
   "Nature":"🌹 🌷 🌻 🌴 🌍 🌈 ☀️ ⭐ 🌙 🔥",
@@ -1291,9 +1294,9 @@ function renderSellerChatDetail(storeId){
   const showEmoji=(group="Recent",filter="")=>{
     $("sellerEmojiPanel").hidden=false;$("sellerEmojiToggle").setAttribute("aria-expanded","true");
     $("sellerEmojiPanel").querySelector(".seller-emoji-tabs").innerHTML=Object.keys(sellerEmojiGroups).map(g=>'<button type="button" class="'+(g===group?'active':'')+'" data-emoji-group="'+g+'">'+g+'</button>').join("");
-    $("sellerEmojiGrid").innerHTML=[...new Set((filter?Object.values(sellerEmojiGroups).join(" "):sellerEmojiGroups[group]).split(/\s+/))].filter(e=>e&&(!filter||(sellerEmojiNames[e]||"").includes(filter.toLowerCase()))).map(e=>'<button type="button" data-emoji="'+esc(e)+'" aria-label="Insert '+esc(e)+'">'+esc(e)+'</button>').join("");
+    $("sellerEmojiGrid").innerHTML=[...new Set((filter?Object.values({...sellerEmojiGroups,Recent:sellerRecentEmojis().concat(sellerDefaultRecent.split(/\s+/)).filter((e,i,a)=>e&&a.indexOf(e)===i).join(" ")}).join(" "):(group==="Recent"?sellerRecentEmojis().concat(sellerDefaultRecent.split(/\s+/)).filter((e,i,a)=>e&&a.indexOf(e)===i).join(" "):sellerEmojiGroups[group])).split(/\s+/))].filter(e=>e&&(!filter||(sellerEmojiNames[e]||"").includes(filter.toLowerCase()))).map(e=>'<button type="button" data-emoji="'+esc(e)+'" aria-label="Insert '+esc(e)+'">'+esc(e)+'</button>').join("");
     $("sellerEmojiPanel").querySelectorAll("[data-emoji-group]").forEach(b=>b.onclick=()=>showEmoji(b.dataset.emojiGroup));
-    $("sellerEmojiGrid").querySelectorAll("[data-emoji]").forEach(b=>b.onclick=()=>{const input=$("sellerChatInput"),at=input.selectionStart;input.setRangeText(b.dataset.emoji,at,input.selectionEnd,"end");input.focus()});
+    $("sellerEmojiGrid").querySelectorAll("[data-emoji]").forEach(b=>b.onclick=()=>{rememberSellerEmoji(b.dataset.emoji);const input=$("sellerChatInput"),at=input.selectionStart;input.setRangeText(b.dataset.emoji,at,input.selectionEnd,"end");input.focus()});
   };
   $("sellerEmojiToggle").onclick=()=>{$("sellerEmojiPanel").hidden?showEmoji():($("sellerEmojiPanel").hidden=true,$("sellerEmojiToggle").setAttribute("aria-expanded","false"))};
   $("sellerEmojiSearch").oninput=e=>showEmoji("Recent",e.target.value.trim());
