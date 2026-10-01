@@ -285,7 +285,6 @@ function authUI(){
   $("authTitle").textContent=signUpMode?"Create your My RPE account":"Welcome back";
   $("authText").textContent=signUpMode?"Create one simple account for saved products, your cart, delivery addresses and live order updates.":"Sign in to see your saved products, cart and live order updates.";
   $("signupFields").classList.toggle("hide",!signUpMode);
-  $("confirmWrap").classList.toggle("hide",!signUpMode);
   $("authFinePrint").classList.toggle("hide",!signUpMode);
   $("authSubmit").textContent=signUpMode?"Create my account":"Sign in";
   $("signInTab").classList.toggle("active",!signUpMode);
@@ -305,21 +304,21 @@ $("authSubmit").onclick=async()=>{
   try{
     let error;
     if(signUpMode){
-      const first=$("firstName").value.trim(),last=$("lastName").value.trim(),phone=$("phone").value.trim(),confirm=$("confirmPassword").value;
-      if(!first){$("authMsg").textContent="Please enter your first name.";return}
+      const phone=$("phone").value.trim();
       if(!email){$("authMsg").textContent="Please enter your email address.";return}
+      if(!phone){$("authMsg").textContent="Please enter your country code and phone number.";return}
+      if(!/^\+[1-9]\d{7,14}$/.test(phone.replace(/[\s()-]/g,""))){$("authMsg").textContent="Enter your phone number with country code, for example +233 54 123 4567.";return}
       if(password.length<8){$("authMsg").textContent="Use at least 8 characters for your password.";return}
-      if(password!==confirm){$("authMsg").textContent="The two passwords do not match.";return}
       ({error}=await sb.auth.signUp({
         email,password,
         options:{
           emailRedirectTo:location.origin+location.pathname+location.search,
-          data:{first_name:first,last_name:last,phone:phone}
+          data:{phone:phone}
         }
       }));
       if(!error){
         $("authMsg").textContent="Your account has been created. If RPE asks you to confirm your email, open the message in your inbox and tap the confirmation link.";
-        $("password").value="";$("confirmPassword").value="";
+        $("password").value="";
       }
     }else{
       ({error}=await sb.auth.signInWithPassword({email,password}));
