@@ -344,6 +344,35 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
     font-size:.7rem;
   }
 }
+
+/* Restore seller banner image composition */
+.banner{
+  background:#dfeae5;
+  overflow:hidden;
+}
+.banner img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center center;
+}
+@media(min-width:901px){
+  .banner{height:300px}
+  .banner img{object-position:center 48%}
+}
+@media(min-width:621px) and (max-width:900px){
+  .banner{height:250px}
+  .banner img{object-position:center center}
+}
+@media(max-width:620px){
+  .banner{height:176px}
+  .banner img{
+    object-fit:cover;
+    object-position:center center;
+  }
+  .banner:after{height:44px}
+}
 .product .price small{color:var(--muted);font-weight:600}.cart-unit-price{font-size:14px}.detail-price{font-size:20px}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
