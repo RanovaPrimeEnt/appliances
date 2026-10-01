@@ -415,6 +415,32 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
 
 
 
+
+/* Unit price directly above product total */
+.detail-unit-price{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:#fff7f1;
+  border:1px solid #ffd8c1;
+}
+.detail-unit-price span{
+  font-size:12px;
+  font-weight:800;
+  color:#6d756f;
+}
+.detail-unit-price strong{
+  font-family:"Manrope","Segoe UI",Arial,sans-serif;
+  font-size:18px;
+  font-weight:800;
+  color:#f05a21;
+}
+.detail-product-total{margin-top:8px}
+
 /* Product detail action hierarchy */
 .detail-actions{
   display:block;
@@ -748,7 +774,7 @@ function openProductDetail(id){
   facts.push(["Delivery",store.fulfilment_summary||"Ask seller for delivery options"],["Returns",store.return_policy_summary||"Confirm return terms with seller"]);
   var unavailable=orderUnavailable(p),minimum=Math.max(1,Math.floor(Number(p.moq)||1)),initial=0;
   var options=products.filter(function(x){return x.id!==id&&x.category===p.category});
-  el("detailContent").innerHTML='<div>'+ (photos.length?'<img class="detail-main-image" id="detailMainImage" src="'+esc(photos[0])+'" alt="'+esc(p.name)+'">':'<div class="detail-main-image empty">Image available on enquiry</div>')+(photos.length>1?'<div class="detail-gallery" aria-label="Product images">'+photos.map(function(src,i){return '<button type="button" class="'+(i===0?'selected':'')+'" data-detail-photo="'+i+'" aria-label="Show image '+(i+1)+'"><img src="'+esc(src)+'" alt=""></button>'}).join("")+'</div>':"")+'<section class="detail-purchase" aria-label="Product ordering"><label class="detail-quantity-label" for="detailQuantity">Quantity</label><div class="qty detail-quantity"><button type="button" id="detailMinus" aria-label="Decrease quantity" '+(unavailable?'disabled':'')+'>−</button><input id="detailQuantity" type="number" step="1" min="0" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(initial)+'" '+(unavailable?'disabled':'')+'><button type="button" id="detailPlus" aria-label="Increase quantity" '+(unavailable?'disabled':'')+'>+</button></div><p id="detailProductTotal" class="detail-product-total" role="status" aria-live="polite"></p><div class="detail-actions"><div class="detail-primary-actions"><button type="button" class="buy" data-detail-add="'+esc(id)+'" '+(unavailable?'disabled':'')+'>'+(unavailable?'Ordering unavailable':p.price==null?'Add to cart':cart[id]!=null?'Update cart':'Add to cart')+'</button><a class="buy" style="background:#116a52;color:#fff" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'&quote=1">Request price</a></div><div class="detail-secondary-actions"><button type="button" class="detail-save-action" data-detail-save="'+esc(id)+'">'+(savedProducts.has(id)?'★ Saved':'☆ Save')+'</button><button type="button" class="detail-share-action" data-detail-share="'+esc(id)+'">Share</button><a class="detail-message-action" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div>'+'</section></div><div><small>'+esc(p.category||"Product")+'</small><h3 id="detailName">'+esc(p.name)+'</h3><strong class="detail-price">'+esc(money(p.price))+'</strong><p>'+esc(productDescription(p))+'</p><dl class="detail-facts">'+facts.map(function(row){return '<div><dt>'+esc(row[0])+'</dt><dd>'+esc(row[1])+'</dd></div>'}).join("")+'</dl><p class="detail-note">Confirm price, stock, important specifications, delivery and applicable warranty before payment.</p>'+(options.length?'<div class="detail-compare"><label for="compareProduct">Compare with another '+esc(p.category||'product')+'</label><select id="compareProduct"><option value="">Choose a product</option>'+options.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select><div id="detailComparison" aria-live="polite"></div></div>':'')+'</div>';
+  el("detailContent").innerHTML='<div>'+ (photos.length?'<img class="detail-main-image" id="detailMainImage" src="'+esc(photos[0])+'" alt="'+esc(p.name)+'">':'<div class="detail-main-image empty">Image available on enquiry</div>')+(photos.length>1?'<div class="detail-gallery" aria-label="Product images">'+photos.map(function(src,i){return '<button type="button" class="'+(i===0?'selected':'')+'" data-detail-photo="'+i+'" aria-label="Show image '+(i+1)+'"><img src="'+esc(src)+'" alt=""></button>'}).join("")+'</div>':"")+'<section class="detail-purchase" aria-label="Product ordering"><label class="detail-quantity-label" for="detailQuantity">Quantity</label><div class="qty detail-quantity"><button type="button" id="detailMinus" aria-label="Decrease quantity" '+(unavailable?'disabled':'')+'>−</button><input id="detailQuantity" type="number" step="1" min="0" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(initial)+'" '+(unavailable?'disabled':'')+'><button type="button" id="detailPlus" aria-label="Increase quantity" '+(unavailable?'disabled':'')+'>+</button></div><div class="detail-unit-price"><span>Price</span><strong>'+esc(money(p.price))+'</strong></div><p id="detailProductTotal" class="detail-product-total" role="status" aria-live="polite"></p><div class="detail-actions"><div class="detail-primary-actions"><button type="button" class="buy" data-detail-add="'+esc(id)+'" '+(unavailable?'disabled':'')+'>'+(unavailable?'Ordering unavailable':p.price==null?'Add to cart':cart[id]!=null?'Update cart':'Add to cart')+'</button><a class="buy" style="background:#116a52;color:#fff" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'&quote=1">Request price</a></div><div class="detail-secondary-actions"><button type="button" class="detail-save-action" data-detail-save="'+esc(id)+'">'+(savedProducts.has(id)?'★ Saved':'☆ Save')+'</button><button type="button" class="detail-share-action" data-detail-share="'+esc(id)+'">Share</button><a class="detail-message-action" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div>'+'</section></div><div><small>'+esc(p.category||"Product")+'</small><h3 id="detailName">'+esc(p.name)+'</h3><p>'+esc(productDescription(p))+'</p><dl class="detail-facts">'+facts.map(function(row){return '<div><dt>'+esc(row[0])+'</dt><dd>'+esc(row[1])+'</dd></div>'}).join("")+'</dl><p class="detail-note">Confirm price, stock, important specifications, delivery and applicable warranty before payment.</p>'+(options.length?'<div class="detail-compare"><label for="compareProduct">Compare with another '+esc(p.category||'product')+'</label><select id="compareProduct"><option value="">Choose a product</option>'+options.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select><div id="detailComparison" aria-live="polite"></div></div>':'')+'</div>';
   var dialog=el("productDetail");dialog.classList.add("open");dialog.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");el("closeDetail").focus();
   dialog.querySelectorAll("[data-detail-photo]").forEach(function(b){b.onclick=function(){el("detailMainImage").src=photos[Number(b.dataset.detailPhoto)];dialog.querySelectorAll("[data-detail-photo]").forEach(function(x){x.classList.toggle("selected",x===b)})}});
   var input=el("detailQuantity");
