@@ -345,6 +345,70 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
   }
 }
 
+
+/* Refine mobile storefront identity positioning */
+@media(max-width:620px){
+  .store-head{
+    width:calc(100% - 18px);
+    margin:-22px auto 0;
+    padding:14px 12px 15px;
+    grid-template-columns:78px minmax(0,1fr);
+    grid-template-areas:
+      "logo copy"
+      "actions actions";
+    column-gap:13px;
+    row-gap:13px;
+    align-items:center;
+    border-radius:18px;
+  }
+  .logo{
+    grid-area:logo;
+    width:78px;
+    height:78px;
+    padding:5px;
+    align-self:center;
+    justify-self:start;
+    border-radius:16px;
+  }
+  .store-copy{
+    grid-area:copy;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:center;
+    padding:0;
+  }
+  .verified{
+    width:auto;
+    max-width:100%;
+    margin:0 0 7px;
+    padding:5px 8px;
+    border-radius:999px;
+    font-size:.61rem;
+    line-height:1.15;
+    white-space:normal;
+  }
+  .store-copy h1{
+    margin:0;
+    font-size:clamp(1.3rem,6vw,1.65rem);
+    line-height:1.05;
+    letter-spacing:-.025em;
+  }
+  .store-copy p{
+    margin:6px 0 0;
+    font-size:.78rem;
+    line-height:1.35;
+  }
+  .contact{
+    grid-area:actions;
+    margin-top:1px;
+    padding-top:0;
+    gap:7px;
+  }
+  .contact a,.contact button{min-height:39px}
+  .contact .contact-primary{min-height:44px}
+}
 /* Restore seller banner image composition */
 .banner{
   background:#dfeae5;
