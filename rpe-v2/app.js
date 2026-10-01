@@ -64,6 +64,8 @@ let marketProductCurrent=null,marketProductOrigin="marketplaceHomePanel";
 let manualPaymentOrderRef="",paymentStatusTimer=null;
 let orderFilter = null;
 let signUpMode = false;
+let guestBrowseMode = false;
+const GUEST_BROWSE_CODE = "RNV-16032005";
 let incomingCartHandled = false;
 let realtimeChannels = [];
 let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null;
@@ -91,7 +93,7 @@ const imageFor = (p) => {
 };
 function hidePreparationScreen(){
   if(setup)setup.classList.add("hide");
-  if(appBox&&user)appBox.classList.remove("hide");
+  if(appBox&&(user||guestBrowseMode))appBox.classList.remove("hide");
 }
 function showToast(msg){toast.textContent=msg;toast.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove("show"),1700)}
 function statusLabel(s){return ({
@@ -206,6 +208,78 @@ $("closeCart").onclick=closeCart;
 $("cartDrawer").addEventListener("click",e=>{if(e.target===$("cartDrawer"))closeCart()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
 
+async function enterGuestBrowse(){
+  guestBrowseMode=true;
+  cleanupRealtime();
+  user=null;
+  profile={buyer_code:GUEST_BROWSE_CODE,first_name:"",last_name:"",phone:"",avatar_url:""};
+  favorites=new Set();recentIds=[];cartId=null;cartItems=[];orders=[];notifications=[];addresses=[];returns=[];
+  setup.classList.add("hide");
+  authBox.classList.add("hide");
+  appBox.classList.remove("hide");
+  if($("helloName"))$("helloName").textContent=GUEST_BROWSE_CODE;
+  if($("accountAvatar"))$("accountAvatar").textContent="R";
+  showPanel("marketplaceHomePanel");
+
+  // Load only public catalogue data. No cart, orders, messages or private profile data.
+  try{
+    const {data,error}=await sb.from("products")
+      .select("id,legacy_id,sku,name,slug,brand,short_description,description,price,currency,stock_status,category_id,dimensions,specifications,product_images(image_url,is_primary,sort_order),categories(name)")
+      .eq("active",true).order("created_at",{ascending:false}).limit(120);
+    if(!error){products=data||[];renderMarketplaceHome($("marketHomeSearch")?.value||"");}
+  }catch{}
+  loadMarketplaceHomeData().catch(()=>{renderMarketplaceHome($("marketHomeSearch")?.value||"")});
+}
+
+function exitGuestToRegistration(){
+  if(!guestBrowseMode)return;
+  guestBrowseMode=false;
+  appBox.classList.add("hide");
+  setup.classList.add("hide");
+  authBox.classList.remove("hide");
+  signUpMode=true;
+  if($("authMsg"))$("authMsg").textContent="";
+  authUI();
+  window.scrollTo(0,0);
+}
+
+window.RANOVA_ENTER_GUEST_BROWSE=enterGuestBrowse;
+window.RANOVA_GUEST_BROWSE_CODE=GUEST_BROWSE_CODE;
+
+// Guest browsing is intentionally read-only. Any product/action intent returns
+// directly to account creation with no toast or extra notification.
+document.addEventListener("click",e=>{
+  if(!guestBrowseMode)return;
+  const restricted=e.target.closest([
+    "[data-mh-product]",
+    "[data-legacy-market-product]",
+    "[data-home-seller-product]",
+    "[data-open-product]",
+    "[data-simple-related]",
+    "[data-variant-product]",
+    "[data-add]",
+    "[data-fav]",
+    "#marketProductBuy",
+    "#marketProductStore",
+    "#marketProductMessage",
+    "#simpleDiscoveryAdd",
+    "#simpleDiscoveryStore",
+    "#simpleDiscoverySave",
+    "#bottomMessages",
+    "#bottomCart",
+    "#bottomMe",
+    "[data-panel='messagesPanel']",
+    "[data-panel='savedPanel']",
+    "[data-panel='homePanel']",
+    ".seller-switch",
+    ".gear"
+  ].join(","));
+  if(!restricted)return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  exitGuestToRegistration();
+},true);
+
 function authUI(){
   $("authTitle").textContent=signUpMode?"Create your My RPE account":"Welcome back";
   $("authText").textContent=signUpMode?"Create one simple account for saved products, your cart, delivery addresses and live order updates.":"Sign in to see your saved products, cart and live order updates.";
@@ -294,6 +368,7 @@ async function applySession(session,initial=false){
   sessionApplyInFlight=true;
 
   cleanupRealtime();
+  guestBrowseMode=false;
   user=nextUser;
   authBox.classList.add("hide");
 
