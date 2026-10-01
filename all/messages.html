@@ -144,3 +144,7 @@ el("back").onclick=function(){el("shell").classList.remove("chat-open")};
 async function boot(){var gs=await sb.auth.getSession();session=gs.data.session;if(!session){try{if(location.search)sessionStorage.setItem("ranova_pending_enquiry",location.search)}catch(e){}el("gate").innerHTML='<div class="auth"><h2>Sign in to use RANOVA Messages</h2><p style="font-size:14px;color:var(--muted)">Messaging is tied to verified buyer and seller accounts so orders, quotes and agreements cannot be impersonated.</p><a class="send" style="display:inline-block" href="./account.html">Buyer sign in</a> <a class="btn" style="display:inline-block" href="./seller-center.html">Seller sign in</a></div>';return}el("shell").style.display="grid";if(innerWidth<=760)el("back").style.display="inline-block";await loadList();await startFromUrl();poll=setInterval(function(){if(current)openConv(current.id,true).catch(()=>{});else loadList().catch(()=>{})},5000)}
 boot().catch(function(e){el("gate").textContent=e.message||"Could not open messages. Please try again."});
 })();</script></body></html>
+<style>
+/* Mobile emoji tray: compact half-screen panel with internal scrolling */
+@media(max-width:720px){.emoji-panel{height:50dvh;max-height:50dvh;min-height:4cm;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.emoji-tabs{position:sticky;top:0;background:#fff;z-index:2}.emoji-panel input{position:sticky;top:48px;background:#fff;z-index:2}}
+</style>
