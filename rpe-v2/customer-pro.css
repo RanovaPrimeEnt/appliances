@@ -137,3 +137,21 @@ body{padding-bottom:calc(var(--rpe-nav-h) + env(safe-area-inset-bottom))}
 .market-store-skeleton-copy{display:grid;align-content:center;gap:9px}.market-store-skeleton-copy i{height:10px;border-radius:999px}.market-store-skeleton-copy i:nth-child(1){width:70%}.market-store-skeleton-copy i:nth-child(2){width:48%}.market-store-skeleton-copy i:nth-child(3){width:82%}
 @keyframes ranovaShimmer{0%{background-position:100% 0}100%{background-position:0 0}}
 @media(min-width:520px){.market-loading-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+
+/* Compact buyer-code header */
+.compact-account-head{padding:7px 12px 6px;min-height:54px;justify-content:space-between;gap:8px}
+.account-identity{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+.compact-account-head .account-avatar{width:42px;height:42px;font-size:14px;border-width:2px}
+.compact-account-head .account-name{min-width:0;flex:1}
+.compact-account-head .account-name b{font-size:13px;letter-spacing:.25px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compact-account-head .account-tools{margin-left:auto;gap:7px;align-self:flex-start;padding-top:1px}
+.compact-account-head .seller-switch{font-size:9px;padding:8px 7px;border-radius:10px;background:#fff;color:#4c4c4c}
+.compact-account-head .gear{width:33px;height:33px}
+.compact-account-head .gear svg{width:19px;height:19px}
+@media(max-width:390px){
+  .compact-account-head{padding-left:8px;padding-right:8px}
+  .compact-account-head .account-avatar{width:38px;height:38px}
+  .compact-account-head .account-name b{font-size:11.5px}
+  .compact-account-head .seller-switch{font-size:8px;padding:7px 5px}
+}
