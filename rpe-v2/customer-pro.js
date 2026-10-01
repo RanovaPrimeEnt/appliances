@@ -258,25 +258,16 @@ function openPassword(){
   $q("#rpePasswordSave",o).onclick=async()=>{const p=$q("#rpeNewPassword",o).value;if(p.length<8)return toast("Use at least 8 characters.");try{const {error}=await sb.auth.updateUser({password:p});if(error)throw error;o.classList.remove("open");toast("Password updated.")}catch(e){toast(e.message||"Password could not be updated.")}};
 }
 
-/* Improvement 15 — browse first, register at action time */
+/* Improvement 15 — controlled browse-only account */
 function setupGuestBrowse(){
   const auth=$q("#auth");if(!auth||$q("#rpeGuestBrowse"))return;
   const form=auth.querySelector("form")||auth.querySelector(".auth")||auth;
   const btn=document.createElement("button");btn.type="button";btn.id="rpeGuestBrowse";btn.className="rpe-guest";btn.textContent="Browse RANOVA without an account";
   form.appendChild(btn);
-  btn.onclick=async()=>{
-    guestMode=true;auth.classList.add("hide");
-    const app=$q("#app")||$q(".shell");app?.classList.remove("hide");
-    try{await loadMarketplaceHomeData()}catch{}
-    try{openPanel("marketplaceHomePanel")}catch{}
-    setupNav();toast("Guest browsing enabled. Sign in when you are ready to order or message.");
+  btn.onclick=()=>{
+    guestMode=true;
+    if(typeof window.RANOVA_ENTER_GUEST_BROWSE==="function")window.RANOVA_ENTER_GUEST_BROWSE();
   };
-  document.addEventListener("click",e=>{
-    if(!guestMode||signedIn())return;
-    if(e.target.closest("#bottomMessages,[data-panel='messagesPanel'],#sendOrder,#marketProductMessage,.fav,[data-panel='savedPanel'],[data-panel='homePanel']")){
-      e.preventDefault();e.stopImmediatePropagation();requireAccount("use this feature");
-    }
-  },true);
 }
 
 /* 15 release hardening: online/offline feedback, reduced accidental failures */
