@@ -589,7 +589,7 @@ el("saveStore").onclick=function(){saveStore((state.store&&state.store.store_sta
 el("publishStore").onclick=function(){saveStore("active",this)};
 el("pauseStore").onclick=function(){saveStore("paused",this)};
 el("uploadLogo").onclick=async function(){var b=this,old=b.textContent;b.disabled=true;b.textContent="Uploading…";try{logoUrl=await uploadAsset(el("logoFile").files[0],"store");preview(el("logoPreview"),logoUrl,true);msg(el("storeMsg"),"Logo uploaded. Save the store to keep it.",true)}catch(e){msg(el("storeMsg"),e.message)}finally{b.disabled=false;b.textContent=old}};
-el("uploadBanner").onclick=async function(){var b=this,old=b.textContent;b.disabled=true;b.textContent="Uploading…";try{bannerUrl=await uploadAsset(el("bannerFile").files[0],"store");preview(el("bannerPreview"),bannerUrl,false);msg(el("storeMsg"),"Banner uploaded. Save the store to keep it.",true)}catch(e){msg(el("storeMsg"),e.message)}finally{b.disabled=false;b.textContent=old}};
+el("uploadBanner").onclick=async function(){var b=this,old=b.textContent,file=el("bannerFile").files[0];if(!file){msg(el("storeMsg"),"Choose a banner image first.");return}b.disabled=true;b.textContent="Uploading…";try{bannerUrl=await uploadAsset(file,"store");preview(el("bannerPreview"),bannerUrl,false);await api(storePayload((state.store&&state.store.store_status)||"draft"));if(state.store)state.store.banner_url=bannerUrl;msg(el("storeMsg"),"Banner uploaded and saved. It will appear at the top of your RANOVA store.",true)}catch(e){msg(el("storeMsg"),e.message||"Could not upload the banner.")}finally{b.disabled=false;b.textContent=old}};
 
 function statusChip(status){return '<span class="chip '+esc(status)+'">'+esc(pretty(status))+'</span>'}
 function productMissingFields(p){
