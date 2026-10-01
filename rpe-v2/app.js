@@ -27,7 +27,38 @@ let returns = [];
 let toPayOrders = [];
 let toPayStores = [];
 let toPayRecommendations = [];
-let marketStores=[],marketSellerProducts=[],marketLoadedAt=0;
+let marketStores=[],marketSellerProducts=[],marketLoadedAt=0,marketFetchInFlight=false;
+const PUBLIC_MARKET_CACHE_KEY="ranova-public-market-v1";
+const PUBLIC_MARKET_CACHE_MAX_AGE=24*60*60*1000;
+
+function restorePublicMarketCache(){
+  try{
+    const raw=localStorage.getItem(PUBLIC_MARKET_CACHE_KEY);
+    if(!raw)return false;
+    const d=JSON.parse(raw);
+    if(!d?.t||Date.now()-d.t>PUBLIC_MARKET_CACHE_MAX_AGE)return false;
+    if(!Array.isArray(d.stores)||!Array.isArray(d.products))return false;
+    marketStores=d.stores;
+    marketSellerProducts=d.products;
+    marketLoadedAt=d.t;
+    return marketStores.length>0||marketSellerProducts.length>0;
+  }catch{return false}
+}
+function savePublicMarketCache(){
+  if(!marketStores.length&&!marketSellerProducts.length)return;
+  try{
+    localStorage.setItem(PUBLIC_MARKET_CACHE_KEY,JSON.stringify({
+      t:Date.now(),stores:marketStores,products:marketSellerProducts
+    }));
+  }catch{}
+}
+function marketSkeleton(count=6){
+  return '<div class="market-loading-grid">'+Array.from({length:count},()=>'<div class="market-skeleton-card"><span class="market-skeleton-img"></span><span class="market-skeleton-line wide"></span><span class="market-skeleton-line"></span></div>').join("")+'</div>';
+}
+function marketStoreSkeleton(count=3){
+  return Array.from({length:count},()=>'<div class="market-store-skeleton"><span class="market-store-skeleton-img"></span><span class="market-store-skeleton-copy"><i></i><i></i><i></i></span></div>').join("");
+}
+restorePublicMarketCache();
 let marketCategory="",marketLocation="",marketSort="recommended",marketMoqOne=false;
 let marketProductCurrent=null,marketProductOrigin="marketplaceHomePanel";
 let manualPaymentOrderRef="",paymentStatusTimer=null;
@@ -309,6 +340,7 @@ async function loadAll(){
   [prof,prod,cart,ord].forEach(x=>{if(x.error)throw x.error});
   profile=prof.data;products=prod.data||[];cartId=cart.data?.id||null;orders=ord.data||[];
   renderAll();
+  if(activePanelId==="marketplaceHomePanel")renderMarketplaceHome($("marketHomeSearch")?.value||"");
   panelPainted.clear();
   ["homePanel","shopPanel","ordersPanel","savedPanel","recentPanel","addressPanel","notifPanel","profilePanel"].forEach(markPanelPainted);
   saveFastCache();
@@ -710,22 +742,44 @@ function cleanupRealtime(){realtimeChannels.forEach(ch=>sb.removeChannel(ch));re
 
 
 async function loadMarketplaceHomeData(){
-  // Never let the Marketplace sit on a loading screen while seller data is refreshing.
-  // Paint the regular customer catalogue immediately, then enhance it with live seller data.
+  if(marketFetchInFlight)return;
+  marketFetchInFlight=true;
+
+  // Paint cached/live content immediately. On a first-ever launch render
+  // skeletons instead of incorrectly declaring the marketplace empty.
   renderMarketplaceHome($("marketHomeSearch")?.value||"");
-  const [storeResult,productResult]=await Promise.allSettled([
-    sb.from("ranova_seller_stores").select("*").eq("store_status","active").limit(60),
-    sb.from("ranova_seller_products").select("*").eq("product_status","active").limit(240)
-  ]);
-  const a=storeResult.status==="fulfilled"?storeResult.value:null;
-  const b=productResult.status==="fulfilled"?productResult.value:null;
-  if(a&&!a.error)marketStores=a.data||[];
-  if(b&&!b.error)marketSellerProducts=b.data||[];
-  marketLoadedAt=Date.now();
-  populateMarketplaceFilters();
-  renderMarketplaceHome($("marketHomeSearch")?.value||"");
-  renderHomeProducts();
-  markPanelPainted("marketplaceHomePanel");
+
+  try{
+    const [storeResult,productResult]=await Promise.allSettled([
+      sb.from("ranova_seller_stores").select("*").eq("store_status","active").limit(60),
+      sb.from("ranova_seller_products").select("*").eq("product_status","active").limit(240)
+    ]);
+    const storeResponse=storeResult.status==="fulfilled"?storeResult.value:null;
+    const productResponse=productResult.status==="fulfilled"?productResult.value:null;
+
+    const storesOk=storeResponse&&!storeResponse.error;
+    const productsOk=productResponse&&!productResponse.error;
+    const freshStores=storesOk?(storeResponse.data||[]):null;
+    const freshProducts=productsOk?(productResponse.data||[]):null;
+
+    // Never erase useful last-known-good marketplace content because one
+    // refresh returned an error or an unexpected temporary empty response.
+    if(storesOk&&freshStores.length)marketStores=freshStores;
+    else if(storesOk&&freshStores.length===0&&!marketStores.length)marketStores=[];
+
+    if(productsOk&&freshProducts.length)marketSellerProducts=freshProducts;
+    else if(productsOk&&freshProducts.length===0&&!marketSellerProducts.length)marketSellerProducts=[];
+
+    if(storesOk||productsOk)marketLoadedAt=Date.now();
+    if(marketStores.length||marketSellerProducts.length)savePublicMarketCache();
+
+    populateMarketplaceFilters();
+    renderMarketplaceHome($("marketHomeSearch")?.value||"");
+    renderHomeProducts();
+    markPanelPainted("marketplaceHomePanel");
+  }finally{
+    marketFetchInFlight=false;
+  }
 }
 function marketStoreProducts(id){return marketSellerProducts.filter(p=>p.store_id===id)}
 function populateMarketplaceFilters(){
@@ -927,17 +981,22 @@ function renderMarketplaceHome(filter=""){
     const legacyRows=products.filter(p=>!qLegacy||[
       p.name,p.sku,p.legacy_id,p.brand,p.categories?.name,p.short_description
     ].some(x=>String(x||"").toLowerCase().includes(qLegacy))).slice(0,36);
-    promo.innerHTML=legacyRows.length
-      ? '<div style="grid-column:1/-1;padding:10px 12px;border-radius:14px;background:#fff7ef;color:#92501c;font-size:10px">Showing available RANOVA products while live seller stores refresh.</div>'
-      : '';
-    if(summary)summary.textContent=legacyRows.length+" product"+(legacyRows.length===1?"":"s");
-    if(productHost)productHost.innerHTML=legacyRows.length?legacyRows.map(p=>{
-      const image=imageFor(p);
-      return '<button class="market-product-card" type="button" data-legacy-market-product="'+esc(p.id)+'">'+
-        (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy">':'<span class="market-product-placeholder">Product image</span>')+
-        '<span class="market-product-copy"><b>'+esc(p.name||"Product")+'</b><small>'+esc(p.categories?.name||p.brand||"RANOVA Marketplace")+'</small><strong>'+esc(money(p.price,p.currency||"GHS"))+'</strong></span></button>';
-    }).join(""):'<div class="market-empty"><b>No products available yet</b>Please try again shortly.</div>';
-    feed.innerHTML='<div class="market-empty"><b>Stores are refreshing</b>You can continue browsing products now.</div>';
+
+    promo.innerHTML="";
+    if(summary)summary.textContent=legacyRows.length
+      ? legacyRows.length+" product"+(legacyRows.length===1?"":"s")
+      : "Loading marketplace…";
+
+    if(productHost){
+      productHost.innerHTML=legacyRows.length?legacyRows.map(p=>{
+        const image=imageFor(p);
+        return '<button class="market-product-card" type="button" data-legacy-market-product="'+esc(p.id)+'">'+
+          (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy">':'<span class="market-product-placeholder">Product image</span>')+
+          '<span class="market-product-copy"><b>'+esc(p.name||"Product")+'</b><small>'+esc(p.categories?.name||p.brand||"RANOVA Marketplace")+'</small><strong>'+esc(money(p.price,p.currency||"GHS"))+'</strong></span></button>';
+      }).join(""):marketSkeleton(6);
+    }
+
+    feed.innerHTML=marketStoreSkeleton(3);
     return;
   }
   const storeById=new Map(marketStores.map(s=>[s.id,s]));
