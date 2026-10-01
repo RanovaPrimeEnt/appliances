@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
         cookieManager.setAcceptCookie(true);
         cookieManager.setAcceptThirdPartyCookies(webView, true);
 
-        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
+        WebView.setWebContentsDebuggingEnabled(false);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
