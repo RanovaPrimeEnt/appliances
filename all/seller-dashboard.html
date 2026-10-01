@@ -167,6 +167,61 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
   .product-button-actions button{min-height:42px;font-size:14px}
 }
 
+
+/* Mobile collapsible seller dashboard header */
+.topbar-mobile{display:contents}
+.mobile-topnav-toggle{display:none}
+@media(max-width:620px){
+  .top .wrap{padding:8px 12px;gap:8px}
+  .topbar-mobile{
+    display:flex;
+    width:100%;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .brand{font-size:15px;line-height:1.2}
+  .mobile-topnav-toggle{
+    display:inline-flex;
+    flex:0 0 auto;
+    min-height:38px;
+    padding:0 12px;
+    border-radius:11px;
+    border:1px solid #ffffff35;
+    background:#ffffff0f;
+    color:#fff;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    font-size:13px;
+    font-weight:900;
+  }
+  .mobile-topnav-toggle b{font-size:16px;line-height:1;transition:transform .18s ease}
+  .mobile-topnav-toggle[aria-expanded="true"] b{transform:rotate(180deg)}
+  .topnav{
+    display:none;
+    width:100%;
+    max-width:none;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    overflow:visible;
+  }
+  .topnav.mobile-open{display:grid}
+  .topnav a,.topnav button{
+    width:100%;
+    min-width:0;
+    min-height:40px;
+    padding:0 9px;
+    border-radius:11px;
+    font-size:12.5px;
+    line-height:1.2;
+    text-align:center;
+    justify-content:center;
+    white-space:normal;
+  }
+  .topnav #signOut{grid-column:1/-1}
+  .side{top:58px}
+}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -179,7 +234,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
     <div data-body style="margin-top:12px;font-size:13px;line-height:1.75;color:#555"></div>
   </div>
 </div>
-<div class="top"><div class="wrap"><div class="brand">RANOVA SELLER DASHBOARD</div><div class="topnav"><a href="./seller-center.html">Verification</a><a href="./seller-admin-messages.html">Admin Messages</a><a href="./messages.html">Messages</a><a href="./documents.html">Documents</a><a href="./after-sales.html">After-sales</a><a href="./">Marketplace</a><button id="signOut">Sign out</button></div></div></div>
+<div class="top"><div class="wrap"><div class="topbar-mobile"><div class="brand">RANOVA SELLER DASHBOARD</div><button id="mobileTopnavToggle" class="mobile-topnav-toggle" type="button" aria-expanded="false" aria-controls="sellerTopnav"><span>Menu</span><b aria-hidden="true">⌄</b></button></div><div class="topnav" id="sellerTopnav"><a href="./seller-center.html">Verification</a><a href="./seller-admin-messages.html">Admin Messages</a><a href="./messages.html">Messages</a><a href="./documents.html">Documents</a><a href="./after-sales.html">After-sales</a><a href="./">Marketplace</a><button id="signOut">Sign out</button></div></div></div>
 <section class="hero"><div class="wrap"><div class="kicker">STORE MANAGEMENT</div><h1>Build and manage your RANOVA store.</h1><p>Set up your public storefront, add products, control wholesale pricing and stock, and keep track of marketplace orders from one workspace.</p></div></section>
 
 <main class="wrap">
@@ -1640,6 +1695,27 @@ function renderHelpIssues(){
 bindSellerPowerTools();
 el("sellerMarkAllRead").onclick=async function(){await api({action:"mark_notifications_read"});await refresh();setPanel("support")};
 el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./seller-center.html"};
+(function(){
+  var toggle=document.getElementById("mobileTopnavToggle"),nav=document.getElementById("sellerTopnav");
+  if(!toggle||!nav)return;
+  function isMobile(){return window.matchMedia&&window.matchMedia("(max-width:620px)").matches}
+  function closeMenu(){nav.classList.remove("mobile-open");toggle.setAttribute("aria-expanded","false")}
+  function openMenu(){nav.classList.add("mobile-open");toggle.setAttribute("aria-expanded","true")}
+  toggle.addEventListener("click",function(){
+    if(!isMobile())return;
+    nav.classList.contains("mobile-open")?closeMenu():openMenu();
+  });
+  nav.querySelectorAll("a,button").forEach(function(item){
+    item.addEventListener("click",function(){if(isMobile())setTimeout(closeMenu,0)});
+  });
+  document.addEventListener("click",function(e){
+    if(!isMobile()||!nav.classList.contains("mobile-open"))return;
+    if(!e.target.closest(".top"))closeMenu();
+  });
+  window.addEventListener("resize",function(){
+    if(!isMobile())closeMenu();
+  });
+})();
 async function boot(){
   var gs=await sb.auth.getSession();session=gs.data.session;
   if(!session){el("gate").innerHTML='<div class="locked"><b>Sign in to Seller Center first.</b>Your seller dashboard uses the same protected seller account.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Open Seller Center →</a></div></div>';return}
