@@ -900,70 +900,90 @@ function openMarketplaceProduct(id){
   const p=marketSellerProducts.find(x=>x.id===id);if(!p)return;
   const store=marketStores.find(s=>s.id===p.store_id)||{};
   marketProductCurrent=p;marketProductOrigin=activePanelId||"marketplaceHomePanel";
-  const ownImages=[
-    p.primary_image_url,
-    ...(Array.isArray(p.image_urls)?p.image_urls:[])
-  ].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-  const variants=marketRelatedVariants(p);
-  const slides=[
-    ...ownImages.map((url,i)=>({id:p.id,url,name:p.name||"Product",current:true,label:i===0?"Current product":"More view"})),
-    ...variants.map(v=>({id:v.id,url:v.primary_image_url||(Array.isArray(v.image_urls)?v.image_urls.find(Boolean):"")||"",name:v.name||"Similar product",current:false,label:"Similar option"}))
-  ].filter(x=>x.url);
-  $("marketProductImage").innerHTML=slides.length
-    ? '<div class="mpd-swipe" id="marketProductSwipe">'+slides.map((s,i)=>
-        '<button type="button" class="mpd-slide'+(s.current?" current":"")+'" data-variant-product="'+esc(s.id)+'" aria-label="'+esc(s.name)+'">'+
-          '<img src="'+esc(s.url)+'" alt="'+esc(s.name)+'" loading="'+(i===0?"eager":"lazy")+'" decoding="async">'+
-          (!s.current?'<span class="mpd-variant-label">'+esc(s.label)+'</span>':'')+
-        '</button>'
-      ).join("")+'</div><div class="mpd-counter" id="marketProductCounter">1 / '+slides.length+'</div>'+
-      (variants.length?'<div class="mpd-swipe-hint">Swipe for similar options from this store</div>':'')
+
+  const primaryImage=p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls.find(Boolean):"")||"";
+  $("marketProductImage").innerHTML=primaryImage
+    ? '<div class="mpd-swipe" id="marketProductSwipe"><button type="button" class="mpd-slide current" data-variant-product="'+esc(p.id)+'" aria-label="'+esc(p.name||"Product")+'"><img src="'+esc(primaryImage)+'" alt="'+esc(p.name||"Product")+'" loading="eager" fetchpriority="high" decoding="async"></button></div>'
     : 'Product image unavailable';
-  const swipe=$("marketProductSwipe");
-  if(swipe){
-    let timer=null;
-    swipe.addEventListener("scroll",()=>{
-      clearTimeout(timer);
-      timer=setTimeout(()=>{
-        const w=swipe.clientWidth||1;
-        const index=Math.max(0,Math.min(slides.length-1,Math.round(swipe.scrollLeft/w)));
-        const counter=$("marketProductCounter");if(counter)counter.textContent=(index+1)+" / "+slides.length;
-        const visible=slides[index];
-        if(visible&&visible.id&&visible.id!==marketProductCurrent?.id){
-          const nextProduct=marketSellerProducts.find(x=>x.id===visible.id);
-          if(nextProduct){
-            const nextStore=marketStores.find(s=>s.id===nextProduct.store_id)||{};
-            paintMarketplaceProductDetails(nextProduct,nextStore);
-          }
-        }else if(visible&&visible.id===p.id&&marketProductCurrent?.id!==p.id){
-          paintMarketplaceProductDetails(p,store);
-        }
-      },60);
-    },{passive:true});
-  }
   $("marketProductName").textContent=p.name||"Product";
   $("marketProductPrice").textContent=p.price==null?"Ask for price":money(p.price,p.currency||"GHS");
   if($("marketProductCategory"))$("marketProductCategory").textContent=p.category||"RANOVA Product";
   $("marketProductMeta").textContent=[store.store_name,p.sku&&("SKU "+p.sku)].filter(Boolean).join(" · ");
   $("marketProductDescription").textContent=p.description||p.short_description||"Contact the seller for additional product information.";
-  const badges=["✓ RANOVA seller",store.business_location||store.country_name,marketStockLabel(p)].filter(Boolean);
-  $("marketProductTrust").innerHTML=badges.map(x=>'<span>'+esc(x)+'</span>').join("");
-  const facts=[];
-  if(p.sku)facts.push(["Model / SKU",p.sku]);
-  if(p.category)facts.push(["Category",p.category]);
-  facts.push(["Availability",marketStockLabel(p)]);
-  if(Number(p.moq||1)>1)facts.push(["Minimum order",String(p.moq)+(p.unit_label?" "+p.unit_label:"")]);
-  if(p.stock_quantity!=null)facts.push(["Stock",String(p.stock_quantity)+(p.unit_label?" "+p.unit_label:"")]);
-  if(store.fulfilment_summary)facts.push(["Delivery",store.fulfilment_summary]);
-  if(store.return_policy_summary)facts.push(["Returns",store.return_policy_summary]);
-  const specs=p.specifications&&typeof p.specifications==="object"?p.specifications:{};
-  Object.keys(specs).slice(0,8).forEach(k=>{const v=specs[k];if(v!=null&&v!==""&&typeof v!=="object")facts.push([prettyKey(k),String(v)])});
-  $("marketProductFacts").innerHTML=facts.map(r=>'<div><dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd></div>').join("");
-  const min=marketProductMinimum(p);
-  $("marketProductMoq").textContent=min>1?"Minimum "+min+(p.unit_label?" "+p.unit_label:""):"No bulk minimum";
-  $("marketProductQty").min=String(min);$("marketProductQty").value=String(min);
-  if(p.stock_quantity!=null)$("marketProductQty").max=String(Math.max(0,Number(p.stock_quantity)||0));else $("marketProductQty").removeAttribute("max");
-  updateMarketProductTotal();
+  $("marketProductTrust").innerHTML="";
+  $("marketProductFacts").innerHTML="";
   showPanel("marketProductPanel");
+
+  afterPaint(()=>{
+    if(marketProductCurrent?.id!==p.id)return;
+    const ownImages=[
+      p.primary_image_url,
+      ...(Array.isArray(p.image_urls)?p.image_urls:[])
+    ].filter(Boolean).filter((v,i,arr)=>arr.indexOf(v)===i);
+    const variants=marketRelatedVariants(p);
+    const slides=[
+      ...ownImages.map((url,i)=>({id:p.id,url,name:p.name||"Product",current:true,label:i===0?"Current product":"More view"})),
+      ...variants.map(v=>({id:v.id,url:v.primary_image_url||(Array.isArray(v.image_urls)?v.image_urls.find(Boolean):"")||"",name:v.name||"Similar product",current:false,label:"Similar option"}))
+    ].filter(x=>x.url);
+
+    if(slides.length){
+      $("marketProductImage").innerHTML='<div class="mpd-swipe" id="marketProductSwipe">'+slides.map((s,i)=>
+        '<button type="button" class="mpd-slide'+(s.current?" current":"")+'" data-variant-product="'+esc(s.id)+'" aria-label="'+esc(s.name)+'">'+
+          '<img src="'+esc(s.url)+'" alt="'+esc(s.name)+'" loading="'+(i===0?"eager":"lazy")+'" '+(i===0?'fetchpriority="high" ':'')+'decoding="async">'+
+          (!s.current?'<span class="mpd-variant-label">'+esc(s.label)+'</span>':'')+
+        '</button>'
+      ).join("")+'</div><div class="mpd-counter" id="marketProductCounter">1 / '+slides.length+'</div>'+
+      (variants.length?'<div class="mpd-swipe-hint">Swipe for similar options from this store</div>':'');
+    }
+
+    const swipe=$("marketProductSwipe");
+    if(swipe){
+      let timer=null;
+      swipe.addEventListener("scroll",()=>{
+        clearTimeout(timer);
+        timer=setTimeout(()=>{
+          const w=swipe.clientWidth||1;
+          const index=Math.max(0,Math.min(slides.length-1,Math.round(swipe.scrollLeft/w)));
+          const counter=$("marketProductCounter");if(counter)counter.textContent=(index+1)+" / "+slides.length;
+          const visible=slides[index];
+          if(visible&&visible.id&&visible.id!==marketProductCurrent?.id){
+            const nextProduct=marketSellerProducts.find(x=>x.id===visible.id);
+            if(nextProduct){
+              const nextStore=marketStores.find(s=>s.id===nextProduct.store_id)||{};
+              paintMarketplaceProductDetails(nextProduct,nextStore);
+            }
+          }else if(visible&&visible.id===p.id&&marketProductCurrent?.id!==p.id){
+            paintMarketplaceProductDetails(p,store);
+          }
+        },60);
+      },{passive:true});
+    }
+
+    const badges=["✓ RANOVA seller",store.business_location||store.country_name,marketStockLabel(p)].filter(Boolean);
+    $("marketProductTrust").innerHTML=badges.map(x=>'<span>'+esc(x)+'</span>').join("");
+    const facts=[];
+    if(p.sku)facts.push(["Model / SKU",p.sku]);
+    if(p.category)facts.push(["Category",p.category]);
+    facts.push(["Availability",marketStockLabel(p)]);
+    if(Number(p.moq||1)>1)facts.push(["Minimum order",String(p.moq)+(p.unit_label?" "+p.unit_label:"")]);
+    if(p.stock_quantity!=null)facts.push(["Stock",String(p.stock_quantity)+(p.unit_label?" "+p.unit_label:"")]);
+    if(store.fulfilment_summary)facts.push(["Delivery",store.fulfilment_summary]);
+    if(store.return_policy_summary)facts.push(["Returns",store.return_policy_summary]);
+    const specs=p.specifications&&typeof p.specifications==="object"?p.specifications:{};
+    Object.keys(specs).slice(0,8).forEach(k=>{const v=specs[k];if(v!=null&&v!==""&&typeof v!=="object")facts.push([prettyKey(k),String(v)])});
+    $("marketProductFacts").innerHTML=facts.map(r=>'<div><dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd></div>').join("");
+    const min=marketProductMinimum(p);
+    $("marketProductMoq").textContent=min>1?"Minimum "+min+(p.unit_label?" "+p.unit_label:""):"No bulk minimum";
+    $("marketProductQty").min=String(min);$("marketProductQty").value=String(min);
+    if(p.stock_quantity!=null)$("marketProductQty").max=String(Math.max(0,Number(p.stock_quantity)||0));else $("marketProductQty").removeAttribute("max");
+    updateMarketProductTotal();
+  });
+}
+
+function warmMarketplaceProduct(id){
+  const p=marketSellerProducts.find(x=>x.id===id);if(!p)return;
+  const urls=[p.primary_image_url,...(Array.isArray(p.image_urls)?p.image_urls.slice(0,1):[])].filter(Boolean);
+  urls.forEach(url=>{const img=new Image();img.decoding="async";img.src=url;});
 }
 function shareMarketplaceProduct(){
   const p=marketProductCurrent;if(!p)return;
@@ -1071,6 +1091,15 @@ document.querySelectorAll("[data-market-focus]").forEach(btn=>btn.addEventListen
 }));
 if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>refreshMarketplaceFilters();
 if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>renderMarketplaceHome(e.target.value);
+document.addEventListener("pointerdown",e=>{
+ const p=e.target.closest("[data-mh-product]");
+ if(p)warmMarketplaceProduct(p.dataset.mhProduct);
+},{passive:true});
+document.addEventListener("touchstart",e=>{
+ const p=e.target.closest("[data-mh-product]");
+ if(p)warmMarketplaceProduct(p.dataset.mhProduct);
+},{passive:true});
+
 document.addEventListener("click",async e=>{
  const variant=e.target.closest("[data-variant-product]");if(variant&&variant.dataset.variantProduct!==marketProductCurrent?.id){openMarketplaceProduct(variant.dataset.variantProduct);return}
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
