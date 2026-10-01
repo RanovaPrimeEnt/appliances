@@ -171,3 +171,8 @@ boot().catch(function(e){el("gate").textContent=e.message||"Could not open messa
 /* Desktop parity for conversation bubbles */
 @media(min-width:721px){.bubble{max-width:72%;padding:9px 12px}.bubble:not(.me):not(.system){margin-left:0;margin-right:auto}.bubble.me{margin-left:auto;margin-right:0}.bubble small.message-meta{font-size:10px;line-height:1.15;margin-top:3px;text-align:right;color:#7b8581}.bubble>div:not(.notice){font-size:16px;line-height:1.5}}
 </style>
+
+<style>
+/* Desktop metadata hierarchy: message first, time/receipt secondary */
+@media(min-width:721px){.bubble small.message-meta{font-size:9px!important;line-height:1.1!important;margin-top:2px!important;font-weight:500!important;opacity:.78}.bubble .message-receipt,.bubble .receipt,.bubble [class*="receipt"]{font-size:9px!important;line-height:1.1!important;margin-top:2px!important;font-weight:500!important;opacity:.78}}
+</style>
