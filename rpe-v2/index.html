@@ -297,7 +297,7 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
   </div>
 </section>
 
-<section id="marketplaceHomePanel" class="panel">
+<section id="marketplaceHomePanel" class="panel active">
   <div style="background:#fff;border-radius:0;min-height:calc(100vh - 80px)">
     <div style="position:sticky;top:0;z-index:12;background:#fff;border-bottom:1px solid #eee">
       <div class="market-tabs" role="tablist" aria-label="Marketplace sections">
@@ -335,7 +335,7 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
     <div id="marketStoresAnchor" style="padding:8px 12px;font-weight:950">Stores for You</div>
     <div id="marketFactoryFeed" style="display:grid;gap:9px;padding:0 9px 14px"></div>
   </div>
-</section><section id="homePanel" class="panel active">
+</section><section id="homePanel" class="panel">
   <div class="card">
     <div class="section-head home-orders-head"><h2>My Orders</h2><button data-panel="ordersPanel">All ›</button></div><div class="order-statuses">
       <button class="status" data-panel="toPayPanel"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h3"/></svg></span><span id="payN" class="n hide">0</span><b>To Pay</b></button>
@@ -456,10 +456,10 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
 </main>
 
 <nav class="bottom" aria-label="Main navigation">
-<button data-panel="marketplaceHomePanel" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></button>
+<button class="active" data-panel="marketplaceHomePanel" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span></button>
 <button id="bottomMessages" data-panel="messagesPanel" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span><span id="bottomMessageCount" class="bubble hide">0</span></button>
 <button id="bottomCart" aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart</span><span id="bottomCartCount" class="bubble hide">0</span></button>
-<button class="active" data-panel="homePanel" aria-label="My account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></button>
+<button data-panel="homePanel" aria-label="My account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></button>
 </nav>
 </div>
 
