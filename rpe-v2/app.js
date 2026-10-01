@@ -86,6 +86,25 @@ function markPanelPainted(id){panelPainted.add(id)}
 function panelIsPainted(id){return panelPainted.has(id)}
 
 const $ = (id) => document.getElementById(id);
+function setAuthOnlyMode(on){
+  document.body.classList.toggle("ranova-auth-only",!!on);
+  if(on){
+    appBox?.classList.add("hide");
+    authBox?.classList.remove("hide");
+  }else{
+    authBox?.classList.add("hide");
+  }
+}
+function showAuthConsole(createAccount=false){
+  guestBrowseMode=false;
+  if(createAccount)signUpMode=true;
+  setAuthOnlyMode(true);
+  if($("authMsg"))$("authMsg").textContent="";
+  authUI();
+  window.scrollTo(0,0);
+}
+window.RANOVA_IS_SIGNED_IN=()=>!!user;
+window.RANOVA_SHOW_AUTH=showAuthConsole;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money = (n,c='GHS') => n == null ? "Ask for price" : "GHC " + Number(n).toLocaleString("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2});
 const imageFor = (p) => {
@@ -216,7 +235,7 @@ async function enterGuestBrowse(){
   profile={buyer_code:GUEST_BROWSE_CODE,first_name:"",last_name:"",phone:"",avatar_url:""};
   favorites=new Set();recentIds=[];cartId=null;cartItems=[];orders=[];notifications=[];addresses=[];returns=[];
   setup.classList.add("hide");
-  authBox.classList.add("hide");
+  setAuthOnlyMode(false);
   appBox.classList.remove("hide");
   if($("helloName"))$("helloName").textContent=GUEST_BROWSE_CODE;
   if($("accountAvatar"))$("accountAvatar").textContent="R";
@@ -235,13 +254,8 @@ async function enterGuestBrowse(){
 function exitGuestToRegistration(){
   if(!guestBrowseMode)return;
   guestBrowseMode=false;
-  appBox.classList.add("hide");
   setup.classList.add("hide");
-  authBox.classList.remove("hide");
-  signUpMode=true;
-  if($("authMsg"))$("authMsg").textContent="";
-  authUI();
-  window.scrollTo(0,0);
+  showAuthConsole(true);
 }
 
 window.RANOVA_ENTER_GUEST_BROWSE=enterGuestBrowse;
@@ -372,8 +386,7 @@ async function applySession(session,initial=false){
     initializedUserId=null;
     user=null;
     setup.classList.add("hide");
-    appBox.classList.add("hide");
-    authBox.classList.remove("hide");
+    setAuthOnlyMode(true);
     authUI();
     return;
   }
@@ -390,7 +403,7 @@ async function applySession(session,initial=false){
   cleanupRealtime();
   guestBrowseMode=false;
   user=nextUser;
-  authBox.classList.add("hide");
+  setAuthOnlyMode(false);
 
   // Keep the actual app visible immediately. Data paints from cache first,
   // then refreshes silently in the background.
@@ -413,6 +426,7 @@ async function applySession(session,initial=false){
     await loadAll();
     initializedUserId=nextId;
     setup.classList.add("hide");
+    setAuthOnlyMode(false);
     appBox.classList.remove("hide");
     subscribeRealtime();
     handleIncomingCartLink().catch(()=>{});

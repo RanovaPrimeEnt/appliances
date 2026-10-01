@@ -14,11 +14,15 @@ function toast(msg){
 }
 function safe(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function money(v,c="GHS"){const n=Number(v||0);try{return new Intl.NumberFormat("en-GH",{style:"currency",currency:c||"GHS"}).format(n)}catch{return "GHS "+n.toFixed(2)}}
-function signedIn(){try{return !!user}catch{return false}}
+function signedIn(){
+  try{return typeof window.RANOVA_IS_SIGNED_IN==="function"?window.RANOVA_IS_SIGNED_IN():false}catch{return false}
+}
 function requireAccount(action="continue"){
   if(signedIn())return true;
-  toast("Please sign in or create an account to "+action+".");
-  try{document.getElementById("auth")?.classList.remove("hide");document.getElementById("app")?.classList.add("hide")}catch{}
+  try{
+    if(typeof window.RANOVA_SHOW_AUTH==="function")window.RANOVA_SHOW_AUTH(false);
+    else{document.getElementById("auth")?.classList.remove("hide");document.getElementById("app")?.classList.add("hide")}
+  }catch{}
   return false;
 }
 function createOverlay(id,title){
