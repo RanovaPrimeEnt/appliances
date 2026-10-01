@@ -409,6 +409,40 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
   .contact a,.contact button{min-height:39px}
   .contact .contact-primary{min-height:44px}
 }
+
+/* Compact seller product cards */
+.product .meta:empty{display:none}
+.product .price{margin-top:7px;padding-top:0}
+.product-tools{display:none!important}
+.product .compact-card-actions{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 46px;
+  gap:7px;
+  margin-top:10px;
+}
+.product .compact-card-actions .buy{width:100%}
+.product .card-save-star{
+  min-height:39px;
+  border:1px solid #ffd1a6;
+  border-radius:11px;
+  background:#fff8f1;
+  color:#ff7a00;
+  font-size:20px;
+  font-weight:900;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+}
+.product .card-save-star[aria-pressed="true"]{background:#fff1df;border-color:#ff9b3d}
+@media(max-width:620px){
+  .product .copy{padding:9px 9px 10px}
+  .product .copy h3{min-height:0;margin:4px 0 0}
+  .product .product-id{margin-top:8px}
+  .product .price{margin-top:7px;padding-top:0;font-size:14px;line-height:1.2}
+  .product .compact-card-actions{grid-template-columns:minmax(0,1fr) 42px;gap:6px;margin-top:8px}
+  .product .compact-card-actions .buy{min-height:38px;font-size:10px}
+  .product .card-save-star{min-height:38px;font-size:19px}
+}
 /* Restore seller banner image composition */
 .banner{
   background:#dfeae5;
@@ -738,7 +772,7 @@ function productCard(p){
   var inCart=cart[p.id]!=null,enforcement=String((marketplaceTrust.enforcement||{}).enforcement_status||"good_standing"),disabled=p.stock_status==="out_of_stock"||enforcement==="restricted"||enforcement==="suspended";
   var photo=productPhoto(p);
   disabled=disabled||orderUnavailable(p);
-  return '<article class="product"><button type="button" class="img" data-open="'+esc(p.id)+'" aria-label="View '+esc(p.name)+' details">'+(photo?'<img src="'+esc(photo)+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<span>Image available on enquiry</span>')+'</button><div class="copy"><small class="product-category">'+esc(p.category||"Product")+'</small><h3><button type="button" class="product-name" data-open="'+esc(p.id)+'">'+esc(p.name)+'</button></h3><small class="product-id">Product ID: '+esc(p.sku||p.id)+'</small><div class="meta">'+(Number(p.moq||1)>1?'<span class="chip" title="Minimum order quantity">MOQ '+esc(p.moq)+'</span>':'')+'<span class="chip">'+esc(stockLabel(p))+'</span></div><div class="price">'+esc(money(p.price))+'</div><div class="product-tools"><button type="button" class="details" data-open="'+esc(p.id)+'">View details</button><button type="button" class="save-star" data-save="'+esc(p.id)+'" aria-pressed="'+(savedProducts.has(p.id)?'true':'false')+'" aria-label="'+(savedProducts.has(p.id)?'Remove saved ':'Save ')+esc(p.name)+'">'+(savedProducts.has(p.id)?'★':'☆')+'</button><button type="button" data-compare="'+esc(p.id)+'" aria-label="Compare '+esc(p.name)+'" '+(products.some(function(x){return x.id!==p.id&&x.category===p.category})?'':'disabled title="Comparison becomes available when this store has another product in this category"')+'>Compare</button></div><div class="card-actions"><button class="buy'+(inCart?' in-cart':'')+'" data-add="'+esc(p.id)+'" '+(disabled?'disabled':'')+'>'+(p.stock_status==="out_of_stock"?'Out of stock':disabled?'Ordering paused':inCart?'✓ View cart':p.price==null?'Add to cart':'Add to cart')+'</button><a class="contact-btn" href="./messages.html?product='+encodeURIComponent(p.id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div></article>'
+  return '<article class="product"><button type="button" class="img" data-open="'+esc(p.id)+'" aria-label="View '+esc(p.name)+' details">'+(photo?'<img src="'+esc(photo)+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<span>Image available on enquiry</span>')+'</button><div class="copy"><small class="product-category">'+esc(p.category||"Product")+'</small><h3><button type="button" class="product-name" data-open="'+esc(p.id)+'">'+esc(p.name)+'</button></h3><small class="product-id">Product ID: '+esc(p.sku||p.id)+'</small><div class="meta">'+(Number(p.moq||1)>1?'<span class="chip" title="Minimum order quantity">MOQ '+esc(p.moq)+'</span>':'')+'</div><div class="price">'+esc(money(p.price))+'</div><div class="card-actions compact-card-actions"><button class="buy'+(inCart?' in-cart':'')+'" data-add="'+esc(p.id)+'" '+(disabled?'disabled':'')+'>'+(p.stock_status==="out_of_stock"?'Out of stock':disabled?'Ordering paused':inCart?'✓ View cart':p.price==null?'Add to cart':'Add to cart')+'</button><button type="button" class="save-star card-save-star" data-save="'+esc(p.id)+'" aria-pressed="'+(savedProducts.has(p.id)?'true':'false')+'" aria-label="'+(savedProducts.has(p.id)?'Remove saved ':'Save ')+esc(p.name)+'">'+(savedProducts.has(p.id)?'★':'☆')+'</button></div></div></article>'
 }
 function renderCategoryNav(){
   var cats=CATEGORY_ORDER.filter(function(c){return products.some(function(p){return p.category===c})});
@@ -764,7 +798,6 @@ function render(){
   el("grid").querySelectorAll("[data-add]").forEach(function(b){b.onclick=function(){addProduct(this.dataset.add)}});
   el("grid").querySelectorAll("[data-open]").forEach(function(b){b.onclick=function(){openProductDetail(this.dataset.open)}});
   el("grid").querySelectorAll("[data-save]").forEach(function(b){b.onclick=function(){toggleSaved(this.dataset.save)}});
-  el("grid").querySelectorAll("[data-compare]").forEach(function(b){b.onclick=function(){openProductDetail(this.dataset.compare);var selector=el("compareProduct");if(selector){selector.scrollIntoView({block:"center"});selector.focus()}}});
   renderCategoryNav()
 }
 function addProduct(id){
