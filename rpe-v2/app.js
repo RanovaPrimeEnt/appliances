@@ -127,7 +127,8 @@ function restoreFastCache(){
 }
 function idleRun(fn,timeout=1200){if("requestIdleCallback"in window)requestIdleCallback(fn,{timeout});else setTimeout(fn,250)}
 async function contactRpe(subject="Shopping enquiry",draft="Hello Ranova Prime Enterprise, I need help with my order or shopping."){
- try{const found=await sb.from("ranova_seller_stores").select("id").eq("slug","ranova-prime-enterprise").eq("store_status","active").maybeSingle();if(found.error)throw found.error;if(!found.data)throw Error("RANOVA Store is currently unavailable. Please try again later.");const out=await messageApi({action:"start",store_id:found.data.id,subject});showPanel("messagesPanel");await openMessageConversation(out.conversation.id);$("msgInput").value=draft;updateMsgAction();$("msgInput").focus()}catch(e){showToast(e.message||"Could not open messages")}
+ showPanel("messagesPanel");
+ try{const found=await sb.from("ranova_seller_stores").select("id").eq("slug","ranova-prime-enterprise").eq("store_status","active").maybeSingle();if(found.error)throw found.error;if(!found.data)throw Error("RANOVA Store is currently unavailable. Please try again later.");const out=await messageApi({action:"start",store_id:found.data.id,subject});await openMessageConversation(out.conversation.id);$("msgInput").value=draft;updateMsgAction();$("msgInput").focus()}catch(e){showToast(e.message||"Could not open messages")}
 }
 
 function showPanel(id){
@@ -524,7 +525,9 @@ document.addEventListener("click",async e=>{
   const fav=e.target.closest("[data-fav]"); if(fav){e.stopPropagation();await toggleFavorite(fav.dataset.fav);return}
   const open=e.target.closest("[data-open-product]"); if(open){openProduct(open.dataset.openProduct);return}
 });
-$("searchBtn").onclick=searchProducts;$("productSearch").addEventListener("input",searchProducts);
+let productSearchFrame=0,marketSearchFrame=0;
+$("searchBtn").onclick=searchProducts;
+$("productSearch").addEventListener("input",()=>{cancelAnimationFrame(productSearchFrame);productSearchFrame=requestAnimationFrame(searchProducts)});
 function searchProducts(){
   const q=$("productSearch").value.trim().toLowerCase();
   if(!q)return renderProducts(products);
@@ -584,8 +587,18 @@ function renderSimpleDiscoveryProduct(p,keepOrigin=false){
 }
 async function openProduct(id){
   const p=products.find(x=>x.id===id);if(!p)return;
-  renderSimpleDiscoveryProduct(p,false);
+  simpleDiscoveryProductId=p.id;
+  simpleDiscoveryOrigin=activePanelId||"homePanel";
+  const image=imageFor(p);
+  $("simpleDiscoveryImage").innerHTML=image
+    ? '<img src="'+esc(image)+'" alt="'+esc(p.name)+'" loading="eager" fetchpriority="high" decoding="async">'
+    : '<div class="sd-empty">RPE Product</div>';
+  $("simpleDiscoveryName").textContent=p.name||"Product";
+  $("simpleDiscoveryCategory").textContent=p.categories?.name||"RPE Product";
+  $("simpleDiscoveryPrice").textContent=money(p.price,p.currency);
   showPanel("simpleDiscoveryPanel");
+
+  afterPaint(()=>renderSimpleDiscoveryProduct(p,true));
   recentIds=[id,...recentIds.filter(x=>x!==id)].slice(0,20);
   panelPainted.delete("recentPanel");
   sb.from("recently_viewed").upsert({user_id:user.id,product_id:id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"}).then(()=>saveFastCache()).catch(()=>{});
@@ -606,17 +619,53 @@ async function handleIncomingCartLink(){
 async function addToCart(productId){
   if(!cartId)return showToast("Cart is not ready");
   const existing=cartItems.find(x=>x.product_id===productId);
-  let res;
-  if(existing)res=await sb.from("cart_items").update({quantity:Math.min(99,existing.quantity+1)}).eq("id",existing.id);
-  else res=await sb.from("cart_items").insert({cart_id:cartId,product_id:productId,quantity:1});
-  if(res.error)return showToast("Could not add product");
-  await loadCartItems();renderCart();showToast("Added to cart");saveFastCache();
+  const product=products.find(x=>x.id===productId)||null;
+  const previous=existing?existing.quantity:null;
+
+  if(existing){
+    existing.quantity=Math.min(99,existing.quantity+1);
+  }else{
+    cartItems.push({
+      id:"temp-"+productId+"-"+Date.now(),
+      quantity:1,
+      product_id:productId,
+      products:product?{
+        id:product.id,name:product.name,sku:product.sku,price:product.price,currency:product.currency,
+        stock_status:product.stock_status,product_images:product.product_images||[]
+      }:null,
+      __optimistic:true
+    });
+  }
+  renderCart();saveFastCache();showToast("Added to cart");
+
+  const res=existing
+    ? await sb.from("cart_items").update({quantity:existing.quantity}).eq("id",existing.id)
+    : await sb.from("cart_items").insert({cart_id:cartId,product_id:productId,quantity:1});
+  if(res.error){
+    if(existing)existing.quantity=previous;
+    else cartItems=cartItems.filter(x=>!(x.__optimistic&&x.product_id===productId));
+    renderCart();saveFastCache();showToast("Could not add product");
+    return;
+  }
+  loadCartItems().then(()=>{renderCart();saveFastCache()}).catch(()=>{});
 }
 async function changeQty(item,delta){
-  const q=Math.max(1,Math.min(99,item.quantity+delta));const {error}=await sb.from("cart_items").update({quantity:q}).eq("id",item.id);
-  if(error)return showToast("Could not update quantity");await loadCartItems();renderCart();saveFastCache();
+  const previous=item.quantity;
+  const q=Math.max(1,Math.min(99,item.quantity+delta));
+  item.quantity=q;renderCart();saveFastCache();
+  if(item.__optimistic)return;
+  const {error}=await sb.from("cart_items").update({quantity:q}).eq("id",item.id);
+  if(error){item.quantity=previous;renderCart();saveFastCache();showToast("Could not update quantity")}
 }
-async function removeCart(item){const {error}=await sb.from("cart_items").delete().eq("id",item.id);if(error)return showToast("Could not remove product");await loadCartItems();renderCart();saveFastCache();}
+async function removeCart(item){
+  const index=cartItems.findIndex(x=>x.id===item.id);
+  if(index<0)return;
+  const removed=cartItems[index];
+  cartItems.splice(index,1);renderCart();saveFastCache();
+  if(removed.__optimistic)return;
+  const {error}=await sb.from("cart_items").delete().eq("id",removed.id);
+  if(error){cartItems.splice(Math.min(index,cartItems.length),0,removed);renderCart();saveFastCache();showToast("Could not remove product")}
+}
 function renderCart(){
   const list=$("cartList");setBadge("cartCount",cartItems.length);setBadge("bottomCartCount",cartItems.length);
   if(!cartItems.length){list.innerHTML='<div class="empty"><b>Your cart is empty</b>Add products you want and they will appear here.</div>';return}
@@ -751,8 +800,8 @@ async function loadMarketplaceHomeData(){
 
   try{
     const [storeResult,productResult]=await Promise.allSettled([
-      sb.from("ranova_seller_stores").select("*").eq("store_status","active").limit(60),
-      sb.from("ranova_seller_products").select("*").eq("product_status","active").limit(240)
+      sb.from("ranova_seller_stores").select("id,seller_id,store_name,slug,tagline,logo_url,banner_url,business_location,fulfilment_summary,return_policy_summary,store_status,country_code,country_name,updated_at").eq("store_status","active").order("updated_at",{ascending:false}).limit(60),
+      sb.from("ranova_seller_products").select("id,seller_id,store_id,name,slug,sku,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,product_status,updated_at,specifications").eq("product_status","active").order("updated_at",{ascending:false}).limit(240)
     ]);
     const storeResponse=storeResult.status==="fulfilled"?storeResult.value:null;
     const productResponse=productResult.status==="fulfilled"?productResult.value:null;
@@ -985,6 +1034,20 @@ function warmMarketplaceProduct(id){
   const urls=[p.primary_image_url,...(Array.isArray(p.image_urls)?p.image_urls.slice(0,1):[])].filter(Boolean);
   urls.forEach(url=>{const img=new Image();img.decoding="async";img.src=url;});
 }
+
+const prefetchedDocuments=new Set();
+function prefetchDocument(url){
+  if(!url||prefetchedDocuments.has(url))return;
+  prefetchedDocuments.add(url);
+  try{
+    const link=document.createElement("link");
+    link.rel="prefetch";link.href=url;
+    document.head.appendChild(link);
+  }catch{}
+}
+function sellerStoreUrlFromSlug(slug){
+  return slug?"../all/seller-store.html?store="+encodeURIComponent(slug):"";
+}
 function shareMarketplaceProduct(){
   const p=marketProductCurrent;if(!p)return;
   const url=sellerStoreProductUrl(p);if(!url)return;
@@ -1090,10 +1153,17 @@ document.querySelectorAll("[data-market-focus]").forEach(btn=>btn.addEventListen
   else if(focus==="categories"){$("marketCategoryFilter")?.focus();$("marketCategoryFilter")?.scrollIntoView({behavior:"smooth",block:"center"});}
 }));
 if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>refreshMarketplaceFilters();
-if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>renderMarketplaceHome(e.target.value);
+if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>{const value=e.target.value;cancelAnimationFrame(marketSearchFrame);marketSearchFrame=requestAnimationFrame(()=>renderMarketplaceHome(value))};
 document.addEventListener("pointerdown",e=>{
  const p=e.target.closest("[data-mh-product]");
  if(p)warmMarketplaceProduct(p.dataset.mhProduct);
+ const store=e.target.closest("[data-mh-store]");
+ if(store)prefetchDocument(sellerStoreUrlFromSlug(store.dataset.mhStore));
+ const sellerHome=e.target.closest("[data-home-seller-product]");
+ if(sellerHome){
+   const item=marketSellerProducts.find(x=>x.id===sellerHome.dataset.homeSellerProduct);
+   prefetchDocument(sellerStoreProductUrl(item));
+ }
 },{passive:true});
 document.addEventListener("touchstart",e=>{
  const p=e.target.closest("[data-mh-product]");
@@ -1104,7 +1174,7 @@ document.addEventListener("click",async e=>{
  const variant=e.target.closest("[data-variant-product]");if(variant&&variant.dataset.variantProduct!==marketProductCurrent?.id){openMarketplaceProduct(variant.dataset.variantProduct);return}
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
  const p=e.target.closest("[data-mh-product]");if(p){openMarketplaceProduct(p.dataset.mhProduct);return}
- const m=e.target.closest("[data-mh-message]");if(m){try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});showPanel("messagesPanel");await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
+ const m=e.target.closest("[data-mh-message]");if(m){showPanel("messagesPanel");try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
  const v=e.target.closest("[data-mh-store]");if(v){location.href="../all/seller-store.html?store="+encodeURIComponent(v.dataset.mhStore);return}
 });
 if($("marketProductBack"))$("marketProductBack").onclick=()=>showPanel(marketProductOrigin||"marketplaceHomePanel");
@@ -1116,9 +1186,10 @@ if($("marketProductStore"))$("marketProductStore").onclick=()=>{const url=seller
 if($("marketProductBuy"))$("marketProductBuy").onclick=()=>{const p=marketProductCurrent,url=sellerStoreProductUrl(p);if(!p||!url)return showToast("Store unavailable");const q=marketProductQuantity(p,$("marketProductQty").value);location.href=url+"&qty="+encodeURIComponent(q)};
 if($("marketProductMessage"))$("marketProductMessage").onclick=async()=>{
   const p=marketProductCurrent;if(!p)return;
+  showPanel("messagesPanel");
   try{
     const out=await messageApi({action:"start",store_id:p.store_id,subject:"Product enquiry: "+(p.name||"Product"),product_id:p.id});
-    showPanel("messagesPanel");await openMessageConversation(out.conversation.id);
+    await openMessageConversation(out.conversation.id);
   }catch(err){showToast(err.message||"Could not open seller chat")}
 };
 async function loadToPayOrders(prefetch=false){
