@@ -66,3 +66,8 @@ $("saRecordDelete").onclick=()=>{if(recorder){recorder.onstop=null;if(recorder.s
 updateAction();
 (async()=>{const g=await sb.auth.getSession();session=g.data.session;if(!session){$("gate").innerHTML='Sign in through <a href="./seller-center.html">Seller Center</a> first.';return}try{await load();$("gate").style.display="none";$("main").style.display="block"}catch(e){$("gate").textContent=e.message||"Could not load official messages."}})();})();
 </script><script src="./seller-pwa.js?v=20260927-01"></script></body></html>
+
+<style>
+/* Mobile emoji tray: compact half-screen panel with internal scrolling */
+@media(max-width:720px){.sa-emoji-panel{height:50dvh;max-height:50dvh;min-height:4cm;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.sa-emoji-tabs{position:sticky;top:0;background:#fff;z-index:2}.sa-emoji-panel input{position:sticky;top:48px;background:#fff;z-index:2}}
+</style>
