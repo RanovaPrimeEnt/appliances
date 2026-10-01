@@ -41,7 +41,7 @@ const PAYMENT_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-payment-gateway";
 const FAST_CACHE_TTL=5*60*1000;
 let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 let initializedUserId=null,sessionApplyInFlight=false;
-let activePanelId="homePanel";
+let activePanelId="marketplaceHomePanel";
 let simpleDiscoveryOrigin="homePanel";
 let simpleDiscoveryProductId=null;
 let recommendationRotation=0,recommendationTimer=null;
@@ -265,6 +265,12 @@ async function applySession(session,initial=false){
   const cached=restoreFastCache();
   setup.classList.add("hide");
   appBox.classList.remove("hide");
+
+  // A fresh signed-in launch always starts on the marketplace Home feed.
+  // Account/Me stays available from the bottom navigation.
+  if(initial){
+    showPanel("marketplaceHomePanel");
+  }
   if(!cached){
     // Render the existing shell immediately rather than showing
     // "Preparing My RPE..." between destinations.
