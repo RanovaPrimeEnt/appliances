@@ -12,7 +12,7 @@ const CORE=[
   "../all/ranova-typography.js?v=20260930-5",
   "./",
   "./index.html",
-  "./app.js?v=20261002-messaging01",
+  "./app.js?v=20261002-msgfix02",
   "./config.js",
   "./design-system.css",
   "./customer-icon.svg",
@@ -21,7 +21,7 @@ const CORE=[
   "./customer-icon-512.svg",
   "./customer-icon-maskable.svg",
   "./customer-app.webmanifest",
-  "./customer-pwa.js?v=20261001-header02",
+  "./customer-pwa.js?v=20261002-msgfix02",
   "./report-store.html",
   "./ranova-prime-store.html",
   "./admin.html",
@@ -41,7 +41,7 @@ self.addEventListener("install",event=>{
 self.addEventListener("activate",event=>{
   event.waitUntil(
     caches.keys().then(keys=>Promise.all(
-      keys.filter(k=>k.startsWith("ranova-")&&k!==CACHE).map(k=>caches.delete(k))
+      keys.filter(k=>k.startsWith("ranova-")&&k!==CACHE&&k!==IMAGE_CACHE).map(k=>caches.delete(k))
     )).then(()=>self.clients.claim())
   );
 });
@@ -91,5 +91,20 @@ self.addEventListener("fetch",event=>{
 });
 
 self.addEventListener("message",event=>{
-  if(event.data&&event.data.type==="SKIP_WAITING")self.skipWaiting();
+  if(event.data&&event.data.type==="SKIP_WAITING"){self.skipWaiting();return}
+  if(event.data&&event.data.type==="CACHE_MARKET_IMAGES"&&Array.isArray(event.data.urls)){
+    const urls=[...new Set(event.data.urls.filter(x=>/^https?:\/\//i.test(String(x))))].slice(0,120);
+    event.waitUntil((async()=>{
+      const cache=await caches.open(IMAGE_CACHE);
+      for(let i=0;i<urls.length;i+=8){
+        await Promise.allSettled(urls.slice(i,i+8).map(async url=>{
+          try{
+            const req=new Request(url,{mode:"no-cors",cache:"reload"});
+            const res=await fetch(req);
+            if(res&&(res.ok||res.type==="opaque"))await cache.put(req,res.clone());
+          }catch{}
+        }));
+      }
+    })());
+  }
 });
