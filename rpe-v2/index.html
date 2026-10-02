@@ -264,8 +264,6 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
     <button id="signInTab" class="auth-tab active" type="button">Sign in</button>
     <button id="createTab" class="auth-tab" type="button">Create account</button>
   </div>
-  <h1 id="authTitle">Welcome back</h1>
-  <p id="authText">Sign in to see your saved products, cart and live order updates.</p>
   <div class="auth-method-tabs" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 12px">
     <button id="authMethodEmail" class="auth-tab active" type="button">Email</button>
     <button id="authMethodPhone" class="auth-tab" type="button">Phone</button>
@@ -274,7 +272,6 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
     <label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com">
   </div>
   <div id="authPhoneFields" class="hide">
-    <label>Country code & phone number</label>
     <div style="display:grid;grid-template-columns:118px 1fr;gap:8px">
       <select id="countryCode" aria-label="Country code" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff">
         <option value="+233" selected>🇬🇭 +233</option>
@@ -307,7 +304,6 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
   <label>Password</label><div class="password-wrap"><input id="password" type="password" autocomplete="current-password" minlength="8"><button id="togglePassword" type="button" aria-label="Show password">Show</button></div>
   <div class="actions"><button id="authSubmit" class="btn primary">Sign in</button></div>
   <div id="authMsg" class="auth-msg" role="status"></div>
-  <p id="authFinePrint" class="auth-fine hide">By creating an account, you can save products, keep your cart, store delivery addresses and follow your RPE orders from one place.</p>
 </section>
 
 <div id="app" class="shell hide">
