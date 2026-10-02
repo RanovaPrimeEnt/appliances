@@ -50,6 +50,15 @@ function restorePublicMarketCache(){
     return marketStores.length>0||marketSellerProducts.length>0;
   }catch{return false}
 }
+function primeOfflineMarketplaceImages(){
+  if(!navigator.onLine||!("serviceWorker" in navigator))return;
+  const urls=[...new Set([
+    ...marketSellerProducts.flatMap(p=>[p.primary_image_url,...(Array.isArray(p.image_urls)?p.image_urls.slice(0,2):[])]),
+    ...marketStores.flatMap(s=>[s.logo_url,s.banner_url])
+  ].filter(Boolean))].slice(0,120);
+  if(!urls.length)return;
+  navigator.serviceWorker.ready.then(reg=>reg.active?.postMessage({type:"CACHE_MARKET_IMAGES",urls})).catch(()=>{});
+}
 function savePublicMarketCache(){
   if(!marketStores.length&&!marketSellerProducts.length)return;
   try{
@@ -57,6 +66,7 @@ function savePublicMarketCache(){
       t:Date.now(),stores:marketStores,products:marketSellerProducts
     }));
   }catch{}
+  primeOfflineMarketplaceImages();
 }
 function marketSkeleton(count=6){
   return '<div class="market-loading-grid">'+Array.from({length:count},()=>'<div class="market-skeleton-card"><span class="market-skeleton-img"></span><span class="market-skeleton-line wide"></span><span class="market-skeleton-line"></span></div>').join("")+'</div>';
