@@ -9,7 +9,7 @@ const rateSyncEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-rate-sync";
 const paymentGatewayEndpoint=cfg.supabaseUrl+"/functions/v1/ranova-payment-gateway";
 let session=null,user=null,role=null,orders=[],products=[],categories=[],countryList=[],countryMap={},googleCountryAvailable=false;
 let market={applications:[],files:[],stores:[],products:[],seller_orders:[],marketplace_orders:[],finance_settings:null,payment_accounts:[],payouts:[],payments:[],country_rules:[],refunds:[],disputes:[],dispute_messages:[],deliveries:[],delivery_proofs:[],delivery_events:[],reviews:[],trust_metrics:[],performance:[],enforcement:[],enforcement_events:[],appeals:[],sponsored_placements:[],inventory_settings:null,inventory_reservations:[],inventory_events:[],after_sales_cases:[],after_sales_events:[],risk_flags:[],safety_reports:[],risk_review_events:[],counts:{}},marketError=null,selectedApplicationRef=null;
-let selectedSellerChatId=null,sellerChatFilter="";
+let selectedSellerChatId=null,sellerChatFilter="",sellerMessageAutoRefreshTimer=null,sellerMessageAutoRefreshBusy=false;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -37,6 +37,25 @@ function show(id){
   document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
   const p=$(id);if(p)p.classList.add("active");
   document.querySelectorAll("[data-panel]").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));
+  if(id==="seller-messages")startSellerMessageAutoRefresh();else stopSellerMessageAutoRefresh();
+}
+function stopSellerMessageAutoRefresh(){
+  if(sellerMessageAutoRefreshTimer){clearInterval(sellerMessageAutoRefreshTimer);sellerMessageAutoRefreshTimer=null}
+}
+function startSellerMessageAutoRefresh(){
+  stopSellerMessageAutoRefresh();
+  sellerMessageAutoRefreshTimer=setInterval(async()=>{
+    if(document.visibilityState!=="visible"||sellerMessageAutoRefreshBusy)return;
+    if(!$("seller-messages")?.classList.contains("active"))return;
+    const input=$("sellerChatInput");
+    if(input&&document.activeElement===input&&input.value.trim())return;
+    if($("sellerRecording")&&!$("sellerRecording").hidden)return;
+    sellerMessageAutoRefreshBusy=true;
+    try{
+      await loadMarketplace();
+      renderSellerMessageCentre();
+    }catch{}finally{sellerMessageAutoRefreshBusy=false}
+  },10000);
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-panel]");if(b&&!b.classList.contains("hide"))show(b.dataset.panel)});
 
