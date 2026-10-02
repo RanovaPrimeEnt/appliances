@@ -96,13 +96,39 @@ function quoteCard(q){var expired=q.expires_at&&new Date(q.expires_at).getTime()
  return '<div class="quote"><strong>'+esc(q.quote_ref)+' · '+esc(pretty(status))+'</strong><small>'+q.requested_quantity+' unit(s)'+(q.unit_price!=null?' · GHS '+Number(q.unit_price).toFixed(2)+' each':'')+(q.delivery_fee!=null?' · Delivery GHS '+Number(q.delivery_fee).toFixed(2):'')+'</small>'+(q.expires_at?'<small>Valid until '+new Date(q.expires_at).toLocaleString()+'</small>':'')+(q.seller_terms?'<div class="notice">'+esc(q.seller_terms)+'</div>':'')+'<div class="actions">'+actions+'</div></div>'}
 function messageById(id){return (current?.messages||[]).find(m=>String(m.id)===String(id))}function shortBody(m){return String(m?.body||({image:"Photo",audio:"Voice note",file:"Attachment"}[m?.message_type]||"Message")).slice(0,100)}function replyHtml(m){if(!m.reply_to_message_id)return "";var q=messageById(m.reply_to_message_id);return q?'<button class="message-quote" data-jump="'+q.id+'"><b>'+esc(q.sender_role===role?"You":pretty(q.sender_role))+'</b><span>'+esc(shortBody(q))+'</span></button>':""}function renderCurrent(){if(!current)return;el("shell").classList.add("chat-open");el("chatTitle").textContent=current.store?.store_name||"Conversation";el("chatSub").textContent=(current.product?.name||current.subject||"")+(current.seller_order_id?" · Order conversation":"");el("rfqBtn").style.display=role==="buyer"&&current.product?"inline-block":"none";el("productLink").style.display=current.product?"inline-grid":"none";if(current.product)el("productLink").href="./product.html?product="+encodeURIComponent(current.product.id);el("orderLink").style.display=current.seller_order_id?"inline-grid":"none";if(current.customer_order_id)el("orderLink").href="./account.html";
  var qhtml=(current.quotes||[]).length?'<div style="margin-bottom:12px">'+current.quotes.map(quoteCard).join("")+'</div>':"";
- el("messages").innerHTML=qhtml+(current.messages||[]).map(function(m){var mine=m.sender_role===role,cl=m.sender_role==="system"?"system":mine?"me":"",report=(!mine&&m.sender_role!=="system")?'<button class="btn" style="padding:4px 7px;margin-top:5px;font-size:14px" data-report-message="'+m.id+'">Report</button>':"",media=mediaBubble(m),body=m.body?'<div>'+esc(m.body)+'</div>':(!media?esc(pretty(m.message_type)):"");return '<div class="bubble '+cl+'" data-message-id="'+m.id+'">'+replyHtml(m)+media+body+'<small class="message-meta">'+new Date(m.created_at).toLocaleString()+(m.edited_at?" · Edited":"")+'</small>'+report+'</div>'}).join("");el("messages").scrollTop=el("messages").scrollHeight;
+ el("messages").innerHTML=qhtml+(current.messages||[]).map(function(m){var mine=m.sender_role===role,cl=m.sender_role==="system"?"system":mine?"me":"",report=(!mine&&m.sender_role!=="system")?'<button class="btn" style="padding:4px 7px;margin-top:5px;font-size:14px" data-report-message="'+m.id+'">Report</button>':"",media=mediaBubble(m),body=m.body?'<div>'+esc(m.body)+'</div>':(!media?esc(pretty(m.message_type)):"");return '<div class="bubble '+cl+'" data-message-id="'+m.id+'">'+replyHtml(m)+media+body+'<small class="message-meta">'+new Date(m.created_at).toLocaleString()+(m.sender_role==="system"?"":(mine?" · Sent":" · Received"))+(m.edited_at?" · Edited":"")+'</small>'+report+'</div>'}).join("");el("messages").scrollTop=el("messages").scrollHeight;
  bindMessageActions();el("messages").querySelectorAll("[data-report-message]").forEach(b=>b.onclick=()=>reportMessage(b.dataset.reportMessage));el("messages").querySelectorAll("[data-quote-edit]").forEach(b=>b.onclick=()=>openQuote(b.dataset.quoteEdit));el("messages").querySelectorAll("[data-accept]").forEach(b=>b.onclick=()=>respondQuote(b.dataset.accept,"accepted"));el("messages").querySelectorAll("[data-negotiate]").forEach(b=>b.onclick=()=>negotiateQuote(b.dataset.negotiate));el("messages").querySelectorAll("[data-decline]").forEach(b=>b.onclick=()=>respondQuote(b.dataset.decline,"declined"));el("messages").querySelectorAll("[data-cart-quote]").forEach(b=>b.onclick=()=>useQuote(b.dataset.cartQuote));
 }
 function setReply(m){editingMessage=null;replyingTo=m;el("replyPreview").hidden=false;el("replyPreview").innerHTML='<span><b>Reply</b> · '+esc(shortBody(m))+'</span><button type="button" id="cancelReply">×</button>';el("cancelReply").onclick=clearAction;el("message").focus()}
 function setEdit(m){replyingTo=null;editingMessage=m;el("replyPreview").hidden=false;el("replyPreview").innerHTML='<span><b>Edit message</b></span><button type="button" id="cancelReply">×</button>';el("cancelReply").onclick=clearAction;el("message").value=m.body||"";updateComposerAction();el("message").focus()}
 function clearAction(){replyingTo=null;editingMessage=null;el("replyPreview").hidden=true}
-function showMessageActions(m){if(!m||m.sender_role==="system")return;var mine=m.sender_role===role,canEdit=mine&&m.message_type==="text"&&Date.now()-new Date(m.created_at).getTime()<=180000;var choices=["Reply","Copy"].concat(canEdit?["Edit"]:[]);var choice=prompt("Message action: "+choices.join(" · "),choices[0]);if(!choice)return;choice=choice.trim().toLowerCase();if(choice==="reply")setReply(m);else if(choice==="copy"){navigator.clipboard?.writeText(m.body||"")}else if(choice==="edit"&&canEdit)setEdit(m)}
+function closeMessageActions(){var s=document.getElementById("messageActionSheet");if(s)s.remove()}
+async function deleteMessage(m){if(!m||!current)return;if(!confirm("Delete this message for both sides?"))return;try{await api({action:"delete_message",conversation_id:current.id,message_id:m.id});closeMessageActions();await openConv(current.id,true)}catch(e){alert(e.message)}}
+function showMessageActions(m){
+ if(!m||m.sender_role==="system")return;
+ closeMessageActions();
+ var mine=m.sender_role===role,fresh=Date.now()-new Date(m.created_at).getTime()<=180000,canEdit=mine&&m.message_type==="text"&&fresh,canDelete=mine&&fresh;
+ var s=document.createElement("div");s.id="messageActionSheet";s.className="message-action-sheet "+(mine?"sent-actions":"received-actions");
+ var buttons=[
+  '<button data-ma="reply">↩ <span>Reply</span></button>',
+  '<button data-ma="copy">⧉ <span>Copy</span></button>',
+  canEdit?'<button data-ma="edit">✎ <span>Edit</span></button>':"",
+  canDelete?'<button class="danger" data-ma="delete">🗑 <span>Delete</span></button>':"",
+  !mine?'<button class="danger" data-ma="report">! <span>Report</span></button>':""
+ ].filter(Boolean).join("");
+ s.innerHTML='<div class="message-action-backdrop"></div><div class="message-action-card"><i></i>'+buttons+'<button class="cancel" data-ma="cancel">Cancel</button></div>';
+ document.body.appendChild(s);
+ s.querySelector(".message-action-backdrop").onclick=closeMessageActions;
+ s.querySelectorAll("[data-ma]").forEach(function(b){b.onclick=async function(){
+  var action=b.dataset.ma;
+  if(action==="cancel")return closeMessageActions();
+  if(action==="reply"){closeMessageActions();setReply(m)}
+  else if(action==="copy"){await navigator.clipboard?.writeText(m.body||"").catch(function(){});closeMessageActions()}
+  else if(action==="edit"&&canEdit){closeMessageActions();setEdit(m)}
+  else if(action==="delete"&&canDelete)await deleteMessage(m);
+  else if(action==="report"&&!mine){closeMessageActions();await reportMessage(m.id)}
+ }});
+}
 function bindMessageActions(){el("messages").querySelectorAll(".bubble[data-message-id]").forEach(function(node){var m=messageById(node.dataset.messageId);node.oncontextmenu=function(e){e.preventDefault();showMessageActions(m)};node.ontouchstart=function(){pressTimer=setTimeout(()=>showMessageActions(m),550)};node.ontouchend=node.ontouchmove=function(){clearTimeout(pressTimer)};node.querySelectorAll("[data-jump]").forEach(function(q){q.onclick=function(e){e.stopPropagation();var target=el("messages").querySelector('[data-message-id="'+q.dataset.jump+'"]');target?.scrollIntoView({behavior:"smooth",block:"center"})}})})}
 function negotiateQuote(id){var q=(current.quotes||[]).find(x=>x.id===id);if(!q)return;var input=el("message");input.value="I would like to negotiate "+q.quote_ref+". ";input.focus();updateComposerAction();el("messages").scrollTop=el("messages").scrollHeight}
 async function reportMessage(id){var category=prompt("Report reason: spam, fraud_suspected, off_platform_payment, harassment, misleading_product, counterfeit_suspected, or other","spam");if(!category)return;var description=prompt("Briefly explain why you are reporting this message.","")||"";if(description.trim().length<5){alert("Please add a short explanation.");return}try{var o=await api({action:"report_message",conversation_id:current.id,message_id:id,category:category.trim().toLowerCase(),description});alert("Report submitted"+(o.report_ref?" ("+o.report_ref+")":"")+". RANOVA will review the context before taking action.")}catch(e){alert(e.message)}}
@@ -204,4 +230,11 @@ window.addEventListener("beforeunload",function(){if(realtime)sb.removeChannel(r
 </style>
 <style>
 .message-quote{display:block;width:100%;text-align:left;border:0;border-left:3px solid var(--g);border-radius:7px;background:rgba(255,255,255,.62);padding:5px 7px;margin:0 0 6px;color:var(--ink);cursor:pointer}.message-quote b,.message-quote span{display:block;font-size:12px;line-height:1.25}.message-quote span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bubble{touch-action:pan-y}
+</style><style>
+.message-action-sheet{position:fixed;inset:0;z-index:9999}.message-action-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.34)}
+.message-action-card{position:absolute;left:10px;right:10px;bottom:10px;background:#fff;border-radius:18px;padding:8px;display:grid;gap:1px;box-shadow:0 12px 40px rgba(0,0,0,.22)}
+.message-action-card>i{display:block;width:42px;height:4px;border-radius:99px;background:#c9cecc;margin:1px auto 7px}
+.message-action-card button{min-height:46px;border:0;border-top:1px solid #f0f0f0;background:#fff;padding:0 12px;text-align:left;font-weight:800;font-size:14px;color:#24332e}
+.message-action-card button.danger{color:#c53232}.message-action-card button.cancel{text-align:center;border:0;border-radius:12px;background:#f4f5f4;margin-top:6px}
+@media(min-width:720px){.message-action-card{left:50%;right:auto;width:370px;transform:translateX(-50%)}}
 </style>
