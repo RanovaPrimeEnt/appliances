@@ -373,6 +373,16 @@ function handleRequestedPanel(){
   history.replaceState(null,"",url.pathname+(url.searchParams.toString()?"?"+url.searchParams.toString():""));
   return true;
 }
+async function handleRequestedConversation(){
+  const qs=new URLSearchParams(location.search),cid=qs.get("conversation")||"";
+  if(!cid)return false;
+  showPanel("messagesPanel");
+  try{await openMessageConversation(cid)}catch(e){showToast(e.message||"Could not open conversation")}
+  const url=new URL(location.href);
+  url.searchParams.delete("conversation");
+  history.replaceState(null,"",url.pathname+(url.searchParams.toString()?"?"+url.searchParams.toString():""));
+  return true;
+}
 
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
@@ -442,6 +452,7 @@ async function applySession(session,initial=false){
     appBox.classList.remove("hide");
     subscribeRealtime();
     handleRequestedPanel();
+    handleRequestedConversation().catch(()=>{});
     handleIncomingCartLink().catch(()=>{});
     afterPaint(()=>loadMessageConversations(true).catch(()=>{}));
     setTimeout(()=>loadToPayOrders(true).catch(()=>{}),80);
@@ -1142,9 +1153,12 @@ function subscribeRealtime(){
   const returnCh=sb.channel("rpe-returns-"+user.id)
     .on("postgres_changes",{event:"*",schema:"public",table:"return_requests",filter:"user_id=eq."+user.id},async()=>{const {data}=await sb.from("return_requests").select("*").eq("user_id",user.id);returns=data||[];renderCounts()})
     .subscribe();
-  realtimeChannels=[orderCh,notifCh,returnCh];
+  const messageListCh=sb.channel("rpe-customer-message-list-"+user.id)
+    .on("postgres_changes",{event:"*",schema:"public",table:"ranova_conversations",filter:"buyer_user_id=eq."+user.id},()=>{loadMessageConversations().catch(()=>{})})
+    .subscribe();
+  realtimeChannels=[orderCh,notifCh,returnCh,messageListCh];
 }
-function cleanupRealtime(){realtimeChannels.forEach(ch=>sb.removeChannel(ch));realtimeChannels=[]}
+function cleanupRealtime(){stopMessageRealtime();realtimeChannels.forEach(ch=>sb.removeChannel(ch));realtimeChannels=[]}
 
 
 
