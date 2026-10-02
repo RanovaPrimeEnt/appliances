@@ -264,7 +264,10 @@ if($("contactShortcut"))$("contactShortcut").onclick=()=>contactRpe();
 if($("helpContact"))$("helpContact").onclick=()=>contactRpe();
 if($("notifBtn"))$("notifBtn").onclick=()=>showPanel("notifPanel");
 if($("cartBtn"))$("cartBtn").onclick=openCart;
-if($("bottomCart"))$("bottomCart").onclick=e=>{e.preventDefault();openCart()};
+const bottomHome=document.querySelector('.bottom [data-panel="marketplaceHomePanel"]');
+if(bottomHome)bottomHome.onclick=e=>{e.preventDefault();orderFilter=null;showPanel("marketplaceHomePanel")};
+if($("bottomMessages"))$("bottomMessages").onclick=e=>{e.preventDefault();orderFilter=null;showPanel("messagesPanel")};
+if($("bottomCart"))$("bottomCart").onclick=e=>{e.preventDefault();orderFilter=null;openCart()};
 if($("bottomMe"))$("bottomMe").onclick=e=>{
   e.preventDefault();
   orderFilter=null;
@@ -415,12 +418,15 @@ $("signOut").onclick=()=>sb.auth.signOut();
 
 function handleRequestedPanel(){
   const qs=new URLSearchParams(location.search);
-  const requested=qs.get("panel")||"";
-  const allowed=new Set(["marketplaceHomePanel","messagesPanel","cartPanel","savedPanel","homePanel"]);
+  const forceHome=qs.get("home")==="1";
+  const requested=forceHome?"marketplaceHomePanel":(qs.get("panel")||"");
+  const allowed=new Set(["marketplaceHomePanel","messagesPanel","cartPanel","savedPanel","homePanel","ordersPanel","toPayPanel","recentPanel","addressPanel","notifPanel","helpPanel"]);
   if(!allowed.has(requested))return false;
+  orderFilter=null;
   showPanel(requested);
   const url=new URL(location.href);
   url.searchParams.delete("panel");
+  url.searchParams.delete("home");
   history.replaceState(null,"",url.pathname+(url.searchParams.toString()?"?"+url.searchParams.toString():""));
   return true;
 }
@@ -1801,7 +1807,7 @@ if($("marketProductQty"))$("marketProductQty").onchange=()=>updateMarketProductT
 if($("marketProductShare"))$("marketProductShare").onclick=shareMarketplaceProduct;
 if($("marketProductSave"))$("marketProductSave").onclick=()=>{if(marketProductCurrent)toggleMarketplaceSaved(marketProductCurrent.id)};
 if($("marketProductStore"))$("marketProductStore").onclick=()=>{const url=sellerStoreProductUrl(marketProductCurrent);if(url)location.href=url;else showToast("Store unavailable")};
-if($("marketProductBuy"))$("marketProductBuy").onclick=async()=>{const p=marketProductCurrent;if(!p)return;const q=marketProductQuantity(p,$("marketProductQty").value);await addMarketplaceToCart(p,q);openCart()};
+if($("marketProductBuy"))$("marketProductBuy").onclick=async()=>{const p=marketProductCurrent;if(!p)return;const q=marketProductQuantity(p,$("marketProductQty").value);await addMarketplaceToCart(p,q)};
 if($("marketProductMessage"))$("marketProductMessage").onclick=async()=>{
   const p=marketProductCurrent;if(!p)return;
   showPanel("messagesPanel");
