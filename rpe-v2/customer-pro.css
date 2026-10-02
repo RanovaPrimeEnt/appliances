@@ -220,3 +220,22 @@ body{padding-bottom:calc(var(--rpe-nav-h) + env(safe-area-inset-bottom))}
 .msg-quote-actions .msg-quote-primary{border-color:#ff5a00;background:#ff5a00;color:#fff}
 .msg-product-context .msg-rfq{border:0;cursor:pointer}
 .msg-bubble time{font-size:9px!important;opacity:.72}
+
+/* Message action sheets: separate sent vs received controls */
+.msg-action-sheet{position:fixed;inset:0;z-index:700;display:none}
+.msg-action-sheet.open{display:block}
+.msg-action-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+.msg-action-card{position:absolute;left:10px;right:10px;bottom:10px;display:grid;gap:1px;padding:8px;background:#fff;border-radius:18px;box-shadow:0 12px 36px rgba(0,0,0,.2)}
+.msg-action-handle{width:42px;height:4px;border-radius:99px;background:#c9cecc;margin:1px auto 7px}
+.msg-action-card button{display:flex;align-items:center;gap:10px;min-height:44px;border:0;background:#fff;padding:0 12px;text-align:left;font-size:12px;font-weight:800;color:#24332e}
+.msg-action-card button+button{border-top:1px solid #f0f0f0}
+.msg-action-card button.danger{color:#c53232}
+.msg-action-card button.cancel{justify-content:center;margin-top:6px;border-top:0;border-radius:12px;background:#f5f6f5}
+@media(min-width:700px){.msg-action-card{left:50%;right:auto;width:360px;transform:translateX(-50%)}}
+.msg-bubble time{font-size:9px!important;line-height:1.2!important;color:#75807c!important}
+.home-feed-note,.rpe-feed-live,[data-ranova-feed-note]{display:none!important}
+
+/* Internet-disconnected banner */
+.rpe-network{display:none!important}
+.rpe-network.show{display:flex!important;align-items:center;gap:8px;top:10px;max-width:min(92vw,420px);padding:9px 13px;border-radius:14px;background:#1f2523;color:#fff;font-size:11px;box-shadow:0 7px 24px rgba(0,0,0,.22)}
+.rpe-network svg{width:18px;height:18px;flex:0 0 18px;stroke:currentColor}
