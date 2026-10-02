@@ -63,7 +63,7 @@ body{height:100vh;height:100dvh;display:flex;flex-direction:column}.top{flex-shr
 <script>
 (function(){"use strict";
 var URL="https://igaerssbzobutlwvjfwt.supabase.co",KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr",sb=window.supabase.createClient(URL,KEY),END=URL+"/functions/v1/ranova-messaging";
-var session=null,list=[],current=null,role=null,poll=null,replyingTo=null,editingMessage=null,pressTimer=null;
+var session=null,list=[],current=null,role=null,poll=null,realtime=null,realtimeRefreshTimer=null,replyingTo=null,editingMessage=null,pressTimer=null;
 function el(x){return document.getElementById(x)}function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function pretty(v){return String(v||"").replace(/_/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
 async function api(body){var r=await fetch(END,{method:"POST",headers:{"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify(body)}),o=await r.json().catch(function(){return{}});if(!r.ok||!o.ok)throw new Error(o.error||"Request failed.");return o}
@@ -108,6 +108,22 @@ function negotiateQuote(id){var q=(current.quotes||[]).find(x=>x.id===id);if(!q)
 async function reportMessage(id){var category=prompt("Report reason: spam, fraud_suspected, off_platform_payment, harassment, misleading_product, counterfeit_suspected, or other","spam");if(!category)return;var description=prompt("Briefly explain why you are reporting this message.","")||"";if(description.trim().length<5){alert("Please add a short explanation.");return}try{var o=await api({action:"report_message",conversation_id:current.id,message_id:id,category:category.trim().toLowerCase(),description});alert("Report submitted"+(o.report_ref?" ("+o.report_ref+")":"")+". RANOVA will review the context before taking action.")}catch(e){alert(e.message)}}
 async function loadList(){var o=await api({action:"list"});list=o.conversations||[];renderList()}
 async function openConv(id,silent){var o=await api({action:"open",conversation_id:id});current=o.conversation;role=o.role;renderCurrent();if(!silent)history.replaceState(null,"","./messages.html?conversation="+encodeURIComponent(id));await loadList()}
+function subscribeRealtimeMessages(){
+ if(realtime)sb.removeChannel(realtime);
+ function queue(payload){
+  clearTimeout(realtimeRefreshTimer);
+  realtimeRefreshTimer=setTimeout(function(){
+   loadList().catch(function(){});
+   var cid=(payload&&payload.new&&payload.new.conversation_id)||(payload&&payload.old&&payload.old.conversation_id)||null;
+   if(current&&(!cid||String(cid)===String(current.id)))openConv(current.id,true).catch(function(){});
+  },80);
+ }
+ realtime=sb.channel("ranova-messages-"+session.user.id)
+  .on("postgres_changes",{event:"*",schema:"public",table:"ranova_conversations"},queue)
+  .on("postgres_changes",{event:"*",schema:"public",table:"ranova_messages"},queue)
+  .on("postgres_changes",{event:"*",schema:"public",table:"ranova_quotes"},queue)
+  .subscribe();
+}
 async function startFromUrl(){
  var q=new URLSearchParams(location.search);if(!q.toString()){try{q=new URLSearchParams(sessionStorage.getItem("ranova_pending_enquiry")||"")}catch(e){}}
  var cid=q.get("conversation"),wantQuote=q.get("quote")==="1",draft=q.get("draft");
@@ -149,8 +165,8 @@ el("submitQuote").onclick=async function(){try{await api({action:"submit_quote",
 async function respondQuote(id,decision){try{var o=await api({action:"respond_quote",conversation_id:current.id,quote_id:id,decision});await openConv(current.id,true);if(decision==="accepted"&&o.cart_url&&confirm("Quote accepted. Add it to your RANOVA cart now?"))location.href=o.cart_url}catch(e){alert(e.message)}}
 function useQuote(id){location.href="./cart.html?quote="+encodeURIComponent(id)}
 el("back").onclick=function(){el("shell").classList.remove("chat-open")};
-async function boot(){var gs=await sb.auth.getSession();session=gs.data.session;if(!session){try{if(location.search)sessionStorage.setItem("ranova_pending_enquiry",location.search)}catch(e){}el("gate").innerHTML='<div class="auth"><h2>Sign in to use RANOVA Messages</h2><p style="font-size:14px;color:var(--muted)">Messaging is tied to verified buyer and seller accounts so orders, quotes and agreements cannot be impersonated.</p><a class="send" style="display:inline-block" href="./account.html">Buyer sign in</a> <a class="btn" style="display:inline-block" href="./seller-center.html">Seller sign in</a></div>';return}el("shell").style.display="grid";if(innerWidth<=760)el("back").style.display="inline-block";await loadList();await startFromUrl();poll=setInterval(function(){if(current)openConv(current.id,true).catch(()=>{});else loadList().catch(()=>{})},5000)}
-boot().catch(function(e){el("gate").textContent=e.message||"Could not open messages. Please try again."});
+async function boot(){var gs=await sb.auth.getSession();session=gs.data.session;if(!session){try{if(location.search)sessionStorage.setItem("ranova_pending_enquiry",location.search)}catch(e){}el("gate").innerHTML='<div class="auth"><h2>Sign in to use RANOVA Messages</h2><p style="font-size:14px;color:var(--muted)">Messaging is tied to verified buyer and seller accounts so orders, quotes and agreements cannot be impersonated.</p><a class="send" style="display:inline-block" href="./account.html">Buyer sign in</a> <a class="btn" style="display:inline-block" href="./seller-center.html">Seller sign in</a></div>';return}el("shell").style.display="grid";if(innerWidth<=760)el("back").style.display="inline-block";await loadList();await startFromUrl();subscribeRealtimeMessages();poll=setInterval(function(){if(current)openConv(current.id,true).catch(()=>{});else loadList().catch(()=>{})},20000)}
+window.addEventListener("beforeunload",function(){if(realtime)sb.removeChannel(realtime)});boot().catch(function(e){el("gate").textContent=e.message||"Could not open messages. Please try again."});
 })();</script></body></html>
 <style>
 /* Mobile emoji tray: compact half-screen panel with internal scrolling */
