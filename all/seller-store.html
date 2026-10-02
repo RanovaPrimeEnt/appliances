@@ -800,6 +800,13 @@ var CATEGORY_ORDER=["Kitchen Appliances","Household Plasticware","Furniture","So
 
 function readLocalJson(key,fallback){try{var v=JSON.parse(localStorage.getItem(key)||"null");return v==null?fallback:v}catch(e){return fallback}}
 function writeLocalJson(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(e){}}
+var shoppingSyncChannel=null;
+try{if("BroadcastChannel" in window)shoppingSyncChannel=new BroadcastChannel("ranova-shopping-sync-v1")}catch(e){}
+function announceShoppingChange(kind,productId){
+  var payload={type:"shopping-change",kind:kind,storeId:store&&store.id||null,productId:productId||null,at:Date.now()};
+  try{if(shoppingSyncChannel)shoppingSyncChannel.postMessage(payload)}catch(e){}
+  try{localStorage.setItem("ranova-shopping-ping",JSON.stringify(payload))}catch(e){}
+}
 function cartLocalKey(){return "ranova_store_cart_"+(store?store.id:"")}
 function queueCartDraft(){
   if(!store)return;
@@ -818,7 +825,7 @@ async function syncCartRemote(){
   var req=Object.keys(cart||{}).length
     ? sb.from("ranova_buyer_carts").upsert({user_id:buyerSession.user.id,store_id:store.id,items:cart,updated_at:new Date().toISOString()},{onConflict:"user_id,store_id"})
     : sb.from("ranova_buyer_carts").delete().eq("user_id",buyerSession.user.id).eq("store_id",store.id);
-  var out=await req;if(out.error)throw out.error;clearCartDraft();return true;
+  var out=await req;if(out.error)throw out.error;clearCartDraft();announceShoppingChange("cart",null);return true;
 }
 function queueSavedChange(id,saved){var p=readLocalJson(PENDING_MARKET_SAVED_KEY,{});p[id]=!!saved;writeLocalJson(PENDING_MARKET_SAVED_KEY,p)}
 function clearSavedChange(id){var p=readLocalJson(PENDING_MARKET_SAVED_KEY,{});delete p[id];writeLocalJson(PENDING_MARKET_SAVED_KEY,p)}
@@ -827,7 +834,7 @@ async function syncSavedRemote(id,saved){
   var req=saved
     ? sb.from("ranova_buyer_saved_products").upsert({user_id:buyerSession.user.id,product_id:id,saved_at:new Date().toISOString()},{onConflict:"user_id,product_id"})
     : sb.from("ranova_buyer_saved_products").delete().eq("user_id",buyerSession.user.id).eq("product_id",id);
-  var out=await req;if(out.error)throw out.error;clearSavedChange(id);return true;
+  var out=await req;if(out.error)throw out.error;clearSavedChange(id);announceShoppingChange("saved",id);return true;
 }
 function goToMainCart(){location.href="../rpe-v2/?panel=cartPanel"}
 function el(id){return document.getElementById(id)}
@@ -883,7 +890,7 @@ async function toggleSaved(id){
   if(willSave)savedProducts.add(id);else savedProducts.delete(id);
   queueSavedChange(id,willSave);
   var quantity=detailProductId===id&&el("detailQuantity")?el("detailQuantity").value:null;
-  saveProductList();render();
+  saveProductList();announceShoppingChange("saved",id);render();
   if(detailProductId===id){openProductDetail(id);if(quantity!=null){el("detailQuantity").value=quantity;updateDetailTotal(products.find(function(p){return p.id===id}))}}
   try{await syncSavedRemote(id,willSave)}catch(e){}
 }
@@ -1002,6 +1009,7 @@ function knownTotal(){var items=cartItems();if(!items.length||items.some(functio
 function saveCart(queue){
   try{localStorage.setItem(cartLocalKey(),JSON.stringify(cart))}catch(e){}
   if(queue!==false)queueCartDraft();
+  announceShoppingChange("cart",null);
   if(queue!==false&&buyerSession&&navigator.onLine)syncCartRemote().catch(function(){});
 }
 function loadCart(){
