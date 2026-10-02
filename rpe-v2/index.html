@@ -493,7 +493,29 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
 </nav>
 </div>
 
-<div id="cartDrawer" class="cart-drawer"><aside class="drawer"><div class="drawer-head"><h3>My Cart</h3><button id="closeCart" class="icon-btn">×</button></div><div id="cartList" class="drawer-list"></div><div class="drawer-foot"><button id="sendOrder" class="btn primary">Send order request</button><small style="color:var(--muted);font-size:9px;text-align:center">After the order is placed, proceed directly to payment.</small></div></aside></div>
+<div id="cartDrawer" class="cart-drawer"><aside class="drawer"><div class="drawer-head"><h3>My Cart</h3><button id="closeCart" class="icon-btn">×</button></div><div id="cartList" class="drawer-list"></div><div class="drawer-foot"><div id="cartGrandTotal" class="rnv-cart-grand"></div><button id="sendOrder" class="btn primary">Proceed to checkout</button><small class="rnv-cart-note">Review your products and quantities before checkout.</small></div></aside></div>
+
+<div id="marketCheckoutOverlay" class="rnv-checkout-overlay" aria-hidden="true">
+  <div class="rnv-checkout-card" role="dialog" aria-modal="true" aria-labelledby="marketCheckoutTitle">
+    <div class="rnv-checkout-head"><h2 id="marketCheckoutTitle">Checkout</h2><button id="marketCheckoutClose" type="button" aria-label="Close">×</button></div>
+    <div id="marketCheckoutMsg" class="rnv-checkout-msg hide"></div>
+    <div class="rnv-checkout-fields">
+      <label>Full name<input id="marketCheckoutName" autocomplete="name"></label>
+      <label>Phone number<input id="marketCheckoutPhone" type="tel" autocomplete="tel"></label>
+      <label>Email <small>(optional)</small><input id="marketCheckoutEmail" type="email" autocomplete="email"></label>
+      <label>Delivery country<select id="marketCheckoutCountry">
+        <option value="GH" selected>Ghana</option><option value="NG">Nigeria</option><option value="CI">Côte d’Ivoire</option><option value="TG">Togo</option><option value="BJ">Benin</option><option value="BF">Burkina Faso</option><option value="NE">Niger</option><option value="SN">Senegal</option><option value="GM">Gambia</option><option value="GN">Guinea</option><option value="SL">Sierra Leone</option><option value="LR">Liberia</option><option value="KE">Kenya</option><option value="UG">Uganda</option><option value="TZ">Tanzania</option><option value="ZA">South Africa</option><option value="US">United States</option><option value="CA">Canada</option><option value="GB">United Kingdom</option><option value="FR">France</option><option value="DE">Germany</option><option value="CN">China</option><option value="IN">India</option><option value="AE">United Arab Emirates</option>
+      </select></label>
+      <label class="full">Delivery location<textarea id="marketCheckoutLocation" placeholder="Area, street, landmark or delivery instructions"></textarea></label>
+      <label>Payment method<select id="marketCheckoutPayment"><option value="Mobile Money">Mobile Money</option><option value="Bank Transfer">Bank Transfer</option></select></label>
+      <label id="marketCheckoutNetworkWrap">Mobile Money network<select id="marketCheckoutNetwork"><option value="mtn">MTN Mobile Money</option><option value="vod">Telecel Cash</option><option value="atl">ATMoney</option></select></label>
+      <label id="marketCheckoutPayPhoneWrap">MoMo number<input id="marketCheckoutPayPhone" type="tel" autocomplete="tel"></label>
+      <label class="full">Order note <small>(optional)</small><textarea id="marketCheckoutNote" placeholder="Colour, size or other order details"></textarea></label>
+    </div>
+    <div id="marketCheckoutSummary" class="rnv-checkout-summary"></div>
+    <button id="marketCheckoutPlace" class="rnv-checkout-place" type="button">Place order & continue to payment</button>
+  </div>
+</div>
 <div id="toast" class="toast"></div>
 
 <script>
