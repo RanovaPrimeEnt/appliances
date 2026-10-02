@@ -1,4 +1,5 @@
-const CACHE="ranova-rpe-v2-shell-v30";
+const CACHE="ranova-rpe-v2-shell-v31";
+const IMAGE_CACHE="ranova-rpe-v2-images-v1";
 const CORE=[
   "../all/fonts/inter-0.woff2",
   "../all/fonts/inter-1.woff2",
@@ -64,10 +65,26 @@ async function networkFirst(request){
   }
 }
 
+async function imageCacheFirst(request){
+  const cache=await caches.open(IMAGE_CACHE);
+  const hit=await cache.match(request);
+  if(hit){
+    if(self.navigator?.onLine!==false)fetch(request).then(r=>{if(r&&r.ok||r&&r.type==="opaque")cache.put(request,r.clone()).catch(()=>{})}).catch(()=>{});
+    return hit;
+  }
+  try{
+    const fresh=await fetch(request);
+    if(fresh&&(fresh.ok||fresh.type==="opaque"))cache.put(request,fresh.clone()).catch(()=>{});
+    return fresh;
+  }catch(err){
+    return new Response('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="100%" height="100%" fill="%23f1f1f1"/><path d="M110 250l55-70 42 46 34-39 49 63z" fill="%23c4cbc8"/><circle cx="165" cy="130" r="22" fill="%23c4cbc8"/></svg>',{headers:{"Content-Type":"image/svg+xml"}});
+  }
+}
 self.addEventListener("fetch",event=>{
   const req=event.request;
   if(req.method!=="GET")return;
   const url=new URL(req.url);
+  if(req.destination==="image"){event.respondWith(imageCacheFirst(req));return}
   if(url.origin!==location.origin)return;
   if(!url.pathname.startsWith("/appliances/rpe-v2/")&&!url.pathname.startsWith("/appliances/all/fonts/")&&!url.pathname.startsWith("/appliances/all/ranova-typography."))return;
   event.respondWith(networkFirst(req));
