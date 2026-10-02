@@ -354,13 +354,6 @@ window.RANOVA_GUEST_BROWSE_CODE=GUEST_BROWSE_CODE;
 document.addEventListener("click",e=>{
   if(!guestBrowseMode)return;
   const restricted=e.target.closest([
-    "[data-mh-product]",
-    "[data-mh-store]",
-    "[data-legacy-market-product]",
-    "[data-home-seller-product]",
-    "[data-open-product]",
-    "[data-simple-related]",
-    "[data-variant-product]",
     "[data-add]",
     "[data-fav]",
     "[data-market-save]",
@@ -950,7 +943,8 @@ document.addEventListener("click",async e=>{
   const sellerHome=e.target.closest("[data-home-seller-product]");
   if(sellerHome){
     const p=marketSellerProducts.find(x=>x.id===sellerHome.dataset.homeSellerProduct);
-    if(p)openMarketplaceProduct(p.id);else showToast("This product is not available right now.");
+    const url=sellerStoreProductUrl(p);
+    if(url)location.href=url;else showToast("This seller store is not available right now.");
     return;
   }
   const add=e.target.closest("[data-add]"); if(add){e.stopPropagation();await addToCart(add.dataset.add);return}
@@ -1840,7 +1834,11 @@ if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>refreshMarketpl
 if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>{const value=e.target.value;cancelAnimationFrame(marketSearchFrame);marketSearchFrame=requestAnimationFrame(()=>renderMarketplaceHome(value))};
 document.addEventListener("pointerdown",e=>{
  const p=e.target.closest("[data-mh-product]");
- if(p)warmMarketplaceProduct(p.dataset.mhProduct);
+ if(p){
+   const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);
+   warmMarketplaceProduct(p.dataset.mhProduct);
+   prefetchDocument(sellerStoreProductUrl(item));
+ }
  const store=e.target.closest("[data-mh-store]");
  if(store)prefetchDocument(sellerStoreUrlFromSlug(store.dataset.mhStore));
  const sellerHome=e.target.closest("[data-home-seller-product]");
@@ -1866,10 +1864,10 @@ document.addEventListener("click",e=>{
 
 document.addEventListener("click",async e=>{
  const marketSave=e.target.closest("[data-market-save]");if(marketSave){e.preventDefault();e.stopPropagation();await toggleMarketplaceSaved(marketSave.dataset.marketSave);return}
- const savedMarket=e.target.closest("[data-saved-market]");if(savedMarket){openMarketplaceProduct(savedMarket.dataset.savedMarket);return}
+ const savedMarket=e.target.closest("[data-saved-market]");if(savedMarket){const item=marketSellerProducts.find(x=>x.id===savedMarket.dataset.savedMarket);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
  const variant=e.target.closest("[data-variant-product]");if(variant&&variant.dataset.variantProduct!==marketProductCurrent?.id){openMarketplaceProduct(variant.dataset.variantProduct);return}
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
- const p=e.target.closest("[data-mh-product]");if(p){openMarketplaceProduct(p.dataset.mhProduct);return}
+ const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
  const m=e.target.closest("[data-mh-message]");if(m){showPanel("messagesPanel");try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
  const v=e.target.closest("[data-mh-store]");if(v){location.href="../all/seller-store.html?store="+encodeURIComponent(v.dataset.mhStore);return}
 });
