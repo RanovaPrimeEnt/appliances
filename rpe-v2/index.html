@@ -247,7 +247,7 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
   font-family:"Inter",ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif!important;
 }
 </style>
-  <link rel="stylesheet" href="./customer-pro.css?v=20261002-audit36">
+  <link rel="stylesheet" href="./customer-pro.css?v=20261002-saved37">
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
@@ -421,7 +421,7 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
   <header class="mpd-head">
     <button id="marketProductBack" class="mpd-back" type="button" aria-label="Back">‹</button>
     <b>Product details</b>
-    <button id="marketProductShare" class="mpd-share" type="button" aria-label="Share product">↗</button>
+    <div class="mpd-head-actions"><button id="marketProductSave" class="mpd-share mpd-save" type="button" aria-label="Save product">☆</button><button id="marketProductShare" class="mpd-share" type="button" aria-label="Share product">↗</button></div>
   </header>
   <div class="mpd-media"><div id="marketProductImage" class="mpd-image"></div></div>
   <div class="mpd-main">
@@ -500,7 +500,7 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
   <div id="toPayOrders" class="pay-orders"></div>
 </section>
 <section id="ordersPanel" class="panel card"><div class="section-head"><h2>My Orders</h2><button data-panel="homePanel">Back</button></div><div id="ordersList" class="panel-body list"></div></section>
-<section id="savedPanel" class="panel card"><div class="section-head"><h2>Saved Products</h2><button data-panel="homePanel">Back</button></div><div id="savedGrid" class="panel-body grid"></div></section>
+<section id="savedPanel" class="panel card saved-love-panel"><div class="section-head"><h2>Saved / Love</h2><button data-panel="homePanel">Back</button></div><div id="savedGrid" class="panel-body grid"></div></section>
 <section id="recentPanel" class="panel card"><div class="section-head"><h2>Recently Viewed</h2><button data-panel="homePanel">Back</button></div><div id="recentGrid" class="panel-body grid"></div></section>
 <section id="addressPanel" class="panel card"><div class="section-head"><h2>Delivery Addresses</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><div id="addressList" class="list"></div><button id="addAddress" class="btn primary" style="margin-top:12px">Add address</button></div></section>
 <section id="notifPanel" class="panel card"><div class="section-head"><h2>Notifications</h2><button data-panel="homePanel">Back</button></div><div id="notifList" class="panel-body list"></div></section>
@@ -546,9 +546,9 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20261002-audit36"></script>
-<script src="./customer-pwa.js?v=20261002-audit36"></script>
-<script src="./customer-pro.js?v=20261002-audit36"></script>
+<script src="./app.js?v=20261002-saved37"></script>
+<script src="./customer-pwa.js?v=20261002-saved37"></script>
+<script src="./customer-pro.js?v=20261002-saved37"></script>
 
 <div id="manualPaymentOverlay" class="rpe-pay-overlay" aria-hidden="true">
   <div class="rpe-pay-card" role="dialog" aria-modal="true" aria-labelledby="manualPaymentTitle">
