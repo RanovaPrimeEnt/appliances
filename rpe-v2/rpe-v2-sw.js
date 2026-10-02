@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v31";
+const CACHE="ranova-rpe-v2-shell-v32";
 const IMAGE_CACHE="ranova-rpe-v2-images-v1";
 const CORE=[
   "../all/fonts/inter-0.woff2",
@@ -12,7 +12,8 @@ const CORE=[
   "../all/ranova-typography.js?v=20260930-5",
   "./",
   "./index.html",
-  "./app.js?v=20261002-msgfix02",
+  "./offline-marketplace.json",
+  "./app.js?v=20261002-force32",
   "./config.js",
   "./design-system.css",
   "./customer-icon.svg",
@@ -21,7 +22,7 @@ const CORE=[
   "./customer-icon-512.svg",
   "./customer-icon-maskable.svg",
   "./customer-app.webmanifest",
-  "./customer-pwa.js?v=20261002-msgfix02",
+  "./customer-pwa.js?v=20261002-force32",
   "./report-store.html",
   "./ranova-prime-store.html",
   "./admin.html",
@@ -32,10 +33,26 @@ const CORE=[
 ];
 
 self.addEventListener("install",event=>{
-  event.waitUntil(
-    caches.open(CACHE).then(cache=>cache.addAll(CORE.map(url=>new Request(url,{cache:"reload"})))).catch(()=>{})
-      .then(()=>self.skipWaiting())
-  );
+  event.waitUntil((async()=>{
+    try{
+      const cache=await caches.open(CACHE);
+      await cache.addAll(CORE.map(url=>new Request(url,{cache:"reload"})));
+      const snap=await (await cache.match("./offline-marketplace.json")).json();
+      const urls=[...new Set([
+        ...(snap.products||[]).map(p=>p.primary_image_url),
+        ...(snap.stores||[]).flatMap(s=>[s.logo_url,s.banner_url])
+      ].filter(Boolean))].slice(0,140);
+      const imageCache=await caches.open(IMAGE_CACHE);
+      for(let i=0;i<urls.length;i+=8){
+        await Promise.allSettled(urls.slice(i,i+8).map(async url=>{
+          const req=new Request(url,{mode:new URL(url,self.location.href).origin===self.location.origin?"same-origin":"no-cors",cache:"reload"});
+          const res=await fetch(req);
+          if(res&&(res.ok||res.type==="opaque"))await imageCache.put(req,res.clone());
+        }));
+      }
+    }catch{}
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate",event=>{
