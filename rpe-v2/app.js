@@ -1148,7 +1148,7 @@ async function loadMarketplaceHomeData(){
   try{
     const [storeResult,productResult]=await Promise.allSettled([
       sb.from("ranova_seller_stores").select("id,seller_id,store_name,slug,tagline,logo_url,banner_url,business_location,fulfilment_summary,return_policy_summary,store_status,country_code,country_name,updated_at").eq("store_status","active").order("updated_at",{ascending:false}).limit(60),
-      sb.from("ranova_seller_products").select("id,seller_id,store_id,name,slug,sku,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,product_status,updated_at,specifications").eq("product_status","active").order("updated_at",{ascending:false}).limit(240)
+      sb.from("ranova_seller_products").select("id,seller_id,store_id,name,slug,sku,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,pricing_tiers,product_status,updated_at,specifications").eq("product_status","active").order("updated_at",{ascending:false}).limit(240)
     ]);
     const storeResponse=storeResult.status==="fulfilled"?storeResult.value:null;
     const productResponse=productResult.status==="fulfilled"?productResult.value:null;
