@@ -17,6 +17,7 @@ let user = null;
 let profile = null;
 let products = [];
 let favorites = new Set();
+let marketSavedProducts = new Set();
 let recentIds = [];
 let cartId = null;
 let cartItems = [];
@@ -169,7 +170,7 @@ function saveFastCache(){
   if(!user)return;
   try{sessionStorage.setItem(fastCacheKey(),JSON.stringify({
     t:Date.now(),profile,products,favorites:[...favorites],recentIds,cartId,cartItems,orders,notifications,addresses,returns,
-    toPayOrders,toPayStores,toPayRecommendations,messageConversations,marketStores,marketSellerProducts,marketLoadedAt
+    toPayOrders,toPayStores,toPayRecommendations,messageConversations,marketStores,marketSellerProducts,marketSavedProducts:[...marketSavedProducts],marketLoadedAt
   }))}catch{}
 }
 function restoreFastCache(){
@@ -180,7 +181,7 @@ function restoreFastCache(){
     profile=d.profile||null;products=d.products||[];favorites=new Set(d.favorites||[]);recentIds=d.recentIds||[];
     cartId=d.cartId||null;cartItems=d.cartItems||[];orders=d.orders||[];notifications=d.notifications||[];
     addresses=d.addresses||[];returns=d.returns||[];toPayOrders=d.toPayOrders||[];toPayStores=d.toPayStores||[];
-    toPayRecommendations=d.toPayRecommendations||[];messageConversations=d.messageConversations||[];marketStores=d.marketStores||[];marketSellerProducts=d.marketSellerProducts||[];marketLoadedAt=d.marketLoadedAt||0;
+    toPayRecommendations=d.toPayRecommendations||[];messageConversations=d.messageConversations||[];marketStores=d.marketStores||[];marketSellerProducts=d.marketSellerProducts||[];marketSavedProducts=new Set(d.marketSavedProducts||[]);marketLoadedAt=d.marketLoadedAt||0;
     renderAll();
     if(messageConversations.length){renderMessageList();setBadge("bottomMessageCount",messageConversations.filter(x=>x.unread).length)}
     return true;
@@ -322,6 +323,8 @@ document.addEventListener("click",e=>{
     "[data-variant-product]",
     "[data-add]",
     "[data-fav]",
+    "[data-market-save]",
+    "#marketProductSave",
     "#marketProductBuy",
     "#marketProductStore",
     "#marketProductMessage",
@@ -528,14 +531,17 @@ async function loadAll(){
 
   secondaryLoadPromise=Promise.all([
     sb.from("favorites").select("product_id").eq("user_id",uid),
+    sb.from("ranova_buyer_saved_products").select("product_id").eq("user_id",uid),
     sb.from("recently_viewed").select("product_id,viewed_at").eq("user_id",uid).order("viewed_at",{ascending:false}).limit(20),
     sb.from("notifications").select("id,user_id,type,title,message,related_order_id,read_at,created_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(40),
     sb.from("addresses").select("id,user_id,label,recipient_name,phone,region,city,area,street_address,landmark,is_default,created_at").eq("user_id",uid).order("is_default",{ascending:false}).order("created_at",{ascending:false}).limit(20),
     sb.from("return_requests").select("id,order_id,order_item_id,user_id,reason,return_status,created_at,updated_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(30),
     Promise.all([loadCartItems(),loadMarketplaceCart()]).then(()=>({data:null,error:null}))
-  ]).then(([fav,rec,noti,addr,ret])=>{
-    [fav,rec,noti,addr,ret].forEach(x=>{if(x?.error)throw x.error});
-    favorites=new Set((fav.data||[]).map(x=>x.product_id));recentIds=(rec.data||[]).map(x=>x.product_id);
+  ]).then(([fav,marketFav,rec,noti,addr,ret])=>{
+    [fav,marketFav,rec,noti,addr,ret].forEach(x=>{if(x?.error)throw x.error});
+    favorites=new Set((fav.data||[]).map(x=>x.product_id));
+    marketSavedProducts=new Set((marketFav.data||[]).map(x=>x.product_id));
+    recentIds=(rec.data||[]).map(x=>x.product_id);
     notifications=noti.data||[];addresses=addr.data||[];returns=ret.data||[];
     renderProducts(filteredProductsNow());renderHomeProducts();renderSaved();renderRecent();renderCart();renderNotifications();renderAddresses();renderCounts();
     ["savedPanel","recentPanel","addressPanel","notifPanel"].forEach(markPanelPainted);
@@ -622,6 +628,7 @@ async function addMarketplaceToCart(product,quantity){
   marketCartProducts.set(product.id,product);
   const store=marketStores.find(s=>s.id===product.store_id);if(store)marketCartStores.set(store.id,store);
   renderCart();
+  openCart();
   try{
     await persistMarketCartRow(product.store_id);
     showToast(previous?"Cart quantity updated":"Added to cart");
@@ -696,6 +703,7 @@ function renderProducts(list){
 function homeSellerCard(p){
   const store=marketStores.find(s=>s.id===p.store_id)||{},moq=Math.max(1,Number(p.moq||1));
   return '<article class="product home-seller-product">'+
+    '<button class="home-market-save '+(marketSavedProducts.has(p.id)?"active":"")+'" type="button" data-market-save="'+esc(p.id)+'" aria-label="'+(marketSavedProducts.has(p.id)?"Remove saved product":"Save product")+'">'+(marketSavedProducts.has(p.id)?"★":"☆")+'</button>'+
     '<button class="product-open" data-home-seller-product="'+esc(p.id)+'" style="display:block;width:100%;padding:0;border:0;background:#fff;text-align:left">'+
       (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" loading="lazy" decoding="async" alt="'+esc(p.name)+'">':'<div style="height:155px;display:grid;place-items:center;background:#f5f7f6;color:#93a49e;font-size:10px">Marketplace Product</div>')+
       '<div class="product-copy"><h3>'+esc(p.name||"Product")+'</h3>'+
@@ -803,7 +811,29 @@ function startRecommendationRotation(){
     renderHomeProducts();
   },45000);
 }
-function renderSaved(){const list=products.filter(p=>favorites.has(p.id));$("savedGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>No saved products yet</b>Tap ☆ on a product you want to remember.</div>'}
+function savedProductCard(item){
+  const p=item.product,kind=item.kind;
+  const image=kind==="market"?(p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls.find(Boolean):"")):imageFor(p);
+  const desc=kind==="market"?(p.short_description||p.category||"Marketplace product"):(p.short_description||p.description||p.categories?.name||"RANOVA product");
+  const price=kind==="market"?(p.price==null?"Ask for price":money(p.price,p.currency||"GHS")):money(p.price,p.currency);
+  const openAttr=kind==="market"?'data-saved-market="'+esc(p.id)+'"':'data-open-product="'+esc(p.id)+'"';
+  const removeAttr=kind==="market"?'data-market-save="'+esc(p.id)+'"':'data-fav="'+esc(p.id)+'"';
+  return '<article class="saved-love-card">'+
+    '<button class="saved-love-main" type="button" '+openAttr+'>'+
+      (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" decoding="async">':'<div class="saved-love-placeholder">Product</div>')+
+      '<span class="saved-love-copy"><b>'+esc(p.name||"Product")+'</b><small>'+esc(String(desc||"").slice(0,110))+'</small><strong>'+esc(price)+'</strong></span>'+
+    '</button>'+
+    '<button class="saved-love-star active" type="button" '+removeAttr+' aria-label="Remove saved product">★</button>'+
+  '</article>';
+}
+function renderSaved(){
+  const rows=[
+    ...marketSellerProducts.filter(p=>marketSavedProducts.has(p.id)).map(product=>({kind:"market",product})),
+    ...products.filter(p=>favorites.has(p.id)).map(product=>({kind:"legacy",product}))
+  ];
+  $("savedGrid").classList.add("saved-love-grid");
+  $("savedGrid").innerHTML=rows.length?rows.map(savedProductCard).join(""):'<div class="empty saved-love-empty"><b>No saved products yet</b>Tap ☆ on a product you want to remember.</div>';
+}
 function renderRecent(){const map=new Map(products.map(p=>[p.id,p]));const list=recentIds.map(id=>map.get(id)).filter(Boolean);$("recentGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>Nothing viewed yet</b>Products you open will appear here automatically.</div>'}
 
 document.addEventListener("click",async e=>{
@@ -826,6 +856,26 @@ function searchProducts(){
   if(!q)return renderProducts(products);
   renderProducts(products.filter(p=>[p.name,p.sku,p.legacy_id,p.brand,p.categories?.name,p.short_description].some(x=>String(x||"").toLowerCase().includes(q))));
 }
+async function toggleMarketplaceSaved(id){
+  if(!user){showAuthConsole(true);return}
+  const wasSaved=marketSavedProducts.has(id);
+  if(wasSaved)marketSavedProducts.delete(id);else marketSavedProducts.add(id);
+  renderMarketplaceHome($("marketHomeSearch")?.value||"");
+  renderHomeProducts();renderSaved();saveFastCache();
+  if(marketProductCurrent?.id===id&&$("marketProductSave"))$("marketProductSave").textContent=marketSavedProducts.has(id)?"★":"☆";
+  showToast(wasSaved?"Removed from saved":"Saved");
+  const req=wasSaved
+    ? sb.from("ranova_buyer_saved_products").delete().eq("user_id",user.id).eq("product_id",id)
+    : sb.from("ranova_buyer_saved_products").upsert({user_id:user.id,product_id:id},{onConflict:"user_id,product_id"});
+  const {error}=await req;
+  if(error){
+    if(wasSaved)marketSavedProducts.add(id);else marketSavedProducts.delete(id);
+    renderMarketplaceHome($("marketHomeSearch")?.value||"");renderHomeProducts();renderSaved();saveFastCache();
+    if(marketProductCurrent?.id===id&&$("marketProductSave"))$("marketProductSave").textContent=marketSavedProducts.has(id)?"★":"☆";
+    showToast("Could not update saved products");
+  }
+}
+
 async function toggleFavorite(id){
   const wasSaved=favorites.has(id);
   if(wasSaved)favorites.delete(id);else favorites.add(id);
@@ -929,7 +979,7 @@ async function addToCart(productId){
       __optimistic:true
     });
   }
-  renderCart();saveFastCache();showToast("Added to cart");
+  renderCart();saveFastCache();showToast("Added to cart");openCart();
 
   const res=existing
     ? await sb.from("cart_items").update({quantity:existing.quantity}).eq("id",existing.id)
@@ -1420,6 +1470,7 @@ function paintMarketplaceProductDetails(p,store){
   if($("marketProductCategory"))$("marketProductCategory").textContent=p.category||"RANOVA Product";
   $("marketProductMeta").textContent=[store.store_name,p.sku&&("SKU "+p.sku)].filter(Boolean).join(" · ");
   $("marketProductDescription").textContent=p.description||p.short_description||"Contact the seller for additional product information.";
+  if($("marketProductSave"))$("marketProductSave").textContent=marketSavedProducts.has(p.id)?"★":"☆";
   const badges=["✓ RANOVA seller",store.business_location||store.country_name,marketStockLabel(p)].filter(Boolean);
   $("marketProductTrust").innerHTML=badges.map(x=>'<span>'+esc(x)+'</span>').join("");
   const facts=[];
@@ -1608,11 +1659,13 @@ function renderMarketplaceHome(filter=""){
     productHost.innerHTML=productRows.length?productRows.map(p=>{
       const store=storeById.get(p.store_id)||{};
       const moq=Number(p.moq||1);
-      return '<button class="market-product-card" type="button" data-mh-product="'+esc(p.id)+'">'+
+      return '<article class="market-product-card-wrap">'+
+        '<button class="market-card-save '+(marketSavedProducts.has(p.id)?"active":"")+'" type="button" data-market-save="'+esc(p.id)+'" aria-label="'+(marketSavedProducts.has(p.id)?"Remove saved product":"Save product")+'">'+(marketSavedProducts.has(p.id)?"★":"☆")+'</button>'+
+        '<button class="market-product-card" type="button" data-mh-product="'+esc(p.id)+'">'+
         (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name||"Product")+'" loading="lazy">':'<span class="market-product-placeholder">Product image</span>')+
         '<span class="market-product-copy"><b>'+esc(p.name||"Product")+'</b><small>'+esc(store.store_name||p.category||"RANOVA Store")+'</small><strong>'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</strong>'+
         (moq>1?'<em>MOQ '+esc(moq)+(p.unit_label?" "+esc(p.unit_label):"")+'</em>':"")+
-        '</span></button>';
+        '</span></button></article>';
     }).join(""):'<div class="market-empty"><b>No matching products</b>Try another product, store, category or location.</div>';
   }
 
@@ -1676,6 +1729,8 @@ document.addEventListener("click",e=>{
 },true);
 
 document.addEventListener("click",async e=>{
+ const marketSave=e.target.closest("[data-market-save]");if(marketSave){e.preventDefault();e.stopPropagation();await toggleMarketplaceSaved(marketSave.dataset.marketSave);return}
+ const savedMarket=e.target.closest("[data-saved-market]");if(savedMarket){openMarketplaceProduct(savedMarket.dataset.savedMarket);return}
  const variant=e.target.closest("[data-variant-product]");if(variant&&variant.dataset.variantProduct!==marketProductCurrent?.id){openMarketplaceProduct(variant.dataset.variantProduct);return}
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
  const p=e.target.closest("[data-mh-product]");if(p){openMarketplaceProduct(p.dataset.mhProduct);return}
@@ -1687,6 +1742,7 @@ if($("marketProductMinus"))$("marketProductMinus").onclick=()=>{if(!marketProduc
 if($("marketProductPlus"))$("marketProductPlus").onclick=()=>{if(!marketProductCurrent)return;$("marketProductQty").value=marketProductQuantity(marketProductCurrent,Number($("marketProductQty").value)+1);updateMarketProductTotal()};
 if($("marketProductQty"))$("marketProductQty").onchange=()=>updateMarketProductTotal();
 if($("marketProductShare"))$("marketProductShare").onclick=shareMarketplaceProduct;
+if($("marketProductSave"))$("marketProductSave").onclick=()=>{if(marketProductCurrent)toggleMarketplaceSaved(marketProductCurrent.id)};
 if($("marketProductStore"))$("marketProductStore").onclick=()=>{const url=sellerStoreProductUrl(marketProductCurrent);if(url)location.href=url;else showToast("Store unavailable")};
 if($("marketProductBuy"))$("marketProductBuy").onclick=async()=>{const p=marketProductCurrent;if(!p)return;const q=marketProductQuantity(p,$("marketProductQty").value);await addMarketplaceToCart(p,q);openCart()};
 if($("marketProductMessage"))$("marketProductMessage").onclick=async()=>{
