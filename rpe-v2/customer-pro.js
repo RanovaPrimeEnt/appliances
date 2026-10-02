@@ -276,9 +276,13 @@ function setupGuestBrowse(){
 /* 15 release hardening: online/offline feedback, reduced accidental failures */
 function setupResilience(){
   let n=$q("#rpeNetwork");if(!n){n=document.createElement("div");n.id="rpeNetwork";n.className="rpe-network";document.body.appendChild(n)}
-  const update=()=>{if(navigator.onLine){n.textContent="Back online";n.classList.add("show");setTimeout(()=>n.classList.remove("show"),1300)}else{n.textContent="You are offline — changes will sync when connection returns";n.classList.add("show")}};
+  const icon='<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M2 8.8A15 15 0 0 1 5.7 6M22 8.8A15 15 0 0 0 12 5c-1.1 0-2.2.1-3.2.4M5 12.5A10 10 0 0 1 8.6 10M19 12.5A10 10 0 0 0 12 10c-.2 0-.4 0-.6.01M8.5 16a5 5 0 0 1 5.7-.8M12 20h.01M3 3l18 18"/></svg>';
+  let hideTimer=null;
+  const show=(text,sticky=false)=>{clearTimeout(hideTimer);n.innerHTML=icon+'<span>'+text+'</span>';n.classList.add("show");if(!sticky)hideTimer=setTimeout(()=>n.classList.remove("show"),1800)};
+  const update=()=>{if(navigator.onLine)show("Back online");else show("Check your Internet Connection",true)};
   window.addEventListener("online",update);window.addEventListener("offline",update);if(!navigator.onLine)update();
-  window.addEventListener("unhandledrejection",e=>{const msg=String(e.reason?.message||"");if(/network|fetch/i.test(msg))toast("Connection issue. Please try again.")});
+  window.addEventListener("ranova:offline-product-click",()=>show("Check your Internet Connection",true));
+  window.addEventListener("unhandledrejection",e=>{const msg=String(e.reason?.message||"");if(/network|fetch/i.test(msg))show("Check your Internet Connection",true)});
 }
 
 function handleEntryRoute(){
