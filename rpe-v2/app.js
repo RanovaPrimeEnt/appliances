@@ -74,7 +74,7 @@ let guestBrowseMode = false;
 const GUEST_BROWSE_CODE = "RNV-16032005";
 let incomingCartHandled = false;
 let realtimeChannels = [];
-let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null;
+let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,messageRealtimeChannel=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null,msgReplyingTo=null,msgEditingMessage=null,msgPressTimer=null;
 const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 const PAYMENT_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-payment-gateway";
 const FAST_CACHE_TTL=5*60*1000;
@@ -1777,26 +1777,169 @@ function messageMedia(m){
   if(m.message_type==="file")return '<a href="'+url+'" target="_blank" rel="noopener">📎 '+name+'</a>';
   return "";
 }
+function messageById(id){return (messageCurrent?.messages||[]).find(m=>String(m.id)===String(id))}
+function shortMessageBody(m){return String(m?.body||({image:"Photo",audio:"Voice note",file:"Attachment",rfq:"Quotation request",quote:"Quotation",quote_status:"Quote update"}[m?.message_type]||"Message")).slice(0,120)}
+function messageReplyHtml(m){
+  if(!m.reply_to_message_id)return "";
+  const q=messageById(m.reply_to_message_id);
+  return q?'<button class="msg-reply-quote" type="button" data-msg-jump="'+esc(q.id)+'"><b>'+esc(q.sender_role===messageRole?"You":prettyKey(q.sender_role))+'</b><span>'+esc(shortMessageBody(q))+'</span></button>':"";
+}
+function clearMsgAction(){
+  msgReplyingTo=null;msgEditingMessage=null;
+  const box=$("msgReplyPreview");if(box){box.hidden=true;box.innerHTML=""}
+}
+function setMsgReply(m){
+  msgEditingMessage=null;msgReplyingTo=m;
+  const box=$("msgReplyPreview");if(!box)return;
+  box.hidden=false;box.innerHTML='<span><b>Reply</b> · '+esc(shortMessageBody(m))+'</span><button id="msgCancelAction" type="button">×</button>';
+  $("msgCancelAction").onclick=clearMsgAction;$("msgInput").focus();
+}
+function setMsgEdit(m){
+  msgReplyingTo=null;msgEditingMessage=m;
+  const box=$("msgReplyPreview");if(!box)return;
+  box.hidden=false;box.innerHTML='<span><b>Edit message</b> · You have 3 minutes after sending.</span><button id="msgCancelAction" type="button">×</button>';
+  $("msgCancelAction").onclick=clearMsgAction;
+  $("msgInput").value=m.body||"";updateMsgAction();$("msgInput").focus();
+}
+function showCustomerMessageActions(m){
+  if(!m||m.sender_role==="system")return;
+  const mine=m.sender_role===messageRole;
+  const canEdit=mine&&m.message_type==="text"&&Date.now()-new Date(m.created_at).getTime()<=180000;
+  const choices=["Reply","Copy",...(!mine?["Report"]:[]),...(canEdit?["Edit"]:[])];
+  const choice=prompt("Message action: "+choices.join(" · "),choices[0]);
+  if(!choice)return;
+  const action=choice.trim().toLowerCase();
+  if(action==="reply")setMsgReply(m);
+  else if(action==="copy"){navigator.clipboard?.writeText(m.body||"").catch(()=>{})}
+  else if(action==="edit"&&canEdit)setMsgEdit(m);
+  else if(action==="report"&&!mine)reportCustomerMessage(m.id);
+}
+async function reportCustomerMessage(messageId){
+  const category=(prompt("Report reason: spam, fraud_suspected, off_platform_payment, harassment, misleading_product, counterfeit_suspected, or other","spam")||"").trim().toLowerCase();
+  if(!category)return;
+  const description=(prompt("Briefly explain why you are reporting this message.","")||"").trim();
+  if(description.length<5)return showToast("Add a short explanation.");
+  try{
+    const out=await messageApi({action:"report_message",conversation_id:messageCurrent.id,message_id:messageId,category,description});
+    showToast(out.report_ref?"Report submitted: "+out.report_ref:"Report submitted");
+  }catch(e){showToast(e.message||"Could not submit report")}
+}
+function customerQuoteCard(q){
+  const expired=q.expires_at&&new Date(q.expires_at).getTime()<=Date.now();
+  const status=expired&&["quoted","revised"].includes(q.status)?"expired":q.status;
+  let actions="";
+  if(messageRole==="buyer"&&["quoted","revised"].includes(status)){
+    actions='<button type="button" class="msg-quote-primary" data-msg-quote-accept="'+esc(q.id)+'">Accept</button>'+
+      '<button type="button" data-msg-quote-negotiate="'+esc(q.id)+'">Negotiate</button>'+
+      '<button type="button" data-msg-quote-decline="'+esc(q.id)+'">Decline</button>';
+  }else if(status==="accepted"&&messageRole==="buyer"){
+    actions='<button type="button" class="msg-quote-primary" data-msg-quote-cart="'+esc(q.id)+'">Use accepted quote</button>';
+  }
+  return '<article class="msg-quote-card"><b>'+esc(q.quote_ref||"Quotation")+' · '+esc(prettyKey(status))+'</b>'+
+    '<small>'+esc(q.requested_quantity||1)+' unit(s)'+(q.unit_price!=null?' · GHC '+Number(q.unit_price).toFixed(2)+' each':'')+(q.delivery_fee!=null?' · Delivery GHC '+Number(q.delivery_fee).toFixed(2):'')+'</small>'+
+    (q.expires_at?'<small>Valid until '+esc(new Date(q.expires_at).toLocaleString())+'</small>':'')+
+    (q.seller_terms?'<p>'+esc(q.seller_terms)+'</p>':'')+
+    (actions?'<div class="msg-quote-actions">'+actions+'</div>':'')+'</article>';
+}
+async function requestCustomerQuote(){
+  if(!messageCurrent?.product||messageRole!=="buyer")return;
+  const p=messageCurrent.product;
+  const qty=prompt("Quantity for quotation",String(p.moq||1));if(qty==null)return;
+  const country=(prompt("Destination country code (example: GH)","GH")||"").trim().toUpperCase();
+  const destination=(prompt("Delivery destination / location","")||"").trim();
+  const note=(prompt("Extra quotation details (optional)","")||"").trim();
+  try{
+    await messageApi({action:"request_quote",conversation_id:messageCurrent.id,product_id:p.id,quantity:qty,destination_country_code:country,destination_text:destination,note});
+    await refreshOpenMessage();showToast("Quotation request sent");
+  }catch(e){showToast(e.message||"Could not request quotation")}
+}
+async function respondCustomerQuote(id,decision){
+  try{
+    const out=await messageApi({action:"respond_quote",conversation_id:messageCurrent.id,quote_id:id,decision});
+    await refreshOpenMessage();
+    if(decision==="accepted")showToast("Quotation accepted");
+    if(decision==="accepted"&&out.cart_url){
+      const b=$("msgAcceptedQuoteLink");if(b){b.hidden=false;b.dataset.url=out.cart_url}
+    }
+  }catch(e){showToast(e.message||"Could not update quotation")}
+}
+function negotiateCustomerQuote(id){
+  const q=(messageCurrent?.quotes||[]).find(x=>x.id===id);if(!q)return;
+  $("msgInput").value="I would like to negotiate "+q.quote_ref+". ";
+  $("msgInput").focus();updateMsgAction();
+}
+function bindCustomerMessageActions(){
+  const host=$("messageThread");if(!host)return;
+  host.querySelectorAll(".msg-bubble[data-message-id]").forEach(node=>{
+    const m=messageById(node.dataset.messageId);if(!m)return;
+    node.oncontextmenu=e=>{e.preventDefault();showCustomerMessageActions(m)};
+    node.ontouchstart=()=>{clearTimeout(msgPressTimer);msgPressTimer=setTimeout(()=>showCustomerMessageActions(m),550)};
+    node.ontouchend=node.ontouchmove=()=>clearTimeout(msgPressTimer);
+  });
+  host.querySelectorAll("[data-msg-jump]").forEach(b=>b.onclick=e=>{e.stopPropagation();host.querySelector('[data-message-id="'+CSS.escape(b.dataset.msgJump)+'"]')?.scrollIntoView({behavior:"smooth",block:"center"})});
+  host.querySelectorAll("[data-msg-report]").forEach(b=>b.onclick=()=>reportCustomerMessage(b.dataset.msgReport));
+  host.querySelectorAll("[data-msg-quote-accept]").forEach(b=>b.onclick=()=>respondCustomerQuote(b.dataset.msgQuoteAccept,"accepted"));
+  host.querySelectorAll("[data-msg-quote-decline]").forEach(b=>b.onclick=()=>respondCustomerQuote(b.dataset.msgQuoteDecline,"declined"));
+  host.querySelectorAll("[data-msg-quote-negotiate]").forEach(b=>b.onclick=()=>negotiateCustomerQuote(b.dataset.msgQuoteNegotiate));
+  host.querySelectorAll("[data-msg-quote-cart]").forEach(b=>b.onclick=()=>location.href="../all/cart.html?quote="+encodeURIComponent(b.dataset.msgQuoteCart));
+}
+function stopMessageRealtime(){
+  if(messageRealtimeChannel){sb.removeChannel(messageRealtimeChannel);messageRealtimeChannel=null}
+}
+function subscribeOpenConversationRealtime(id){
+  stopMessageRealtime();
+  let refreshTimer=null;
+  const refresh=()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>{if(messageCurrent?.id===id)refreshOpenMessage().catch(()=>{})},90)};
+  messageRealtimeChannel=sb.channel("rpe-customer-conversation-"+id)
+    .on("postgres_changes",{event:"*",schema:"public",table:"ranova_messages",filter:"conversation_id=eq."+id},refresh)
+    .on("postgres_changes",{event:"*",schema:"public",table:"ranova_quotes",filter:"conversation_id=eq."+id},refresh)
+    .subscribe();
+}
 async function openMessageConversation(id){
   const out=await messageApi({action:"open",conversation_id:id});messageCurrent=out.conversation;messageRole=out.role;
+  clearMsgAction();
   $("messagesPanel").classList.add("chat-open");
-  const store=messageCurrent.store||{};$("messageChatTitle").textContent=store.store_name||"RANOVA Store";$("messageChatSub").textContent="Online store conversation";
+  const store=messageCurrent.store||{};$("messageChatTitle").textContent=store.store_name||"RANOVA Store";$("messageChatSub").textContent=messageCurrent.subject||"Online store conversation";
   $("messageChatAvatar").innerHTML=store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="" style="width:100%;height:100%;object-fit:cover">':animalAvatar(store.id||store.store_name);
   const p=messageCurrent.product,ctx=$("messageProductContext");
-  if(p){ctx.classList.add("show");ctx.innerHTML=(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'">':'<div style="width:48px;height:48px;border-radius:9px;background:#eee"></div>')+'<div><b>'+esc(p.name||"Product")+'</b><small>'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</small></div><span class="ask-tag">Product enquiry</span>'}else{ctx.classList.remove("show");ctx.innerHTML=""}
+  if(p){
+    ctx.classList.add("show");
+    ctx.innerHTML=(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'">':'<div style="width:48px;height:48px;border-radius:9px;background:#eee"></div>')+
+      '<div><b>'+esc(p.name||"Product")+'</b><small>'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</small></div>'+
+      '<button class="ask-tag msg-rfq" id="msgRequestQuote" type="button">Request quote</button>';
+    $("msgRequestQuote").onclick=requestCustomerQuote;
+  }else{ctx.classList.remove("show");ctx.innerHTML=""}
   renderMessageThread();
+  subscribeOpenConversationRealtime(id);
   await loadMessageConversations();
-  clearInterval(messagePoll);messagePoll=setInterval(()=>{if(messageCurrent&&$("messagesPanel").classList.contains("active"))refreshOpenMessage().catch(()=>{})},5000);
+  clearInterval(messagePoll);
+  messagePoll=setInterval(()=>{if(messageCurrent?.id===id&&$("messagesPanel").classList.contains("active"))refreshOpenMessage().catch(()=>{})},15000);
 }
-async function refreshOpenMessage(){if(!messageCurrent)return;const out=await messageApi({action:"open",conversation_id:messageCurrent.id});messageCurrent=out.conversation;messageRole=out.role;renderMessageThread()}
+async function refreshOpenMessage(){
+  if(!messageCurrent)return;
+  const id=messageCurrent.id,out=await messageApi({action:"open",conversation_id:id});
+  if(messageCurrent?.id!==id)return;
+  messageCurrent=out.conversation;messageRole=out.role;renderMessageThread();
+}
 function renderMessageThread(){
   const host=$("messageThread");if(!host||!messageCurrent)return;
   let day="";
-  host.innerHTML=(messageCurrent.messages||[]).map(m=>{const d=new Date(m.created_at),key=d.toDateString(),sep=key!==day?'<div class="msg-date">'+d.toLocaleDateString([],{year:"numeric",month:"long",day:"numeric"})+'</div>':"";day=key;const mine=m.sender_role===messageRole,cl=m.sender_role==="system"?"system":mine?"mine":"other",media=messageMedia(m),body=m.body?'<div>'+esc(m.body)+'</div>':"";return sep+'<div class="msg-bubble '+cl+'">'+media+body+'<time>'+d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+'</time></div>'}).join("")||'<div class="msg-list-empty">Start your conversation with this store.</div>';
+  const quotes=(messageCurrent.quotes||[]).length?'<div class="msg-quote-stack">'+messageCurrent.quotes.map(customerQuoteCard).join("")+'</div>':"";
+  const rows=(messageCurrent.messages||[]).map(m=>{
+    const d=new Date(m.created_at),key=d.toDateString(),sep=key!==day?'<div class="msg-date">'+d.toLocaleDateString([],{year:"numeric",month:"long",day:"numeric"})+'</div>':"";
+    day=key;
+    const mine=m.sender_role===messageRole,cl=m.sender_role==="system"?"system":mine?"mine":"other";
+    const media=messageMedia(m),body=m.body?'<div class="msg-body">'+esc(m.body)+'</div>':(!media&&m.message_type!=="system"?'<div class="msg-body">'+esc(prettyKey(m.message_type))+'</div>':"");
+    const report=!mine&&m.sender_role!=="system"?'<button class="msg-report" type="button" data-msg-report="'+esc(m.id)+'">Report</button>':"";
+    const edited=m.edited_at?" · Edited":"";
+    return sep+'<div class="msg-bubble '+cl+'" data-message-id="'+esc(m.id)+'">'+messageReplyHtml(m)+media+body+'<time>'+d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+edited+'</time>'+report+'</div>';
+  }).join("");
+  host.innerHTML=quotes+(rows||'<div class="msg-list-empty">Start your conversation with this store.</div>');
+  bindCustomerMessageActions();
   host.scrollTop=host.scrollHeight;
 }
-$("messageBack").onclick=()=>{$("messagesPanel").classList.remove("chat-open");messageCurrent=null;clearInterval(messagePoll);loadMessageConversations().catch(()=>{})};
-$("messageStoreButton").onclick=()=>{if(messageCurrent?.store?.slug)location.href="../all/marketplace.html?store="+encodeURIComponent(messageCurrent.store.slug)};
+$("messageBack").onclick=()=>{$("messagesPanel").classList.remove("chat-open");messageCurrent=null;clearMsgAction();stopMessageRealtime();clearInterval(messagePoll);loadMessageConversations().catch(()=>{})};
+$("messageStoreButton").onclick=()=>{if(messageCurrent?.store?.slug)location.href="../all/seller-store.html?store="+encodeURIComponent(messageCurrent.store.slug)};
 $("messageSearchButton").onclick=()=>{const q=prompt("Search store conversations:","");if(q==null)return;const s=q.trim().toLowerCase();document.querySelectorAll("#messageConversationList .msg-row").forEach(row=>{row.style.display=!s||row.textContent.toLowerCase().includes(s)?"grid":"none"})};
 
 const msgEmojiGroups={
@@ -1810,14 +1953,38 @@ const msgEmojiGroups={
  "Objects":"📱 💻 ⌚ 📷 📸 🎥 📎 📌 ✂️ 🖊️ 📚 📦 🎁 🛒 💳 🔑 🏆 🎓 💡 🔒",
  "Flags":"🇬🇭 🇳🇬 🇺🇸 🇬🇧 🇨🇦 🇿🇦 🇨🇮 🇰🇪 🇹🇬 🇫🇷 🇩🇪 🇪🇸 🇮🇹 🇯🇵 🇨🇳 🇮🇳 🇧🇷 🇦🇪"
 };
+function getMsgRecentEmojis(){try{return JSON.parse(localStorage.getItem("ranova-msg-recent-emojis")||"[]")}catch{return[]}}
+function rememberMsgEmoji(e){const next=[e,...getMsgRecentEmojis().filter(x=>x!==e)].slice(0,32);try{localStorage.setItem("ranova-msg-recent-emojis",JSON.stringify(next))}catch{}}
 function updateMsgAction(){const has=!!$("msgInput").value.trim()||!!msgAttachment;$("msgRecordStart").hidden=has;$("msgSend").hidden=!has}
-function showMsgEmoji(group="Recent",filter=""){$("msgEmojiPanel").hidden=false;$("msgEmojiTabs").innerHTML=Object.keys(msgEmojiGroups).map(g=>'<button type="button" class="'+(g===group?'active':'')+'" data-msg-emoji-group="'+g+'">'+g+'</button>').join("");const src=filter?Object.values(msgEmojiGroups).join(" "):(msgEmojiGroups[group]||msgEmojiGroups.Recent);$("msgEmojiGrid").innerHTML=[...new Set(src.split(/\s+/))].filter(Boolean).map(e=>'<button type="button" data-msg-emoji="'+e+'">'+e+'</button>').join("");$("msgEmojiTabs").querySelectorAll("[data-msg-emoji-group]").forEach(b=>b.onclick=()=>showMsgEmoji(b.dataset.msgEmojiGroup));$("msgEmojiGrid").querySelectorAll("[data-msg-emoji]").forEach(b=>b.onclick=()=>{const i=$("msgInput"),at=i.selectionStart;i.setRangeText(b.dataset.msgEmoji,at,i.selectionEnd,"end");i.focus();updateMsgAction()})}
+function showMsgEmoji(group="Recent",filter=""){
+  $("msgEmojiPanel").hidden=false;
+  $("msgEmojiTabs").innerHTML=Object.keys(msgEmojiGroups).map(g=>'<button type="button" class="'+(g===group?'active':'')+'" data-msg-emoji-group="'+g+'">'+g+'</button>').join("");
+  const recent=getMsgRecentEmojis().concat(msgEmojiGroups.Recent.split(/\s+/)).filter((e,i,arr)=>e&&arr.indexOf(e)===i).join(" ");
+  const src=filter?Object.values({...msgEmojiGroups,Recent:recent}).join(" "):(group==="Recent"?recent:(msgEmojiGroups[group]||recent));
+  $("msgEmojiGrid").innerHTML=[...new Set(src.split(/\s+/))].filter(Boolean).map(e=>'<button type="button" data-msg-emoji="'+e+'">'+e+'</button>').join("");
+  $("msgEmojiTabs").querySelectorAll("[data-msg-emoji-group]").forEach(b=>b.onclick=()=>showMsgEmoji(b.dataset.msgEmojiGroup));
+  $("msgEmojiGrid").querySelectorAll("[data-msg-emoji]").forEach(b=>b.onclick=()=>{rememberMsgEmoji(b.dataset.msgEmoji);const i=$("msgInput"),at=i.selectionStart;i.setRangeText(b.dataset.msgEmoji,at,i.selectionEnd,"end");i.focus();updateMsgAction()})
+}
 function previewMsgAttachment(file){msgAttachment=file;$("msgAttachmentPreview").hidden=false;$("msgAttachmentPreview").innerHTML='<span>'+esc(file.name)+' ('+Math.ceil(file.size/1024)+' KB)</span><button id="msgRemoveAttachment" type="button">×</button>';$("msgRemoveAttachment").onclick=()=>{msgAttachment=null;$("msgAttachmentPreview").hidden=true;updateMsgAction()};updateMsgAction()}
 async function sendInAppMessage(fileOverride){
-  if(!messageCurrent)return;const body=$("msgInput").value.trim(),file=fileOverride||msgAttachment;if(!body&&!file)return;
+  if(!messageCurrent)return;
+  const body=$("msgInput").value.trim(),file=fileOverride||msgAttachment;
+  if(!body&&!file)return;
   $("msgSend").disabled=true;
   try{
-    if(file){if(file.size>15*1024*1024)throw Error("The attachment must be under 15 MB.");const mime=file.type||"audio/webm",prep=await messageApi({action:"prepare_media",conversation_id:messageCurrent.id,mime_type:mime,file_size:file.size});const up=await sb.storage.from("buyer-seller-media").uploadToSignedUrl(prep.path,prep.token,file,{contentType:mime});if(up.error)throw up.error;await messageApi({action:"send_media",conversation_id:messageCurrent.id,body,storage_path:prep.path,media_type:prep.media_type,file_name:file.name,mime_type:mime});msgAttachment=null;$("msgAttachmentPreview").hidden=true}else await messageApi({action:"send",conversation_id:messageCurrent.id,body});
+    if(msgEditingMessage){
+      await messageApi({action:"edit_message",conversation_id:messageCurrent.id,message_id:msgEditingMessage.id,body});
+      clearMsgAction();
+    }else if(file){
+      if(file.size>15*1024*1024)throw Error("The attachment must be under 15 MB.");
+      const mime=file.type||"audio/webm",prep=await messageApi({action:"prepare_media",conversation_id:messageCurrent.id,mime_type:mime,file_size:file.size});
+      const up=await sb.storage.from("buyer-seller-media").uploadToSignedUrl(prep.path,prep.token,file,{contentType:mime});if(up.error)throw up.error;
+      await messageApi({action:"send_media",conversation_id:messageCurrent.id,body,storage_path:prep.path,media_type:prep.media_type,file_name:file.name,mime_type:mime});
+      msgAttachment=null;$("msgAttachmentPreview").hidden=true;clearMsgAction();
+    }else{
+      await messageApi({action:"send",conversation_id:messageCurrent.id,body,reply_to_message_id:msgReplyingTo?.id||null});
+      clearMsgAction();
+    }
     $("msgInput").value="";updateMsgAction();await refreshOpenMessage();await loadMessageConversations();
   }catch(e){showToast(e.message||"Could not send message")}finally{$("msgSend").disabled=false}
 }
