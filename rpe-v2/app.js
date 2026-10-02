@@ -23,6 +23,8 @@ let cartItems = [];
 let marketCartRows=[];
 let marketCartProducts=new Map();
 let marketCartStores=new Map();
+let cartSelectedKeys=new Set();
+let cartEditMode=false;
 let marketCartLoaded=false;
 let marketCartLoadPromise=null;
 let orders = [];
@@ -196,6 +198,7 @@ function showPanel(id){
   document.querySelectorAll(".panel.active").forEach(x=>x.classList.remove("active"));
   next.classList.add("active");
   document.querySelectorAll(".bottom [data-panel]").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));
+  if($("bottomCart"))$("bottomCart").classList.toggle("active",id==="cartPanel");
   window.scrollTo(0,0);
 
   // Paint the destination first. Any database refresh happens only after
@@ -253,7 +256,7 @@ if($("contactShortcut"))$("contactShortcut").onclick=()=>contactRpe();
 if($("helpContact"))$("helpContact").onclick=()=>contactRpe();
 if($("notifBtn"))$("notifBtn").onclick=()=>showPanel("notifPanel");
 if($("cartBtn"))$("cartBtn").onclick=openCart;
-if($("bottomCart"))$("bottomCart").onclick=openCart;
+if($("bottomCart"))$("bottomCart").onclick=e=>{e.preventDefault();openCart()};
 if($("bottomMe"))$("bottomMe").onclick=e=>{
   e.preventDefault();
   orderFilter=null;
@@ -261,6 +264,9 @@ if($("bottomMe"))$("bottomMe").onclick=e=>{
 };
 if($("openCartShortcut"))$("openCartShortcut").onclick=openCart;
 $("closeCart").onclick=closeCart;
+if($("cartSelectAll"))$("cartSelectAll").onchange=e=>{const entries=cartUnifiedEntries().filter(i=>i.available);entries.forEach(i=>e.target.checked?cartSelectedKeys.add(cartItemKey(i)):cartSelectedKeys.delete(cartItemKey(i)));renderCart()};
+if($("cartEditToggle"))$("cartEditToggle").onclick=()=>{cartEditMode=!cartEditMode;$("cartEditToggle").textContent=cartEditMode?"Done":"Edit";renderCart()};
+if($("cartCheckoutSelected"))$("cartCheckoutSelected").onclick=openMarketplaceCheckout;
 $("cartDrawer").addEventListener("click",e=>{if(e.target===$("cartDrawer"))closeCart()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
 
@@ -949,64 +955,132 @@ async function removeCart(item){
   const {error}=await sb.from("cart_items").delete().eq("id",removed.id);
   if(error){cartItems.splice(Math.min(index,cartItems.length),0,removed);renderCart();saveFastCache();showToast("Could not remove product")}
 }
-function renderCart(){
-  const list=$("cartList"),marketEntries=marketCartEntries();
-  const lineCount=cartItems.length+marketEntries.length;
-  setBadge("cartCount",lineCount);setBadge("bottomCartCount",lineCount);
-  const total=marketplaceCartSubtotal();
-  if($("cartGrandTotal"))$("cartGrandTotal").innerHTML=lineCount
-    ? '<span>'+lineCount+' item'+(lineCount===1?'':'s')+'</span><strong>'+(total==null?'Total confirmed at checkout':money(total,"GHS"))+'</strong>'
-    : '';
-  if($("sendOrder"))$("sendOrder").disabled=!lineCount;
-  if(!lineCount){list.innerHTML='<div class="empty"><b>Your cart is empty</b>Add products you want and they will appear here.</div>';return}
-
-  const grouped=new Map();
-  marketEntries.forEach(i=>{if(!grouped.has(i.store_id))grouped.set(i.store_id,[]);grouped.get(i.store_id).push(i)});
-  let html="";
-  grouped.forEach((items,storeId)=>{
-    const store=items[0]?.store||{};
-    html+='<section class="rnv-cart-store"><div class="rnv-cart-store-head">'+
-      (store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="">':'<span>🏪</span>')+
-      '<b>'+esc(store.store_name||"Marketplace Store")+'</b></div>';
-    html+=items.map(i=>{
-      const p=i.product,img=p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls[0]:"")||"";
-      return '<div class="cart-item rnv-market-cart-item">'+
-        (img?'<img src="'+esc(img)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" decoding="async">':'<div class="rnv-cart-img-empty"></div>')+
-        '<div><b>'+esc(p.name||"Product")+'</b><small>'+esc(marketUnitPrice(p,i.quantity)==null?"Price to confirm":money(marketUnitPrice(p,i.quantity),p.currency||"GHS"))+'</small>'+
-        '<div class="qty"><button type="button" data-market-minus="'+esc(storeId)+'|'+esc(p.id)+'">−</button><span>'+esc(i.quantity)+'</span><button type="button" data-market-plus="'+esc(storeId)+'|'+esc(p.id)+'">+</button></div></div>'+
-        '<button class="remove" type="button" data-market-remove="'+esc(storeId)+'|'+esc(p.id)+'">Remove</button></div>';
-    }).join("");
-    html+='</section>';
+function cartItemKey(entry){
+  return entry.kind==="market"?"m:"+entry.store_id+":"+entry.product_id:"l:"+entry.id;
+}
+function cartUnifiedEntries(){
+  const out=marketCartEntries().map(i=>({...i,kind:"market",available:i.product.product_status!=="inactive"&&i.product.stock_status!=="out_of_stock"&&Number(i.product.stock_quantity??1)>0}));
+  cartItems.forEach(i=>out.push({kind:"legacy",id:i.id,product_id:i.product_id,quantity:Number(i.quantity||1),product:i.products||{},store_id:"ranova-prime",store:{store_name:"RANOVA Prime"},available:(i.products?.stock_status||"")!=="out_of_stock"}));
+  return out;
+}
+function selectedCartEntries(){
+  return cartUnifiedEntries().filter(i=>i.available&&cartSelectedKeys.has(cartItemKey(i)));
+}
+function selectedCartTotal(){
+  let total=0,known=true;
+  selectedCartEntries().forEach(i=>{
+    const p=i.product||{};
+    const unit=i.kind==="market"?marketUnitPrice(p,i.quantity):(p.price==null?null:Number(p.price));
+    if(unit==null||!Number.isFinite(Number(unit)))known=false;else total+=Number(unit)*Number(i.quantity);
   });
+  return known?total:null;
+}
+function ensureCartSelections(){
+  const valid=cartUnifiedEntries().filter(i=>i.available);
+  const validKeys=new Set(valid.map(cartItemKey));
+  [...cartSelectedKeys].forEach(k=>{if(!validKeys.has(k))cartSelectedKeys.delete(k)});
+  if(!cartSelectedKeys.size)valid.forEach(i=>cartSelectedKeys.add(cartItemKey(i)));
+}
+function toggleCartSelection(key,on){
+  if(on)cartSelectedKeys.add(key);else cartSelectedKeys.delete(key);
+  renderCart();
+}
+function renderCartRecommendations(){
+  const host=$("cartRecommendations");if(!host)return;
+  const picks=pickHomeRecommendations(8);
+  host.innerHTML=picks.length?picks.map(x=>x.kind==="seller"?homeSellerCard(x.p):productCard(x.p)).join(""):'<div class="empty">Products will appear here as stores add them.</div>';
+}
+function renderCart(){
+  const entries=cartUnifiedEntries();
+  ensureCartSelections();
+  const lineCount=entries.length;
+  setBadge("cartCount",lineCount);setBadge("bottomCartCount",lineCount);
+  if($("cartPageCount"))$("cartPageCount").textContent=lineCount+" item"+(lineCount===1?"":"s");
+  const available=entries.filter(i=>i.available),unavailable=entries.filter(i=>!i.available);
+  const selected=selectedCartEntries(),total=selectedCartTotal();
 
-  if(cartItems.length){
-    html+='<section class="rnv-cart-store"><div class="rnv-cart-store-head"><span>R</span><b>RANOVA Prime</b></div>'+
-      cartItems.map(i=>{const p=i.products||{},img=imageFor(p);return '<div class="cart-item">'+
-      (img?'<img src="'+esc(img)+'" alt="">':'<div class="rnv-cart-img-empty"></div>')+
-      '<div><b>'+esc(p.name||"Product")+'</b><small>'+esc(money(p.price,p.currency))+'</small><div class="qty"><button data-minus="'+esc(i.id)+'">−</button><span>'+esc(i.quantity)+'</span><button data-plus="'+esc(i.id)+'">+</button></div></div>'+
-      '<button class="remove" data-remove="'+esc(i.id)+'">Remove</button></div>'}).join("")+'</section>';
+  if($("cartSelectedTotal"))$("cartSelectedTotal").textContent=total==null?"Price to confirm":money(total,"GHS");
+  if($("cartCheckoutSelected"))$("cartCheckoutSelected").disabled=!selected.length;
+  if($("cartSelectAll")){
+    $("cartSelectAll").checked=available.length>0&&available.every(i=>cartSelectedKeys.has(cartItemKey(i)));
+    $("cartSelectAll").indeterminate=available.some(i=>cartSelectedKeys.has(cartItemKey(i)))&&!available.every(i=>cartSelectedKeys.has(cartItemKey(i)));
   }
 
-  list.innerHTML=html;
-  list.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>changeQty(cartItems.find(x=>x.id===b.dataset.minus),-1));
-  list.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>changeQty(cartItems.find(x=>x.id===b.dataset.plus),1));
-  list.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeCart(cartItems.find(x=>x.id===b.dataset.remove)));
-  list.querySelectorAll("[data-market-minus]").forEach(b=>b.onclick=()=>{const [s,p]=b.dataset.marketMinus.split("|");changeMarketCartQty(s,p,-1)});
-  list.querySelectorAll("[data-market-plus]").forEach(b=>b.onclick=()=>{const [s,p]=b.dataset.marketPlus.split("|");changeMarketCartQty(s,p,1)});
-  list.querySelectorAll("[data-market-remove]").forEach(b=>b.onclick=()=>{const [s,p]=b.dataset.marketRemove.split("|");removeMarketCartItem(s,p)});
+  const host=$("cartPageList");
+  if(host){
+    if(!lineCount){
+      host.innerHTML='<div class="rnv-cart-empty"><div class="rnv-cart-empty-icon">🛒</div><b>Your cart is empty</b><span>Browse RANOVA and add products you want to buy.</span><button type="button" data-cart-home>Go shopping</button></div>';
+      host.querySelector("[data-cart-home]")?.addEventListener("click",()=>showPanel("marketplaceHomePanel"));
+    }else{
+      const grouped=new Map();
+      available.forEach(i=>{const key=i.store_id||"store";if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(i)});
+      let html="";
+      grouped.forEach((items,storeId)=>{
+        const store=items[0]?.store||{};
+        html+='<section class="rnv-cart-store-block"><div class="rnv-cart-store-title"><label><input type="checkbox" data-cart-store="'+esc(storeId)+'"> <b>'+esc(store.store_name||"RANOVA Store")+'</b></label></div>';
+        html+=items.map(i=>{
+          const p=i.product||{},key=cartItemKey(i),img=p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls[0]:"")||imageFor(p)||"";
+          const unit=i.kind==="market"?marketUnitPrice(p,i.quantity):(p.price==null?null:Number(p.price));
+          return '<div class="rnv-cart-row">'+
+            '<input class="rnv-cart-check" type="checkbox" data-cart-select="'+esc(key)+'" '+(cartSelectedKeys.has(key)?"checked":"")+'>'+
+            '<button class="rnv-cart-product" type="button" data-cart-product="'+esc(i.kind)+':'+esc(i.product_id)+'">'+
+              (img?'<img src="'+esc(img)+'" alt="'+esc(p.name||"Product")+'">':'<div class="rnv-cart-img-empty"></div>')+
+              '<span><b>'+esc(p.name||"Product")+'</b><small>'+esc(unit==null?"Price to confirm":money(unit,p.currency||"GHS"))+'</small></span>'+
+            '</button>'+
+            '<div class="rnv-cart-row-actions">'+
+              '<div class="qty"><button type="button" data-cart-minus="'+esc(key)+'">−</button><span>'+esc(i.quantity)+'</span><button type="button" data-cart-plus="'+esc(key)+'">+</button></div>'+
+              '<button class="rnv-cart-remove '+(cartEditMode?"show":"")+'" type="button" data-cart-remove="'+esc(key)+'">Remove</button>'+
+            '</div></div>';
+        }).join("");
+        html+='</section>';
+      });
+      if(unavailable.length){
+        html+='<section class="rnv-cart-unavailable"><div class="rnv-cart-unavailable-head"><b>Unavailable Products</b><button type="button" data-clear-unavailable>Clear unavailable</button></div>'+
+          unavailable.map(i=>{const p=i.product||{},key=cartItemKey(i),img=p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls[0]:"")||imageFor(p)||"";return '<div class="rnv-cart-row unavailable">'+(img?'<img src="'+esc(img)+'" alt="">':'<div class="rnv-cart-img-empty"></div>')+'<span><b>'+esc(p.name||"Product")+'</b><small>Currently unavailable</small></span><button type="button" data-cart-remove="'+esc(key)+'">Remove</button></div>'}).join("")+
+          '</section>';
+      }
+      host.innerHTML=html;
+
+      host.querySelectorAll("[data-cart-select]").forEach(x=>x.onchange=()=>toggleCartSelection(x.dataset.cartSelect,x.checked));
+      host.querySelectorAll("[data-cart-store]").forEach(x=>{
+        const rows=available.filter(i=>String(i.store_id)===String(x.dataset.cartStore));
+        x.checked=rows.length&&rows.every(i=>cartSelectedKeys.has(cartItemKey(i)));
+        x.onchange=()=>{rows.forEach(i=>x.checked?cartSelectedKeys.add(cartItemKey(i)):cartSelectedKeys.delete(cartItemKey(i)));renderCart()}
+      });
+      const findEntry=key=>entries.find(i=>cartItemKey(i)===key);
+      host.querySelectorAll("[data-cart-minus]").forEach(b=>b.onclick=()=>{const i=findEntry(b.dataset.cartMinus);if(!i)return;i.kind==="market"?changeMarketCartQty(i.store_id,i.product_id,-1):changeQty(cartItems.find(x=>x.id===i.id),-1)});
+      host.querySelectorAll("[data-cart-plus]").forEach(b=>b.onclick=()=>{const i=findEntry(b.dataset.cartPlus);if(!i)return;i.kind==="market"?changeMarketCartQty(i.store_id,i.product_id,1):changeQty(cartItems.find(x=>x.id===i.id),1)});
+      host.querySelectorAll("[data-cart-remove]").forEach(b=>b.onclick=()=>{const i=findEntry(b.dataset.cartRemove);if(!i)return;cartSelectedKeys.delete(cartItemKey(i));i.kind==="market"?removeMarketCartItem(i.store_id,i.product_id):removeCart(cartItems.find(x=>x.id===i.id))});
+      host.querySelector("[data-clear-unavailable]")?.addEventListener("click",()=>unavailable.forEach(i=>i.kind==="market"?removeMarketCartItem(i.store_id,i.product_id):removeCart(cartItems.find(x=>x.id===i.id))));
+      host.querySelectorAll("[data-cart-product]").forEach(b=>b.onclick=()=>{
+        const [kind,id]=b.dataset.cartProduct.split(":");
+        if(kind==="market"){const p=marketCartProducts.get(id)||marketSellerProducts.find(x=>x.id===id);if(p)openMarketplaceProduct(p)}
+        else{const p=products.find(x=>x.id===id);if(p)renderSimpleDiscoveryProduct(p,true)}
+      });
+    }
+  }
+
+  renderCartRecommendations();
+
+  // Keep the old drawer synchronized for compatibility, but Cart navigation no longer depends on it.
+  const list=$("cartList");if(list)list.innerHTML="";
+  if($("cartGrandTotal"))$("cartGrandTotal").innerHTML="";
 }
 function openCart(){
-  $("cartDrawer").classList.add("open");
+  if(!user){showAuthConsole(true);return}
+  showPanel("cartPanel");
   renderCart();
-  if(user)loadMarketplaceCart().then(renderCart).catch(()=>{});
+  loadMarketplaceCart().then(renderCart).catch(()=>renderCart());
 }
-function closeCart(){$("cartDrawer").classList.remove("open")}
+function closeCart(){
+  $("cartDrawer")?.classList.remove("open");
+}
 
 const COUNTRY_NAMES={GH:"Ghana",NG:"Nigeria",CI:"Côte d’Ivoire",TG:"Togo",BJ:"Benin",BF:"Burkina Faso",NE:"Niger",SN:"Senegal",GM:"Gambia",GN:"Guinea",SL:"Sierra Leone",LR:"Liberia",KE:"Kenya",UG:"Uganda",TZ:"Tanzania",ZA:"South Africa",US:"United States",CA:"Canada",GB:"United Kingdom",FR:"France",DE:"Germany",CN:"China",IN:"India",AE:"United Arab Emirates"};
 
 async function openMarketplaceCheckout(){
   if(!user)return showAuthConsole(true);
-  if(!cartLineCount())return showToast("Your cart is empty");
+  if(!selectedCartEntries().length)return showToast("Select at least one product");
   closeCart();
   $("marketCheckoutOverlay").classList.add("show");
   $("marketCheckoutOverlay").setAttribute("aria-hidden","false");
@@ -1032,8 +1106,8 @@ function closeMarketplaceCheckout(){
   $("marketCheckoutOverlay").setAttribute("aria-hidden","true");
 }
 function renderMarketplaceCheckoutSummary(){
-  const count=cartLineCount(),subtotal=marketplaceCartSubtotal();
-  $("marketCheckoutSummary").innerHTML='<span>'+count+' product'+(count===1?'':'s')+' from '+new Set(marketCartEntries().map(i=>i.store_id)).size+' marketplace store(s)</span><strong>'+(subtotal==null?'Price confirmed at checkout':money(subtotal,"GHS"))+'</strong>';
+  const count=selectedCartEntries().length,subtotal=selectedCartTotal();
+  $("marketCheckoutSummary").innerHTML='<span>'+count+' selected product'+(count===1?'':'s')+' from '+new Set(selectedCartEntries().map(i=>i.store_id)).size+' store(s)</span><strong>'+(subtotal==null?'Price confirmed at checkout':money(subtotal,"GHS"))+'</strong>';
 }
 function updateCheckoutPaymentFields(){
   const momo=$("marketCheckoutPayment").value==="Mobile Money";
@@ -1048,10 +1122,10 @@ async function placeMarketplaceCartOrder(){
   const fail=t=>{msg.textContent=t;msg.classList.remove("hide")};
   if(!name||!phone||!country||!locationText)return fail("Complete your name, phone number, delivery country and delivery location.");
   if(method==="Mobile Money"&&!payPhone)return fail("Enter the Mobile Money number for payment authorization.");
-  const items=[
-    ...marketCartEntries().map(i=>({seller_product_id:i.product_id,quantity:i.quantity})),
-    ...cartItems.map(i=>({product_id:i.product_id,product_name:i.products?.name||"Product",quantity:i.quantity,unit_price:i.products?.price==null?null:Number(i.products.price)}))
-  ];
+  const selected=selectedCartEntries();
+  const items=selected.map(i=>i.kind==="market"
+    ?({seller_product_id:i.product_id,quantity:i.quantity})
+    :({product_id:i.product_id,product_name:i.product?.name||"Product",quantity:i.quantity,unit_price:i.product?.price==null?null:Number(i.product.price)}));
   if(!items.length)return fail("Your cart is empty.");
   const button=$("marketCheckoutPlace"),old=button.textContent;button.disabled=true;button.textContent="Placing order…";msg.classList.add("hide");
   try{
@@ -1074,11 +1148,19 @@ async function placeMarketplaceCartOrder(){
     const out=await res.json().catch(()=>({}));
     if(!res.ok||!out.ok)throw new Error(out.error||"Could not place the order.");
     if(out.order_ref&&out.buyer_access_code)try{localStorage.setItem("ranova_buyer_code_"+out.order_ref,String(out.buyer_access_code))}catch{}
-    await Promise.all([
-      sb.from("ranova_buyer_carts").delete().eq("user_id",user.id),
-      cartId?sb.from("cart_items").delete().eq("cart_id",cartId):Promise.resolve()
-    ]);
-    marketCartRows=[];marketCartProducts=new Map();marketCartStores=new Map();cartItems=[];
+    const checkedOut=selectedCartEntries();
+    const touchedStores=new Set();
+    checkedOut.forEach(i=>{
+      if(i.kind==="market"){
+        const row=marketCartRows.find(r=>r.store_id===i.store_id);
+        if(row&&row.items){delete row.items[i.product_id];touchedStores.add(i.store_id)}
+      }
+    });
+    for(const storeId of touchedStores)await persistMarketCartRow(storeId);
+    const legacyIds=checkedOut.filter(i=>i.kind==="legacy").map(i=>i.id);
+    if(legacyIds.length&&cartId)await sb.from("cart_items").delete().eq("cart_id",cartId).in("id",legacyIds);
+    cartItems=cartItems.filter(i=>!legacyIds.includes(i.id));
+    checkedOut.forEach(i=>cartSelectedKeys.delete(cartItemKey(i)));
     renderCart();closeMarketplaceCheckout();
     await loadToPayOrders(false).catch(()=>{});
     showPanel("toPayPanel");
