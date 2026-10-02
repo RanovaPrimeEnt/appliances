@@ -79,7 +79,7 @@ if("serviceWorker" in navigator){
   }).catch(()=>{});
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./rpe-v2-sw.js?v=20261002-37",{scope:"./",updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register("./rpe-v2-sw.js?v=20261002-38",{scope:"./",updateViaCache:"none"});
       reg.update().catch(()=>{});
       setInterval(()=>reg.update().catch(()=>{}),30*60*1000);
       if(reg.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});
