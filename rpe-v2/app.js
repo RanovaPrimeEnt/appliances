@@ -34,6 +34,37 @@ const PENDING_MARKET_SAVED_KEY="ranova_pending_saved_products_v2";
 let shoppingRefreshPromise=null;
 function readLocalJson(key,fallback){try{const v=JSON.parse(localStorage.getItem(key)||"null");return v==null?fallback:v}catch{return fallback}}
 function writeLocalJson(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
+const SHOPPING_SYNC_CHANNEL="ranova-shopping-sync-v1";
+let shoppingSyncChannel=null;
+function marketplaceDraftSnapshot(){
+  const out={};
+  marketCartRows.forEach(r=>{if(r?.store_id)out[r.store_id]={...(r.items||{})}});
+  return out;
+}
+function saveMarketplaceCartDrafts(){
+  writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,marketplaceDraftSnapshot());
+}
+function clearMarketplaceCartDraft(storeId){
+  const drafts=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});
+  delete drafts[storeId];writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,drafts);
+}
+function restoreMarketplaceCartDrafts(){
+  const drafts=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});
+  if(!drafts||typeof drafts!=="object")return false;
+  let changed=false;
+  for(const [storeId,items] of Object.entries(drafts)){
+    if(!items||typeof items!=="object")continue;
+    let row=marketCartRows.find(r=>r.store_id===storeId);
+    if(!row){row={store_id:storeId,items:{}};marketCartRows.push(row)}
+    row.items={...(row.items||{}),...items};changed=true;
+  }
+  return changed;
+}
+function announceShoppingChange(kind,storeId=null,productId=null){
+  const payload={type:"shopping-change",kind,storeId,productId,at:Date.now()};
+  try{shoppingSyncChannel?.postMessage(payload)}catch{}
+  try{localStorage.setItem("ranova-shopping-ping",JSON.stringify(payload))}catch{}
+}
 
 let orders = [];
 let notifications = [];
@@ -610,6 +641,23 @@ async function refreshBuyerShoppingState(){
   try{return await shoppingRefreshPromise}finally{shoppingRefreshPromise=null}
 }
 
+function setupShoppingSynchronization(){
+  try{
+    if("BroadcastChannel" in window){
+      shoppingSyncChannel=new BroadcastChannel(SHOPPING_SYNC_CHANNEL);
+      shoppingSyncChannel.addEventListener("message",e=>{
+        if(e.data?.type==="shopping-change"&&user)refreshBuyerShoppingState().catch(()=>{});
+      });
+    }
+  }catch{}
+  window.addEventListener("storage",e=>{
+    if((e.key==="ranova-shopping-ping"||e.key===UNIVERSAL_MARKET_CART_DRAFT_KEY||e.key===PENDING_MARKET_SAVED_KEY)&&user){
+      refreshBuyerShoppingState().catch(()=>{});
+    }
+  });
+}
+setupShoppingSynchronization();
+
 async function loadMarketplaceCart(){
   if(!user){marketCartRows=[];marketCartProducts=new Map();marketCartStores=new Map();marketCartLoaded=false;return}
   if(marketCartLoadPromise)return marketCartLoadPromise;
@@ -638,6 +686,7 @@ async function loadMarketplaceCart(){
       (data||[]).forEach(s=>marketCartStores.set(s.id,s));
     }
   }
+  restoreMarketplaceCartDrafts();
   marketCartLoaded=true;
   })();
   try{return await marketCartLoadPromise}finally{marketCartLoadPromise=null}
@@ -681,12 +730,15 @@ async function addMarketplaceToCart(product,quantity){
   if(!row){row={store_id:product.store_id,items:{}};marketCartRows.push(row)}
   const previous=Number(row.items[product.id]||0);
   row.items={...(row.items||{}),[product.id]:q};
+  saveMarketplaceCartDrafts();
   marketCartProducts.set(product.id,product);
   const store=marketStores.find(s=>s.id===product.store_id);if(store)marketCartStores.set(store.id,store);
   renderCart();
   openCart();
   try{
     await persistMarketCartRow(product.store_id);
+    clearMarketplaceCartDraft(product.store_id);
+    announceShoppingChange("cart",product.store_id,product.id);
     showToast(previous?"Cart quantity updated":"Added to cart");
   }catch(e){
     if(previous)row.items[product.id]=previous;else delete row.items[product.id];
@@ -700,14 +752,16 @@ async function changeMarketCartQty(storeId,productId,delta){
   const next=marketProductQuantity(product,previous+delta);
   if(next<marketProductMinimum(product))return;
   row.items={...(row.items||{}),[productId]:next};
-  renderCart();
-  try{await persistMarketCartRow(storeId)}catch{row.items[productId]=previous;renderCart();showToast("Could not update quantity")}
+  saveMarketplaceCartDrafts();renderCart();saveFastCache();
+  try{await persistMarketCartRow(storeId);clearMarketplaceCartDraft(storeId);announceShoppingChange("cart",storeId,productId)}
+  catch{row.items[productId]=previous;saveMarketplaceCartDrafts();renderCart();saveFastCache();showToast("Could not update quantity")}
 }
 async function removeMarketCartItem(storeId,productId){
   const row=marketCartRows.find(r=>r.store_id===storeId);if(!row)return;
   const previous=Number(row.items[productId]||0);
-  const next={...(row.items||{})};delete next[productId];row.items=next;renderCart();
-  try{await persistMarketCartRow(storeId)}catch{row.items={...(row.items||{}),[productId]:previous};renderCart();showToast("Could not remove product")}
+  const next={...(row.items||{})};delete next[productId];row.items=next;saveMarketplaceCartDrafts();renderCart();saveFastCache();
+  try{await persistMarketCartRow(storeId);clearMarketplaceCartDraft(storeId);announceShoppingChange("cart",storeId,productId)}
+  catch{row.items={...(row.items||{}),[productId]:previous};saveMarketplaceCartDrafts();renderCart();saveFastCache();showToast("Could not remove product")}
 }
 function marketUnitPrice(product,quantity){
   if(product?.price==null)return null;
@@ -896,8 +950,7 @@ document.addEventListener("click",async e=>{
   const sellerHome=e.target.closest("[data-home-seller-product]");
   if(sellerHome){
     const p=marketSellerProducts.find(x=>x.id===sellerHome.dataset.homeSellerProduct);
-    const url=sellerStoreProductUrl(p);
-    if(url)location.href=url;else showToast("This product is not available right now.");
+    if(p)openMarketplaceProduct(p.id);else showToast("This product is not available right now.");
     return;
   }
   const add=e.target.closest("[data-add]"); if(add){e.stopPropagation();await addToCart(add.dataset.add);return}
@@ -924,6 +977,7 @@ async function toggleMarketplaceSaved(id){
     ? sb.from("ranova_buyer_saved_products").delete().eq("user_id",user.id).eq("product_id",id)
     : sb.from("ranova_buyer_saved_products").upsert({user_id:user.id,product_id:id},{onConflict:"user_id,product_id"});
   const {error}=await req;
+  if(!error)announceShoppingChange("saved",null,id);
   if(error){
     const offline=!navigator.onLine||/fetch|network|connection/i.test(String(error.message||error));
     if(offline){
@@ -1225,8 +1279,22 @@ function closeMarketplaceCheckout(){
   $("marketCheckoutOverlay").setAttribute("aria-hidden","true");
 }
 function renderMarketplaceCheckoutSummary(){
-  const count=selectedCartEntries().length,subtotal=selectedCartTotal();
-  $("marketCheckoutSummary").innerHTML='<span>'+count+' selected product'+(count===1?'':'s')+' from '+new Set(selectedCartEntries().map(i=>i.store_id)).size+' store(s)</span><strong>'+(subtotal==null?'Price confirmed at checkout':money(subtotal,"GHS"))+'</strong>';
+  const selected=selectedCartEntries(),count=selected.length,subtotal=selectedCartTotal();
+  const groups=new Map();
+  selected.forEach(i=>{
+    const key=i.store_id||"ranova";
+    const storeName=i.store?.store_name||i.product?.store_name||(i.kind==="legacy"?"RANOVA Prime Enterprise":"RANOVA Store");
+    if(!groups.has(key))groups.set(key,{name:storeName,count:0,total:0,known:true});
+    const g=groups.get(key);g.count++;
+    const unit=i.kind==="market"?marketUnitPrice(i.product,i.quantity):Number(i.product?.price);
+    if(!Number.isFinite(unit))g.known=false;else g.total+=unit*Number(i.quantity||1);
+  });
+  const groupRows=[...groups.values()].map(g=>
+    '<div class="rnv-checkout-store-row"><span><b>'+esc(g.name)+'</b><small>'+g.count+' product'+(g.count===1?'':'s')+'</small></span><strong>'+(g.known?money(g.total,"GHS"):"Price to confirm")+'</strong></div>'
+  ).join("");
+  $("marketCheckoutSummary").innerHTML=
+    '<div class="rnv-checkout-store-summary">'+groupRows+'</div>'+
+    '<div class="rnv-checkout-grand"><span>'+count+' selected product'+(count===1?'':'s')+' from '+groups.size+' store'+(groups.size===1?'':'s')+'</span><strong>'+(subtotal==null?'Price confirmed at checkout':money(subtotal,"GHS"))+'</strong></div>';
 }
 function updateCheckoutPaymentFields(){
   const momo=$("marketCheckoutPayment").value==="Mobile Money";
@@ -1275,7 +1343,7 @@ async function placeMarketplaceCartOrder(){
         if(row&&row.items){delete row.items[i.product_id];touchedStores.add(i.store_id)}
       }
     });
-    for(const storeId of touchedStores)await persistMarketCartRow(storeId);
+    for(const storeId of touchedStores){await persistMarketCartRow(storeId);clearMarketplaceCartDraft(storeId);announceShoppingChange("cart",storeId,null)}
     const legacyIds=checkedOut.filter(i=>i.kind==="legacy").map(i=>i.id);
     if(legacyIds.length&&cartId)await sb.from("cart_items").delete().eq("cart_id",cartId).in("id",legacyIds);
     cartItems=cartItems.filter(i=>!legacyIds.includes(i.id));
@@ -2302,7 +2370,7 @@ function removeLegacyFeedNotice(root=document){
 }
 removeLegacyFeedNotice();
 new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>{if(n.nodeType===1)removeLegacyFeedNotice(n)}))).observe(document.body,{childList:true,subtree:true});
-window.addEventListener("pageshow",()=>{if(user)refreshBuyerShoppingState().catch(()=>{})});
+window.addEventListener("pageshow",()=>{if(!user)return;restoreMarketplaceCartDrafts();renderCart();if(navigator.onLine)refreshBuyerShoppingState().catch(()=>{})});
 window.addEventListener("online",()=>{if(user)refreshBuyerShoppingState().catch(()=>{})});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&user)refreshBuyerShoppingState().catch(()=>{})});
 startRecommendationRotation();
