@@ -134,6 +134,9 @@ function enhanceSite(){
     cards.forEach(function(card){
       var h=card.querySelector("h3");if(!h)return;var p=ps.find(function(x){return x.name===h.textContent.trim()});if(!p)return;
       card.dataset.productId=p.id;
+      card.setAttribute("role","button");
+      card.setAttribute("tabindex","0");
+      card.setAttribute("aria-label","View details for "+p.name);
       if(!card.querySelector(".rpe-model")){var m=d.createElement("div");m.className="rpe-model";m.textContent="Product ID "+p.id+(modelFor(p)?" • Model "+modelFor(p):"");h.insertAdjacentElement("afterend",m)}
       if(!card.querySelector(".rpe-status")){var s=d.createElement("div");s.className="rpe-status";s.textContent="Availability confirmed on enquiry";var meta=card.querySelector(".product-meta");if(meta)meta.parentNode.insertBefore(s,meta)}
       var sb=card.querySelector(".select-btn");if(sb){if(sb.classList.contains("selected"))selectedMirror.add(p.id);else selectedMirror.delete(p.id)}
@@ -141,7 +144,38 @@ function enhanceSite(){
     });
     if(sortMode!=="default"&&cards.length>1){var desired=cards.slice().sort(function(a,b){var ah=a.querySelector("h3").textContent,bh=b.querySelector("h3").textContent;if(sortMode==="name")return ah.localeCompare(bh);var ap=ps.find(function(x){return x.name===ah}),bp=ps.find(function(x){return x.name===bh});return ((ap&&ap.category)||"").localeCompare((bp&&bp.category)||"")||ah.localeCompare(bh)});var changed=desired.some(function(x,i){return x!==cards[i]});if(changed){sorting=true;desired.forEach(function(x){grid.appendChild(x)});sorting=false}}
   }
-  if(grid){decorate();new MutationObserver(function(){requestAnimationFrame(decorate)}).observe(grid,{childList:true,subtree:true})}
+  if(grid){
+    decorate();
+    new MutationObserver(function(){requestAnimationFrame(decorate)}).observe(grid,{childList:true,subtree:true});
+
+    // Product-card click contract:
+    // tapping the card body opens product details; interactive controls keep their own actions.
+    grid.addEventListener("click",function(e){
+      if(e.target.closest("button,a,input,select,textarea,.select-btn,.rpe-card-tools"))return;
+      var card=e.target.closest(".product");
+      if(!card)return;
+      var id=card.dataset.productId;
+      if(!id){
+        var h=card.querySelector("h3");
+        var p=h&&ps.find(function(x){return x.name===h.textContent.trim()});
+        if(p){id=String(p.id);card.dataset.productId=id}
+      }
+      if(id&&typeof w.openProduct==="function"){
+        e.preventDefault();
+        w.openProduct(id);
+      }
+    });
+
+    // Make the visual product area itself keyboard/touch accessible.
+    grid.addEventListener("keydown",function(e){
+      if(e.key!=="Enter"&&e.key!==" ")return;
+      var card=e.target.closest(".product");
+      if(!card||e.target.closest("button,a,input,select,textarea"))return;
+      e.preventDefault();
+      var id=card.dataset.productId;
+      if(id&&typeof w.openProduct==="function")w.openProduct(id);
+    });
+  }
 
   // Richer product details while staying honest about unavailable catalogue data.
   var mc=d.querySelector("#productModal .modal-copy"),actions=d.querySelector("#productModal .modal-actions");
