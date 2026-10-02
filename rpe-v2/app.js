@@ -75,6 +75,26 @@ function marketStoreSkeleton(count=3){
   return Array.from({length:count},()=>'<div class="market-store-skeleton"><span class="market-store-skeleton-img"></span><span class="market-store-skeleton-copy"><i></i><i></i><i></i></span></div>').join("");
 }
 restorePublicMarketCache();
+let offlineMarketSnapshotPromise=null;
+async function loadOfflineMarketplaceSnapshot(){
+  if(marketStores.length||marketSellerProducts.length)return true;
+  if(offlineMarketSnapshotPromise)return offlineMarketSnapshotPromise;
+  offlineMarketSnapshotPromise=(async()=>{
+    try{
+      const r=await fetch("./offline-marketplace.json",{cache:"force-cache"});
+      if(!r.ok)return false;
+      const d=await r.json();
+      if(!Array.isArray(d.stores)||!Array.isArray(d.products))return false;
+      marketStores=d.stores;marketSellerProducts=d.products;marketLoadedAt=Date.now();
+      populateMarketplaceFilters?.();
+      renderMarketplaceHome?.($("marketHomeSearch")?.value||"");
+      renderHomeProducts?.();
+      return marketStores.length>0||marketSellerProducts.length>0;
+    }catch{return false}
+  })();
+  try{return await offlineMarketSnapshotPromise}finally{offlineMarketSnapshotPromise=null}
+}
+loadOfflineMarketplaceSnapshot().catch(()=>{});
 let marketCategory="",marketLocation="",marketSort="recommended",marketMoqOne=false;
 let marketProductCurrent=null,marketProductOrigin="marketplaceHomePanel";
 let manualPaymentOrderRef="",paymentStatusTimer=null;
@@ -256,6 +276,7 @@ async function enterGuestBrowse(){
   if($("helloName"))$("helloName").textContent=GUEST_BROWSE_CODE;
   if($("accountAvatar"))$("accountAvatar").textContent="R";
   showPanel("marketplaceHomePanel");
+  await loadOfflineMarketplaceSnapshot().catch(()=>{});
 
   // Load only public catalogue data. No cart, orders, messages or private profile data.
   try{
@@ -1178,6 +1199,7 @@ function cleanupRealtime(){stopMessageRealtime();realtimeChannels.forEach(ch=>sb
 async function loadMarketplaceHomeData(){
   if(marketFetchInFlight)return;
   marketFetchInFlight=true;
+  if(!marketStores.length&&!marketSellerProducts.length)await loadOfflineMarketplaceSnapshot();
 
   // Paint cached/live content immediately. On a first-ever launch render
   // skeletons instead of incorrectly declaring the marketplace empty.

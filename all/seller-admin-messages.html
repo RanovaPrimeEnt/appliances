@@ -12,6 +12,11 @@
 .sa-attach{margin:0 0 6px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff;border:1px solid #dfe8e4;border-radius:13px;font:600 .95rem "Cormorant Garamond",Georgia,serif}.sa-attach button{width:30px;height:30px;border:0;border-radius:50%;background:#fde8ee;color:#d70a4f;font-size:18px}
 .sa-record{margin:0 0 6px;min-height:68px;padding:8px 9px;display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #dfe8e4;border-radius:18px}.sa-record button{border:0}.sa-record .trash{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#fde9ef;color:#e4004f;padding:0}.sa-record .trash svg{width:22px;height:22px;stroke:currentColor}.sa-record .pause{flex:1;min-height:44px;border-radius:24px;background:#f2f3f3;color:#2b4038;font:600 1rem "Cormorant Garamond",Georgia,serif}.sa-record .sendvoice{width:46px;height:46px;border-radius:50%;background:#116a52;color:#fff;font-size:19px}.sa-record span{min-width:42px;font-variant-numeric:tabular-nums}
 .sa-emoji-panel{position:absolute;bottom:100%;left:.19cm;right:.19cm;z-index:20;background:#fff;border:1px solid #dfe8e4;border-radius:22px 22px 0 0;box-shadow:0 -10px 28px rgba(20,40,32,.13);padding:11px;max-height:min(440px,65vh);overflow:auto}.sa-emoji-tabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:8px}.sa-emoji-tabs button{border:0;border-radius:999px;padding:7px 10px;background:#f3f5f4;color:#566761;font:700 .9rem "Cormorant Garamond",Georgia,serif}.sa-emoji-tabs button.active{background:#e5f3ec;color:#145a3e}.sa-emoji-panel input{width:100%;padding:8px 11px;border:1px solid #dfe8e4;border-radius:12px}.sa-emoji-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:4px;margin-top:9px}.sa-emoji-grid button{border:0;background:transparent;font-size:1.75rem;line-height:1;padding:6px;border-radius:10px;min-width:40px;min-height:40px}@media(max-width:720px){.sa-emoji-panel{max-height:58vh}.sa-emoji-grid{grid-template-columns:repeat(7,minmax(36px,1fr));gap:2px}.sa-emoji-grid button{font-size:1.7rem;padding:4px;min-width:36px;min-height:38px}}.sa-emoji-grid button:hover{background:#f1f4f3}
+
+.official-message-actions{position:fixed;inset:0;z-index:9999}.official-actions-bg{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+.official-actions-card{position:absolute;left:10px;right:10px;bottom:10px;display:grid;gap:1px;background:#fff;border-radius:18px;padding:8px;box-shadow:0 12px 40px rgba(0,0,0,.22)}
+.official-actions-card>i{display:block;width:42px;height:4px;border-radius:99px;background:#c9cecc;margin:1px auto 7px}.official-actions-card button{min-height:45px;border:0;border-top:1px solid #f0f0f0;background:#fff;color:#24332e;text-align:left;padding:0 12px;font-weight:800}.official-actions-card button.danger{color:#c53232}.official-actions-card button.cancel{text-align:center;border:0;background:#f5f6f5;border-radius:12px;margin-top:6px}
+@media(min-width:720px){.official-actions-card{left:50%;right:auto;width:360px;transform:translateX(-50%)}}
 </style><link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
 </head><body>
@@ -40,7 +45,37 @@
 (function(){const URL="https://igaerssbzobutlwvjfwt.supabase.co",KEY="sb_publishable_NMzJFpXOIJMEH3LW50Cs9g_Otc6tlYr",ENDPOINT=URL+"/functions/v1/ranova-trust-center";const sb=supabase.createClient(URL,KEY);let session=null,officialRefreshTimer=null,officialRefreshBusy=false;const $=id=>document.getElementById(id);
 async function api(body){const r=await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":KEY,"x-ranova-client":"ranova-site-v1"},body:JSON.stringify(body)});const o=await r.json().catch(()=>({}));if(!r.ok||!o.ok)throw new Error(o.error||"Request failed.");return o}
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-async function load(){const o=await api({action:"seller_messages"});$("storeStatus").innerHTML='<b>'+esc(o.store.store_name)+'</b><br>Status: '+esc(String(o.store.store_status).replace(/_/g," "))+(o.store.moderation_note?'<br><small>'+esc(o.store.moderation_note)+'</small>':'');$("thread").innerHTML=o.messages.length?o.messages.map(m=>{const media=m.media_url?(m.media_type==="image"?'<a href="'+esc(m.media_url)+'" target="_blank" rel="noopener"><img src="'+esc(m.media_url)+'" alt="'+esc(m.file_name||"Image")+'" style="display:block;max-width:100%;max-height:320px;border-radius:10px"></a>':m.media_type==="audio"?'<audio controls preload="metadata" src="'+esc(m.media_url)+'" style="max-width:100%"></audio>':'<a href="'+esc(m.media_url)+'" target="_blank" rel="noopener" download="'+esc(m.file_name||"Attachment")+'">📄 '+esc(m.file_name||"Attachment")+'</a>'):"";return '<div class="bubble '+(m.sender_role==="admin"?"admin":"seller")+'"><b>'+(m.sender_role==="admin"?"RANOVA Admin":"You")+'</b><br>'+media+esc(m.body)+'<small>'+new Date(m.created_at).toLocaleString()+'</small></div>'}).join(""):'<div class="official">No official messages yet. You can contact RANOVA Admin below.</div>';receiptMessageIds=o.messages.filter(m=>m.sender_role==="admin").map(m=>String(m.id));requestAnimationFrame(acknowledgeMessages)}
+async function load(){
+ const o=await api({action:"seller_messages"});
+ $("storeStatus").innerHTML='<b>'+esc(o.store.store_name)+'</b><br>Status: '+esc(String(o.store.store_status).replace(/_/g," "))+(o.store.moderation_note?'<br><small>'+esc(o.store.moderation_note)+'</small>':'');
+ $("thread").innerHTML=o.messages.length?o.messages.map(m=>{
+   const media=m.media_url?(m.media_type==="image"?'<a href="'+esc(m.media_url)+'" target="_blank" rel="noopener"><img src="'+esc(m.media_url)+'" alt="'+esc(m.file_name||"Image")+'" style="display:block;max-width:100%;max-height:320px;border-radius:10px"></a>':m.media_type==="audio"?'<audio controls preload="metadata" src="'+esc(m.media_url)+'" style="max-width:100%"></audio>':'<a href="'+esc(m.media_url)+'" target="_blank" rel="noopener" download="'+esc(m.file_name||"Attachment")+'">📄 '+esc(m.file_name||"Attachment")+'</a>'):"";
+   const mine=m.sender_role==="seller";
+   return '<div class="bubble '+(m.sender_role==="admin"?"admin":"seller")+'" data-official-message="'+esc(m.id)+'"><b>'+(m.sender_role==="admin"?"RANOVA Admin":"You")+'</b><br>'+media+esc(m.body)+'<small>'+new Date(m.created_at).toLocaleString()+(mine?" · Sent":" · Received")+(m.edited_at?" · Edited":"")+'</small></div>'
+ }).join(""):'<div class="official">No official messages yet. You can contact RANOVA Admin below.</div>';
+ receiptMessageIds=o.messages.filter(m=>m.sender_role==="admin").map(m=>String(m.id));
+ $("thread").querySelectorAll("[data-official-message]").forEach(node=>{
+   const m=o.messages.find(x=>String(x.id)===String(node.dataset.officialMessage));if(!m)return;
+   node.oncontextmenu=e=>{e.preventDefault();showOfficialActions(m)};
+   node.ontouchstart=()=>{clearTimeout(pressTimer);pressTimer=setTimeout(()=>showOfficialActions(m),550)};
+   node.ontouchend=node.ontouchmove=()=>clearTimeout(pressTimer);
+ });
+ requestAnimationFrame(acknowledgeMessages)
+}
+function closeOfficialActions(){document.getElementById("officialMessageActions")?.remove()}
+function showOfficialActions(m){
+ closeOfficialActions();
+ const mine=m.sender_role==="seller",fresh=Date.now()-new Date(m.created_at).getTime()<=180000,canEdit=mine&&fresh&&!m.media_type,canDelete=mine&&fresh;
+ const wrap=document.createElement("div");wrap.id="officialMessageActions";wrap.className="official-message-actions";
+ wrap.innerHTML='<div class="official-actions-bg"></div><div class="official-actions-card"><i></i><button data-oa="copy">⧉ <span>Copy</span></button>'+(canEdit?'<button data-oa="edit">✎ <span>Edit</span></button>':'')+(canDelete?'<button class="danger" data-oa="delete">🗑 <span>Delete</span></button>':'')+'<button class="cancel" data-oa="cancel">Cancel</button></div>';
+ document.body.appendChild(wrap);wrap.querySelector(".official-actions-bg").onclick=closeOfficialActions;
+ wrap.querySelectorAll("[data-oa]").forEach(b=>b.onclick=async()=>{
+   const action=b.dataset.oa;if(action==="cancel")return closeOfficialActions();
+   if(action==="copy"){await navigator.clipboard?.writeText(m.body||"").catch(()=>{});closeOfficialActions()}
+   else if(action==="edit"&&canEdit){editingMessage=m;$("body").value=m.body||"";updateAction();$("body").focus();closeOfficialActions()}
+   else if(action==="delete"&&canDelete){if(!confirm("Delete this message for both sides?"))return;try{await api({action:"seller_delete_message",message_id:m.id});closeOfficialActions();await load()}catch(e){$("msg").textContent=e.message;$("msg").style.display="block"}}
+ });
+}
 let receiptMessageIds=[];
 function acknowledgeMessages(){if(document.visibilityState!=="visible"||$("main").style.display==="none"||!receiptMessageIds.length)return;api({action:"seller_messages_seen",message_ids:receiptMessageIds}).catch(()=>{})}
 document.addEventListener("visibilitychange",acknowledgeMessages);
@@ -53,12 +88,12 @@ const defaultRecentEmojis="😂 🤣 🥳 🔥 👍 🥹 🌚 🙌 🫶 ❤️ �
 function getRecentEmojis(){try{return JSON.parse(localStorage.getItem("ranova-seller-chat-recent-emojis")||"[]")}catch(e){return []}}
 function rememberEmoji(e){const a=getRecentEmojis().filter(x=>x!==e);a.unshift(e);localStorage.setItem("ranova-seller-chat-recent-emojis",JSON.stringify(a.slice(0,30)))}
 const emojiGroups={"Recents":defaultRecentEmojis,"Smileys":"😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😋 😜 🤪 🤗 🤭 🤫 🤔 😎 🥺 🥹 😭 😱 😤 😡","People":"👋 🤚 ✋ 👌 ✌️ 🤞 🤟 🤙 👈 👉 👆 👇 👍 👎 ✊ 👊 👏 🙌 🫶 🤲 🙏 💪 🧑‍💻 👨‍💼 👩‍💼","Love":"❤️ 🩷 🧡 💛 💚 🩵 💙 💜 🤎 🖤 🤍 💘 💝 💖 💗 💓 💞 💕 💌 💋","Animals":"🐶 🐱 🐭 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐷 🐸 🐵 🐧 🐦 🦄 🐝 🦋 🐢 🐬 🐳 🐘","Food":"🍎 🍊 🍋 🍌 🍉 🍇 🍓 🍒 🍑 🥭 🍍 🥥 🥑 🍅 🍔 🍟 🍕 🌮 🍜 🍣 🍩 🎂 🍰 🍫 ☕ 🥤 🥂","Nature":"🌹 🌷 🌸 🌺 🌻 🌿 🍀 🌴 🌍 🌞 🌝 🌚 ⭐ ✨ ⚡ 🔥 🌈 ☀️ ☁️ 🌧️ ❄️ 🌊","Objects":"📱 💻 ⌚ 📷 📸 🎥 📎 📌 ✂️ 🖊️ 📚 📦 🎁 🛒 💳 🔑 🏆 🎓 💡 🔒","Flags":RANOVA_FLAGS};
-let attachment=null,recorder=null,mediaStream=null,chunks=[],started=0,paused=0,pauseStarted=0,timer=null;
+let attachment=null,recorder=null,mediaStream=null,chunks=[],started=0,paused=0,pauseStarted=0,timer=null,editingMessage=null,pressTimer=null;
 function updateAction(){const hasText=!!$("body").value.trim(),hasAttachment=!!attachment;$("saRecordStart").hidden=hasText||hasAttachment;$("send").hidden=!(hasText||hasAttachment)}
 function preview(file){attachment=file;$("saAttach").hidden=false;$("saAttach").innerHTML='<span>'+esc(file.name)+' ('+Math.ceil(file.size/1024)+' KB)</span><button id="saRemoveAttachment" type="button">×</button>';$("saRemoveAttachment").onclick=()=>{attachment=null;$("saAttach").hidden=true;updateAction()};updateAction()}
 function showEmoji(group="Recents",filter=""){$("saEmojiPanel").hidden=false;$("saEmojiTabs").innerHTML=Object.keys(emojiGroups).map(g=>'<button type="button" class="'+(g===group?'active':'')+'" data-group="'+g+'">'+g+'</button>').join("");const recent=getRecentEmojis().concat(defaultRecentEmojis.split(/\s+/)).filter((e,i,a)=>e&&a.indexOf(e)===i).join(" ");const source=filter?Object.values({...emojiGroups,Recents:recent}).join(" "):(group==="Recents"?recent:(emojiGroups[group]||recent));$("saEmojiGrid").innerHTML=[...new Set(source.split(/\s+/))].filter(Boolean).map(e=>'<button type="button" data-emoji="'+e+'">'+e+'</button>').join("");$("saEmojiTabs").querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>showEmoji(b.dataset.group));$("saEmojiGrid").querySelectorAll("[data-emoji]").forEach(b=>b.onclick=()=>{rememberEmoji(b.dataset.emoji);const input=$("body"),at=input.selectionStart;input.setRangeText(b.dataset.emoji,at,input.selectionEnd,"end");input.focus();updateAction()})}
 function stopMedia(){if(mediaStream){mediaStream.getTracks().forEach(t=>t.stop());mediaStream=null}recorder=null;$("saRecord").hidden=true}
-async function sendMessage(fileOverride){const body=$("body").value.trim(),file=fileOverride||attachment;if(!body&&!file)return;const b=$("send");b.disabled=true;$("msg").style.display="none";try{if(file){if(file.size>15*1024*1024)throw Error("The attachment must be under 15 MB.");const mime=file.type||"audio/webm",prepared=await api({action:"seller_prepare_media",mime_type:mime,file_size:file.size});const up=await sb.storage.from("admin-seller-media").uploadToSignedUrl(prepared.path,prepared.token,file,{contentType:mime});if(up.error)throw up.error;await api({action:"seller_send_message",body,storage_path:prepared.path,media_type:prepared.media_type,file_name:file.name,mime_type:mime});attachment=null;$("saAttach").hidden=true}else await api({action:"seller_send_message",body});$("body").value="";updateAction();await load()}catch(e){$("msg").textContent=e.message;$("msg").style.display="block"}finally{b.disabled=false}}
+async function sendMessage(fileOverride){const body=$("body").value.trim(),file=fileOverride||attachment;if(!body&&!file)return;const b=$("send");b.disabled=true;$("msg").style.display="none";try{if(editingMessage){await api({action:"seller_edit_message",message_id:editingMessage.id,body});editingMessage=null}else if(file){if(file.size>15*1024*1024)throw Error("The attachment must be under 15 MB.");const mime=file.type||"audio/webm",prepared=await api({action:"seller_prepare_media",mime_type:mime,file_size:file.size});const up=await sb.storage.from("admin-seller-media").uploadToSignedUrl(prepared.path,prepared.token,file,{contentType:mime});if(up.error)throw up.error;await api({action:"seller_send_message",body,storage_path:prepared.path,media_type:prepared.media_type,file_name:file.name,mime_type:mime});attachment=null;$("saAttach").hidden=true}else await api({action:"seller_send_message",body});$("body").value="";updateAction();await load()}catch(e){$("msg").textContent=e.message;$("msg").style.display="block"}finally{b.disabled=false}}
 $("send").onclick=()=>sendMessage();
 $("body").oninput=updateAction;$("body").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}};
 $("saEmojiToggle").onclick=()=>{$("saEmojiPanel").hidden?showEmoji():$("saEmojiPanel").hidden=true};$("saEmojiSearch").oninput=e=>showEmoji("Recents",e.target.value.trim());
@@ -77,7 +112,7 @@ updateAction();
   },7000);
   window.addEventListener("beforeunload",()=>clearInterval(officialRefreshTimer),{once:true});
 }catch(e){$("gate").textContent=e.message||"Could not load official messages."}})();})();
-</script><script src="./seller-pwa.js?v=20261002-messaging01"></script></body></html>
+</script><script src="./seller-pwa.js?v=20261002-msgactions33"></script></body></html>
 
 <style>
 /* Mobile emoji tray: compact half-screen panel with internal scrolling */
