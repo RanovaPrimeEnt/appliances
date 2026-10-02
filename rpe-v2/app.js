@@ -1148,11 +1148,19 @@ async function placeMarketplaceCartOrder(){
     const out=await res.json().catch(()=>({}));
     if(!res.ok||!out.ok)throw new Error(out.error||"Could not place the order.");
     if(out.order_ref&&out.buyer_access_code)try{localStorage.setItem("ranova_buyer_code_"+out.order_ref,String(out.buyer_access_code))}catch{}
-    await Promise.all([
-      sb.from("ranova_buyer_carts").delete().eq("user_id",user.id),
-      cartId?sb.from("cart_items").delete().eq("cart_id",cartId):Promise.resolve()
-    ]);
-    marketCartRows=[];marketCartProducts=new Map();marketCartStores=new Map();cartItems=[];
+    const checkedOut=selectedCartEntries();
+    const touchedStores=new Set();
+    checkedOut.forEach(i=>{
+      if(i.kind==="market"){
+        const row=marketCartRows.find(r=>r.store_id===i.store_id);
+        if(row&&row.items){delete row.items[i.product_id];touchedStores.add(i.store_id)}
+      }
+    });
+    for(const storeId of touchedStores)await persistMarketCartRow(storeId);
+    const legacyIds=checkedOut.filter(i=>i.kind==="legacy").map(i=>i.id);
+    if(legacyIds.length&&cartId)await sb.from("cart_items").delete().eq("cart_id",cartId).in("id",legacyIds);
+    cartItems=cartItems.filter(i=>!legacyIds.includes(i.id));
+    checkedOut.forEach(i=>cartSelectedKeys.delete(cartItemKey(i)));
     renderCart();closeMarketplaceCheckout();
     await loadToPayOrders(false).catch(()=>{});
     showPanel("toPayPanel");
