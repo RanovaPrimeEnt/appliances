@@ -237,12 +237,12 @@ function setNavState(){
 function setupNav(){
   const nav=$q(".bottom");if(!nav)return;
   nav.setAttribute("role","navigation");
-  const home=$q('[data-panel="marketplaceHomePanel"]',nav), me=$q('[data-panel="homePanel"]',nav), msg=$q("#bottomMessages"), cart=$q("#bottomCart");
-  if(home)home.onclick=()=>{try{openPanel("marketplaceHomePanel")}catch{};setNavState()};
-  if(me)me.onclick=()=>{if(!requireAccount("open your account"))return;try{openPanel("homePanel")}catch{};setNavState()};
-  if(msg)msg.onclick=()=>{if(!requireAccount("open messages"))return;try{openPanel("messagesPanel")}catch{};setNavState()};
-  if(cart)cart.onclick=()=>{try{openCart()}catch{$q("#cartDrawer")?.classList.add("open")}cart.classList.add("active")};
-  const root=$q("main");if(root)new MutationObserver(setNavState).observe(root,{attributes:true,subtree:true,attributeFilter:["class"]});
+
+  // Navigation behavior is owned by the core customer app.
+  // The Pro layer must never replace Home, Message, Cart or Me click handlers.
+  // It only mirrors the active visual state.
+  const root=$q("main");
+  if(root)new MutationObserver(setNavState).observe(root,{attributes:true,subtree:true,attributeFilter:["class"]});
   setNavState();
 }
 

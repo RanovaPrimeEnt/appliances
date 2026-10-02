@@ -362,6 +362,18 @@ $("authSubmit").onclick=async()=>{
 };
 $("signOut").onclick=()=>sb.auth.signOut();
 
+function handleRequestedPanel(){
+  const qs=new URLSearchParams(location.search);
+  const requested=qs.get("panel")||"";
+  const allowed=new Set(["marketplaceHomePanel","messagesPanel","homePanel"]);
+  if(!allowed.has(requested))return false;
+  showPanel(requested);
+  const url=new URL(location.href);
+  url.searchParams.delete("panel");
+  history.replaceState(null,"",url.pathname+(url.searchParams.toString()?"?"+url.searchParams.toString():""));
+  return true;
+}
+
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
   await applySession(session,true);
@@ -429,6 +441,7 @@ async function applySession(session,initial=false){
     setAuthOnlyMode(false);
     appBox.classList.remove("hide");
     subscribeRealtime();
+    handleRequestedPanel();
     handleIncomingCartLink().catch(()=>{});
     afterPaint(()=>loadMessageConversations(true).catch(()=>{}));
     setTimeout(()=>loadToPayOrders(true).catch(()=>{}),80);
