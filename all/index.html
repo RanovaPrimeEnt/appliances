@@ -271,8 +271,7 @@ function enhancePremiumExperience(){
       if(!card.querySelector(".rpe-card-tools")){
         var tools=d.createElement("div");tools.className="rpe-card-tools";
         var heart=d.createElement("button");heart.type="button";heart.className="rpe-round-tool rpe-heart";heart.innerHTML=icon("heart");heart.setAttribute("aria-label","Save "+p.name+" to favourites");heart.addEventListener("click",function(e){e.stopPropagation();toggleFav(id)});
-        var share=d.createElement("button");share.type="button";share.className="rpe-round-tool";share.innerHTML=icon("share");share.setAttribute("aria-label","Share "+p.name);share.addEventListener("click",function(e){e.stopPropagation();shareProduct(p)});
-        tools.appendChild(heart);tools.appendChild(share);card.appendChild(tools);
+        tools.appendChild(heart);card.appendChild(tools);
       }
       var hb=card.querySelector(".rpe-heart");if(hb)hb.setAttribute("aria-pressed",favs.has(id)?"true":"false");
       if(!card.querySelector(".rpe-product-badge")){var status=d.createElement("span");status.className="rpe-product-badge";status.textContent="Price & stock confirmed on enquiry";var meta=card.querySelector(".product-meta");if(meta)meta.parentNode.insertBefore(status,meta)}
@@ -316,15 +315,33 @@ function enhancePremiumExperience(){
   d.getElementById("rpeClearOrder").onclick=function(){var ids=currentSelectedIds();ids.forEach(function(id){try{w.toggleProduct(Number(id))}catch(e){}});setTimeout(function(){renderDrawer();updateSelectionUI()},0)};
   d.addEventListener("click",function(e){if(e.target.closest&&e.target.closest(".select-btn"))setTimeout(updateSelectionUI,0)});
 
-  // Related products + share controls in modal.
+  // Related products + saved-star control in modal.
   var mc=d.querySelector("#productModal .modal-copy"),actions=d.querySelector("#productModal .modal-actions"),related=d.createElement("div");
-  if(mc&&!d.getElementById("rpeRelated")){related.id="rpeRelated";related.className="rpe-related";related.innerHTML='<h4>You may also like</h4><div id="rpeRelatedGrid" class="rpe-related-grid"></div>';mc.insertBefore(related,actions);var shareRow=d.createElement("div");shareRow.className="rpe-modal-share";shareRow.innerHTML='<button id="rpeShareCurrent" type="button">Share product</button><button id="rpeFavCurrent" type="button">Save to favourites</button>';mc.insertBefore(shareRow,actions)}
+  if(mc&&!d.getElementById("rpeRelated")){related.id="rpeRelated";related.className="rpe-related";related.innerHTML='<h4>You may also like</h4><div id="rpeRelatedGrid" class="rpe-related-grid"></div>';mc.insertBefore(related,actions);var saveRow=d.createElement("div");saveRow.className="rpe-modal-share";saveRow.innerHTML='<button id="rpeFavCurrent" type="button" aria-label="Save product">☆ Save product</button>';mc.insertBefore(saveRow,actions)}
+  function addCurrentModalToSelection(){
+    if(!currentModalId)return;
+    var id=String(currentModalId),selected=currentSelectedIds();
+    if(selected.indexOf(id)<0){
+      try{w.toggleProduct(Number(id))}catch(e){
+        var card=grid.querySelector('.product[data-product-id="'+CSS.escape(id)+'"]'),btn=card&&card.querySelector(".select-btn");
+        if(btn&&!btn.classList.contains("selected"))btn.click();
+      }
+    }
+    setTimeout(function(){renderDrawer();updateSelectionUI();openDrawer()},0);
+  }
   var currentModalId=null;
   function renderRelated(p){var rg=d.getElementById("rpeRelatedGrid");if(!rg)return;var rel=ps.filter(function(x){return String(x.id)!==String(p.id)&&x.category===p.category}).slice(0,3);rg.innerHTML="";rel.forEach(function(x){var b=d.createElement("button");b.type="button";b.className="rpe-related-card";b.innerHTML='<img src="'+x.image+'" loading="lazy" alt="'+x.name.replace(/"/g,"&quot;")+'"><b>'+x.name+'</b>';b.onclick=function(){w.openProduct(x.id)};rg.appendChild(b)});related.style.display=rel.length?"block":"none"}
   var prevOpen=w.openProduct;
-  if(typeof prevOpen==="function"&&!w.__rpePremiumOpenWrapped){w.__rpePremiumOpenWrapped=true;w.openProduct=function(id){prevOpen(id);currentModalId=String(id);var p=getP(id);if(p){addRecent(id);renderRelated(p);var fb=d.getElementById("rpeFavCurrent");if(fb)fb.textContent=favs.has(String(id))?"Remove from favourites":"Save to favourites";try{history.replaceState(null,"",location.pathname+"?product="+encodeURIComponent(id))}catch(e){}}}}
-  var sh=d.getElementById("rpeShareCurrent");if(sh)sh.onclick=function(){var p=getP(currentModalId);if(p)shareProduct(p)};
-  var fc=d.getElementById("rpeFavCurrent");if(fc)fc.onclick=function(){if(currentModalId){toggleFav(currentModalId);this.textContent=favs.has(String(currentModalId))?"Remove from favourites":"Save to favourites"}};
+  if(typeof prevOpen==="function"&&!w.__rpePremiumOpenWrapped){w.__rpePremiumOpenWrapped=true;w.openProduct=function(id){prevOpen(id);currentModalId=String(id);var p=getP(id);if(p){addRecent(id);renderRelated(p);var fb=d.getElementById("rpeFavCurrent");if(fb)fb.textContent=favs.has(String(id))?"★ Saved":"☆ Save product";try{history.replaceState(null,"",location.pathname+"?product="+encodeURIComponent(id))}catch(e){}}}}
+  var fc=d.getElementById("rpeFavCurrent");if(fc)fc.onclick=function(){if(currentModalId){toggleFav(currentModalId);this.textContent=favs.has(String(currentModalId))?"★ Saved":"☆ Save product"}};
+  if(mc)mc.addEventListener("click",function(e){
+    var b=e.target.closest("button");
+    if(!b||b.id==="rpeFavCurrent"||b.id==="rpeModalEmail"||b.closest("#rpeRelatedGrid"))return;
+    var label=(b.textContent||"").trim().toLowerCase();
+    if(/buy|add to cart|add to selection|select product|order now/.test(label)){
+      e.preventDefault();e.stopImmediatePropagation();addCurrentModalToSelection();
+    }
+  },true);
 
   // Mobile bottom navigation.
   var mobile=d.createElement("nav");mobile.className="rpe-mobile-nav";mobile.setAttribute("aria-label","Mobile shop navigation");mobile.innerHTML='<button id="rpeMHome" type="button">'+icon("home")+'<span>Home</span></button><button id="rpeMProducts" type="button">'+icon("search")+'<span>Products</span></button><button id="rpeMCamera" type="button">'+icon("camera")+'<span>Camera</span></button><button id="rpeMFavs" type="button">'+icon("heart")+'<span>Saved</span><i id="rpeMobileFavCount" class="badge">0</i></button><button id="rpeMSelection" type="button">'+icon("bag")+'<span>Selection</span><i id="rpeMobileSelCount" class="badge">0</i></button>';d.body.appendChild(mobile);
@@ -366,3 +383,9 @@ if("serviceWorker" in navigator){window.addEventListener("load",function(){navig
 <script src="./friendly-upgrades.js?v=20260930-messages01"></script>\n<script src="./marketplace-v1.js?v=20260926-3"></script>\n<script src="./customer-home.js?v=20260927-2"></script>
 <noscript><div style="padding:30px;font-family:system-ui"><h1>Ranova Prime Enterprise</h1><p>Browse kitchen appliances, household plasticware and furniture products. Contact RPE to confirm price and availability.</p><p><a href="tel:+233542846895">054 284 6895</a> • <a href="tel:+233204144809">020 414 4809</a> • ranovaprimeenterprise360@gmail.com</p></div></noscript></body>
 </html>
+<style>
+.rpe-card-tools{gap:0!important}
+.rpe-card-tools .rpe-heart{color:#f28a00!important;border-color:#ffd7a3!important}
+.rpe-card-tools .rpe-heart[aria-pressed="true"]{background:#fff3df!important;color:#f28a00!important;border-color:#f28a00!important}
+#rpeFavCurrent{color:#f28a00!important;border-color:#ffd7a3!important;background:#fff8ef!important}
+</style>
