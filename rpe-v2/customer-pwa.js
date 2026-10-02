@@ -95,7 +95,7 @@ if("serviceWorker" in navigator){
       });
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
         note("");
-        const key="ranova-sw-controller-20261002-32";
+        const key="ranova-sw-controller-20261002-38";
         try{
           if(sessionStorage.getItem(key)!=="1"){
             sessionStorage.setItem(key,"1");
