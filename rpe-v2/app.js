@@ -41,7 +41,8 @@ function restorePublicMarketCache(){
     const raw=localStorage.getItem(PUBLIC_MARKET_CACHE_KEY);
     if(!raw)return false;
     const d=JSON.parse(raw);
-    if(!d?.t||Date.now()-d.t>PUBLIC_MARKET_CACHE_MAX_AGE)return false;
+    if(!d?.t)return false;
+    if(navigator.onLine&&Date.now()-d.t>PUBLIC_MARKET_CACHE_MAX_AGE)return false;
     if(!Array.isArray(d.stores)||!Array.isArray(d.products))return false;
     marketStores=d.stores;
     marketSellerProducts=d.products;
@@ -1544,6 +1545,16 @@ document.addEventListener("touchstart",e=>{
  if(p)warmMarketplaceProduct(p.dataset.mhProduct);
 },{passive:true});
 
+function showOfflineProductNotice(){
+  window.dispatchEvent(new CustomEvent("ranova:offline-product-click"));
+}
+document.addEventListener("click",e=>{
+  if(navigator.onLine)return;
+  const target=e.target.closest("[data-mh-product],[data-legacy-market-product],[data-home-seller-product],[data-open-product],[data-simple-related],[data-variant-product]");
+  if(!target)return;
+  e.preventDefault();e.stopImmediatePropagation();showOfflineProductNotice();
+},true);
+
 document.addEventListener("click",async e=>{
  const variant=e.target.closest("[data-variant-product]");if(variant&&variant.dataset.variantProduct!==marketProductCurrent?.id){openMarketplaceProduct(variant.dataset.variantProduct);return}
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
@@ -1815,18 +1826,43 @@ function setMsgEdit(m){
   $("msgCancelAction").onclick=clearMsgAction;
   $("msgInput").value=m.body||"";updateMsgAction();$("msgInput").focus();
 }
+function closeCustomerMessageActions(){
+  const sheet=$("msgActionSheet");if(sheet){sheet.classList.remove("open");sheet.innerHTML=""}
+}
+async function deleteCustomerMessage(m){
+  if(!m||!messageCurrent)return;
+  if(!confirm("Delete this message for both sides?"))return;
+  try{
+    await messageApi({action:"delete_message",conversation_id:messageCurrent.id,message_id:m.id});
+    closeCustomerMessageActions();clearMsgAction();await refreshOpenMessage();await loadMessageConversations();showToast("Message deleted");
+  }catch(e){showToast(e.message||"Could not delete message")}
+}
 function showCustomerMessageActions(m){
   if(!m||m.sender_role==="system")return;
   const mine=m.sender_role===messageRole;
-  const canEdit=mine&&m.message_type==="text"&&Date.now()-new Date(m.created_at).getTime()<=180000;
-  const choices=["Reply","Copy",...(!mine?["Report"]:[]),...(canEdit?["Edit"]:[])];
-  const choice=prompt("Message action: "+choices.join(" · "),choices[0]);
-  if(!choice)return;
-  const action=choice.trim().toLowerCase();
-  if(action==="reply")setMsgReply(m);
-  else if(action==="copy"){navigator.clipboard?.writeText(m.body||"").catch(()=>{})}
-  else if(action==="edit"&&canEdit)setMsgEdit(m);
-  else if(action==="report"&&!mine)reportCustomerMessage(m.id);
+  const fresh=Date.now()-new Date(m.created_at).getTime()<=180000;
+  const canEdit=mine&&m.message_type==="text"&&fresh;
+  const canDelete=mine&&fresh;
+  const sheet=$("msgActionSheet");if(!sheet)return;
+  const buttons=[
+    '<button type="button" data-msg-action="reply">↩ <span>Reply</span></button>',
+    '<button type="button" data-msg-action="copy">⧉ <span>Copy</span></button>',
+    ...(canEdit?['<button type="button" data-msg-action="edit">✎ <span>Edit</span></button>']:[]),
+    ...(canDelete?['<button type="button" class="danger" data-msg-action="delete">🗑 <span>Delete</span></button>']:[]),
+    ...(!mine?['<button type="button" class="danger" data-msg-action="report">! <span>Report</span></button>']:[])
+  ];
+  sheet.className="msg-action-sheet open "+(mine?"sent-actions":"received-actions");
+  sheet.innerHTML='<div class="msg-action-backdrop"></div><div class="msg-action-card"><div class="msg-action-handle"></div>'+buttons.join("")+'<button type="button" class="cancel" data-msg-action="cancel">Cancel</button></div>';
+  sheet.querySelector(".msg-action-backdrop").onclick=closeCustomerMessageActions;
+  sheet.querySelectorAll("[data-msg-action]").forEach(b=>b.onclick=async()=>{
+    const action=b.dataset.msgAction;
+    if(action==="cancel")return closeCustomerMessageActions();
+    if(action==="reply"){closeCustomerMessageActions();setMsgReply(m)}
+    else if(action==="copy"){await navigator.clipboard?.writeText(m.body||"").catch(()=>{});closeCustomerMessageActions();showToast("Message copied")}
+    else if(action==="edit"&&canEdit){closeCustomerMessageActions();setMsgEdit(m)}
+    else if(action==="delete"&&canDelete)await deleteCustomerMessage(m);
+    else if(action==="report"&&!mine){closeCustomerMessageActions();await reportCustomerMessage(m.id)}
+  });
 }
 async function reportCustomerMessage(messageId){
   const category=(prompt("Report reason: spam, fraud_suspected, off_platform_payment, harassment, misleading_product, counterfeit_suspected, or other","spam")||"").trim().toLowerCase();
@@ -1946,7 +1982,8 @@ function renderMessageThread(){
     const media=messageMedia(m),body=m.body?'<div class="msg-body">'+esc(m.body)+'</div>':(!media&&m.message_type!=="system"?'<div class="msg-body">'+esc(prettyKey(m.message_type))+'</div>':"");
     const report=!mine&&m.sender_role!=="system"?'<button class="msg-report" type="button" data-msg-report="'+esc(m.id)+'">Report</button>':"";
     const edited=m.edited_at?" · Edited":"";
-    return sep+'<div class="msg-bubble '+cl+'" data-message-id="'+esc(m.id)+'">'+messageReplyHtml(m)+media+body+'<time>'+d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+edited+'</time>'+report+'</div>';
+    const delivery=m.sender_role==="system"?"":(mine?" · Sent":" · Received");
+    return sep+'<div class="msg-bubble '+cl+'" data-message-id="'+esc(m.id)+'">'+messageReplyHtml(m)+media+body+'<time>'+d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+delivery+edited+'</time>'+report+'</div>';
   }).join("");
   host.innerHTML=quotes+(rows||'<div class="msg-list-empty">Start your conversation with this store.</div>');
   bindCustomerMessageActions();
@@ -2011,6 +2048,15 @@ $("msgRecordPause").onclick=()=>{if(!msgRecorder)return;const b=$("msgRecordPaus
 $("msgRecordDelete").onclick=()=>{if(msgRecorder){msgRecorder.onstop=null;if(msgRecorder.state!=="inactive")msgRecorder.stop()}clearInterval(msgTimer);stopMsgRecording()};$("msgRecordSend").onclick=()=>{if(msgRecorder&&msgRecorder.state!=="inactive"){clearInterval(msgTimer);msgRecorder.stop()}};
 updateMsgAction();
 
+function removeLegacyFeedNotice(){
+  document.querySelectorAll(".home-feed-note,.rpe-feed-live,[data-ranova-feed-note]").forEach(x=>x.remove());
+  document.querySelectorAll("body *").forEach(x=>{
+    const t=(x.textContent||"").trim();
+    if(x.children.length<=3&&(/Products from different RANOVA stores/i.test(t)||/Refreshing mix/i.test(t)))x.remove();
+  });
+}
+removeLegacyFeedNotice();
+new MutationObserver(removeLegacyFeedNotice).observe(document.body,{childList:true,subtree:true});
 startRecommendationRotation();
 boot();
 })();
