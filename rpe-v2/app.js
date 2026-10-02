@@ -297,11 +297,6 @@ document.addEventListener("click",e=>{
 },true);
 
 function authUI(){
-  $("authTitle").textContent=signUpMode?"Create your RANOVA account":"Welcome back";
-  $("authText").textContent=signUpMode
-    ?"Register with your email address or phone number."
-    :"Sign in with the email address or phone number you used to register.";
-  $("authFinePrint").classList.toggle("hide",!signUpMode);
   $("authSubmit").textContent=signUpMode?"Create my account":"Sign in";
   $("signInTab").classList.toggle("active",!signUpMode);
   $("createTab").classList.toggle("active",signUpMode);
