@@ -1839,7 +1839,7 @@ function shortMessageBody(m){return String(m?.body||({image:"Photo",audio:"Voice
 function messageReplyHtml(m){
   if(!m.reply_to_message_id)return "";
   const q=messageById(m.reply_to_message_id);
-  return q?'<button class="msg-reply-quote" type="button" data-msg-jump="'+esc(q.id)+'"><b>'+esc(q.sender_role===messageRole?"You":prettyKey(q.sender_role))+'</b><span>'+esc(shortMessageBody(q))+'</span></button>':"";
+  return q?'<button class="msg-reply-quote" type="button" data-msg-jump="'+esc(q.id)+'"><b>'+esc(String(q.sender_user_id||"")===String(user?.id||"")?"You":prettyKey(q.sender_role))+'</b><span>'+esc(shortMessageBody(q))+'</span></button>':"";
 }
 function clearMsgAction(){
   msgReplyingTo=null;msgEditingMessage=null;
@@ -1871,7 +1871,7 @@ async function deleteCustomerMessage(m){
 }
 function showCustomerMessageActions(m){
   if(!m||m.sender_role==="system")return;
-  const mine=m.sender_role===messageRole;
+  const mine=m.sender_role!=="system"&&String(m.sender_user_id||"")===String(user?.id||"");
   const fresh=Date.now()-new Date(m.created_at).getTime()<=180000;
   const canEdit=mine&&m.message_type==="text"&&fresh;
   const canDelete=mine&&fresh;
@@ -2010,7 +2010,7 @@ function renderMessageThread(){
   const rows=(messageCurrent.messages||[]).map(m=>{
     const d=new Date(m.created_at),key=d.toDateString(),sep=key!==day?'<div class="msg-date">'+d.toLocaleDateString([],{year:"numeric",month:"long",day:"numeric"})+'</div>':"";
     day=key;
-    const mine=m.sender_role===messageRole,cl=m.sender_role==="system"?"system":mine?"mine":"other";
+    const mine=m.sender_role!=="system"&&String(m.sender_user_id||"")===String(user?.id||""),cl=m.sender_role==="system"?"system":mine?"mine":"other";
     const media=messageMedia(m),body=m.body?'<div class="msg-body">'+esc(m.body)+'</div>':(!media&&m.message_type!=="system"?'<div class="msg-body">'+esc(prettyKey(m.message_type))+'</div>':"");
     const report=!mine&&m.sender_role!=="system"?'<button class="msg-report" type="button" data-msg-report="'+esc(m.id)+'">Report</button>':"";
     const edited=m.edited_at?" · Edited":"";
