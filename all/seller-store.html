@@ -795,8 +795,41 @@ var COUNTRY_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-country-service";
 var FINANCE_QUOTE_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-finance-quote";
 var TRUST_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-marketplace-trust";
 var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),store=null,products=[],cart={},countryMap={},marketplaceTrust={performance:{},enforcement:{enforcement_status:"good_standing"}},buyerSession=null,buyerProfile=null,buyerAddresses=[],buyerStoreSaved=false,activeCategory="All",detailProductId=null,savedProducts=new Set();
+var UNIVERSAL_MARKET_CART_DRAFT_KEY="ranova_universal_market_cart_v2",PENDING_MARKET_SAVED_KEY="ranova_pending_saved_products_v2";
 var CATEGORY_ORDER=["Kitchen Appliances","Household Plasticware","Furniture","Solar Street Lights","Lighting & Fans","Rechargeable Lights"];
 
+function readLocalJson(key,fallback){try{var v=JSON.parse(localStorage.getItem(key)||"null");return v==null?fallback:v}catch(e){return fallback}}
+function writeLocalJson(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(e){}}
+function cartLocalKey(){return "ranova_store_cart_"+(store?store.id:"")}
+function queueCartDraft(){
+  if(!store)return;
+  var drafts=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});
+  drafts[store.id]=Object.assign({},cart||{});
+  writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,drafts);
+}
+function clearCartDraft(){
+  if(!store)return;
+  var drafts=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});
+  delete drafts[store.id];writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,drafts);
+}
+function hasCartDraft(){var d=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});return !!(store&&Object.prototype.hasOwnProperty.call(d,store.id))}
+async function syncCartRemote(){
+  if(!buyerSession||!store||!navigator.onLine)return false;
+  var req=Object.keys(cart||{}).length
+    ? sb.from("ranova_buyer_carts").upsert({user_id:buyerSession.user.id,store_id:store.id,items:cart,updated_at:new Date().toISOString()},{onConflict:"user_id,store_id"})
+    : sb.from("ranova_buyer_carts").delete().eq("user_id",buyerSession.user.id).eq("store_id",store.id);
+  var out=await req;if(out.error)throw out.error;clearCartDraft();return true;
+}
+function queueSavedChange(id,saved){var p=readLocalJson(PENDING_MARKET_SAVED_KEY,{});p[id]=!!saved;writeLocalJson(PENDING_MARKET_SAVED_KEY,p)}
+function clearSavedChange(id){var p=readLocalJson(PENDING_MARKET_SAVED_KEY,{});delete p[id];writeLocalJson(PENDING_MARKET_SAVED_KEY,p)}
+async function syncSavedRemote(id,saved){
+  if(!buyerSession||!navigator.onLine)return false;
+  var req=saved
+    ? sb.from("ranova_buyer_saved_products").upsert({user_id:buyerSession.user.id,product_id:id,saved_at:new Date().toISOString()},{onConflict:"user_id,product_id"})
+    : sb.from("ranova_buyer_saved_products").delete().eq("user_id",buyerSession.user.id).eq("product_id",id);
+  var out=await req;if(out.error)throw out.error;clearSavedChange(id);return true;
+}
+function goToMainCart(){location.href="../rpe-v2/?panel=cartPanel"}
 function el(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]})}
 function phoneDigits(v){var d=String(v||"").replace(/\D/g,"");if(d.startsWith("0"))d="233"+d.slice(1);return d}
@@ -845,10 +878,14 @@ function productPhotos(p){
   return images.filter(function(url,i){return typeof url==="string"&&url.trim()&&images.indexOf(url)===i});
 }
 function saveProductList(){try{localStorage.setItem("ranova_saved_store_"+store.id,JSON.stringify(Array.from(savedProducts)))}catch(e){}}
-function toggleSaved(id){
-  if(savedProducts.has(id))savedProducts.delete(id);else savedProducts.add(id);
+async function toggleSaved(id){
+  var willSave=!savedProducts.has(id);
+  if(willSave)savedProducts.add(id);else savedProducts.delete(id);
+  queueSavedChange(id,willSave);
   var quantity=detailProductId===id&&el("detailQuantity")?el("detailQuantity").value:null;
-  saveProductList();render();if(detailProductId===id){openProductDetail(id);if(quantity!=null){el("detailQuantity").value=quantity;updateDetailTotal(products.find(function(p){return p.id===id}))}}
+  saveProductList();render();
+  if(detailProductId===id){openProductDetail(id);if(quantity!=null){el("detailQuantity").value=quantity;updateDetailTotal(products.find(function(p){return p.id===id}))}}
+  try{await syncSavedRemote(id,willSave)}catch(e){}
 }
 function shareProduct(id){
   var p=products.find(function(x){return x.id===id});if(!p)return;
@@ -877,9 +914,9 @@ function openProductDetail(id){
   input.oninput=function(){updateDetailTotal(p)};
   input.onchange=function(){updateDetailQuantity(input.value)};
   updateDetailTotal(p);
-  dialog.querySelector("[data-detail-add]").onclick=function(){var q=detailQuantityValue(p,input.value);if(q<minimum||orderUnavailable(p))return;cart[id]=q;saveCart();closeProductDetail();render();renderCart();openCart()};
+  dialog.querySelector("[data-detail-add]").onclick=async function(){var q=detailQuantityValue(p,input.value);if(q<minimum||orderUnavailable(p))return;cart[id]=q;saveCart();closeProductDetail();render();renderCart();try{await syncCartRemote()}catch(e){}goToMainCart()};
   var buyNowButton=dialog.querySelector("[data-detail-buy-now]");
-  if(buyNowButton)buyNowButton.onclick=function(){var q=detailQuantityValue(p,input.value);if(q<minimum||orderUnavailable(p)||p.price==null)return;cart[id]=q;saveCart();closeProductDetail();render();renderCart();openCart()};
+  if(buyNowButton)buyNowButton.onclick=async function(){var q=detailQuantityValue(p,input.value);if(q<minimum||orderUnavailable(p)||p.price==null)return;cart[id]=q;saveCart();closeProductDetail();render();renderCart();try{await syncCartRemote()}catch(e){}goToMainCart()};
   if(el("compareProduct"))el("compareProduct").onchange=function(){renderComparison(id,this.value)};
   dialog.querySelector("[data-detail-save]").onclick=function(){toggleSaved(id)};
 }
@@ -962,36 +999,36 @@ async function loadFeePreview(){
 function cartItems(){return Object.keys(cart).map(function(id){var p=products.find(function(x){return x.id===id});return p?{product:p,quantity:cart[id]}:null}).filter(Boolean)}
 function totalQty(){return cartItems().reduce(function(s,x){return s+x.quantity},0)}
 function knownTotal(){var items=cartItems();if(!items.length||items.some(function(x){return x.product.price==null}))return null;return items.reduce(function(s,x){return s+(Number(x.product.price)*x.quantity)},0)}
-function saveCart(){
-  try{sessionStorage.setItem("ranova_store_cart_"+(store?store.id:""),JSON.stringify(cart))}catch(e){}
-  try{
-    var universal=JSON.parse(localStorage.getItem("ranova_universal_cart")||"{}");
-    if(store){
-      products.forEach(function(p){delete universal[p.id]});
-      Object.keys(cart||{}).forEach(function(id){if(cart[id]>0)universal[id]=cart[id]});
-      localStorage.setItem("ranova_universal_cart",JSON.stringify(universal));
-    }
-  }catch(e){}
-  if(buyerSession&&store){
-    if(Object.keys(cart).length)sb.from("ranova_buyer_carts").upsert({user_id:buyerSession.user.id,store_id:store.id,items:cart,updated_at:new Date().toISOString()},{onConflict:"user_id,store_id"});
-    else sb.from("ranova_buyer_carts").delete().eq("user_id",buyerSession.user.id).eq("store_id",store.id);
-  }
+function saveCart(queue){
+  try{localStorage.setItem(cartLocalKey(),JSON.stringify(cart))}catch(e){}
+  if(queue!==false)queueCartDraft();
+  if(queue!==false&&buyerSession&&navigator.onLine)syncCartRemote().catch(function(){});
 }
-function loadCart(){try{var x=sessionStorage.getItem("ranova_store_cart_"+store.id);cart=x?JSON.parse(x):{}}catch(e){cart={}};sanitizeCart()}
+function loadCart(){try{var x=localStorage.getItem(cartLocalKey());cart=x?JSON.parse(x):{}}catch(e){cart={}};sanitizeCart()}
 async function hydrateBuyerAccount(){
   try{
-    var gs=await sb.auth.getSession();buyerSession=gs.data.session;if(!buyerSession)return;
-    var uid=buyerSession.user.id;
+    var gu=await sb.auth.getUser(),authUser=gu.data&&gu.data.user;if(!authUser)return;
+    buyerSession={user:authUser};
+    var uid=authUser.id,productIds=products.map(function(p){return p.id});
+    var savedQuery=productIds.length?sb.from("ranova_buyer_saved_products").select("product_id").eq("user_id",uid).in("product_id",productIds):Promise.resolve({data:[],error:null});
     var results=await Promise.all([
       sb.from("ranova_buyer_profiles").select("*").eq("user_id",uid).maybeSingle(),
       sb.from("ranova_buyer_addresses").select("*").eq("user_id",uid).order("is_default",{ascending:false}).order("updated_at",{ascending:false}),
       sb.from("ranova_buyer_carts").select("items").eq("user_id",uid).eq("store_id",store.id).maybeSingle(),
-      sb.from("ranova_buyer_saved_stores").select("store_id").eq("user_id",uid).eq("store_id",store.id).maybeSingle()
+      sb.from("ranova_buyer_saved_stores").select("store_id").eq("user_id",uid).eq("store_id",store.id).maybeSingle(),
+      savedQuery
     ]);
     buyerProfile=results[0].data||null;buyerAddresses=results[1].data||[];
     var remote=(results[2].data&&results[2].data.items)||{};
-    Object.keys(remote).forEach(function(id){cart[id]=Math.max(Number(cart[id]||0),Number(remote[id]||0))});
+    if(!hasCartDraft())cart=remote;else Object.keys(remote).forEach(function(id){if(cart[id]==null)cart[id]=remote[id]});
     sanitizeCart();
+    var remoteSaved=new Set((results[4].data||[]).map(function(x){return x.product_id}));
+    var pendingSaved=readLocalJson(PENDING_MARKET_SAVED_KEY,{});
+    savedProducts=remoteSaved;
+    Object.keys(pendingSaved).forEach(function(id){if(!productIds.includes(id))return;if(pendingSaved[id])savedProducts.add(id);else savedProducts.delete(id)});
+    saveProductList();
+    if(hasCartDraft())syncCartRemote().catch(function(){});
+    Object.keys(pendingSaved).forEach(function(id){if(productIds.includes(id))syncSavedRemote(id,!!pendingSaved[id]).catch(function(){})});
     var a=buyerAddresses.find(function(x){return x.is_default})||buyerAddresses[0]||null;
     if(buyerProfile){
       if(!el("customerName").value)el("customerName").value=buyerProfile.full_name||"";
@@ -1018,7 +1055,7 @@ function sanitizeCart(){
     if(p.stock_quantity!=null)q=Math.min(q,Number(p.stock_quantity));
     if(p.stock_status!=="out_of_stock"&&q>=Number(p.moq||1))next[id]=q;
   });
-  cart=next;saveCart();
+  cart=next;saveCart(false);
 }
 function productCard(p){
   var inCart=cart[p.id]!=null,enforcement=String((marketplaceTrust.enforcement||{}).enforcement_status||"good_standing"),disabled=p.stock_status==="out_of_stock"||enforcement==="restricted"||enforcement==="suspended";
@@ -1047,16 +1084,18 @@ function render(){
     html+=rows.map(productCard).join("")
   });
   el("grid").innerHTML=html||'<div class="empty">No matching published products in this store yet.</div>';
-  el("grid").querySelectorAll("[data-add]").forEach(function(b){b.onclick=function(){addProduct(this.dataset.add)}});
+  el("grid").querySelectorAll("[data-add]").forEach(function(b){b.onclick=function(){addProduct(this.dataset.add).catch(function(){})}});
   el("grid").querySelectorAll("[data-open]").forEach(function(b){b.onclick=function(){openProductDetail(this.dataset.open)}});
   renderCategoryNav()
 }
-function addProduct(id){
+async function addProduct(id){
   var p=products.find(function(x){return x.id===id}),enforcement=String((marketplaceTrust.enforcement||{}).enforcement_status||"good_standing");
   if(!p||orderUnavailable(p))return;
   if(p.price==null&&cart[id]==null){location.href="./messages.html?product="+encodeURIComponent(id)+"&store="+encodeURIComponent(store.id)+"&quote=1";return}
-  if(cart[id]!=null){openCart();return}
-  cart[id]=boundedQuantity(p,p.moq||1);saveCart();render();renderCart();openCart();
+  if(cart[id]==null)cart[id]=boundedQuantity(p,p.moq||1);
+  saveCart();render();renderCart();
+  try{await syncCartRemote()}catch(e){}
+  goToMainCart();
 }
 function setQuantity(id,value){
   var p=products.find(function(x){return x.id===id});if(!p)return;
@@ -1165,16 +1204,17 @@ async function boot(){
     if(dp&&dp.stock_status!=="out_of_stock"){
       var min=Number(dp.moq||1),q=Number.isFinite(deepQty)&&deepQty>0?Math.max(min,Math.floor(deepQty)):min;
       if(dp.stock_quantity!=null)q=Math.min(q,Number(dp.stock_quantity));
-      if(q>=min){cart[dp.id]=q;saveCart();render();renderCart();openCart()}
+      if(q>=min){cart[dp.id]=q;saveCart();render();renderCart();try{await syncCartRemote()}catch(e){}goToMainCart()}
     }
   }else if(deepProduct){openProductDetail(deepProduct)}
 }
 el("search").addEventListener("input",render);el("buyerCountry").addEventListener("change",loadFeePreview);el("paymentMethod").addEventListener("change",loadFeePreview);
-el("topCart").onclick=el("cartFab").onclick=openCart;el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
+el("topCart").onclick=el("cartFab").onclick=goToMainCart;el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
 el("closeCheckout").onclick=el("cancelCheckout").onclick=closeCheckout;el("placeOrder").onclick=placeOrder;el("doneCheckout").onclick=closeCheckout;
 el("checkoutModal").addEventListener("click",function(e){if(e.target===this)closeCheckout()});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeCart();closeCheckout()}});
 boot();
+window.addEventListener("online",function(){syncCartRemote().catch(function(){});var p=readLocalJson(PENDING_MARKET_SAVED_KEY,{});Object.keys(p).forEach(function(id){syncSavedRemote(id,!!p[id]).catch(function(){})})});
 window.addEventListener("focus",refreshStoreProducts);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")refreshStoreProducts()});
 setInterval(function(){if(document.visibilityState!=="hidden")refreshStoreProducts()},15000);
@@ -1204,11 +1244,7 @@ try{
   var b=document.getElementById("storeBottomCart");
   if(!b)return;
   b.addEventListener("click",function(){
-    var top=document.getElementById("topCart")||document.getElementById("cartFab");
-    if(top){top.click();return;}
-    var drawer=document.getElementById("cartDrawer"),backdrop=document.getElementById("cartBackdrop");
-    if(drawer)drawer.classList.add("open");
-    if(backdrop)backdrop.classList.add("open");
+    location.href="../rpe-v2/?panel=cartPanel";
   });
 })();
 </script>
