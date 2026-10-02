@@ -219,7 +219,6 @@ function rotateRecommended(){
   const shift=Math.max(1,Math.floor(cards.length/3));cards.slice(0,shift).forEach(c=>host.appendChild(c));
 }
 function setupRecommendations(){
-  const note=$q(".home-feed-note");if(note&&!$q(".rpe-feed-live",note.parentElement)){const b=document.createElement("span");b.className="rpe-feed-live";b.textContent="Refreshing mix";note.parentElement.appendChild(b)}
   clearInterval(recommendedTimer);recommendedTimer=setInterval(rotateRecommended,45000);
 }
 
