@@ -285,26 +285,8 @@ function setupResilience(){
   window.addEventListener("unhandledrejection",e=>{const msg=String(e.reason?.message||"");if(/network|fetch/i.test(msg))show("Check your Internet Connection",true)});
 }
 
-function handleEntryRoute(){
-  const qs=new URLSearchParams(location.search);
-  const requested=qs.get("panel");
-  const forceHome=qs.get("home")==="1";
-  if(forceHome){
-    try{openPanel("marketplaceHomePanel")}catch{try{showPanel("marketplaceHomePanel")}catch{}}
-    history.replaceState(null,"",location.pathname);
-    return;
-  }
-  if(requested){
-    const allowed=new Set(["marketplaceHomePanel","messagesPanel","homePanel","ordersPanel","toPayPanel","savedPanel","recentPanel","addressPanel","notifPanel","helpPanel"]);
-    if(allowed.has(requested)){
-      if((requested==="messagesPanel"||requested==="homePanel")&&!signedIn()){requireAccount(requested==="messagesPanel"?"open messages":"open your account");return;}
-      try{openPanel(requested)}catch{try{showPanel(requested)}catch{}}
-      history.replaceState(null,"",location.pathname);
-    }
-  }
-}
 function init(){
-  upgradeCheckout();enhancePaymentReceived();enhanceOrders();notificationEnhancements();enhanceAddresses();enhanceSaved();enhanceSearch();enhanceProductDetails();setupRecommendations();setupNav();securityPanel();setupGuestBrowse();setupResilience();addReviewEntry();handleEntryRoute();
+  upgradeCheckout();enhancePaymentReceived();enhanceOrders();notificationEnhancements();enhanceAddresses();enhanceSaved();enhanceSearch();enhanceProductDetails();setupRecommendations();setupNav();securityPanel();setupGuestBrowse();setupResilience();addReviewEntry();
   const cart=$q("#cartList");if(cart)cartObserver.observe(cart,{childList:true,subtree:true});
   // Re-apply additive UI after panel/data rerenders.
   const appRoot=$q("#app")||document.body;
