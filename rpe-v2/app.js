@@ -1433,6 +1433,11 @@ async function loadMarketplaceHomeData(){
     populateMarketplaceFilters();
     renderMarketplaceHome($("marketHomeSearch")?.value||"");
     renderHomeProducts();
+    // Marketplace products are also needed by Saved/Love and the unified Cart.
+    // Repaint them after every successful catalogue refresh so those sections
+    // never appear empty simply because marketplace data arrived later.
+    renderSaved();
+    renderCart();
     markPanelPainted("marketplaceHomePanel");
   }finally{
     marketFetchInFlight=false;
