@@ -79,7 +79,7 @@ if("serviceWorker" in navigator){
   }).catch(()=>{});
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./rpe-v2-sw.js?v=20261002-31",{scope:"./",updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register("./rpe-v2-sw.js?v=20261002-32",{scope:"./",updateViaCache:"none"});
       reg.update().catch(()=>{});
       setInterval(()=>reg.update().catch(()=>{}),30*60*1000);
       if(reg.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});
@@ -95,6 +95,13 @@ if("serviceWorker" in navigator){
       });
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
         note("");
+        const key="ranova-sw-controller-20261002-32";
+        try{
+          if(sessionStorage.getItem(key)!=="1"){
+            sessionStorage.setItem(key,"1");
+            location.reload();
+          }
+        }catch{location.reload()}
       });
     }catch(err){console.error("RANOVA install/update setup failed",err)}
   });
