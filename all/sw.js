@@ -1,4 +1,4 @@
-const CACHE="rpe-shell-v34";
+const CACHE="rpe-shell-v35";
 const SHELL=[
   "./fonts/inter-0.woff2",
   "./fonts/inter-1.woff2",
