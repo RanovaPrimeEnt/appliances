@@ -20,6 +20,9 @@ let favorites = new Set();
 let recentIds = [];
 let cartId = null;
 let cartItems = [];
+let marketCartRows=[];
+let marketCartProducts=new Map();
+let marketCartStores=new Map();
 let orders = [];
 let notifications = [];
 let addresses = [];
@@ -461,7 +464,7 @@ async function loadAll(){
     sb.from("notifications").select("id,user_id,type,title,message,related_order_id,read_at,created_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(40),
     sb.from("addresses").select("id,user_id,label,recipient_name,phone,region,city,area,street_address,landmark,is_default,created_at").eq("user_id",uid).order("is_default",{ascending:false}).order("created_at",{ascending:false}).limit(20),
     sb.from("return_requests").select("id,order_id,order_item_id,user_id,reason,return_status,created_at,updated_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(30),
-    loadCartItems().then(()=>({data:null,error:null}))
+    Promise.all([loadCartItems(),loadMarketplaceCart()]).then(()=>({data:null,error:null}))
   ]).then(([fav,rec,noti,addr,ret])=>{
     [fav,rec,noti,addr,ret].forEach(x=>{if(x?.error)throw x.error});
     favorites=new Set((fav.data||[]).map(x=>x.product_id));recentIds=(rec.data||[]).map(x=>x.product_id);
@@ -476,6 +479,106 @@ async function loadCartItems(){
   const {data,error}=await sb.from("cart_items").select("id,quantity,product_id,products(id,name,sku,price,currency,stock_status,product_images(image_url,is_primary,sort_order))").eq("cart_id",cartId).order("created_at").limit(100);
   if(error)throw error;cartItems=data||[];
 }
+
+async function loadMarketplaceCart(){
+  if(!user){marketCartRows=[];marketCartProducts=new Map();marketCartStores=new Map();return}
+  const {data:rows,error}=await sb.from("ranova_buyer_carts").select("store_id,items,updated_at").eq("user_id",user.id);
+  if(error)throw error;
+  marketCartRows=(rows||[]).map(r=>({store_id:r.store_id,items:r.items&&typeof r.items==="object"?r.items:{},updated_at:r.updated_at}));
+  const productIds=[...new Set(marketCartRows.flatMap(r=>Object.keys(r.items||{})))];
+  const storeIds=[...new Set(marketCartRows.map(r=>r.store_id).filter(Boolean))];
+  marketCartProducts=new Map();
+  marketCartStores=new Map();
+  if(productIds.length){
+    const {data,error:pe}=await sb.from("ranova_seller_products")
+      .select("id,store_id,name,sku,category,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,product_status")
+      .in("id",productIds);
+    if(pe)throw pe;
+    (data||[]).forEach(p=>marketCartProducts.set(p.id,p));
+  }
+  if(storeIds.length){
+    const known=new Map(marketStores.map(s=>[s.id,s]));
+    storeIds.forEach(id=>{if(known.has(id))marketCartStores.set(id,known.get(id))});
+    const missing=storeIds.filter(id=>!marketCartStores.has(id));
+    if(missing.length){
+      const {data,error:se}=await sb.from("ranova_seller_stores").select("id,store_name,slug,logo_url,store_status").in("id",missing);
+      if(se)throw se;
+      (data||[]).forEach(s=>marketCartStores.set(s.id,s));
+    }
+  }
+}
+function marketCartEntries(){
+  const out=[];
+  marketCartRows.forEach(row=>{
+    Object.entries(row.items||{}).forEach(([productId,quantity])=>{
+      const product=marketCartProducts.get(productId)||marketSellerProducts.find(p=>p.id===productId);
+      if(!product)return;
+      const q=marketProductQuantity(product,quantity);
+      if(q<1)return;
+      out.push({store_id:row.store_id,product_id:productId,quantity:q,product,store:marketCartStores.get(row.store_id)||marketStores.find(s=>s.id===row.store_id)||{}});
+    });
+  });
+  return out;
+}
+function marketCartLineCount(){return marketCartEntries().length}
+function cartLineCount(){return cartItems.length+marketCartLineCount()}
+function cartQuantityCount(){return cartItems.reduce((n,i)=>n+Number(i.quantity||0),0)+marketCartEntries().reduce((n,i)=>n+Number(i.quantity||0),0)}
+async function persistMarketCartRow(storeId){
+  const row=marketCartRows.find(r=>r.store_id===storeId);
+  if(!row||!Object.keys(row.items||{}).length){
+    marketCartRows=marketCartRows.filter(r=>r.store_id!==storeId);
+    const {error}=await sb.from("ranova_buyer_carts").delete().eq("user_id",user.id).eq("store_id",storeId);
+    if(error)throw error;
+    return;
+  }
+  const {error}=await sb.from("ranova_buyer_carts").upsert({
+    user_id:user.id,store_id:storeId,items:row.items,updated_at:new Date().toISOString()
+  },{onConflict:"user_id,store_id"});
+  if(error)throw error;
+}
+async function addMarketplaceToCart(product,quantity){
+  if(!user){showAuthConsole(true);return}
+  if(!product?.id||!product.store_id)return showToast("Product unavailable");
+  const q=marketProductQuantity(product,quantity||product.moq||1);
+  if(q<marketProductMinimum(product))return showToast("Quantity is below the minimum order");
+  let row=marketCartRows.find(r=>r.store_id===product.store_id);
+  if(!row){row={store_id:product.store_id,items:{}};marketCartRows.push(row)}
+  const previous=Number(row.items[product.id]||0);
+  row.items={...(row.items||{}),[product.id]:q};
+  marketCartProducts.set(product.id,product);
+  const store=marketStores.find(s=>s.id===product.store_id);if(store)marketCartStores.set(store.id,store);
+  renderCart();
+  try{
+    await persistMarketCartRow(product.store_id);
+    showToast(previous?"Cart quantity updated":"Added to cart");
+  }catch(e){
+    if(previous)row.items[product.id]=previous;else delete row.items[product.id];
+    renderCart();showToast("Could not update cart");
+  }
+}
+async function changeMarketCartQty(storeId,productId,delta){
+  const row=marketCartRows.find(r=>r.store_id===storeId),product=marketCartProducts.get(productId)||marketSellerProducts.find(p=>p.id===productId);
+  if(!row||!product)return;
+  const previous=Number(row.items[productId]||marketProductMinimum(product));
+  const next=marketProductQuantity(product,previous+delta);
+  if(next<marketProductMinimum(product))return;
+  row.items={...(row.items||{}),[productId]:next};
+  renderCart();
+  try{await persistMarketCartRow(storeId)}catch{row.items[productId]=previous;renderCart();showToast("Could not update quantity")}
+}
+async function removeMarketCartItem(storeId,productId){
+  const row=marketCartRows.find(r=>r.store_id===storeId);if(!row)return;
+  const previous=Number(row.items[productId]||0);
+  const next={...(row.items||{})};delete next[productId];row.items=next;renderCart();
+  try{await persistMarketCartRow(storeId)}catch{row.items={...(row.items||{}),[productId]:previous};renderCart();showToast("Could not remove product")}
+}
+function marketplaceCartSubtotal(){
+  let known=true,total=0;
+  marketCartEntries().forEach(i=>{if(i.product.price==null)known=false;else total+=Number(i.product.price)*Number(i.quantity)});
+  cartItems.forEach(i=>{const p=i.products||{};if(p.price==null)known=false;else total+=Number(p.price)*Number(i.quantity)});
+  return known?total:null;
+}
+
 
 
 function renderAll(){
@@ -776,28 +879,148 @@ async function removeCart(item){
   if(error){cartItems.splice(Math.min(index,cartItems.length),0,removed);renderCart();saveFastCache();showToast("Could not remove product")}
 }
 function renderCart(){
-  const list=$("cartList");setBadge("cartCount",cartItems.length);setBadge("bottomCartCount",cartItems.length);
-  if(!cartItems.length){list.innerHTML='<div class="empty"><b>Your cart is empty</b>Add products you want and they will appear here.</div>';return}
-  list.innerHTML=cartItems.map(i=>{const p=i.products||{},img=imageFor(p);return `<div class="cart-item" data-cart="${i.id}">
-    ${img?'<img src="'+esc(img)+'" alt="">':'<div style="width:58px;height:58px;background:#f5f7f6;border-radius:10px"></div>'}
-    <div><b>${esc(p.name||"Product")}</b><small>${esc(money(p.price,p.currency))}</small><div class="qty"><button data-minus="${i.id}">−</button><span>${i.quantity}</span><button data-plus="${i.id}">+</button></div></div>
-    <button class="remove" data-remove="${i.id}">Remove</button>
-  </div>`}).join("");
+  const list=$("cartList"),marketEntries=marketCartEntries();
+  const lineCount=cartItems.length+marketEntries.length;
+  setBadge("cartCount",lineCount);setBadge("bottomCartCount",lineCount);
+  const total=marketplaceCartSubtotal();
+  if($("cartGrandTotal"))$("cartGrandTotal").innerHTML=lineCount
+    ? '<span>'+lineCount+' item'+(lineCount===1?'':'s')+'</span><strong>'+(total==null?'Total confirmed at checkout':money(total,"GHS"))+'</strong>'
+    : '';
+  if($("sendOrder"))$("sendOrder").disabled=!lineCount;
+  if(!lineCount){list.innerHTML='<div class="empty"><b>Your cart is empty</b>Add products you want and they will appear here.</div>';return}
+
+  const grouped=new Map();
+  marketEntries.forEach(i=>{if(!grouped.has(i.store_id))grouped.set(i.store_id,[]);grouped.get(i.store_id).push(i)});
+  let html="";
+  grouped.forEach((items,storeId)=>{
+    const store=items[0]?.store||{};
+    html+='<section class="rnv-cart-store"><div class="rnv-cart-store-head">'+
+      (store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="">':'<span>🏪</span>')+
+      '<b>'+esc(store.store_name||"Marketplace Store")+'</b></div>';
+    html+=items.map(i=>{
+      const p=i.product,img=p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls[0]:"")||"";
+      return '<div class="cart-item rnv-market-cart-item">'+
+        (img?'<img src="'+esc(img)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" decoding="async">':'<div class="rnv-cart-img-empty"></div>')+
+        '<div><b>'+esc(p.name||"Product")+'</b><small>'+esc(p.price==null?"Price to confirm":money(p.price,p.currency||"GHS"))+'</small>'+
+        '<div class="qty"><button type="button" data-market-minus="'+esc(storeId)+'|'+esc(p.id)+'">−</button><span>'+esc(i.quantity)+'</span><button type="button" data-market-plus="'+esc(storeId)+'|'+esc(p.id)+'">+</button></div></div>'+
+        '<button class="remove" type="button" data-market-remove="'+esc(storeId)+'|'+esc(p.id)+'">Remove</button></div>';
+    }).join("");
+    html+='</section>';
+  });
+
+  if(cartItems.length){
+    html+='<section class="rnv-cart-store"><div class="rnv-cart-store-head"><span>R</span><b>RANOVA Prime</b></div>'+
+      cartItems.map(i=>{const p=i.products||{},img=imageFor(p);return '<div class="cart-item">'+
+      (img?'<img src="'+esc(img)+'" alt="">':'<div class="rnv-cart-img-empty"></div>')+
+      '<div><b>'+esc(p.name||"Product")+'</b><small>'+esc(money(p.price,p.currency))+'</small><div class="qty"><button data-minus="'+esc(i.id)+'">−</button><span>'+esc(i.quantity)+'</span><button data-plus="'+esc(i.id)+'">+</button></div></div>'+
+      '<button class="remove" data-remove="'+esc(i.id)+'">Remove</button></div>'}).join("")+'</section>';
+  }
+
+  list.innerHTML=html;
   list.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>changeQty(cartItems.find(x=>x.id===b.dataset.minus),-1));
   list.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>changeQty(cartItems.find(x=>x.id===b.dataset.plus),1));
   list.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeCart(cartItems.find(x=>x.id===b.dataset.remove)));
+  list.querySelectorAll("[data-market-minus]").forEach(b=>b.onclick=()=>{const [s,p]=b.dataset.marketMinus.split("|");changeMarketCartQty(s,p,-1)});
+  list.querySelectorAll("[data-market-plus]").forEach(b=>b.onclick=()=>{const [s,p]=b.dataset.marketPlus.split("|");changeMarketCartQty(s,p,1)});
+  list.querySelectorAll("[data-market-remove]").forEach(b=>b.onclick=()=>{const [s,p]=b.dataset.marketRemove.split("|");removeMarketCartItem(s,p)});
 }
-function openCart(){$("cartDrawer").classList.add("open");afterPaint(()=>renderCart())}
+function openCart(){
+  $("cartDrawer").classList.add("open");
+  renderCart();
+  if(user)loadMarketplaceCart().then(renderCart).catch(()=>{});
+}
 function closeCart(){$("cartDrawer").classList.remove("open")}
-$("sendOrder").onclick=async()=>{
-  if(!cartItems.length)return showToast("Your cart is empty");
-  $("sendOrder").disabled=true;$("sendOrder").textContent="Sending…";
-  const defaultAddr=addresses.find(x=>x.is_default)||addresses[0]||null;
-  const {data,error}=await sb.rpc("create_rpe_order_from_cart",{p_address_id:defaultAddr?.id||null,p_note:null});
-  $("sendOrder").disabled=false;$("sendOrder").textContent="Send order request";
-  if(error)return showToast(error.message||"Could not send order");
-  closeCart();showToast("Order request sent");await Promise.all([loadCartItems(),loadOrdersOnly(),loadNotificationsOnly()]);renderCart();renderOrders();renderNotifications();renderCounts();showPanel("ordersPanel");
-};
+
+const COUNTRY_NAMES={GH:"Ghana",NG:"Nigeria",CI:"Côte d’Ivoire",TG:"Togo",BJ:"Benin",BF:"Burkina Faso",NE:"Niger",SN:"Senegal",GM:"Gambia",GN:"Guinea",SL:"Sierra Leone",LR:"Liberia",KE:"Kenya",UG:"Uganda",TZ:"Tanzania",ZA:"South Africa",US:"United States",CA:"Canada",GB:"United Kingdom",FR:"France",DE:"Germany",CN:"China",IN:"India",AE:"United Arab Emirates"};
+
+async function openMarketplaceCheckout(){
+  if(!user)return showAuthConsole(true);
+  if(!cartLineCount())return showToast("Your cart is empty");
+  closeCart();
+  $("marketCheckoutOverlay").classList.add("show");
+  $("marketCheckoutOverlay").setAttribute("aria-hidden","false");
+  $("marketCheckoutMsg").classList.add("hide");
+  try{
+    const [prof,addr,sessionResult]=await Promise.all([
+      sb.from("ranova_buyer_profiles").select("full_name,phone,default_country_code").eq("user_id",user.id).maybeSingle(),
+      sb.from("ranova_buyer_addresses").select("recipient_name,phone,country_code,country_name,address_text,is_default").eq("user_id",user.id).order("is_default",{ascending:false}).order("updated_at",{ascending:false}).limit(1),
+      sb.auth.getSession()
+    ]);
+    const address=addr.data?.[0]||{},bp=prof.data||{},authUser=sessionResult.data?.session?.user||user;
+    $("marketCheckoutName").value=address.recipient_name||bp.full_name||"";
+    $("marketCheckoutPhone").value=address.phone||bp.phone||authUser.phone||"";
+    $("marketCheckoutEmail").value=authUser.email||"";
+    $("marketCheckoutCountry").value=address.country_code||bp.default_country_code||"GH";
+    $("marketCheckoutLocation").value=address.address_text||"";
+    $("marketCheckoutPayPhone").value=address.phone||bp.phone||authUser.phone||"";
+  }catch{}
+  renderMarketplaceCheckoutSummary();
+}
+function closeMarketplaceCheckout(){
+  $("marketCheckoutOverlay").classList.remove("show");
+  $("marketCheckoutOverlay").setAttribute("aria-hidden","true");
+}
+function renderMarketplaceCheckoutSummary(){
+  const count=cartLineCount(),subtotal=marketplaceCartSubtotal();
+  $("marketCheckoutSummary").innerHTML='<span>'+count+' product'+(count===1?'':'s')+' from '+new Set(marketCartEntries().map(i=>i.store_id)).size+' marketplace store(s)</span><strong>'+(subtotal==null?'Price confirmed at checkout':money(subtotal,"GHS"))+'</strong>';
+}
+function updateCheckoutPaymentFields(){
+  const momo=$("marketCheckoutPayment").value==="Mobile Money";
+  $("marketCheckoutNetworkWrap").classList.toggle("hide",!momo);
+  $("marketCheckoutPayPhoneWrap").classList.toggle("hide",!momo);
+}
+async function placeMarketplaceCartOrder(){
+  const name=$("marketCheckoutName").value.trim(),phone=$("marketCheckoutPhone").value.trim(),email=$("marketCheckoutEmail").value.trim();
+  const country=$("marketCheckoutCountry").value,locationText=$("marketCheckoutLocation").value.trim(),method=$("marketCheckoutPayment").value;
+  const network=$("marketCheckoutNetwork").value,payPhone=$("marketCheckoutPayPhone").value.trim(),note=$("marketCheckoutNote").value.trim();
+  const msg=$("marketCheckoutMsg");
+  const fail=t=>{msg.textContent=t;msg.classList.remove("hide")};
+  if(!name||!phone||!country||!locationText)return fail("Complete your name, phone number, delivery country and delivery location.");
+  if(method==="Mobile Money"&&!payPhone)return fail("Enter the Mobile Money number for payment authorization.");
+  const items=[
+    ...marketCartEntries().map(i=>({seller_product_id:i.product_id,quantity:i.quantity})),
+    ...cartItems.map(i=>({product_id:i.product_id,product_name:i.products?.name||"Product",quantity:i.quantity,unit_price:i.products?.price==null?null:Number(i.products.price)}))
+  ];
+  if(!items.length)return fail("Your cart is empty.");
+  const button=$("marketCheckoutPlace"),old=button.textContent;button.disabled=true;button.textContent="Placing order…";msg.classList.add("hide");
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(cfg.supabaseUrl+"/functions/v1/ranova-place-order",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-ranova-client":"ranova-site-v1",
+        "apikey":cfg.supabasePublishableKey,
+        ...(session?.access_token?{Authorization:"Bearer "+session.access_token}:{})
+      },
+      body:JSON.stringify({
+        customer_name:name,customer_phone:phone,customer_email:email,
+        delivery_location:locationText,buyer_country_code:country,buyer_country_name:COUNTRY_NAMES[country]||country,
+        payment_method:method,payment_network:method==="Mobile Money"?network:"bank_transfer",
+        payment_phone:method==="Mobile Money"?payPhone:null,buyer_note:note,items
+      })
+    });
+    const out=await res.json().catch(()=>({}));
+    if(!res.ok||!out.ok)throw new Error(out.error||"Could not place the order.");
+    if(out.order_ref&&out.buyer_access_code)try{localStorage.setItem("ranova_buyer_code_"+out.order_ref,String(out.buyer_access_code))}catch{}
+    await Promise.all([
+      sb.from("ranova_buyer_carts").delete().eq("user_id",user.id),
+      cartId?sb.from("cart_items").delete().eq("cart_id",cartId):Promise.resolve()
+    ]);
+    marketCartRows=[];marketCartProducts=new Map();marketCartStores=new Map();cartItems=[];
+    renderCart();closeMarketplaceCheckout();
+    await loadToPayOrders(false).catch(()=>{});
+    showPanel("toPayPanel");
+    showToast("Order placed. Continue to payment.");
+  }catch(e){fail(e.message||"Could not place the order.")}
+  finally{button.disabled=false;button.textContent=old}
+}
+$("sendOrder").onclick=openMarketplaceCheckout;
+if($("marketCheckoutClose"))$("marketCheckoutClose").onclick=closeMarketplaceCheckout;
+if($("marketCheckoutOverlay"))$("marketCheckoutOverlay").onclick=e=>{if(e.target===$("marketCheckoutOverlay"))closeMarketplaceCheckout()};
+if($("marketCheckoutPayment"))$("marketCheckoutPayment").onchange=updateCheckoutPaymentFields;
+if($("marketCheckoutPlace"))$("marketCheckoutPlace").onclick=placeMarketplaceCartOrder;
+updateCheckoutPaymentFields();
 
 async function loadOrdersOnly(){const {data,error}=await sb.from("orders").select("*,order_items(*)").eq("user_id",user.id).order("created_at",{ascending:false});if(!error)orders=data||[]}
 async function loadNotificationsOnly(){const {data,error}=await sb.from("notifications").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(50);if(!error)notifications=data||[]}
@@ -1023,7 +1246,7 @@ function updateMarketProductTotal(){
   input.value=q;
   const unavailable=String(p.stock_status||"")==="out_of_stock"||(stock!=null&&stock<min);
   if(total)total.textContent=p.price==null?"Price will be confirmed by the seller":"Product total: "+money(Number(p.price)*q,p.currency||"GHS");
-  if(buy){buy.disabled=unavailable;buy.textContent=unavailable?"Unavailable":"Buy now"}
+  if(buy){buy.disabled=unavailable;buy.textContent=unavailable?"Unavailable":"Add to Cart"}
 }
 function paintMarketplaceProductDetails(p,store){
   if(!p)return;
@@ -1292,7 +1515,7 @@ if($("marketProductPlus"))$("marketProductPlus").onclick=()=>{if(!marketProductC
 if($("marketProductQty"))$("marketProductQty").onchange=()=>updateMarketProductTotal();
 if($("marketProductShare"))$("marketProductShare").onclick=shareMarketplaceProduct;
 if($("marketProductStore"))$("marketProductStore").onclick=()=>{const url=sellerStoreProductUrl(marketProductCurrent);if(url)location.href=url;else showToast("Store unavailable")};
-if($("marketProductBuy"))$("marketProductBuy").onclick=()=>{const p=marketProductCurrent,url=sellerStoreProductUrl(p);if(!p||!url)return showToast("Store unavailable");const q=marketProductQuantity(p,$("marketProductQty").value);location.href=url+"&qty="+encodeURIComponent(q)};
+if($("marketProductBuy"))$("marketProductBuy").onclick=async()=>{const p=marketProductCurrent;if(!p)return;const q=marketProductQuantity(p,$("marketProductQty").value);await addMarketplaceToCart(p,q);openCart()};
 if($("marketProductMessage"))$("marketProductMessage").onclick=async()=>{
   const p=marketProductCurrent;if(!p)return;
   showPanel("messagesPanel");
