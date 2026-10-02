@@ -1004,7 +1004,19 @@ function saveCart(queue){
   if(queue!==false)queueCartDraft();
   if(queue!==false&&buyerSession&&navigator.onLine)syncCartRemote().catch(function(){});
 }
-function loadCart(){try{var x=localStorage.getItem(cartLocalKey());cart=x?JSON.parse(x):{}}catch(e){cart={}};sanitizeCart()}
+function loadCart(){
+  try{
+    var x=localStorage.getItem(cartLocalKey());
+    if(!x)x=sessionStorage.getItem(cartLocalKey());
+    cart=x?JSON.parse(x):{};
+    if(!Object.keys(cart).length){
+      var legacy=readLocalJson("ranova_universal_cart",{});
+      products.forEach(function(p){if(Number(legacy[p.id]||0)>0)cart[p.id]=Number(legacy[p.id])});
+      if(Object.keys(cart).length)queueCartDraft();
+    }
+  }catch(e){cart={}}
+  sanitizeCart()
+}
 async function hydrateBuyerAccount(){
   try{
     var gu=await sb.auth.getUser(),authUser=gu.data&&gu.data.user;if(!authUser)return;
