@@ -29,6 +29,12 @@ let cartEditMode=false;
 let cartViewMode="all";
 let marketCartLoaded=false;
 let marketCartLoadPromise=null;
+const UNIVERSAL_MARKET_CART_DRAFT_KEY="ranova_universal_market_cart_v2";
+const PENDING_MARKET_SAVED_KEY="ranova_pending_saved_products_v2";
+let shoppingRefreshPromise=null;
+function readLocalJson(key,fallback){try{const v=JSON.parse(localStorage.getItem(key)||"null");return v==null?fallback:v}catch{return fallback}}
+function writeLocalJson(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
+
 let orders = [];
 let notifications = [];
 let addresses = [];
@@ -410,7 +416,7 @@ $("signOut").onclick=()=>sb.auth.signOut();
 function handleRequestedPanel(){
   const qs=new URLSearchParams(location.search);
   const requested=qs.get("panel")||"";
-  const allowed=new Set(["marketplaceHomePanel","messagesPanel","homePanel"]);
+  const allowed=new Set(["marketplaceHomePanel","messagesPanel","cartPanel","savedPanel","homePanel"]);
   if(!allowed.has(requested))return false;
   showPanel(requested);
   const url=new URL(location.href);
@@ -490,6 +496,7 @@ async function applySession(session,initial=false){
   }
 
   try{
+    await importStoreShoppingDrafts().catch(()=>{});
     await loadAll();
     initializedUserId=nextId;
     setup.classList.add("hide");
@@ -552,6 +559,49 @@ async function loadCartItems(){
   if(!cartId){cartItems=[];return}
   const {data,error}=await sb.from("cart_items").select("id,quantity,product_id,products(id,name,sku,price,currency,stock_status,product_images(image_url,is_primary,sort_order))").eq("cart_id",cartId).order("created_at").limit(100);
   if(error)throw error;cartItems=data||[];
+}
+
+async function importStoreShoppingDrafts(){
+  if(!user||!navigator.onLine)return false;
+  let changed=false;
+  const drafts=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});
+  for(const [storeId,items] of Object.entries(drafts||{})){
+    try{
+      const clean=items&&typeof items==="object"?items:{};
+      const req=Object.keys(clean).length
+        ? sb.from("ranova_buyer_carts").upsert({user_id:user.id,store_id:storeId,items:clean,updated_at:new Date().toISOString()},{onConflict:"user_id,store_id"})
+        : sb.from("ranova_buyer_carts").delete().eq("user_id",user.id).eq("store_id",storeId);
+      const {error}=await req;if(error)throw error;
+      delete drafts[storeId];changed=true;
+    }catch{}
+  }
+  writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,drafts);
+
+  const pending=readLocalJson(PENDING_MARKET_SAVED_KEY,{});
+  for(const [productId,save] of Object.entries(pending||{})){
+    try{
+      const req=save
+        ? sb.from("ranova_buyer_saved_products").upsert({user_id:user.id,product_id:productId,saved_at:new Date().toISOString()},{onConflict:"user_id,product_id"})
+        : sb.from("ranova_buyer_saved_products").delete().eq("user_id",user.id).eq("product_id",productId);
+      const {error}=await req;if(error)throw error;
+      delete pending[productId];changed=true;
+    }catch{}
+  }
+  writeLocalJson(PENDING_MARKET_SAVED_KEY,pending);
+  return changed;
+}
+async function refreshBuyerShoppingState(){
+  if(!user||!navigator.onLine)return;
+  if(shoppingRefreshPromise)return shoppingRefreshPromise;
+  shoppingRefreshPromise=(async()=>{
+    await importStoreShoppingDrafts().catch(()=>{});
+    marketCartLoaded=false;
+    await loadMarketplaceCart().catch(()=>{});
+    const {data,error}=await sb.from("ranova_buyer_saved_products").select("product_id").eq("user_id",user.id);
+    if(!error)marketSavedProducts=new Set((data||[]).map(x=>x.product_id));
+    renderCart();renderSaved();renderHomeProducts();renderMarketplaceHome($("marketHomeSearch")?.value||"");saveFastCache();
+  })();
+  try{return await shoppingRefreshPromise}finally{shoppingRefreshPromise=null}
 }
 
 async function loadMarketplaceCart(){
@@ -869,10 +919,17 @@ async function toggleMarketplaceSaved(id){
     : sb.from("ranova_buyer_saved_products").upsert({user_id:user.id,product_id:id},{onConflict:"user_id,product_id"});
   const {error}=await req;
   if(error){
-    if(wasSaved)marketSavedProducts.add(id);else marketSavedProducts.delete(id);
-    renderMarketplaceHome($("marketHomeSearch")?.value||"");renderHomeProducts();renderSaved();saveFastCache();
-    if(marketProductCurrent?.id===id&&$("marketProductSave"))$("marketProductSave").textContent=marketSavedProducts.has(id)?"★":"☆";
-    showToast("Could not update saved products");
+    const offline=!navigator.onLine||/fetch|network|connection/i.test(String(error.message||error));
+    if(offline){
+      const pending=readLocalJson(PENDING_MARKET_SAVED_KEY,{});
+      pending[id]=!wasSaved;writeLocalJson(PENDING_MARKET_SAVED_KEY,pending);
+      showToast((wasSaved?"Removed":"Saved")+" — will sync when online");
+    }else{
+      if(wasSaved)marketSavedProducts.add(id);else marketSavedProducts.delete(id);
+      renderMarketplaceHome($("marketHomeSearch")?.value||"");renderHomeProducts();renderSaved();saveFastCache();
+      if(marketProductCurrent?.id===id&&$("marketProductSave"))$("marketProductSave").textContent=marketSavedProducts.has(id)?"★":"☆";
+      showToast("Could not update saved products");
+    }
   }
 }
 
@@ -1655,7 +1712,7 @@ function renderMarketplaceHome(filter=""){
     summary.textContent=(filtered?ps.length:marketSellerProducts.length)+" product"+((filtered?ps.length:marketSellerProducts.length)===1?"":"s")+(filtered?" found":" live");
   }
   if(productHost){
-    const productRows=ps.slice(0,36);
+    const productRows=navigator.onLine?ps.slice(0,36):ps;
     productHost.innerHTML=productRows.length?productRows.map(p=>{
       const store=storeById.get(p.store_id)||{};
       const moq=Number(p.moq||1);
@@ -2234,6 +2291,9 @@ function removeLegacyFeedNotice(root=document){
 }
 removeLegacyFeedNotice();
 new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>{if(n.nodeType===1)removeLegacyFeedNotice(n)}))).observe(document.body,{childList:true,subtree:true});
+window.addEventListener("pageshow",()=>{if(user)refreshBuyerShoppingState().catch(()=>{})});
+window.addEventListener("online",()=>{if(user)refreshBuyerShoppingState().catch(()=>{})});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&user)refreshBuyerShoppingState().catch(()=>{})});
 startRecommendationRotation();
 boot();
 })();
