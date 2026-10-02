@@ -23,6 +23,8 @@ let cartItems = [];
 let marketCartRows=[];
 let marketCartProducts=new Map();
 let marketCartStores=new Map();
+let marketCartLoaded=false;
+let marketCartLoadPromise=null;
 let orders = [];
 let notifications = [];
 let addresses = [];
@@ -481,7 +483,9 @@ async function loadCartItems(){
 }
 
 async function loadMarketplaceCart(){
-  if(!user){marketCartRows=[];marketCartProducts=new Map();marketCartStores=new Map();return}
+  if(!user){marketCartRows=[];marketCartProducts=new Map();marketCartStores=new Map();marketCartLoaded=false;return}
+  if(marketCartLoadPromise)return marketCartLoadPromise;
+  marketCartLoadPromise=(async()=>{
   const {data:rows,error}=await sb.from("ranova_buyer_carts").select("store_id,items,updated_at").eq("user_id",user.id);
   if(error)throw error;
   marketCartRows=(rows||[]).map(r=>({store_id:r.store_id,items:r.items&&typeof r.items==="object"?r.items:{},updated_at:r.updated_at}));
@@ -491,7 +495,7 @@ async function loadMarketplaceCart(){
   marketCartStores=new Map();
   if(productIds.length){
     const {data,error:pe}=await sb.from("ranova_seller_products")
-      .select("id,store_id,name,sku,category,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,product_status")
+      .select("id,store_id,name,sku,category,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,pricing_tiers,product_status")
       .in("id",productIds);
     if(pe)throw pe;
     (data||[]).forEach(p=>marketCartProducts.set(p.id,p));
@@ -506,6 +510,9 @@ async function loadMarketplaceCart(){
       (data||[]).forEach(s=>marketCartStores.set(s.id,s));
     }
   }
+  marketCartLoaded=true;
+  })();
+  try{return await marketCartLoadPromise}finally{marketCartLoadPromise=null}
 }
 function marketCartEntries(){
   const out=[];
@@ -538,6 +545,7 @@ async function persistMarketCartRow(storeId){
 }
 async function addMarketplaceToCart(product,quantity){
   if(!user){showAuthConsole(true);return}
+  if(!marketCartLoaded)try{await loadMarketplaceCart()}catch{}
   if(!product?.id||!product.store_id)return showToast("Product unavailable");
   const q=marketProductQuantity(product,quantity||product.moq||1);
   if(q<marketProductMinimum(product))return showToast("Quantity is below the minimum order");
@@ -572,9 +580,16 @@ async function removeMarketCartItem(storeId,productId){
   const next={...(row.items||{})};delete next[productId];row.items=next;renderCart();
   try{await persistMarketCartRow(storeId)}catch{row.items={...(row.items||{}),[productId]:previous};renderCart();showToast("Could not remove product")}
 }
+function marketUnitPrice(product,quantity){
+  if(product?.price==null)return null;
+  let price=Number(product.price);
+  const tiers=Array.isArray(product.pricing_tiers)?product.pricing_tiers.slice().sort((a,b)=>Number(a.min_qty||0)-Number(b.min_qty||0)):[];
+  tiers.forEach(t=>{if(Number(quantity)>=Number(t.min_qty||0)&&Number.isFinite(Number(t.unit_price)))price=Number(t.unit_price)});
+  return price;
+}
 function marketplaceCartSubtotal(){
   let known=true,total=0;
-  marketCartEntries().forEach(i=>{if(i.product.price==null)known=false;else total+=Number(i.product.price)*Number(i.quantity)});
+  marketCartEntries().forEach(i=>{const price=marketUnitPrice(i.product,i.quantity);if(price==null)known=false;else total+=price*Number(i.quantity)});
   cartItems.forEach(i=>{const p=i.products||{};if(p.price==null)known=false;else total+=Number(p.price)*Number(i.quantity)});
   return known?total:null;
 }
@@ -901,7 +916,7 @@ function renderCart(){
       const p=i.product,img=p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls[0]:"")||"";
       return '<div class="cart-item rnv-market-cart-item">'+
         (img?'<img src="'+esc(img)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" decoding="async">':'<div class="rnv-cart-img-empty"></div>')+
-        '<div><b>'+esc(p.name||"Product")+'</b><small>'+esc(p.price==null?"Price to confirm":money(p.price,p.currency||"GHS"))+'</small>'+
+        '<div><b>'+esc(p.name||"Product")+'</b><small>'+esc(marketUnitPrice(p,i.quantity)==null?"Price to confirm":money(marketUnitPrice(p,i.quantity),p.currency||"GHS"))+'</small>'+
         '<div class="qty"><button type="button" data-market-minus="'+esc(storeId)+'|'+esc(p.id)+'">−</button><span>'+esc(i.quantity)+'</span><button type="button" data-market-plus="'+esc(storeId)+'|'+esc(p.id)+'">+</button></div></div>'+
         '<button class="remove" type="button" data-market-remove="'+esc(storeId)+'|'+esc(p.id)+'">Remove</button></div>';
     }).join("");
