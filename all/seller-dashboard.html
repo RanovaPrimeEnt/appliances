@@ -548,9 +548,9 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
           <div class="payout-breakdown" style="margin-bottom:14px"><span>Total money<b id="sellerWalletTotal">GHC 0.00</b></span><span>Payment records<b id="sellerPayoutCount">0</b></span><span>Money on hold<b id="sellerHeldShare">0%</b></span><span>Money ready<b id="sellerAvailableShare">0%</b></span></div>
           <div class="form-grid">
             <div class="field"><label>Payout method</label><select id="payoutMethod"><option>Mobile Money</option><option>Bank Transfer</option></select></div>
-            <div class="field"><label>Provider / bank</label><select id="payoutProvider"><option value="">Choose provider</option></select></div>
+            <div class="field"><label id="payoutProviderLabel">Mobile Money network</label><select id="payoutProvider"><option value="">Select network</option></select><small id="payoutProviderHint" class="hint" style="display:block;margin-top:5px;font-size:11px"></small></div>
             <div class="field"><label>Account name</label><input id="payoutAccountName" placeholder="Registered account name"></div>
-            <div class="field"><label>Account / MoMo number</label><input id="payoutAccountReference" autocomplete="off" placeholder="Entered securely for verification"></div>
+            <div class="field"><label id="payoutAccountNumberLabel">MoMo number</label><input id="payoutAccountReference" autocomplete="off" inputmode="numeric" placeholder="Select a network first" disabled></div>
           </div>
           <div class="actions"><button id="savePayoutProfile" class="btn green" type="button">Verify payout destination</button></div>
           <div id="payoutVerified" class="hint" style="margin-top:9px"></div>
@@ -1451,10 +1451,20 @@ el("submitAppeal").onclick=async function(){
 };
 
 function setPayoutProviders(){
-  var method=el("payoutMethod").value,rows=method==="Bank Transfer"?(payoutChannels.banks||[]):(payoutChannels.mobile_money||[]);
-  var current=el("payoutProvider").value;
-  el("payoutProvider").innerHTML='<option value="">Choose provider</option>'+rows.map(function(x){return '<option value="'+esc(x.code)+'">'+esc(x.name)+'</option>'}).join("");
-  if(rows.some(function(x){return x.code===current}))el("payoutProvider").value=current;
+  var method=el("payoutMethod").value,isBank=method==="Bank Transfer";
+  var rows=(isBank?(payoutChannels.banks||[]):(payoutChannels.mobile_money||[])).slice().sort(function(a,b){return String(a.name||"").localeCompare(String(b.name||""))});
+  var current=el("payoutProvider").value,provider=el("payoutProvider"),account=el("payoutAccountReference");
+  el("payoutProviderLabel").textContent=isBank?"Bank":"Mobile Money network";
+  el("payoutAccountNumberLabel").textContent=isBank?"Bank account number":"MoMo number";
+  provider.innerHTML='<option value="">'+(isBank?"Select your bank":"Select Mobile Money network")+'</option>'+rows.map(function(x){return '<option value="'+esc(x.code)+'">'+esc(x.name)+'</option>'}).join("");
+  provider.disabled=!rows.length;
+  el("payoutProviderHint").textContent=rows.length
+    ?(isBank?"Choose your bank first, then enter the account number.":"Choose your Mobile Money network first, then enter the MoMo number.")
+    :(payoutChannels.provider_configured?"No supported "+(isBank?"banks":"Mobile Money networks")+" are available right now. Refresh and try again.":"Payout provider setup is not active yet.");
+  if(rows.some(function(x){return x.code===current}))provider.value=current;
+  account.disabled=!provider.value;
+  account.placeholder=provider.value?(isBank?"Enter bank account number":"Enter Mobile Money number"):(isBank?"Select a bank first":"Select a network first");
+  account.inputMode="numeric";
 }
 function renderFinance(){
   var profile=state.finance_profile||{},settings=state.finance_settings||{},payouts=state.payouts||[],wallet=state.wallet_summary||{};
@@ -1484,13 +1494,24 @@ function renderFinance(){
     return '<div class="order-row"><div><b>'+esc(p.platform_order_ref||p.seller_order_ref)+'</b><small>'+esc(p.seller_order_ref)+' · '+(p.created_at?new Date(p.created_at).toLocaleString():"")+'</small><div class="payout-breakdown"><span>Products<b>'+esc(money(p.gross_product_amount))+'</b></span><span>Commission '+Number(p.commission_rate||0).toFixed(2)+'%<b>- '+esc(money(p.commission_amount))+'</b></span><span>Delivery<b>'+esc(money(p.delivery_fee))+'</b></span><span>Your payout<b>'+esc(money(p.payout_amount))+'</b></span></div>'+feeText+'</div><div><span class="status">'+esc(pretty(p.payout_status))+'</span><small>'+(p.eligible_at?'Eligible '+new Date(p.eligible_at).toLocaleDateString():'Eligibility pending')+'</small></div><div><b>'+esc(money(p.payout_amount))+'</b><small>'+(p.payout_reference?'Payout ref: '+esc(p.payout_reference):'No payout reference yet')+'</small>'+(p.payout_note?'<small>'+esc(p.payout_note)+'</small>':'')+'</div></div>';
   }).join("");
 }
-el("payoutMethod").onchange=setPayoutProviders;
+el("payoutMethod").onchange=function(){
+  el("payoutProvider").value="";
+  el("payoutAccountReference").value="";
+  setPayoutProviders();
+};
+el("payoutProvider").onchange=function(){
+  var selected=!!this.value,isBank=el("payoutMethod").value==="Bank Transfer";
+  el("payoutAccountReference").disabled=!selected;
+  el("payoutAccountReference").placeholder=selected?(isBank?"Enter bank account number":"Enter Mobile Money number"):(isBank?"Select a bank first":"Select a network first");
+  if(selected)el("payoutAccountReference").focus();
+};
 el("savePayoutProfile").onclick=async function(){
   clearMsg(el("payoutMsg"));
   if(!state.store){msg(el("payoutMsg"),"Create your store profile before adding payout details.");return}
   if(!payoutChannels.provider_configured){msg(el("payoutMsg"),"RANOVA must activate the approved Hubtel payout connection before payout destinations can be verified automatically.");return}
   var sel=el("payoutProvider"),providerName=sel.options[sel.selectedIndex]?.text||"",account=el("payoutAccountReference").value.trim();
-  if(!sel.value||!account)return msg(el("payoutMsg"),"Choose the provider and enter the account/MoMo number.");
+  if(!sel.value)return msg(el("payoutMsg"),el("payoutMethod").value==="Bank Transfer"?"Select your bank first.":"Select your Mobile Money network first.");
+  if(!account)return msg(el("payoutMsg"),el("payoutMethod").value==="Bank Transfer"?"Enter the bank account number.":"Enter the Mobile Money number.");
   var b=this,old=b.textContent;b.disabled=true;b.textContent="Verifying…";
   try{
     await api({
