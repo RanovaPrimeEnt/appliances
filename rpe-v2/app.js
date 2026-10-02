@@ -25,6 +25,7 @@ let marketCartProducts=new Map();
 let marketCartStores=new Map();
 let cartSelectedKeys=new Set();
 let cartEditMode=false;
+let cartViewMode="all";
 let marketCartLoaded=false;
 let marketCartLoadPromise=null;
 let orders = [];
@@ -266,6 +267,9 @@ if($("openCartShortcut"))$("openCartShortcut").onclick=openCart;
 $("closeCart").onclick=closeCart;
 if($("cartSelectAll"))$("cartSelectAll").onchange=e=>{const entries=cartUnifiedEntries().filter(i=>i.available);entries.forEach(i=>e.target.checked?cartSelectedKeys.add(cartItemKey(i)):cartSelectedKeys.delete(cartItemKey(i)));renderCart()};
 if($("cartEditToggle"))$("cartEditToggle").onclick=()=>{cartEditMode=!cartEditMode;$("cartEditToggle").textContent=cartEditMode?"Done":"Edit";renderCart()};
+if($("cartAllTab"))$("cartAllTab").onclick=()=>{cartViewMode="all";renderCart()};
+if($("cartAvailableTab"))$("cartAvailableTab").onclick=()=>{cartViewMode="available";renderCart()};
+if($("cartSavedTab"))$("cartSavedTab").onclick=()=>showPanel("savedPanel");
 if($("cartCheckoutSelected"))$("cartCheckoutSelected").onclick=openMarketplaceCheckout;
 $("cartDrawer").addEventListener("click",e=>{if(e.target===$("cartDrawer"))closeCart()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeCart()});
@@ -998,6 +1002,8 @@ function renderCart(){
   if($("cartPageCount"))$("cartPageCount").textContent=lineCount+" item"+(lineCount===1?"":"s");
   const available=entries.filter(i=>i.available),unavailable=entries.filter(i=>!i.available);
   const selected=selectedCartEntries(),total=selectedCartTotal();
+  if($("cartAllTab"))$("cartAllTab").classList.toggle("active",cartViewMode==="all");
+  if($("cartAvailableTab"))$("cartAvailableTab").classList.toggle("active",cartViewMode==="available");
 
   if($("cartSelectedTotal"))$("cartSelectedTotal").textContent=total==null?"Price to confirm":money(total,"GHS");
   if($("cartCheckoutSelected"))$("cartCheckoutSelected").disabled=!selected.length;
@@ -1034,7 +1040,7 @@ function renderCart(){
         }).join("");
         html+='</section>';
       });
-      if(unavailable.length){
+      if(cartViewMode==="all"&&unavailable.length){
         html+='<section class="rnv-cart-unavailable"><div class="rnv-cart-unavailable-head"><b>Unavailable Products</b><button type="button" data-clear-unavailable>Clear unavailable</button></div>'+
           unavailable.map(i=>{const p=i.product||{},key=cartItemKey(i),img=p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls[0]:"")||imageFor(p)||"";return '<div class="rnv-cart-row unavailable">'+(img?'<img src="'+esc(img)+'" alt="">':'<div class="rnv-cart-img-empty"></div>')+'<span><b>'+esc(p.name||"Product")+'</b><small>Currently unavailable</small></span><button type="button" data-cart-remove="'+esc(key)+'">Remove</button></div>'}).join("")+
           '</section>';
