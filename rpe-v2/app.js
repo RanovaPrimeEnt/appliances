@@ -2058,15 +2058,16 @@ $("msgRecordPause").onclick=()=>{if(!msgRecorder)return;const b=$("msgRecordPaus
 $("msgRecordDelete").onclick=()=>{if(msgRecorder){msgRecorder.onstop=null;if(msgRecorder.state!=="inactive")msgRecorder.stop()}clearInterval(msgTimer);stopMsgRecording()};$("msgRecordSend").onclick=()=>{if(msgRecorder&&msgRecorder.state!=="inactive"){clearInterval(msgTimer);msgRecorder.stop()}};
 updateMsgAction();
 
-function removeLegacyFeedNotice(){
-  document.querySelectorAll(".home-feed-note,.rpe-feed-live,[data-ranova-feed-note]").forEach(x=>x.remove());
-  document.querySelectorAll("body *").forEach(x=>{
+function removeLegacyFeedNotice(root=document){
+  root.querySelectorAll?.(".home-feed-note,.rpe-feed-live,[data-ranova-feed-note]").forEach(x=>x.remove());
+  root.querySelectorAll?.("p,div,span,a,button").forEach(x=>{
+    if(x.children.length>3)return;
     const t=(x.textContent||"").trim();
-    if(x.children.length<=3&&(/Products from different RANOVA stores/i.test(t)||/Refreshing mix/i.test(t)))x.remove();
+    if(/Products from different RANOVA stores/i.test(t)||/^Refreshing mix$/i.test(t)||(/^Explore\s*›?$/i.test(t)&&x.closest(".home-feed-note,[data-ranova-feed-note]")))x.remove();
   });
 }
 removeLegacyFeedNotice();
-new MutationObserver(removeLegacyFeedNotice).observe(document.body,{childList:true,subtree:true});
+new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>{if(n.nodeType===1)removeLegacyFeedNotice(n)}))).observe(document.body,{childList:true,subtree:true});
 startRecommendationRotation();
 boot();
 })();
