@@ -149,6 +149,7 @@ let realtimeChannels = [];
 let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,messageRealtimeChannel=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null,msgReplyingTo=null,msgEditingMessage=null,msgPressTimer=null;
 const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 const PAYMENT_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-payment-gateway";
+const ORDER_STATUS_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-order-status";
 const FAST_CACHE_TTL=5*60*1000;
 let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 let initializedUserId=null,sessionApplyInFlight=false;
@@ -1374,6 +1375,58 @@ function renderOrders(){
   </button>`).join(""):'<div class="empty"><b>No orders here yet</b>Your matching orders will appear automatically.</div>';
   $("ordersList").querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
 }
+function deliveryStatusLabel(s){return ({
+  pending_quote:"Delivery quote pending",awaiting_dispatch:"Awaiting dispatch",assigned:"Courier assigned",
+  picked_up:"Picked up",in_transit:"In transit",out_for_delivery:"Out for delivery",
+  delivered_pending_confirmation:"Delivered — confirm receipt",delivered_confirmed:"Delivered confirmed",
+  failed_attempt:"Delivery attempt failed",returned:"Returned",cancelled:"Cancelled"
+})[s]||statusLabel(s)}
+function dateTimeLabel(v){
+  if(!v)return "";
+  const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString([],{dateStyle:"medium",timeStyle:"short"});
+}
+function etaLabel(d){
+  if(!d)return "";
+  const a=d.eta_start_date,b=d.eta_end_date;
+  if(a&&b)return a===b?a:(a+" → "+b);
+  return a||b||"";
+}
+async function orderStatusApi(orderRef){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)throw Error("Sign in to view live order tracking.");
+  const r=await fetch(ORDER_STATUS_ENDPOINT,{method:"POST",headers:{
+    "Content-Type":"application/json","x-ranova-client":"ranova-site-v1",
+    "apikey":cfg.supabasePublishableKey,"Authorization":"Bearer "+session.access_token
+  },body:JSON.stringify({action:"lookup",order_ref:orderRef})});
+  const out=await r.json().catch(()=>({}));
+  if(!r.ok||!out.ok)throw Error(out.error||"Live tracking is unavailable.");
+  return out;
+}
+function sellerTrackingHtml(seller){
+  const d=seller?.delivery||null;
+  const items=Array.isArray(seller?.items)?seller.items:[];
+  const timeline=Array.isArray(d?.timeline)?d.timeline:[];
+  const courier=[d?.courier_name,d?.courier_reference].filter(Boolean).join(" • ");
+  const eta=etaLabel(d);
+  return '<section style="border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0;background:#fff">'+
+    '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><b>'+esc(seller?.store_name||"Seller store")+'</b><small style="display:block;color:var(--muted);margin-top:3px">'+esc(seller?.order_ref||"")+'</small></div><span class="status-chip">'+esc(deliveryStatusLabel(d?.status||seller?.order_status))+'</span></div>'+
+    (items.length?'<div style="margin-top:9px;font-size:11px;color:var(--muted)">'+esc(items.map(i=>(i.product_name||i.name||"Product")+" ×"+(i.quantity||1)).join(" • "))+'</div>':"")+
+    (courier||eta?'<div class="list-row" style="padding-left:0;padding-right:0;margin-top:8px"><div><b>Delivery</b><small>'+esc([courier,eta?("ETA "+eta):""].filter(Boolean).join(" • "))+'</small></div></div>':"")+
+    (d?.destination_text?'<div style="font-size:10px;color:var(--muted);margin:4px 0 8px">Delivering to '+esc(d.destination_text)+'</div>':"")+
+    (timeline.length?'<div style="border-left:2px solid #f47a00;margin:10px 0 2px 7px;padding-left:12px">'+timeline.map((e,idx)=>'<div style="position:relative;padding:0 0 '+(idx===timeline.length-1?'2':'11')+'px"><span style="position:absolute;left:-17px;top:3px;width:8px;height:8px;border-radius:50%;background:#f47a00"></span><b style="font-size:11px">'+esc(deliveryStatusLabel(e.status))+'</b><small style="display:block;color:var(--muted);margin-top:2px">'+esc([dateTimeLabel(e.occurred_at),e.location_text,e.note].filter(Boolean).join(" • "))+'</small></div>').join("")+'</div>':'<small style="display:block;color:var(--muted);margin-top:8px">Delivery updates will appear here as the seller or courier progresses the order.</small>')+
+  '</section>';
+}
+async function hydrateOrderTracking(order,overlay){
+  const host=overlay.querySelector("[data-live-order-tracking]");if(!host)return;
+  try{
+    const out=await orderStatusApi(order.order_number);
+    const sellers=Array.isArray(out.seller_orders)?out.seller_orders:[];
+    if(!sellers.length){host.remove();return}
+    host.innerHTML='<h4 style="margin:14px 0 8px">Live delivery tracking</h4>'+sellers.map(sellerTrackingHtml).join("");
+  }catch{
+    host.remove();
+  }
+}
 function openOrder(id){
   const o=orders.find(x=>x.id===id);if(!o)return;
   const overlay=document.createElement("div");overlay.className="cart-drawer open";overlay.innerHTML=`<aside class="drawer"><div class="drawer-head"><div><small style="color:var(--muted)">ORDER</small><h3>${esc(o.order_number)}</h3></div><button class="icon-btn" data-close-order>×</button></div><div class="drawer-list">
@@ -1381,8 +1434,11 @@ function openOrder(id){
     <h4>Products</h4>
     ${(o.order_items||[]).map(i=>'<div class="list-row"><div><b>'+esc(i.product_name_snapshot)+'</b><small>Quantity '+i.quantity+'</small></div><span class="status-chip">'+esc(i.unit_price==null?"Price to confirm":money(i.unit_price,o.currency))+'</span></div>').join("")}
     <div class="list-row"><div><b>Payment</b><small>${esc(statusLabel(o.payment_status))}</small></div></div>
+    <div data-live-order-tracking><small style="display:block;color:var(--muted);padding:8px 0">Checking live delivery tracking…</small></div>
   </div><div class="drawer-foot"><button class="btn primary" data-order-help>Contact RPE about this order</button></div></aside>`;
-  document.body.appendChild(overlay);overlay.addEventListener("click",e=>{
+  document.body.appendChild(overlay);
+  hydrateOrderTracking(o,overlay);
+  overlay.addEventListener("click",e=>{
     if(e.target===overlay||e.target.closest("[data-close-order]"))overlay.remove();
     if(e.target.closest("[data-order-help]"))contactRpe("Order support","Hello Ranova Prime Enterprise, I need help with order "+o.order_number+".");
   })
