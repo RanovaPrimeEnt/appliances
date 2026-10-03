@@ -364,3 +364,11 @@ body{padding-bottom:calc(var(--rpe-nav-h) + env(safe-area-inset-bottom))}
   color:var(--rpe-orange);
   text-align:right;
 }
+
+.market-search-wrap{position:relative;background:#fff}
+.market-search-assist{position:absolute;left:10px;right:10px;top:100%;z-index:80;background:#fff;border:1px solid var(--rpe-line);border-radius:0 0 14px 14px;box-shadow:0 12px 26px rgba(0,0,0,.12);max-height:320px;overflow:auto}
+.market-search-assist button{width:100%;border:0;border-bottom:1px solid #f0f1f1;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;text-align:left}
+.market-search-assist button:last-child{border-bottom:0}
+.market-search-assist button:active{background:#f7f7f7}
+.market-search-assist span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:750;color:var(--rpe-text)}
+.market-search-assist small{flex:none;font-size:9px;color:var(--rpe-sub)}
