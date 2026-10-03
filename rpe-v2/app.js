@@ -1848,8 +1848,54 @@ document.querySelectorAll("[data-market-focus]").forEach(btn=>btn.addEventListen
   else if(focus==="stores")$("marketStoresAnchor")?.scrollIntoView({behavior:"smooth",block:"start"});
   else if(focus==="categories"){$("marketCategoryFilter")?.focus();$("marketCategoryFilter")?.scrollIntoView({behavior:"smooth",block:"center"});}
 }));
-if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=()=>refreshMarketplaceFilters();
-if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>{const value=e.target.value;cancelAnimationFrame(marketSearchFrame);marketSearchFrame=requestAnimationFrame(()=>renderMarketplaceHome(value))};
+const MARKET_SEARCH_HISTORY_KEY="ranova-market-search-history-v3";
+function marketSearchHistory(){const rows=readLocalJson(MARKET_SEARCH_HISTORY_KEY,[]);return Array.isArray(rows)?rows.slice(0,8):[]}
+function rememberMarketSearch(value){
+  const q=String(value||"").trim();if(q.length<2)return;
+  const rows=[q,...marketSearchHistory().filter(x=>String(x).toLowerCase()!==q.toLowerCase())].slice(0,8);
+  writeLocalJson(MARKET_SEARCH_HISTORY_KEY,rows);
+}
+function marketSearchSuggestions(value=""){
+  const q=String(value||"").trim().toLowerCase(),seen=new Set(),rows=[];
+  const add=(label,kind)=>{
+    const text=String(label||"").trim();if(!text)return;
+    const key=text.toLowerCase();if(seen.has(key))return;
+    if(q&&!key.includes(q))return;
+    seen.add(key);rows.push({label:text,kind});
+  };
+  marketSearchHistory().forEach(x=>add(x,"Recent"));
+  marketSellerProducts.slice(0,160).forEach(p=>{add(p.name,"Product");add(p.category,"Category");add(p.sku,"SKU")});
+  marketStores.slice(0,60).forEach(s=>{add(s.store_name,"Store");add(s.business_location||s.country_name,"Location")});
+  return rows.slice(0,10);
+}
+function renderMarketSearchAssist(value=""){
+  const host=$("marketSearchAssist"),input=$("marketHomeSearch");if(!host||!input)return;
+  const rows=marketSearchSuggestions(value);
+  host.innerHTML=rows.map(x=>'<button type="button" role="option" data-market-suggest="'+esc(x.label)+'"><span>'+esc(x.label)+'</span><small>'+esc(x.kind)+'</small></button>').join("");
+  host.classList.toggle("hide",!rows.length);
+  input.setAttribute("aria-expanded",rows.length?"true":"false");
+  host.querySelectorAll("[data-market-suggest]").forEach(b=>b.onclick=()=>{
+    input.value=b.dataset.marketSuggest||"";
+    rememberMarketSearch(input.value);
+    host.classList.add("hide");input.setAttribute("aria-expanded","false");
+    refreshMarketplaceFilters();
+  });
+}
+function submitMarketSearch(){
+  const value=$("marketHomeSearch")?.value||"";
+  rememberMarketSearch(value);
+  $("marketSearchAssist")?.classList.add("hide");
+  $("marketHomeSearch")?.setAttribute("aria-expanded","false");
+  refreshMarketplaceFilters();
+}
+if($("marketHomeSearchBtn"))$("marketHomeSearchBtn").onclick=submitMarketSearch;
+if($("marketHomeSearch"))$("marketHomeSearch").oninput=e=>{
+  const value=e.target.value;renderMarketSearchAssist(value);
+  cancelAnimationFrame(marketSearchFrame);marketSearchFrame=requestAnimationFrame(()=>renderMarketplaceHome(value))
+};
+if($("marketHomeSearch"))$("marketHomeSearch").onfocus=e=>renderMarketSearchAssist(e.target.value);
+if($("marketHomeSearch"))$("marketHomeSearch").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();submitMarketSearch()}else if(e.key==="Escape"){$("marketSearchAssist")?.classList.add("hide");e.currentTarget.setAttribute("aria-expanded","false")}};
+document.addEventListener("click",e=>{if(!e.target.closest(".market-search-wrap")){$("marketSearchAssist")?.classList.add("hide");$("marketHomeSearch")?.setAttribute("aria-expanded","false")}});
 document.addEventListener("pointerdown",e=>{
  const p=e.target.closest("[data-mh-product]");
  if(p){
