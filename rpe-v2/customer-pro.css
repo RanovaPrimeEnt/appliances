@@ -375,17 +375,19 @@ body{padding-bottom:calc(var(--rpe-nav-h) + env(safe-area-inset-bottom))}
 
 
 /* RANOVA stores directory */
-.rnv-stores-panel{min-height:calc(100dvh - 70px);background:linear-gradient(180deg,#fff7ef 0,#f7f8f7 210px)!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-bottom:96px}
-.rnv-stores-head{position:sticky;top:0;z-index:18;display:grid;grid-template-columns:38px 1fr;align-items:center;gap:9px;padding:12px 12px 11px;background:linear-gradient(135deg,#ff8a00,#ff5a00);border-bottom:0;box-shadow:0 5px 18px rgba(255,90,0,.18);color:#fff}
-.rnv-stores-head h2{margin:0;font-size:21px;line-height:1.1;color:#fff;font-weight:950}.rnv-stores-head small{display:block;margin-top:4px;color:#fff3e9;font-size:9px;line-height:1.35}
-.rnv-stores-back{width:36px;height:36px;border:0;background:#ffffff24;border-radius:50%;font-size:30px;line-height:1;color:#fff;display:grid;place-items:center}
+.rnv-stores-panel,.rnv-my-stores-panel{min-height:calc(100dvh - 70px);background:linear-gradient(180deg,#fff7ef 0,#f7f8f7 210px)!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-bottom:96px}
+.rnv-stores-head,.rnv-my-stores-head{position:sticky;top:0;z-index:18;display:grid;grid-template-columns:38px 1fr;align-items:center;gap:9px;padding:12px 12px 11px;background:linear-gradient(135deg,#ff8a00,#ff5a00);border-bottom:0;box-shadow:0 5px 18px rgba(255,90,0,.18);color:#fff}
+.rnv-stores-head h2,.rnv-my-stores-head h2{margin:0;font-size:21px;line-height:1.1;color:#fff;font-weight:950}
+.rnv-stores-head small,.rnv-my-stores-head small{display:block;margin-top:4px;color:#fff3e9;font-size:9px;line-height:1.35}
+.rnv-stores-back,.rnv-my-stores-head>button{width:36px;height:36px;border:0;background:#ffffff24;border-radius:50%;font-size:30px;line-height:1;color:#fff;display:grid;place-items:center}
 .rnv-stores-search-wrap{margin:13px 10px 7px;height:45px;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:7px;padding:0 13px;background:#fff;border:1px solid #ffe0ca;border-radius:24px;box-shadow:0 7px 20px rgba(77,50,31,.08)}
 .rnv-stores-search-wrap span{font-size:20px;color:#ff6b00}.rnv-stores-search-wrap input{min-width:0;border:0;outline:0;background:transparent;font-size:12px;color:#202523}.rnv-stores-search-wrap input::placeholder{color:#9a9f9c}
 .rnv-stores-summary{padding:6px 13px 9px;color:#6f7773;font-size:9px;font-weight:800;display:flex;align-items:center;gap:5px}.rnv-stores-summary:before{content:"";width:7px;height:7px;border-radius:50%;background:#23a55a;box-shadow:0 0 0 3px #e9f8ef}
 .rnv-stores-list{display:grid;gap:10px;padding:0 9px 16px}
-.rnv-store-row{position:relative;width:100%;display:grid;grid-template-columns:66px minmax(0,1fr) auto;align-items:center;gap:12px;padding:13px 11px;border:1px solid #eee4dc;border-radius:18px;background:linear-gradient(135deg,#fff 0%,#fffdfa 100%);text-align:left;box-shadow:0 5px 18px rgba(55,42,32,.07);color:#1f2926;overflow:hidden;transition:transform .14s ease,box-shadow .14s ease}
+.rnv-store-row{position:relative;border:1px solid #eee4dc;border-radius:18px;background:linear-gradient(135deg,#fff 0%,#fffdfa 100%);box-shadow:0 5px 18px rgba(55,42,32,.07);color:#1f2926;overflow:hidden}
 .rnv-store-row:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#ff8a00,#ff5a00)}
-.rnv-store-row:active{transform:scale(.992);box-shadow:0 2px 9px rgba(55,42,32,.08)}
+.rnv-store-main{width:100%;display:grid;grid-template-columns:66px minmax(0,1fr) auto;align-items:center;gap:12px;padding:13px 11px 9px;border:0;background:transparent;text-align:left;color:#1f2926}
+.rnv-store-main:active{background:#fff8f2}
 .rnv-store-logo{width:66px;height:66px;border-radius:16px;overflow:hidden;background:linear-gradient(145deg,#fff6eb,#fff);border:1px solid #f1dfd2;display:grid;place-items:center;flex:none;box-shadow:inset 0 0 0 3px #fff}
 .rnv-store-logo img{width:100%;height:100%;object-fit:cover}.rnv-store-logo span{font-size:26px;font-weight:950;color:#ff6b00}
 .rnv-store-copy{min-width:0}.rnv-store-copy b{display:block;font-size:14px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1f2926}
@@ -396,5 +398,12 @@ body{padding-bottom:calc(var(--rpe-nav-h) + env(safe-area-inset-bottom))}
 .rnv-store-copy em:before{content:"✓";display:grid;place-items:center;width:12px;height:12px;border-radius:50%;background:#22a85b;color:#fff;font-size:8px}
 .rnv-store-partner{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;background:#fff2e5;color:#b85400;font-size:8px;font-weight:900;border:1px solid #ffdfc3}
 .rnv-store-open{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#fff1e6;color:#ff6b00;font-size:20px;font-weight:900}
+.rnv-store-save{margin:0 11px 11px 88px;border:1px solid #ffd8ba;background:#fff6ed;color:#c35c00;border-radius:999px;padding:7px 10px;font-size:9px;font-weight:900}
+.rnv-store-save.saved{background:#ff7a00;color:#fff;border-color:#ff7a00}
+.rnv-store-expiry{display:block;margin:-4px 12px 10px 88px;color:#8a928f;font-size:8px}
+.rnv-my-stores-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 10px 7px;padding:4px;background:#fff;border:1px solid #f0e1d6;border-radius:16px;box-shadow:0 5px 17px rgba(66,45,29,.06)}
+.rnv-my-stores-tabs button{border:0;background:transparent;color:#69716e;border-radius:12px;min-height:38px;font-size:10px;font-weight:900}
+.rnv-my-stores-tabs button.active{background:#ff7a00;color:#fff;box-shadow:0 4px 11px rgba(255,122,0,.2)}
+.rnv-my-stores-info{margin:2px 12px 10px;padding:9px 11px;border-radius:12px;background:#fff;color:#6f7773;font-size:9px;line-height:1.45;border:1px solid #eee8e3}
 .rnv-stores-empty{padding:48px 18px;text-align:center;background:#fff;border-radius:18px;color:#7d8783;font-size:11px;border:1px solid #eee5df;box-shadow:0 5px 18px rgba(0,0,0,.04)}.rnv-stores-empty b{display:block;color:#222;margin-bottom:5px;font-size:13px}
-@media(min-width:560px){.rnv-stores-list{grid-template-columns:1fr 1fr}.rnv-store-row{grid-template-columns:60px minmax(0,1fr) auto}.rnv-store-logo{width:60px;height:60px}}
+@media(min-width:560px){.rnv-stores-list{grid-template-columns:1fr 1fr}.rnv-store-main{grid-template-columns:60px minmax(0,1fr) auto}.rnv-store-logo{width:60px;height:60px}.rnv-store-save,.rnv-store-expiry{margin-left:82px}}
