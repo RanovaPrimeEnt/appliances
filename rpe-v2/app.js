@@ -2385,7 +2385,7 @@ function subscribeOpenConversationRealtime(id){
 async function openMessageConversation(id){
   const out=await messageApi({action:"open",conversation_id:id});messageCurrent=out.conversation;messageRole=out.role;
   clearMsgAction();
-  $("messagesPanel").classList.add("chat-open");document.body.classList.add("ranova-chat-open");
+  $("messagesPanel").classList.add("chat-open");document.body.classList.add("ranova-chat-open");syncChatViewport();requestAnimationFrame(syncChatViewport);
   const store=messageCurrent.store||{};$("messageChatTitle").textContent=store.store_name||"RANOVA Store";$("messageChatSub").textContent=messageCurrent.subject||"Online store conversation";
   $("messageChatAvatar").innerHTML=store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="" style="width:100%;height:100%;object-fit:cover">':animalAvatar(store.id||store.store_name);
   const p=messageCurrent.product,ctx=$("messageProductContext");
@@ -2436,7 +2436,7 @@ function renderMessageThread({preserveScroll=false}={}){
   bindCustomerMessageActions();
   if(!preserveScroll||wasNearBottom)host.scrollTop=host.scrollHeight;else host.scrollTop=previousTop;
 }
-$("messageBack").onclick=()=>{$("messagesPanel").classList.remove("chat-open");document.body.classList.remove("ranova-chat-open");messageCurrent=null;messageRefreshQueued=false;clearMsgAction();stopMessageRealtime();clearInterval(messagePoll);loadMessageConversations().catch(()=>{})};
+$("messageBack").onclick=()=>{$("messagesPanel").classList.remove("chat-open");document.body.classList.remove("ranova-chat-open");clearChatViewport();messageCurrent=null;messageRefreshQueued=false;clearMsgAction();stopMessageRealtime();clearInterval(messagePoll);loadMessageConversations().catch(()=>{})};
 $("messageStoreButton").onclick=()=>{if(messageCurrent?.store?.slug)location.href="../all/seller-store.html?store="+encodeURIComponent(messageCurrent.store.slug)};
 $("messageSearchButton").onclick=()=>{const q=prompt("Search store conversations:","");if(q==null)return;const s=q.trim().toLowerCase();document.querySelectorAll("#messageConversationList .msg-row").forEach(row=>{row.style.display=!s||row.textContent.toLowerCase().includes(s)?"grid":"none"})};
 
@@ -2453,7 +2453,24 @@ const msgEmojiGroups={
 };
 function getMsgRecentEmojis(){try{return JSON.parse(localStorage.getItem("ranova-msg-recent-emojis")||"[]")}catch{return[]}}
 function rememberMsgEmoji(e){const next=[e,...getMsgRecentEmojis().filter(x=>x!==e)].slice(0,32);try{localStorage.setItem("ranova-msg-recent-emojis",JSON.stringify(next))}catch{}}
-function resizeMsgInput(){const i=$("msgInput");if(!i)return;i.style.height="36px";i.style.height=Math.min(116,Math.max(36,i.scrollHeight))+"px";i.style.overflowY=i.scrollHeight>116?"auto":"hidden"}
+function syncChatViewport(){
+  if(!document.body.classList.contains("ranova-chat-open"))return;
+  const vv=window.visualViewport;
+  const top=vv?Math.max(0,vv.offsetTop):0;
+  const height=vv?vv.height:window.innerHeight;
+  document.documentElement.style.setProperty("--rnv-chat-top",top+"px");
+  document.documentElement.style.setProperty("--rnv-chat-height",Math.max(320,height)+"px");
+}
+function clearChatViewport(){
+  document.documentElement.style.removeProperty("--rnv-chat-top");
+  document.documentElement.style.removeProperty("--rnv-chat-height");
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize",syncChatViewport,{passive:true});
+  window.visualViewport.addEventListener("scroll",syncChatViewport,{passive:true});
+}
+window.addEventListener("resize",syncChatViewport,{passive:true});
+function resizeMsgInput(){const i=$("msgInput");if(!i)return;i.style.height="36px";i.style.height=Math.min(116,Math.max(36,i.scrollHeight))+"px";i.style.overflowY=i.scrollHeight>116?"auto":"hidden";requestAnimationFrame(syncChatViewport)}
 function updateMsgAction(){const has=!!$("msgInput").value.trim()||!!msgAttachment;$("msgRecordStart").hidden=has;$("msgSend").hidden=!has;resizeMsgInput()}
 function showMsgEmoji(group="Recent",filter=""){
   $("msgEmojiPanel").hidden=false;
@@ -2490,7 +2507,7 @@ async function sendInAppMessage(fileOverride){
 function stopMsgRecording(){if(msgStream){msgStream.getTracks().forEach(t=>t.stop());msgStream=null}msgRecorder=null;$("msgRecording").hidden=true}
 $("msgEmojiToggle").onclick=()=>{$("msgEmojiPanel").hidden?showMsgEmoji():$("msgEmojiPanel").hidden=true};$("msgEmojiSearch").oninput=e=>showMsgEmoji("Recent",e.target.value.trim());
 $("msgFilePick").onclick=()=>$("msgFileInput").click();$("msgImagePick").onclick=()=>$("msgImageInput").click();["msgFileInput","msgImageInput"].forEach(id=>$(id).onchange=e=>{if(e.target.files?.[0])previewMsgAttachment(e.target.files[0])});
-$("msgInput").oninput=updateMsgAction;$("msgInput").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendInAppMessage()}};$("msgSend").onclick=()=>sendInAppMessage();
+$("msgInput").oninput=updateMsgAction;$("msgInput").onfocus=()=>{syncChatViewport();setTimeout(syncChatViewport,60);setTimeout(syncChatViewport,250)};$("msgInput").onblur=()=>setTimeout(syncChatViewport,80);$("msgInput").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendInAppMessage()}};$("msgSend").onclick=()=>sendInAppMessage();
 $("msgRecordStart").onclick=async()=>{try{if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw Error("Voice recording is unavailable in this browser.");msgStream=await navigator.mediaDevices.getUserMedia({audio:true});const mime=["audio/webm;codecs=opus","audio/mp4","audio/webm"].find(x=>MediaRecorder.isTypeSupported(x))||"";msgRecorder=new MediaRecorder(msgStream,mime?{mimeType:mime}:undefined);msgChunks=[];msgStarted=Date.now();msgPaused=0;msgPauseStarted=0;msgRecorder.ondataavailable=e=>{if(e.data.size)msgChunks.push(e.data)};msgRecorder.onstop=()=>{const type=msgRecorder?.mimeType?.split(";")[0]||"audio/webm",blob=new Blob(msgChunks,{type});stopMsgRecording();if(blob.size)sendInAppMessage(new File([blob],"Voice note."+({"audio/mp4":"m4a","audio/ogg":"ogg"}[type]||"webm"),{type}))};msgRecorder.start();$("msgRecording").hidden=false;$("msgRecordTime").textContent="0:00";msgTimer=setInterval(()=>{const ms=(msgPauseStarted||Date.now())-msgStarted-msgPaused,sec=Math.floor(ms/1000);$("msgRecordTime").textContent=Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0")},500)}catch(e){stopMsgRecording();showToast(e.message||"Microphone access was denied.")}};
 $("msgRecordPause").onclick=()=>{if(!msgRecorder)return;const b=$("msgRecordPause");if(msgRecorder.state==="recording"){msgRecorder.pause();msgPauseStarted=Date.now();b.textContent="▶ Resume"}else if(msgRecorder.state==="paused"){msgRecorder.resume();msgPaused+=Date.now()-msgPauseStarted;msgPauseStarted=0;b.textContent="⏸ Pause"}};
 $("msgRecordDelete").onclick=()=>{if(msgRecorder){msgRecorder.onstop=null;if(msgRecorder.state!=="inactive")msgRecorder.stop()}clearInterval(msgTimer);stopMsgRecording()};$("msgRecordSend").onclick=()=>{if(msgRecorder&&msgRecorder.state!=="inactive"){clearInterval(msgTimer);msgRecorder.stop()}};
