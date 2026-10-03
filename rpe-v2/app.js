@@ -248,11 +248,13 @@ function renderStoresDirectory(filter=""){
   if(summary)summary.textContent=rows.length+" active store"+(rows.length===1?"":"s");
   host.innerHTML=rows.length?rows.map(store=>{
     const logo=store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name||"Store")+' logo" loading="lazy" decoding="async">':'<span>'+storeLogoFallback(store)+'</span>';
+    const tagline=String(store.tagline||"Trusted seller on RANOVA").trim();
     return '<button class="rnv-store-row" type="button" data-store-directory="'+esc(store.slug||"")+'">'+
       '<span class="rnv-store-logo">'+logo+'</span>'+
       '<span class="rnv-store-copy"><b>'+esc(store.store_name||"RANOVA Store")+'</b>'+
       '<small>⌖ '+esc(storeLocationLabel(store))+'</small>'+
-      '<em>Verified seller</em></span>'+
+      '<small class="rnv-store-tagline">'+esc(tagline)+'</small>'+
+      '<span class="rnv-store-badges"><em>Verified seller</em><span class="rnv-store-partner">RANOVA Store Partner</span></span></span>'+
       '<span class="rnv-store-open">›</span></button>';
   }).join(""):'<div class="rnv-stores-empty"><b>No stores found</b>Try another store name or location.</div>';
   host.querySelectorAll("[data-store-directory]").forEach(btn=>btn.onclick=()=>{
