@@ -1704,8 +1704,19 @@ function weeklyTrendingMarketplaceProducts(rows,limit=2){
 
   // During a no-purchase week, reuse the latest available weekly ranking but
   // mix the previously ranked products so the same two do not stay fixed.
-  if(weeklyTrendingFallback){
+  if(weeklyTrendingFallback&&ranked.length){
     ranked=[...ranked];
+    for(let i=ranked.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [ranked[i],ranked[j]]=[ranked[j],ranked[i]];
+    }
+  }
+
+  // If RANOVA has no confirmed purchase history yet, keep Trending Picks
+  // visually populated with a temporary random catalogue mix. As soon as the
+  // first confirmed purchases exist, the server ranking automatically replaces it.
+  if(!ranked.length){
+    ranked=[...(rows||[])].map(product=>({trend:null,product}));
     for(let i=ranked.length-1;i>0;i--){
       const j=Math.floor(Math.random()*(i+1));
       [ranked[i],ranked[j]]=[ranked[j],ranked[i]];
