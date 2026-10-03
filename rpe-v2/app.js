@@ -2133,7 +2133,7 @@ document.addEventListener("click",e=>{
 
 document.addEventListener("click",async e=>{
  const marketSave=e.target.closest("[data-market-save]");if(marketSave){e.preventDefault();e.stopPropagation();await toggleMarketplaceSaved(marketSave.dataset.marketSave);return}
- const savedMarket=e.target.closest("[data-saved-market]");if(savedMarket){const item=marketSellerProducts.find(x=>x.id===savedMarket.dataset.savedMarket);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
+ const savedMarket=e.target.closest("[data-saved-market]");if(savedMarket){const item=marketSellerProducts.find(x=>x.id===savedMarket.dataset.savedMarket);const store=marketStores.find(s=>s.id===item?.store_id);if(store)rememberRecentStore(store);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
  const variant=e.target.closest("[data-variant-product]");if(variant&&variant.dataset.variantProduct!==marketProductCurrent?.id){openMarketplaceProduct(variant.dataset.variantProduct);return}
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
  const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);const store=marketStores.find(s=>s.id===item?.store_id);if(store)rememberRecentStore(store);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
@@ -2296,7 +2296,7 @@ document.addEventListener("click",async e=>{
     finally{pay.disabled=false;pay.textContent="Pay Now"}
     return
   }
-  const product=e.target.closest("[data-pay-product]");if(product){const p=toPayRecommendations.find(x=>x.id===product.dataset.payProduct);if(!p)return;const store=toPayStores.find(s=>s.id===p.store_id);if(store?.slug){location.href="../all/seller-store.html?store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(p.id)}else showToast("This seller store is not available right now.");return}
+  const product=e.target.closest("[data-pay-product]");if(product){const p=toPayRecommendations.find(x=>x.id===product.dataset.payProduct);if(!p)return;const store=toPayStores.find(s=>s.id===p.store_id);if(store?.slug){rememberRecentStore(store);location.href="../all/seller-store.html?store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(p.id)}else showToast("This seller store is not available right now.");return}
 });
 
 // RANOVA in-app buyer messenger 2026-09-29
@@ -2584,7 +2584,7 @@ function renderMessageThread({preserveScroll=false}={}){
   if(!preserveScroll||wasNearBottom)host.scrollTop=host.scrollHeight;else host.scrollTop=previousTop;
 }
 $("messageBack").onclick=()=>{$("messagesPanel").classList.remove("chat-open");document.body.classList.remove("ranova-chat-open");clearChatViewport();messageCurrent=null;messageRefreshQueued=false;clearMsgAction();stopMessageRealtime();clearInterval(messagePoll);loadMessageConversations().catch(()=>{})};
-$("messageStoreButton").onclick=()=>{if(messageCurrent?.store?.slug)location.href="../all/seller-store.html?store="+encodeURIComponent(messageCurrent.store.slug)};
+$("messageStoreButton").onclick=()=>{if(messageCurrent?.store?.slug){rememberRecentStore(messageCurrent.store);location.href="../all/seller-store.html?store="+encodeURIComponent(messageCurrent.store.slug)}};
 $("messageSearchButton").onclick=()=>{const q=prompt("Search store conversations:","");if(q==null)return;const s=q.trim().toLowerCase();document.querySelectorAll("#messageConversationList .msg-row").forEach(row=>{row.style.display=!s||row.textContent.toLowerCase().includes(s)?"grid":"none"})};
 
 const msgEmojiGroups={
