@@ -1049,6 +1049,7 @@ function renderSaved(){
     ...products.filter(p=>favorites.has(p.id)).map(product=>({kind:"legacy",product}))
   ];
   $("savedGrid").classList.add("saved-love-grid");
+  if($("favoriteCount"))$("favoriteCount").textContent=rows.length+" saved product"+(rows.length===1?"":"s");
   $("savedGrid").innerHTML=rows.length?rows.map(savedProductCard).join(""):'<div class="empty saved-love-empty"><b>No saved products yet</b>Tap ☆ on a product you want to remember.</div>';
 }
 function renderRecent(){const map=new Map(products.map(p=>[p.id,p]));const list=recentIds.map(id=>map.get(id)).filter(Boolean);$("recentGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>Nothing viewed yet</b>Products you open will appear here automatically.</div>'}
