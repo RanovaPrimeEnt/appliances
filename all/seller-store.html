@@ -1290,25 +1290,28 @@ try{
 </script>
 
 <nav class="customer-store-bottom-nav" aria-label="Customer navigation">
-  <a class="home" href="../rpe-v2/?home=1" aria-label="Home">
+  <button type="button" data-customer-route="../rpe-v2/?home=1" aria-label="Home">
     <svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg><span>Home</span>
-  </a>
-  <a href="../rpe-v2/?panel=messagesPanel" aria-label="Message">
+  </button>
+  <button type="button" data-customer-route="../rpe-v2/?panel=messagesPanel" aria-label="Message">
     <svg viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg><span>Message</span>
-  </a>
-  <button id="storeBottomCart" type="button" aria-label="Cart">
+  </button>
+  <button type="button" data-customer-route="../rpe-v2/?panel=cartPanel" aria-label="Cart">
     <svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart</span>
   </button>
-  <a href="../rpe-v2/?panel=homePanel" aria-label="Me">
+  <button type="button" data-customer-route="../rpe-v2/?panel=homePanel" aria-label="Me">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span>
-  </a>
+  </button>
 </nav>
 <script>
 (function(){
-  var b=document.getElementById("storeBottomCart");
-  if(!b)return;
-  b.addEventListener("click",function(){
-    location.href="../rpe-v2/?panel=cartPanel";
+  document.querySelectorAll(".customer-store-bottom-nav [data-customer-route]").forEach(function(button){
+    button.addEventListener("click",function(event){
+      event.preventDefault();
+      event.stopPropagation();
+      var target=button.getAttribute("data-customer-route");
+      if(target)location.href=target;
+    });
   });
 })();
 </script>
