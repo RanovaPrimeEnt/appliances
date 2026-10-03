@@ -1541,9 +1541,27 @@ function marketFilteredProducts(filter=""){
   else if(marketSort==="name")rows.sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
   return rows;
 }
-function sellerStoreProductUrl(product){
+const SELLER_STORE_FAST_CACHE_PREFIX="ranova-seller-store-fast:";
+function primeSellerStoreCache(product){
   if(!product)return null;
   const store=marketStores.find(s=>s.id===product.store_id);
+  if(!store?.slug)return null;
+  const storeProducts=marketSellerProducts.filter(p=>p.store_id===store.id);
+  try{
+    localStorage.setItem(SELLER_STORE_FAST_CACHE_PREFIX+store.slug,JSON.stringify({
+      t:Date.now(),
+      store,
+      products:storeProducts
+    }));
+  }catch{}
+  // Warm the selected image immediately while the seller-store document opens.
+  const urls=[product.primary_image_url,...(Array.isArray(product.image_urls)?product.image_urls.slice(0,2):[])].filter(Boolean);
+  urls.forEach(url=>{try{const img=new Image();img.decoding="async";img.src=url}catch{}});
+  return store;
+}
+function sellerStoreProductUrl(product){
+  if(!product)return null;
+  const store=primeSellerStoreCache(product)||marketStores.find(s=>s.id===product.store_id);
   if(!store?.slug)return null;
   return "../all/seller-store.html?store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(product.id);
 }
@@ -1869,7 +1887,13 @@ document.addEventListener("click",async e=>{
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
  const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
  const m=e.target.closest("[data-mh-message]");if(m){showPanel("messagesPanel");try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
- const v=e.target.closest("[data-mh-store]");if(v){location.href="../all/seller-store.html?store="+encodeURIComponent(v.dataset.mhStore);return}
+ const v=e.target.closest("[data-mh-store]");if(v){
+   const st=marketStores.find(s=>s.slug===v.dataset.mhStore||s.id===v.dataset.mhStore);
+   if(st){
+     try{localStorage.setItem(SELLER_STORE_FAST_CACHE_PREFIX+st.slug,JSON.stringify({t:Date.now(),store:st,products:marketSellerProducts.filter(p=>p.store_id===st.id)}))}catch{}
+   }
+   location.href="../all/seller-store.html?store="+encodeURIComponent(v.dataset.mhStore);return
+ }
 });
 if($("marketProductBack"))$("marketProductBack").onclick=()=>showPanel(marketProductOrigin||"marketplaceHomePanel");
 if($("marketProductMinus"))$("marketProductMinus").onclick=()=>{if(!marketProductCurrent)return;$("marketProductQty").value=marketProductQuantity(marketProductCurrent,Number($("marketProductQty").value)-1);updateMarketProductTotal()};
