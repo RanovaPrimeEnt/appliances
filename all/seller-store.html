@@ -1182,14 +1182,58 @@ async function refreshStoreProducts(){
     var pr=await sb.from("ranova_seller_products").select("*").eq("store_id",store.id).eq("product_status","active").order("category",{ascending:true}).order("name",{ascending:true});
     if(pr.error)return;
     products=pr.data||[];
+  try{localStorage.setItem(SELLER_STORE_FAST_CACHE_PREFIX+slug,JSON.stringify({t:Date.now(),store:store,products:products}))}catch(e){}
     render();renderCart();
   }catch(e){}
 }
+
+var SELLER_STORE_FAST_CACHE_PREFIX="ranova-seller-store-fast:";
+function readSellerFastCache(slug){
+  try{
+    var raw=localStorage.getItem(SELLER_STORE_FAST_CACHE_PREFIX+slug);
+    if(!raw)return null;
+    var data=JSON.parse(raw);
+    if(!data||!data.store||!Array.isArray(data.products)||!data.t)return null;
+    if(Date.now()-Number(data.t)>30*60*1000)return null;
+    return data;
+  }catch(e){return null}
+}
+function paintFastStoreShell(deepProduct){
+  if(!store)return;
+  try{savedProducts=new Set(JSON.parse(localStorage.getItem("ranova_saved_store_"+store.id)||"[]"))}catch(e){savedProducts=new Set()}
+  loadCart();
+  el("storeName").textContent=store.store_name||"Seller store";
+  el("tagline").textContent=store.tagline||"Verified seller on RANOVA";
+  el("drawerStoreName").textContent=store.store_name||"Seller store";
+  el("description").textContent=store.description||"Browse products from this RANOVA seller.";
+  el("location").textContent=store.business_location||store.country_name||"Seller location";
+  el("minimum").textContent=store.minimum_order_note||"Varies by product";
+  el("fulfilment").textContent=store.fulfilment_summary||"Delivery options available";
+  el("returns").textContent=store.return_policy_summary||"Confirm applicable return terms.";
+  if(store.logo_url)el("logo").innerHTML='<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name||"Store")+' logo">';
+  else el("logo").textContent=String(store.store_name||"R").charAt(0).toUpperCase();
+  if(store.banner_url)el("banner").innerHTML='<img src="'+esc(store.banner_url)+'" alt="">';
+  el("loading").style.display="none";
+  el("page").style.display="block";
+  render();renderCart();
+  if(deepProduct&&products.some(function(p){return p.id===deepProduct})){
+    requestAnimationFrame(function(){openProductDetail(deepProduct)});
+  }
+}
 async function boot(){
-  var slug=new URLSearchParams(location.search).get("store")||"";
+  var qpBoot=new URLSearchParams(location.search),slug=qpBoot.get("store")||"",deepProductBoot=qpBoot.get("product")||"";
   if(!slug){el("loading").textContent="Store link is incomplete.";return}
+  var fast=readSellerFastCache(slug);
+  if(fast){
+    store=fast.store;
+    products=fast.products||[];
+    paintFastStoreShell(deepProductBoot);
+  }
   var sr=await sb.from("ranova_seller_stores").select("*").eq("slug",slug).eq("store_status","active").maybeSingle();
-  if(sr.error||!sr.data){el("loading").textContent="This RANOVA store is not available.";return}
+  if(sr.error||!sr.data){
+    if(fast)return;
+    el("loading").textContent="This RANOVA store is not available.";return
+  }
   store=sr.data;
   var pr=await sb.from("ranova_seller_products").select("*").eq("store_id",store.id).eq("product_status","active").order("category",{ascending:true}).order("name",{ascending:true});
   products=pr.data||[];
