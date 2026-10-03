@@ -324,9 +324,12 @@ html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(
         <button type="button" class="market-tab" data-market-focus="stores">Stores</button>
         <button type="button" class="market-tab" data-market-focus="categories">Categories</button>
       </div>
-      <div class="market-search">
-        <span aria-hidden="true">⌕</span><input id="marketHomeSearch" type="search" autocomplete="off" placeholder="Search products, stores, SKU or location">
-        <button id="marketHomeSearchBtn" type="button">Search</button>
+      <div class="market-search-wrap">
+        <div class="market-search">
+          <span aria-hidden="true">⌕</span><input id="marketHomeSearch" type="search" autocomplete="off" placeholder="Search products, stores, SKU or location" aria-controls="marketSearchAssist" aria-expanded="false">
+          <button id="marketHomeSearchBtn" type="button">Search</button>
+        </div>
+        <div id="marketSearchAssist" class="market-search-assist hide" role="listbox" aria-label="Search suggestions"></div>
       </div>
       <div class="market-filter-row" aria-label="Marketplace filters">
         <select id="marketCategoryFilter" aria-label="Category"><option value="">All categories</option></select>
