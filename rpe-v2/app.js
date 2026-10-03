@@ -1024,14 +1024,21 @@ function startRecommendationRotation(){
 function savedProductCard(item){
   const p=item.product,kind=item.kind;
   const image=kind==="market"?(p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls.find(Boolean):"")):imageFor(p);
-  const desc=kind==="market"?(p.short_description||p.category||"Marketplace product"):(p.short_description||p.description||p.categories?.name||"RANOVA product");
+  const store=kind==="market"?marketStores.find(s=>s.id===p.store_id):null;
+  const location=kind==="market"?storeLocationLabel(store):"Location not provided";
   const price=kind==="market"?(p.price==null?"Ask for price":money(p.price,p.currency||"GHS")):money(p.price,p.currency);
   const openAttr=kind==="market"?'data-saved-market="'+esc(p.id)+'"':'data-open-product="'+esc(p.id)+'"';
   const removeAttr=kind==="market"?'data-market-save="'+esc(p.id)+'"':'data-fav="'+esc(p.id)+'"';
   return '<article class="saved-love-card">'+
     '<button class="saved-love-main" type="button" '+openAttr+'>'+
-      (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" decoding="async">':'<div class="saved-love-placeholder">Product</div>')+
-      '<span class="saved-love-copy"><b>'+esc(p.name||"Product")+'</b><small>'+esc(String(desc||"").slice(0,110))+'</small><strong>'+esc(price)+'</strong></span>'+
+      '<span class="saved-love-media">'+
+        (image?'<img src="'+esc(image)+'" alt="'+esc(p.name||"Product")+'" loading="lazy" decoding="async">':'<div class="saved-love-placeholder">Product</div>')+
+      '</span>'+
+      '<span class="saved-love-copy">'+
+        '<b>'+esc(p.name||"Product")+'</b>'+
+        '<small class="saved-love-location"><span aria-hidden="true">⌖</span>'+esc(location)+'</small>'+
+        '<strong>'+esc(price)+'</strong>'+
+      '</span>'+
     '</button>'+
     '<button class="saved-love-star active" type="button" '+removeAttr+' aria-label="Remove saved product">★</button>'+
   '</article>';
