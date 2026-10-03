@@ -180,7 +180,7 @@ const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 const PAYMENT_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-payment-gateway";
 const ORDER_STATUS_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-order-status";
 const WEEKLY_TRENDING_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-weekly-trending";
-let weeklyTrendingProducts=[],weeklyTrendingLoadedAt=0,weeklyTrendingPromise=null;
+let weeklyTrendingProducts=[],weeklyTrendingLoadedAt=0,weeklyTrendingPromise=null,weeklyTrendingFallback=false;
 const FAST_CACHE_TTL=5*60*1000;
 let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 let initializedUserId=null,sessionApplyInFlight=false;
@@ -1683,6 +1683,7 @@ async function loadWeeklyTrendingProducts(force=false){
       const out=await res.json().catch(()=>({}));
       if(!res.ok||!out.ok)throw Error(out.error||"Could not load Trending Picks");
       weeklyTrendingProducts=Array.isArray(out.products)?out.products:[];
+      weeklyTrendingFallback=out.fallback===true;
       weeklyTrendingLoadedAt=Date.now();
       return weeklyTrendingProducts;
     }catch(e){
@@ -1696,10 +1697,24 @@ async function loadWeeklyTrendingProducts(force=false){
 }
 function weeklyTrendingMarketplaceProducts(rows,limit=2){
   const allowed=new Map((rows||[]).map(p=>[String(p.id),p]));
+  let ranked=weeklyTrendingProducts.map(trend=>({
+    trend,
+    product:allowed.get(String(trend.product_id))
+  })).filter(x=>x.product);
+
+  // During a no-purchase week, reuse the latest available weekly ranking but
+  // mix the previously ranked products so the same two do not stay fixed.
+  if(weeklyTrendingFallback){
+    ranked=[...ranked];
+    for(let i=ranked.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [ranked[i],ranked[j]]=[ranked[j],ranked[i]];
+    }
+  }
+
   const picked=[],seenIds=new Set(),seenImages=new Set();
-  for(const trend of weeklyTrendingProducts){
-    const p=allowed.get(String(trend.product_id));
-    if(!p)continue;
+  for(const item of ranked){
+    const p=item.product;
     const id=String(p.id||""),img=String(p.primary_image_url||"").trim();
     if(!id||seenIds.has(id)||(img&&seenImages.has(img)))continue;
     picked.push(p);seenIds.add(id);if(img)seenImages.add(img);
