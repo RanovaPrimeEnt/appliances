@@ -146,7 +146,7 @@ let guestBrowseMode = false;
 const GUEST_BROWSE_CODE = "RNV-16032005";
 let incomingCartHandled = false;
 let realtimeChannels = [];
-let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,messageRealtimeChannel=null,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null,msgReplyingTo=null,msgEditingMessage=null,msgPressTimer=null;
+let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=null,messageRealtimeChannel=null,messageRefreshPromise=null,messageRefreshQueued=false,msgAttachment=null,msgRecorder=null,msgStream=null,msgChunks=[],msgStarted=0,msgPaused=0,msgPauseStarted=0,msgTimer=null,msgReplyingTo=null,msgEditingMessage=null,msgPressTimer=null;
 const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 const PAYMENT_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-payment-gateway";
 const ORDER_STATUS_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-order-status";
@@ -2403,12 +2403,22 @@ async function openMessageConversation(id){
 }
 async function refreshOpenMessage(){
   if(!messageCurrent)return;
-  const id=messageCurrent.id,out=await messageApi({action:"open",conversation_id:id});
-  if(messageCurrent?.id!==id)return;
-  messageCurrent=out.conversation;messageRole=out.role;renderMessageThread();
+  if(messageRefreshPromise){messageRefreshQueued=true;return messageRefreshPromise}
+  const id=messageCurrent.id;
+  messageRefreshPromise=(async()=>{
+    do{
+      messageRefreshQueued=false;
+      const out=await messageApi({action:"open",conversation_id:id});
+      if(messageCurrent?.id!==id)return;
+      messageCurrent=out.conversation;messageRole=out.role;renderMessageThread({preserveScroll:true});
+    }while(messageRefreshQueued&&messageCurrent?.id===id);
+  })();
+  try{return await messageRefreshPromise}finally{messageRefreshPromise=null}
 }
-function renderMessageThread(){
+function renderMessageThread({preserveScroll=false}={}){
   const host=$("messageThread");if(!host||!messageCurrent)return;
+  const wasNearBottom=host.scrollHeight-host.scrollTop-host.clientHeight<90;
+  const previousTop=host.scrollTop;
   let day="";
   const quotes=(messageCurrent.quotes||[]).length?'<div class="msg-quote-stack">'+messageCurrent.quotes.map(customerQuoteCard).join("")+'</div>':"";
   const rows=(messageCurrent.messages||[]).map(m=>{
@@ -2418,14 +2428,14 @@ function renderMessageThread(){
     const media=messageMedia(m),body=m.body?'<div class="msg-body">'+esc(m.body)+'</div>':(!media&&m.message_type!=="system"?'<div class="msg-body">'+esc(prettyKey(m.message_type))+'</div>':"");
     const report=!mine&&m.sender_role!=="system"?'<button class="msg-report" type="button" data-msg-report="'+esc(m.id)+'">Report</button>':"";
     const edited=m.edited_at?" · Edited":"";
-    const delivery=m.sender_role==="system"?"":(mine?" · Sent":" · Received");
+    const delivery=m.sender_role==="system"?"":(mine?(m.read_at?" · Read":m.delivered_at?" · Delivered":" · Sent"):" · Received");
     return sep+'<div class="msg-bubble '+cl+'" data-message-id="'+esc(m.id)+'">'+messageReplyHtml(m)+media+body+'<time>'+d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+delivery+edited+'</time>'+report+'</div>';
   }).join("");
   host.innerHTML=quotes+(rows||'<div class="msg-list-empty">Start your conversation with this store.</div>');
   bindCustomerMessageActions();
-  host.scrollTop=host.scrollHeight;
+  if(!preserveScroll||wasNearBottom)host.scrollTop=host.scrollHeight;else host.scrollTop=previousTop;
 }
-$("messageBack").onclick=()=>{$("messagesPanel").classList.remove("chat-open");messageCurrent=null;clearMsgAction();stopMessageRealtime();clearInterval(messagePoll);loadMessageConversations().catch(()=>{})};
+$("messageBack").onclick=()=>{$("messagesPanel").classList.remove("chat-open");messageCurrent=null;messageRefreshQueued=false;clearMsgAction();stopMessageRealtime();clearInterval(messagePoll);loadMessageConversations().catch(()=>{})};
 $("messageStoreButton").onclick=()=>{if(messageCurrent?.store?.slug)location.href="../all/seller-store.html?store="+encodeURIComponent(messageCurrent.store.slug)};
 $("messageSearchButton").onclick=()=>{const q=prompt("Search store conversations:","");if(q==null)return;const s=q.trim().toLowerCase();document.querySelectorAll("#messageConversationList .msg-row").forEach(row=>{row.style.display=!s||row.textContent.toLowerCase().includes(s)?"grid":"none"})};
 
