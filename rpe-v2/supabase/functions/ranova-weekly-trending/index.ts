@@ -16,11 +16,12 @@ function headers(origin:string|null){
     "Cache-Control":"public,max-age=300"
   };
 }
-function weekBounds(){
+function weekBounds(offsetWeeks=0){
   const now=new Date();
   const day=now.getUTCDay();
   const daysSinceMonday=(day+6)%7;
-  const start=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()-daysSinceMonday,0,0,0,0));
+  const currentStart=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()-daysSinceMonday,0,0,0,0));
+  const start=new Date(currentStart.getTime()-offsetWeeks*7*24*60*60*1000);
   const end=new Date(start.getTime()+7*24*60*60*1000-1);
   return {start,end};
 }
@@ -32,21 +33,41 @@ Deno.serve(async(req:Request)=>{
   if(req.headers.get("x-ranova-client")!=="ranova-site-v1")return new Response(JSON.stringify({ok:false,error:"Invalid client"}),{status:403,headers:h});
 
   try{
-    const {start,end}=weekBounds();
+    let sourceOffset=0;
+    let {start,end}=weekBounds(0);
+    let payments:any[]=[];
 
-    // Count only purchases whose server-side marketplace payment is confirmed
-    // during the current Monday-Sunday week. No buyer information leaves this function.
-    const {data:payments,error:paymentError}=await admin.from("ranova_marketplace_payments")
-      .select("parent_order_id,payment_status,updated_at")
-      .in("payment_status",["confirmed","paid"])
-      .gte("updated_at",start.toISOString())
-      .lte("updated_at",end.toISOString())
-      .limit(5000);
-    if(paymentError)throw paymentError;
+    // Use this Monday-Sunday period first. If it has no confirmed purchases,
+    // reuse the most recent earlier week that had purchases.
+    for(let offset=0;offset<=12;offset++){
+      const bounds=weekBounds(offset);
+      const result=await admin.from("ranova_marketplace_payments")
+        .select("parent_order_id,payment_status,updated_at")
+        .in("payment_status",["confirmed","paid"])
+        .gte("updated_at",bounds.start.toISOString())
+        .lte("updated_at",bounds.end.toISOString())
+        .limit(5000);
+      if(result.error)throw result.error;
+      if((result.data||[]).length){
+        sourceOffset=offset;
+        start=bounds.start;
+        end=bounds.end;
+        payments=result.data||[];
+        break;
+      }
+    }
 
     const orderIds=[...new Set((payments||[]).map((p:any)=>p.parent_order_id).filter(Boolean))];
     if(!orderIds.length){
-      return new Response(JSON.stringify({ok:true,week_start:start.toISOString(),week_end:end.toISOString(),products:[]}),{status:200,headers:h});
+      return new Response(JSON.stringify({
+        ok:true,
+        week_start:weekBounds(0).start.toISOString(),
+        week_end:weekBounds(0).end.toISOString(),
+        source_week_start:null,
+        source_week_end:null,
+        fallback:true,
+        products:[]
+      }),{status:200,headers:h});
     }
 
     const {data:orders,error:orderError}=await admin.from("ranova_customer_orders")
@@ -74,8 +95,11 @@ Deno.serve(async(req:Request)=>{
 
     return new Response(JSON.stringify({
       ok:true,
-      week_start:start.toISOString(),
-      week_end:end.toISOString(),
+      week_start:weekBounds(0).start.toISOString(),
+      week_end:weekBounds(0).end.toISOString(),
+      source_week_start:start.toISOString(),
+      source_week_end:end.toISOString(),
+      fallback:sourceOffset>0,
       products
     }),{status:200,headers:h});
   }catch(e){
