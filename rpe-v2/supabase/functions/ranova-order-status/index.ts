@@ -120,14 +120,23 @@ Deno.serve(async(req:Request)=>{
     }
     const storeMap=new Map(stores.map((s:any)=>[s.id,s]));
     const childIds=(children||[]).map((x:any)=>x.id);
-    let reviews:any[]=[], deliveries:any[]=[];
+    let reviews:any[]=[], deliveries:any[]=[], deliveryEvents:any[]=[];
     if(childIds.length){
       const rr=await admin.from("ranova_marketplace_reviews")
         .select("id,review_ref,seller_order_id,overall_rating,product_rating,service_rating,delivery_rating,review_title,review_text,recommend,verified_purchase,moderation_status,moderation_note,submitted_at,published_at,seller_response,seller_responded_at")
         .in("seller_order_id",childIds);
       reviews=rr.data||[];
-      const dd=await admin.from("ranova_order_deliveries").select("seller_order_id,delivery_status").in("seller_order_id",childIds);
+      const dd=await admin.from("ranova_order_deliveries")
+        .select("id,seller_order_id,delivery_status,responsibility,fulfilment_method,quoted_delivery_fee,currency,destination_text,courier_name,courier_phone,courier_reference,tracking_url,eta_start_date,eta_end_date,assigned_at,dispatched_at,picked_up_at,out_for_delivery_at,seller_marked_delivered_at,buyer_confirmed_at,admin_confirmed_at,delivered_at,delivery_note,updated_at")
+        .in("seller_order_id",childIds);
       deliveries=dd.data||[];
+      const deliveryIds=deliveries.map((d:any)=>d.id).filter(Boolean);
+      if(deliveryIds.length){
+        const ev=await admin.from("ranova_delivery_events")
+          .select("delivery_id,seller_order_id,status,actor_type,note,location_text,occurred_at")
+          .in("delivery_id",deliveryIds).order("occurred_at",{ascending:true});
+        deliveryEvents=ev.data||[];
+      }
     }
 
     let payment_instructions:any=null;
@@ -152,9 +161,19 @@ Deno.serve(async(req:Request)=>{
       const s:any=storeMap.get(x.store_id)||{};
       const rv=reviews.find((r:any)=>r.seller_order_id===x.id)||null;
       const dl=deliveries.find((d:any)=>d.seller_order_id===x.id)||null;
+      const timeline=dl?deliveryEvents.filter((e:any)=>e.seller_order_id===x.id||e.delivery_id===dl.id).map((e:any)=>({
+        status:e.status,actor_type:e.actor_type,note:e.note||null,location_text:e.location_text||null,occurred_at:e.occurred_at
+      })):[];
       return {order_ref:x.order_ref,store_name:s.store_name||"Seller store",store_slug:s.slug||null,store_status:s.store_status||null,
         items:x.items||[],item_count:x.item_count,subtotal:x.subtotal,delivery_fee:x.delivery_fee,total:x.total,currency:x.currency,
         payment_method:x.payment_method,payment_status:x.payment_status,order_status:x.order_status,seller_note:x.seller_note,updated_at:x.updated_at,
+        delivery:dl?{status:dl.delivery_status,responsibility:dl.responsibility,fulfilment_method:dl.fulfilment_method,
+          quoted_delivery_fee:dl.quoted_delivery_fee,currency:dl.currency,destination_text:dl.destination_text,
+          courier_name:dl.courier_name,courier_phone:dl.courier_phone,courier_reference:dl.courier_reference,tracking_url:dl.tracking_url,
+          eta_start_date:dl.eta_start_date,eta_end_date:dl.eta_end_date,assigned_at:dl.assigned_at,dispatched_at:dl.dispatched_at,
+          picked_up_at:dl.picked_up_at,out_for_delivery_at:dl.out_for_delivery_at,seller_marked_delivered_at:dl.seller_marked_delivered_at,
+          buyer_confirmed_at:dl.buyer_confirmed_at,admin_confirmed_at:dl.admin_confirmed_at,delivered_at:dl.delivered_at,
+          delivery_note:dl.delivery_note,updated_at:dl.updated_at,timeline}:null,
         review_eligible:x.order_status==="delivered"&&dl?.delivery_status==="delivered_confirmed"&&!rv,
         review:rv?{review_ref:rv.review_ref,overall_rating:rv.overall_rating,product_rating:rv.product_rating,service_rating:rv.service_rating,
           delivery_rating:rv.delivery_rating,review_title:rv.review_title,review_text:rv.review_text,recommend:rv.recommend,
