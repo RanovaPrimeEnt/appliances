@@ -1598,25 +1598,36 @@ async function loadMarketplaceHomeData(){
 }
 function marketStoreProducts(id){return marketSellerProducts.filter(p=>p.store_id===id)}
 function latestMarketplaceProducts(rows,limit=2){
-  const sorted=[...(rows||[])].sort((a,b)=>{
+  const recent=[...(rows||[])].sort((a,b)=>{
     const bt=new Date(b.created_at||b.updated_at||0).getTime()||0;
     const at=new Date(a.created_at||a.updated_at||0).getTime()||0;
     return bt-at;
-  });
-  const picked=[],seenStores=new Set();
-  for(const p of sorted){
-    const storeKey=String(p.store_id||"");
-    if(storeKey&&seenStores.has(storeKey))continue;
-    picked.push(p);if(storeKey)seenStores.add(storeKey);
-    if(picked.length>=limit)break;
+  }).slice(0,16);
+
+  // Randomize only inside the newest products pool so this section keeps
+  // changing while still representing recently added products.
+  for(let i=recent.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [recent[i],recent[j]]=[recent[j],recent[i]];
   }
-  if(picked.length<limit){
-    const pickedIds=new Set(picked.map(p=>p.id));
-    for(const p of sorted){
-      if(pickedIds.has(p.id))continue;
-      picked.push(p);
-      if(picked.length>=limit)break;
-    }
+
+  const picked=[],seenIds=new Set(),seenImages=new Set(),seenStores=new Set();
+  const imageKey=p=>String(p?.primary_image_url||"").trim();
+
+  // First prefer different stores and different product images.
+  for(const p of recent){
+    const id=String(p.id||""),img=imageKey(p),store=String(p.store_id||"");
+    if(!id||seenIds.has(id)||(img&&seenImages.has(img))||(store&&seenStores.has(store)))continue;
+    picked.push(p);seenIds.add(id);if(img)seenImages.add(img);if(store)seenStores.add(store);
+    if(picked.length>=limit)return picked;
+  }
+
+  // Then fill remaining slots, still never showing the same product/image twice.
+  for(const p of recent){
+    const id=String(p.id||""),img=imageKey(p);
+    if(!id||seenIds.has(id)||(img&&seenImages.has(img)))continue;
+    picked.push(p);seenIds.add(id);if(img)seenImages.add(img);
+    if(picked.length>=limit)break;
   }
   return picked;
 }
@@ -1947,6 +1958,11 @@ function renderMarketplaceHome(filter=""){
       '<div class="mh-actions"><button class="mh-ask" type="button" data-mh-message="'+esc(s.id)+'">Message Store</button><button class="mh-view" type="button" data-mh-store="'+esc(s.slug||s.id)+'">View Store</button></div></div></article>';
   }).join(""):'<div class="market-empty"><b>No matching stores</b>Try a different search.</div>';
 }
+let newProductsRotationTimer=setInterval(()=>{
+  if(document.visibilityState==="visible"&&activePanelId==="marketplaceHomePanel"){
+    renderMarketplaceHome($("marketHomeSearch")?.value||"");
+  }
+},12000);
 function refreshMarketplaceFilters(){renderMarketplaceHome($("marketHomeSearch")?.value||"")}
 if($("marketCategoryFilter"))$("marketCategoryFilter").onchange=e=>{marketCategory=e.target.value;refreshMarketplaceFilters()};
 if($("marketLocationFilter"))$("marketLocationFilter").onchange=e=>{marketLocation=e.target.value;refreshMarketplaceFilters()};
