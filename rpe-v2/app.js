@@ -2279,7 +2279,7 @@ function showCustomerMessageActions(m){
   const mine=m.sender_role!=="system"&&String(m.sender_user_id||"")===String(user?.id||"");
   const fresh=Date.now()-new Date(m.created_at).getTime()<=180000;
   const canEdit=mine&&m.message_type==="text"&&fresh;
-  const canDelete=mine&&fresh;
+  const canDelete=mine;
   const sheet=$("msgActionSheet");if(!sheet)return;
   const buttons=[
     '<button type="button" data-msg-action="reply">↩ <span>Reply</span></button>',
