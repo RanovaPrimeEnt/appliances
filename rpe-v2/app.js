@@ -231,6 +231,34 @@ async function contactRpe(subject="Shopping enquiry",draft="Hello Ranova Prime E
  try{const found=await sb.from("ranova_seller_stores").select("id").eq("slug","ranova-prime-enterprise").eq("store_status","active").maybeSingle();if(found.error)throw found.error;if(!found.data)throw Error("RANOVA Store is currently unavailable. Please try again later.");const out=await messageApi({action:"start",store_id:found.data.id,subject});await openMessageConversation(out.conversation.id);$("msgInput").value=draft;updateMsgAction();$("msgInput").focus()}catch(e){showToast(e.message||"Could not open messages")}
 }
 
+function storeLocationLabel(store){
+  return String(store?.business_location||store?.country_name||store?.country_code||"Location not provided").trim();
+}
+function storeLogoFallback(store){
+  const name=String(store?.store_name||"Store").trim();
+  return esc((name[0]||"S").toUpperCase());
+}
+function renderStoresDirectory(filter=""){
+  const host=$("storesDirectoryList"),summary=$("storesDirectorySummary");if(!host)return;
+  const q=String(filter||"").trim().toLowerCase();
+  const rows=(marketStores||[]).filter(store=>{
+    if(!q)return true;
+    return [store.store_name,store.business_location,store.country_name,store.tagline].some(v=>String(v||"").toLowerCase().includes(q));
+  }).sort((a,b)=>String(a.store_name||"").localeCompare(String(b.store_name||"")));
+  if(summary)summary.textContent=rows.length+" active store"+(rows.length===1?"":"s");
+  host.innerHTML=rows.length?rows.map(store=>{
+    const logo=store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name||"Store")+' logo" loading="lazy" decoding="async">':'<span>'+storeLogoFallback(store)+'</span>';
+    return '<button class="rnv-store-row" type="button" data-store-directory="'+esc(store.slug||"")+'">'+
+      '<span class="rnv-store-logo">'+logo+'</span>'+
+      '<span class="rnv-store-copy"><b>'+esc(store.store_name||"RANOVA Store")+'</b>'+
+      '<small>⌖ '+esc(storeLocationLabel(store))+'</small>'+
+      '<em>Verified seller</em></span>'+
+      '<span class="rnv-store-open">›</span></button>';
+  }).join(""):'<div class="rnv-stores-empty"><b>No stores found</b>Try another store name or location.</div>';
+  host.querySelectorAll("[data-store-directory]").forEach(btn=>btn.onclick=()=>{
+    const slug=btn.dataset.storeDirectory;if(slug)location.href="../all/seller-store.html?store="+encodeURIComponent(slug);
+  });
+}
 function showPanel(id){
   hidePreparationScreen();
   const next=$(id);if(!next)return;
@@ -249,6 +277,7 @@ function showPanel(id){
     else if(id==="savedPanel"){if(!panelIsPainted(id)){renderSaved();markPanelPainted(id)}}
     else if(id==="recentPanel"){if(!panelIsPainted(id)){renderRecent();markPanelPainted(id)}}
     else if(id==="addressPanel"){if(!panelIsPainted(id)){renderAddresses();markPanelPainted(id)}}
+    else if(id==="storesPanel"){renderStoresDirectory($("storesSearch")?.value||"");if(!marketStores.length||Date.now()-marketLoadedAt>60000)loadMarketplaceHomeData().then(()=>renderStoresDirectory($("storesSearch")?.value||"")).catch(()=>{})}
     else if(id==="messagesPanel"){
       if(!panelIsPainted(id)){renderMessageList();markPanelPainted(id)}
       if(Date.now()-messagesLoadedAt>30000)loadMessageConversations().catch(()=>{});
@@ -269,6 +298,8 @@ document.addEventListener("click",e=>{
   const coming=e.target.closest("[data-coming]");
   if(coming){showToast(coming.dataset.coming+" is coming soon to RANOVA.")}
 });
+if($("storesBack"))$("storesBack").onclick=()=>showPanel("homePanel");
+if($("storesSearch"))$("storesSearch").oninput=e=>renderStoresDirectory(e.target.value);
 if($("simpleDiscoveryBack"))$("simpleDiscoveryBack").onclick=()=>showPanel(simpleDiscoveryOrigin||"homePanel");
 if($("simpleDiscoveryAdd"))$("simpleDiscoveryAdd").onclick=async()=>{
   const id=simpleDiscoveryProductId;if(!id)return;
@@ -1550,6 +1581,7 @@ async function loadMarketplaceHomeData(){
 
     populateMarketplaceFilters();
     renderMarketplaceHome($("marketHomeSearch")?.value||"");
+    if(activePanelId==="storesPanel")renderStoresDirectory($("storesSearch")?.value||"");
     renderHomeProducts();
     // Marketplace products are also needed by Saved/Love and the unified Cart.
     // Repaint them after every successful catalogue refresh so those sections
