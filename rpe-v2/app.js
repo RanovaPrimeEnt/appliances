@@ -179,6 +179,8 @@ let messageConversations=[],messageCurrent=null,messageRole=null,messagePoll=nul
 const MESSAGE_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-messaging";
 const PAYMENT_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-payment-gateway";
 const ORDER_STATUS_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-order-status";
+const WEEKLY_TRENDING_ENDPOINT=cfg.supabaseUrl+"/functions/v1/ranova-weekly-trending";
+let weeklyTrendingProducts=[],weeklyTrendingLoadedAt=0,weeklyTrendingPromise=null;
 const FAST_CACHE_TTL=5*60*1000;
 let messagesLoadedAt=0,toPayLoadedAt=0,secondaryLoadPromise=null;
 let initializedUserId=null,sessionApplyInFlight=false;
@@ -354,6 +356,7 @@ function showPanel(id){
       if(Date.now()-toPayLoadedAt>30000)loadToPayOrders().catch(e=>showToast(e.message||"Could not load unpaid orders"));
     }else if(id==="marketplaceHomePanel"){
       if(!panelIsPainted(id)){renderMarketplaceHome($("marketHomeSearch")?.value||"");markPanelPainted(id)}
+      loadWeeklyTrendingProducts().then(()=>renderMarketplaceHome($("marketHomeSearch")?.value||"")).catch(()=>{});
       if(Date.now()-marketLoadedAt>60000)loadMarketplaceHomeData().catch(()=>{renderMarketplaceHome($("marketHomeSearch")?.value||"")});
     }
   });
@@ -1653,6 +1656,7 @@ async function loadMarketplaceHomeData(){
 
     populateMarketplaceFilters();
     renderMarketplaceHome($("marketHomeSearch")?.value||"");
+    loadWeeklyTrendingProducts().then(()=>{if(activePanelId==="marketplaceHomePanel")renderMarketplaceHome($("marketHomeSearch")?.value||"")}).catch(()=>{});
     if(activePanelId==="storesPanel")renderStoresDirectory($("storesSearch")?.value||"");
     renderHomeProducts();
     // Marketplace products are also needed by Saved/Love and the unified Cart.
@@ -1666,6 +1670,43 @@ async function loadMarketplaceHomeData(){
   }
 }
 function marketStoreProducts(id){return marketSellerProducts.filter(p=>p.store_id===id)}
+async function loadWeeklyTrendingProducts(force=false){
+  if(!force&&weeklyTrendingLoadedAt&&Date.now()-weeklyTrendingLoadedAt<5*60*1000)return weeklyTrendingProducts;
+  if(weeklyTrendingPromise)return weeklyTrendingPromise;
+  weeklyTrendingPromise=(async()=>{
+    try{
+      const res=await fetch(WEEKLY_TRENDING_ENDPOINT,{
+        method:"GET",
+        headers:{"x-ranova-client":"ranova-site-v1","apikey":cfg.supabasePublishableKey},
+        cache:"no-store"
+      });
+      const out=await res.json().catch(()=>({}));
+      if(!res.ok||!out.ok)throw Error(out.error||"Could not load Trending Picks");
+      weeklyTrendingProducts=Array.isArray(out.products)?out.products:[];
+      weeklyTrendingLoadedAt=Date.now();
+      return weeklyTrendingProducts;
+    }catch(e){
+      console.warn("Weekly trending unavailable",e);
+      return weeklyTrendingProducts;
+    }finally{
+      weeklyTrendingPromise=null;
+    }
+  })();
+  return weeklyTrendingPromise;
+}
+function weeklyTrendingMarketplaceProducts(rows,limit=2){
+  const allowed=new Map((rows||[]).map(p=>[String(p.id),p]));
+  const picked=[],seenIds=new Set(),seenImages=new Set();
+  for(const trend of weeklyTrendingProducts){
+    const p=allowed.get(String(trend.product_id));
+    if(!p)continue;
+    const id=String(p.id||""),img=String(p.primary_image_url||"").trim();
+    if(!id||seenIds.has(id)||(img&&seenImages.has(img)))continue;
+    picked.push(p);seenIds.add(id);if(img)seenImages.add(img);
+    if(picked.length>=limit)break;
+  }
+  return picked;
+}
 function latestMarketplaceProducts(rows,limit=2){
   const recent=[...(rows||[])].sort((a,b)=>{
     const bt=new Date(b.created_at||b.updated_at||0).getTime()||0;
@@ -1983,8 +2024,9 @@ function renderMarketplaceHome(filter=""){
     return textMatch&&locationMatch&&productMatch;
   });
   const promoPool=ps.length?ps:(!q?marketSellerProducts:[]);
+  const trendingPair=weeklyTrendingMarketplaceProducts(promoPool,2);
   const promoGroups=[
-    {title:"Trending Picks",pair:promoPool.slice(0,2)},
+    {title:"Trending Picks",pair:trendingPair},
     {title:"New Products",pair:latestMarketplaceProducts(promoPool,2)},
     {title:"Store Deals",pair:promoPool.slice(4,6)},
     {title:"Popular Today",pair:promoPool.slice(6,8)}
