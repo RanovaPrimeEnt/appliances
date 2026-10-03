@@ -1561,7 +1561,7 @@ async function loadMarketplaceHomeData(){
   try{
     const [storeResult,productResult]=await Promise.allSettled([
       sb.from("ranova_seller_stores").select("id,seller_id,store_name,slug,tagline,logo_url,banner_url,business_location,fulfilment_summary,return_policy_summary,store_status,country_code,country_name,updated_at").eq("store_status","active").order("updated_at",{ascending:false}).limit(60),
-      sb.from("ranova_seller_products").select("id,seller_id,store_id,name,slug,sku,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,pricing_tiers,product_status,updated_at,specifications").eq("product_status","active").order("updated_at",{ascending:false}).limit(240)
+      sb.from("ranova_seller_products").select("id,seller_id,store_id,name,slug,sku,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,pricing_tiers,product_status,created_at,updated_at,specifications").eq("product_status","active").order("created_at",{ascending:false}).limit(240)
     ]);
     const storeResponse=storeResult.status==="fulfilled"?storeResult.value:null;
     const productResponse=productResult.status==="fulfilled"?productResult.value:null;
@@ -1597,6 +1597,29 @@ async function loadMarketplaceHomeData(){
   }
 }
 function marketStoreProducts(id){return marketSellerProducts.filter(p=>p.store_id===id)}
+function latestMarketplaceProducts(rows,limit=2){
+  const sorted=[...(rows||[])].sort((a,b)=>{
+    const bt=new Date(b.created_at||b.updated_at||0).getTime()||0;
+    const at=new Date(a.created_at||a.updated_at||0).getTime()||0;
+    return bt-at;
+  });
+  const picked=[],seenStores=new Set();
+  for(const p of sorted){
+    const storeKey=String(p.store_id||"");
+    if(storeKey&&seenStores.has(storeKey))continue;
+    picked.push(p);if(storeKey)seenStores.add(storeKey);
+    if(picked.length>=limit)break;
+  }
+  if(picked.length<limit){
+    const pickedIds=new Set(picked.map(p=>p.id));
+    for(const p of sorted){
+      if(pickedIds.has(p.id))continue;
+      picked.push(p);
+      if(picked.length>=limit)break;
+    }
+  }
+  return picked;
+}
 function populateMarketplaceFilters(){
   const cat=$("marketCategoryFilter"),loc=$("marketLocationFilter");
   if(cat){
@@ -1880,9 +1903,15 @@ function renderMarketplaceHome(filter=""){
     return textMatch&&locationMatch&&productMatch;
   });
   const promoPool=ps.length?ps:(!q?marketSellerProducts:[]);
-  promo.innerHTML=[0,2,4,6].map((n,i)=>{
-    const pair=promoPool.slice(n,n+2);if(!pair.length)return"";
-    return '<div class="mh-promo"><h3>'+["Trending Picks","New Arrivals","Store Deals","Popular Today"][i]+'</h3><div class="mh-mini">'+pair.map(p=>
+  const promoGroups=[
+    {title:"Trending Picks",pair:promoPool.slice(0,2)},
+    {title:"New Products",pair:latestMarketplaceProducts(promoPool,2)},
+    {title:"Store Deals",pair:promoPool.slice(4,6)},
+    {title:"Popular Today",pair:promoPool.slice(6,8)}
+  ];
+  promo.innerHTML=promoGroups.map(group=>{
+    const pair=group.pair;if(!pair.length)return"";
+    return '<div class="mh-promo"><h3>'+group.title+'</h3><div class="mh-mini">'+pair.map(p=>
       '<button type="button" data-mh-product="'+esc(p.id)+'">'+
       (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name)+'" loading="lazy">':'')+
       '<div style="font-size:10px;font-weight:900;color:#e84e31;margin-top:4px">'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</div></button>'
