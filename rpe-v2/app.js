@@ -74,6 +74,35 @@ let toPayOrders = [];
 let toPayStores = [];
 let toPayRecommendations = [];
 let marketStores=[],marketSellerProducts=[],marketLoadedAt=0,marketFetchInFlight=false;
+let myStoresMode="saved";
+const RECENT_STORE_RETENTION_MS=75*24*60*60*1000;
+function buyerStoreMemoryKey(kind){return "ranova-"+kind+"-stores-v1:"+(user?.id||"guest")}
+function savedStoreIds(){
+  const rows=readLocalJson(buyerStoreMemoryKey("saved"),[]);
+  return new Set(Array.isArray(rows)?rows.map(String):[]);
+}
+function recentStoreRows(){
+  const rows=readLocalJson(buyerStoreMemoryKey("recent"),[]);
+  const now=Date.now();
+  const clean=(Array.isArray(rows)?rows:[]).filter(x=>x&&x.id&&Number(x.viewed_at)&&now-Number(x.viewed_at)<RECENT_STORE_RETENTION_MS);
+  if(clean.length!==(Array.isArray(rows)?rows.length:0))writeLocalJson(buyerStoreMemoryKey("recent"),clean);
+  return clean;
+}
+function rememberRecentStore(store){
+  if(!store?.id)return;
+  const rows=recentStoreRows().filter(x=>String(x.id)!==String(store.id));
+  rows.unshift({id:String(store.id),viewed_at:Date.now()});
+  writeLocalJson(buyerStoreMemoryKey("recent"),rows.slice(0,80));
+}
+function toggleSavedStore(storeId){
+  const id=String(storeId||"");if(!id)return;
+  const saved=savedStoreIds();
+  if(saved.has(id)){saved.delete(id);showToast("Store removed from Saved Stores")}
+  else{saved.add(id);showToast("Store saved")}
+  writeLocalJson(buyerStoreMemoryKey("saved"),[...saved]);
+  renderStoresDirectory($("storesSearch")?.value||"");
+  if(activePanelId==="myStoresPanel")renderMyStores();
+}
 const PUBLIC_MARKET_CACHE_KEY="ranova-public-market-v1";
 const PUBLIC_MARKET_CACHE_MAX_AGE=24*60*60*1000;
 
@@ -238,6 +267,37 @@ function storeLogoFallback(store){
   const name=String(store?.store_name||"Store").trim();
   return esc((name[0]||"S").toUpperCase());
 }
+function storeDirectoryCard(store,{savedContext=false,recentContext=false}={}){
+  const logo=store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name||"Store")+' logo" loading="lazy" decoding="async">':'<span>'+storeLogoFallback(store)+'</span>';
+  const tagline=String(store.tagline||"Trusted seller on RANOVA").trim();
+  const saved=savedStoreIds().has(String(store.id));
+  return '<article class="rnv-store-row">'+
+    '<button class="rnv-store-main" type="button" data-store-open="'+esc(store.id)+'">'+
+      '<span class="rnv-store-logo">'+logo+'</span>'+
+      '<span class="rnv-store-copy"><b>'+esc(store.store_name||"RANOVA Store")+'</b>'+
+      '<small>⌖ '+esc(storeLocationLabel(store))+'</small>'+
+      '<small class="rnv-store-tagline">'+esc(tagline)+'</small>'+
+      '<span class="rnv-store-badges"><em>Verified seller</em><span class="rnv-store-partner">RANOVA Store Partner</span></span></span>'+
+      '<span class="rnv-store-open">›</span>'+
+    '</button>'+
+    '<button class="rnv-store-save '+(saved?"saved":"")+'" type="button" data-store-save="'+esc(store.id)+'">'+(saved?"★ Saved Store":"☆ Save Store")+'</button>'+
+    (recentContext?'<span class="rnv-store-expiry">Recently viewed · kept for 2½ months</span>':"")+
+  '</article>';
+}
+function openMarketplaceStore(store){
+  if(!store?.slug)return showToast("Store unavailable");
+  rememberRecentStore(store);
+  try{localStorage.setItem(SELLER_STORE_FAST_CACHE_PREFIX+store.slug,JSON.stringify({t:Date.now(),store,products:marketSellerProducts.filter(p=>p.store_id===store.id)}))}catch{}
+  location.href="../all/seller-store.html?store="+encodeURIComponent(store.slug);
+}
+function bindStoreCards(host){
+  host?.querySelectorAll("[data-store-open]").forEach(btn=>btn.onclick=()=>{
+    const store=marketStores.find(s=>String(s.id)===String(btn.dataset.storeOpen));if(store)openMarketplaceStore(store);
+  });
+  host?.querySelectorAll("[data-store-save]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();e.stopPropagation();toggleSavedStore(btn.dataset.storeSave);
+  });
+}
 function renderStoresDirectory(filter=""){
   const host=$("storesDirectoryList"),summary=$("storesDirectorySummary");if(!host)return;
   const q=String(filter||"").trim().toLowerCase();
@@ -246,20 +306,25 @@ function renderStoresDirectory(filter=""){
     return [store.store_name,store.business_location,store.country_name,store.tagline].some(v=>String(v||"").toLowerCase().includes(q));
   }).sort((a,b)=>String(a.store_name||"").localeCompare(String(b.store_name||"")));
   if(summary)summary.textContent=rows.length+" active store"+(rows.length===1?"":"s");
-  host.innerHTML=rows.length?rows.map(store=>{
-    const logo=store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name||"Store")+' logo" loading="lazy" decoding="async">':'<span>'+storeLogoFallback(store)+'</span>';
-    const tagline=String(store.tagline||"Trusted seller on RANOVA").trim();
-    return '<button class="rnv-store-row" type="button" data-store-directory="'+esc(store.slug||"")+'">'+
-      '<span class="rnv-store-logo">'+logo+'</span>'+
-      '<span class="rnv-store-copy"><b>'+esc(store.store_name||"RANOVA Store")+'</b>'+
-      '<small>⌖ '+esc(storeLocationLabel(store))+'</small>'+
-      '<small class="rnv-store-tagline">'+esc(tagline)+'</small>'+
-      '<span class="rnv-store-badges"><em>Verified seller</em><span class="rnv-store-partner">RANOVA Store Partner</span></span></span>'+
-      '<span class="rnv-store-open">›</span></button>';
-  }).join(""):'<div class="rnv-stores-empty"><b>No stores found</b>Try another store name or location.</div>';
-  host.querySelectorAll("[data-store-directory]").forEach(btn=>btn.onclick=()=>{
-    const slug=btn.dataset.storeDirectory;if(slug)location.href="../all/seller-store.html?store="+encodeURIComponent(slug);
-  });
+  host.innerHTML=rows.length?rows.map(store=>storeDirectoryCard(store)).join(""):'<div class="rnv-stores-empty"><b>No stores found</b>Try another store name or location.</div>';
+  bindStoreCards(host);
+}
+function renderMyStores(){
+  const host=$("myStoresList"),info=$("myStoresInfo");if(!host)return;
+  const saved=savedStoreIds();
+  const recent=recentStoreRows();
+  const rows=myStoresMode==="saved"
+    ? marketStores.filter(s=>saved.has(String(s.id)))
+    : recent.map(r=>marketStores.find(s=>String(s.id)===String(r.id))).filter(Boolean);
+  if($("savedStoresTab"))$("savedStoresTab").classList.toggle("active",myStoresMode==="saved");
+  if($("recentStoresTab"))$("recentStoresTab").classList.toggle("active",myStoresMode==="recent");
+  if(info)info.textContent=myStoresMode==="saved"
+    ?"Saved Stores stay here until you remove them."
+    :"Recently Viewed Stores are automatically removed after 2½ months.";
+  host.innerHTML=rows.length
+    ? rows.map(store=>storeDirectoryCard(store,{savedContext:myStoresMode==="saved",recentContext:myStoresMode==="recent"})).join("")
+    : '<div class="rnv-stores-empty"><b>'+(myStoresMode==="saved"?"No saved stores yet":"No recently viewed stores yet")+'</b>'+(myStoresMode==="saved"?"Save a store and it will stay here until you remove it.":"Stores you visit will appear here temporarily.")+'</div>';
+  bindStoreCards(host);
 }
 function showPanel(id){
   hidePreparationScreen();
@@ -280,6 +345,7 @@ function showPanel(id){
     else if(id==="recentPanel"){if(!panelIsPainted(id)){renderRecent();markPanelPainted(id)}}
     else if(id==="addressPanel"){if(!panelIsPainted(id)){renderAddresses();markPanelPainted(id)}}
     else if(id==="storesPanel"){renderStoresDirectory($("storesSearch")?.value||"");if(!marketStores.length||Date.now()-marketLoadedAt>60000)loadMarketplaceHomeData().then(()=>renderStoresDirectory($("storesSearch")?.value||"")).catch(()=>{})}
+    else if(id==="myStoresPanel"){renderMyStores();if(!marketStores.length||Date.now()-marketLoadedAt>60000)loadMarketplaceHomeData().then(renderMyStores).catch(()=>{})}
     else if(id==="messagesPanel"){
       if(!panelIsPainted(id)){renderMessageList();markPanelPainted(id)}
       if(Date.now()-messagesLoadedAt>30000)loadMessageConversations().catch(()=>{});
@@ -301,6 +367,9 @@ document.addEventListener("click",e=>{
   if(coming){showToast(coming.dataset.coming+" is coming soon to RANOVA.")}
 });
 if($("storesBack"))$("storesBack").onclick=()=>showPanel("homePanel");
+if($("myStoresBack"))$("myStoresBack").onclick=()=>showPanel("homePanel");
+if($("savedStoresTab"))$("savedStoresTab").onclick=()=>{myStoresMode="saved";renderMyStores()};
+if($("recentStoresTab"))$("recentStoresTab").onclick=()=>{myStoresMode="recent";renderMyStores()};
 if($("storesSearch"))$("storesSearch").oninput=e=>renderStoresDirectory(e.target.value);
 if($("simpleDiscoveryBack"))$("simpleDiscoveryBack").onclick=()=>showPanel(simpleDiscoveryOrigin||"homePanel");
 if($("simpleDiscoveryAdd"))$("simpleDiscoveryAdd").onclick=async()=>{
@@ -478,7 +547,7 @@ function handleRequestedPanel(){
   const qs=new URLSearchParams(location.search);
   const forceHome=qs.get("home")==="1";
   const requested=forceHome?"marketplaceHomePanel":(qs.get("panel")||"");
-  const allowed=new Set(["marketplaceHomePanel","messagesPanel","cartPanel","savedPanel","homePanel","ordersPanel","toPayPanel","recentPanel","addressPanel","notifPanel","helpPanel"]);
+  const allowed=new Set(["marketplaceHomePanel","messagesPanel","cartPanel","savedPanel","homePanel","ordersPanel","toPayPanel","recentPanel","addressPanel","notifPanel","helpPanel","storesPanel","myStoresPanel"]);
   if(!allowed.has(requested))return false;
   orderFilter=null;
   showPanel(requested);
@@ -2067,14 +2136,12 @@ document.addEventListener("click",async e=>{
  const savedMarket=e.target.closest("[data-saved-market]");if(savedMarket){const item=marketSellerProducts.find(x=>x.id===savedMarket.dataset.savedMarket);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
  const variant=e.target.closest("[data-variant-product]");if(variant&&variant.dataset.variantProduct!==marketProductCurrent?.id){openMarketplaceProduct(variant.dataset.variantProduct);return}
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
- const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
+ const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);const store=marketStores.find(s=>s.id===item?.store_id);if(store)rememberRecentStore(store);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
  const m=e.target.closest("[data-mh-message]");if(m){showPanel("messagesPanel");try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
  const v=e.target.closest("[data-mh-store]");if(v){
    const st=marketStores.find(s=>s.slug===v.dataset.mhStore||s.id===v.dataset.mhStore);
-   if(st){
-     try{localStorage.setItem(SELLER_STORE_FAST_CACHE_PREFIX+st.slug,JSON.stringify({t:Date.now(),store:st,products:marketSellerProducts.filter(p=>p.store_id===st.id)}))}catch{}
-   }
-   location.href="../all/seller-store.html?store="+encodeURIComponent(v.dataset.mhStore);return
+   if(st)openMarketplaceStore(st);else showToast("Store unavailable");
+   return
  }
 });
 if($("marketProductBack"))$("marketProductBack").onclick=()=>showPanel(marketProductOrigin||"marketplaceHomePanel");
@@ -2083,7 +2150,7 @@ if($("marketProductPlus"))$("marketProductPlus").onclick=()=>{if(!marketProductC
 if($("marketProductQty"))$("marketProductQty").onchange=()=>updateMarketProductTotal();
 if($("marketProductShare"))$("marketProductShare").onclick=shareMarketplaceProduct;
 if($("marketProductSave"))$("marketProductSave").onclick=()=>{if(marketProductCurrent)toggleMarketplaceSaved(marketProductCurrent.id)};
-if($("marketProductStore"))$("marketProductStore").onclick=()=>{const url=sellerStoreProductUrl(marketProductCurrent);if(url)location.href=url;else showToast("Store unavailable")};
+if($("marketProductStore"))$("marketProductStore").onclick=()=>{const store=marketStores.find(s=>s.id===marketProductCurrent?.store_id);if(store)openMarketplaceStore(store);else showToast("Store unavailable")};
 if($("marketProductBuy"))$("marketProductBuy").onclick=async()=>{const p=marketProductCurrent;if(!p)return;const q=marketProductQuantity(p,$("marketProductQty").value);await addMarketplaceToCart(p,q)};
 if($("marketProductMessage"))$("marketProductMessage").onclick=async()=>{
   const p=marketProductCurrent;if(!p)return;
