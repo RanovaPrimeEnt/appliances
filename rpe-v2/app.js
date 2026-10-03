@@ -548,9 +548,10 @@ async function applySession(session,initial=false){
   setup.classList.add("hide");
   appBox.classList.remove("hide");
 
-  // A fresh signed-in launch always starts on the marketplace Home feed.
-  // Account/Me stays available from the bottom navigation.
-  if(initial){
+  // When arriving from a seller store, honor the requested bottom-tab
+  // destination before painting anything else. This prevents an intermediate
+  // Home/store flash before Message, Cart or Me opens.
+  if(initial&&!handleRequestedPanel()){
     showPanel("marketplaceHomePanel");
   }
   if(!cached){
