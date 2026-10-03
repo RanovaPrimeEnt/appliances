@@ -299,7 +299,7 @@ if($("cartBtn"))$("cartBtn").onclick=openCart;
 const bottomHome=document.querySelector('.bottom [data-panel="marketplaceHomePanel"]');
 if(bottomHome)bottomHome.onclick=e=>{e.preventDefault();orderFilter=null;showPanel("marketplaceHomePanel")};
 if($("bottomMessages"))$("bottomMessages").onclick=e=>{e.preventDefault();orderFilter=null;showPanel("messagesPanel")};
-if($("bottomCart"))$("bottomCart").onclick=e=>{e.preventDefault();orderFilter=null;openCart()};
+if($("bottomCart"))$("bottomCart").onclick=e=>{e.preventDefault();e.stopPropagation();orderFilter=null;openCart()};
 if($("bottomMe"))$("bottomMe").onclick=e=>{
   e.preventDefault();
   orderFilter=null;
