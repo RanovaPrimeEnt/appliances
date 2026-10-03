@@ -1197,7 +1197,7 @@ function renderCart(){
             '</button>'+
             '<div class="rnv-cart-row-actions">'+
               '<div class="qty"><button type="button" data-cart-minus="'+esc(key)+'">−</button><span>'+esc(i.quantity)+'</span><button type="button" data-cart-plus="'+esc(key)+'">+</button></div>'+
-              '<button class="rnv-cart-remove '+(cartEditMode?"show":"")+'" type="button" data-cart-remove="'+esc(key)+'">Remove</button>'+
+              '<button class="rnv-cart-remove show" type="button" data-cart-remove="'+esc(key)+'" aria-label="Remove '+esc(p.name||"product")+' from cart">Remove</button>'+
             '</div></div>';
         }).join("");
         html+='</section>';
