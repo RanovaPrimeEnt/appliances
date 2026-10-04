@@ -376,11 +376,6 @@ function showMissingDocuments(focusFirst,serverMissing){
 }
 var savedRef="",savedPhone="",savedEmail="";
 try{
-  savedRef=sessionStorage.getItem("ranovaSellerApplicationRef")||"";
-  savedPhone=sessionStorage.getItem("ranovaSellerApplicationPhone")||"";
-  savedEmail=sessionStorage.getItem("ranovaSellerApplicationEmail")||"";
-}catch(e){}
-try{
   var qs=new URLSearchParams(location.search);
   if(qs.get("ref"))savedRef=qs.get("ref").trim();
 }catch(e){}
@@ -388,9 +383,8 @@ try{
 
 var authPanel=document.getElementById("authPanel"),resetPanel=document.getElementById("resetPanel"),linkPanel=document.getElementById("linkPanel"),workspace=document.getElementById("workspace"),signOut=document.getElementById("signOut");
 var loginTab=document.getElementById("loginTab"),signupTab=document.getElementById("signupTab"),authSubmit=document.getElementById("authSubmit"),authMsg=document.getElementById("authMsg");
-if(savedEmail)document.getElementById("email").value=savedEmail;
+// Do not prefill another seller's saved account details on a shared device.
 if(savedRef)document.getElementById("applicationRef").value=savedRef;
-if(savedPhone)document.getElementById("applicationPhone").value=savedPhone;
 
 function showMsg(el,text){el.textContent=text;el.style.display="block"}
 function hideMsg(el){el.style.display="none"}
@@ -670,20 +664,9 @@ async function loadWorkspace(){
   try{
     var out=await api(WORKSPACE_ENDPOINT,{});
     if(!out.linked){
-      if(savedRef&&savedPhone&&!autoLinkTried){
-        autoLinkTried=true;
-        try{
-          await api(LINK_ENDPOINT,{application_ref:savedRef,phone:savedPhone});
-          return await loadWorkspace();
-        }catch(linkErr){
-          linkPanel.style.display="block";workspace.style.display="none";
-          showMsg(document.getElementById("linkMsg"),linkErr.message||"We could not connect this application automatically. Check the details below.");
-        }
-      }else{
-        linkPanel.style.display="block";workspace.style.display="none";
-      }
+      linkPanel.style.display="block";workspace.style.display="none";
       if(savedRef&&!document.getElementById("applicationRef").value)document.getElementById("applicationRef").value=savedRef;
-      if(savedPhone&&!document.getElementById("applicationPhone").value)document.getElementById("applicationPhone").value=savedPhone;
+      document.getElementById("applicationPhone").value="";
       return
     }
     linkPanel.style.display="none";workspace.style.display="block";
