@@ -486,3 +486,7 @@ linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shado
 @media(min-width:760px){
   #homePanel .me-premium-head{margin-left:-14px;margin-right:-14px;border-radius:0 0 22px 22px}
 }
+
+/* Registered seller location on product cards */
+.home-store-location,.market-product-location{display:block!important;margin-top:3px!important;color:#777f7b!important;font-size:8.5px!important;line-height:1.25!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.market-product-location{color:#7a817e!important}
