@@ -530,8 +530,6 @@ document.addEventListener("click",e=>{
 },true);
 
 function authUI(){
-  if($("authTitle"))$("authTitle").textContent=signUpMode?"Welcome":"Welcome Back";
-  if($("authCopy"))$("authCopy").textContent=signUpMode?"Create your account and start exploring RANOVA.":"Sign in to continue to your RANOVA home.";
   $("authSubmit").textContent=signUpMode?"Create my account":"Sign in";
   $("signInTab").classList.toggle("active",!signUpMode);
   $("createTab").classList.toggle("active",signUpMode);
@@ -577,32 +575,23 @@ function phoneLoginEmail(phone){
   return "phone-"+digits+"@accounts.ranova.invalid";
 }
 async function createRanovaPasswordAccount({method,email,phone,password}){
-  const payload={method,email,phone,password};
-  let lastError=null;
-  for(let attempt=0;attempt<2;attempt++){
-    const invoke=sb.functions.invoke("ranova-account-signup",{body:payload});
-    const timed=await Promise.race([
-      invoke,
-      new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error("RANOVA account service took too long. Please try again.")}),10000))
-    ]);
-    const {data,error}=timed;
-    if(!error)return data||{};
-    lastError=error;
-    // Retry only a transport failure. Application errors (duplicate account,
-    // invalid input, etc.) should return to the user immediately.
-    const msg=String(error?.message||"");
-    if(attempt===0&&/fetch|network|timed out|load failed/i.test(msg)){
-      await new Promise(resolve=>setTimeout(resolve,180));
-      continue;
-    }
-    break;
+  const res=await fetch(cfg.supabaseUrl+"/functions/v1/ranova-account-signup",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":cfg.supabasePublishableKey,
+      "Authorization":"Bearer "+cfg.supabasePublishableKey
+    },
+    body:JSON.stringify({method,email,phone,password})
+  });
+  let out={};
+  try{out=await res.json()}catch{}
+  if(!res.ok){
+    const err=new Error(out?.error||"Could not create account.");
+    err.code=out?.code||"";
+    throw err;
   }
-  const context=lastError?.context;
-  let details=null;
-  try{details=context&&typeof context.json==="function"?await context.json():null}catch{}
-  const err=new Error(details?.error||lastError?.message||"Could not create account.");
-  err.code=details?.code||lastError?.code||"";
-  throw err;
+  return out;
 }
 $("authSubmit").onclick=async()=>{
   const email=$("email").value.trim().toLowerCase();
@@ -658,28 +647,8 @@ $("authSubmit").onclick=async()=>{
 
     if(data?.session){
       $("authMsg").textContent=signUpMode?"Account created. Opening RANOVA…":"Signed in. Opening RANOVA…";
-
-      // Open the customer Home shell immediately after Supabase returns a
-      // valid session. Account/profile/cart/order hydration continues in the
-      // background, so sign in and create account never wait on the heavier
-      // account-data requests before the customer sees RANOVA.
-      const nextUser=data.session.user;
-      const previousId=user?.id||null;
-      if(previousId&&previousId!==nextUser?.id)resetUserScopedState();
-      user=nextUser;
-      guestBrowseMode=false;
-      setup.classList.add("hide");
-      setAuthOnlyMode(false);
-      appBox.classList.remove("hide");
-      const cached=restoreFastCache();
+      await applySession(data.session,true);
       showPanel("marketplaceHomePanel");
-      if(!cached){try{renderAll()}catch{}}
-
-      // Complete initialization silently. Do not block the auth button/UI.
-      applySession(data.session,true).catch(error=>{
-        console.error(error);
-        showToast("Some account information is still loading.");
-      });
       return;
     }
 
