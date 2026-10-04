@@ -667,7 +667,7 @@ async function refresh(){
   }
   if(!state.approved){
     el("gate").classList.remove("hide");
-    el("gate").innerHTML='<div class="locked"><b>Seller verification is not approved yet.</b>Wait for RANOVA Admin to approve your seller account or store. After approval, you can manage your store during the document submission period.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Return to Seller Center →</a></div></div>';
+    el("gate").innerHTML='<div class="locked"><b>Seller verification is not approved yet.</b>RANOVA Admin must approve all three required documents and then approve your store before dashboard access is unlocked.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Return to Seller Center →</a></div></div>';
     el("dashboard").classList.add("hide");return;
   }
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
@@ -677,7 +677,7 @@ async function refresh(){
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
   el("welcomeName").textContent=store.store_name||app.business_name||"Seller Dashboard";
-  el("welcomeText").textContent=store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your seller account is approved. Finish the Set Up Your Store and prepare products for review.";
+  el("welcomeText").textContent=store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your store has been approved. Finish Set Up Your Store and prepare products for RANOVA review.";
   el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mMyOrders").textContent=c.open_orders||0;
   var unreadNotes=(state.notifications||[]).filter(function(n){return !n.read_at}).length,attention=(c.open_support_cases||0)+unreadNotes;
   el("supportNav").textContent=attention>0?"Help & Issues ("+attention+")":"Help & Issues";el("deliveryNav").textContent=(c.awaiting_delivery_confirmation||0)>0?"Delivery ("+(c.awaiting_delivery_confirmation||0)+")":"Delivery";
