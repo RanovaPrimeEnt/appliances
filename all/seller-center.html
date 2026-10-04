@@ -126,6 +126,18 @@ body:not(.document-onboarding) .upload button,body:not(.document-onboarding) .su
   body:not(.document-onboarding) .hero{padding:14px 0 8px}
   .doc-requirements-strip{grid-template-columns:1fr}
 }
+
+.seller-approved-gate{margin:0;min-height:calc(100dvh - 40px);padding:58px 24px 36px;text-align:center;background:#fff}
+.seller-approved-gate[hidden]{display:none!important}
+.seller-approved-mark{width:78px;height:78px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:#e9f8f0;color:#0a8f58;font-size:40px;font-weight:950;box-shadow:0 8px 24px rgba(15,139,88,.13)}
+.seller-approved-gate>small{display:block;color:#0a8f58;font-size:9px;letter-spacing:1.45px;font-weight:950}
+.seller-approved-gate h2{max-width:500px;margin:7px auto 10px;color:#173d33;font-size:30px;line-height:1.12}
+.seller-approved-gate p{max-width:550px;margin:0 auto;color:#64736d;font-size:14px;line-height:1.7}
+.seller-approved-ref{width:min(100%,480px);margin:22px auto 0;padding:14px 16px;border:1px solid #dce9e2;border-radius:14px;background:#f6fbf8;text-align:left}
+.seller-approved-ref span{display:block;color:#87918d;font-size:9px;font-weight:800}.seller-approved-ref b{display:block;margin-top:3px;color:#203a32;font-size:14px;word-break:break-all}
+#accessSellerCenter,#checkSellerReviewStatus{display:block;width:min(100%,480px);box-sizing:border-box;min-height:54px;margin:18px auto 0;border:0;border-radius:15px;background:#ff5a2d;color:#fff;font-size:15px;font-weight:950;cursor:pointer;text-decoration:none;line-height:54px;text-align:center;box-shadow:0 8px 22px rgba(237,87,33,.17)}
+#checkSellerReviewStatus{background:#173f35}
+body.document-approved-gate #sellerReviewAlert,body.document-approved-gate #sellerStatusOverview,body.document-approved-gate #sellerOnboardingGrid,body.document-approved-gate #documentSubmitSuccess{display:none!important}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -144,11 +156,11 @@ body:not(.document-onboarding) .upload button,body:not(.document-onboarding) .su
   <div class="approved-launch-card">
     <div class="approved-launch-logo"><img src="data:image/webp;base64,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" alt="RANOVA Marketplace logo"></div>
     <div class="approved-launch-copy">
-      <h2>Build Your Store</h2>
-      <p>Your account is verified and ready. Manage your products, update your store information, and grow your business on RANOVA Marketplace.</p>
+      <h2>Your Store Has Been Approved</h2>
+      <p>RANOVA Admin has approved your required seller documents. You can now manage your products, store information, stock and delivery settings.</p>
     </div>
   </div>
-  <a class="approved-launch-btn" href="./seller-dashboard.html">OPEN SELLER DASHBOARD →</a>
+  <a class="approved-launch-btn" href="./seller-dashboard.html">ACCESS RANOVA SELLER CENTER →</a>
 </div>
 </div></section>
 
@@ -271,13 +283,22 @@ body:not(.document-onboarding) .upload button,body:not(.document-onboarding) .su
           </div>
         </div>
 
+        <section id="sellerApprovedGate" class="seller-approved-gate" hidden aria-live="polite">
+          <div class="seller-approved-mark">✓</div>
+          <small>RANOVA ADMIN APPROVAL</small>
+          <h2>Your Store Has Been Approved</h2>
+          <p>RANOVA Admin has approved your required seller documents. You can now access the RANOVA Seller Center and continue building your store.</p>
+          <div class="seller-approved-ref"><span>Application reference</span><b id="sellerApprovedRef">—</b></div>
+          <a id="accessSellerCenter" href="./seller-center.html">ACCESS RANOVA SELLER CENTER →</a>
+        </section>
+
         <section id="documentSubmitSuccess" class="document-submit-success" hidden aria-live="polite">
           <div class="document-success-mark">✓</div>
-          <small>SELLER REGISTRATION SENT</small>
-          <h2>Your documents have been submitted</h2>
-          <p>RANOVA Admin can now review your business, identity and fulfilment documents. You can continue to the Seller Center and follow the status of your application.</p>
+          <small>DOCUMENTS SUBMITTED</small>
+          <h2>Your documents are now under review</h2>
+          <p>RANOVA Admin must review and approve all required documents before Seller Center access is provided. We will show the approval screen here after the review is completed.</p>
           <div class="document-success-ref"><span>Application reference</span><b id="documentSuccessRef">—</b></div>
-          <button id="openSellerCenterAfterSubmit" type="button">Open RANOVA Seller Center →</button>
+          <button id="checkSellerReviewStatus" type="button">Check Review Status</button>
         </section>
 
         <div class="card" id="storeSetupCard">
@@ -658,9 +679,16 @@ async function loadWorkspace(){
     var approved=out.approved===true;
     currentApplication.dashboard_approved=approved;
     currentApplication.store_accessible=out.store_accessible===true;
-    renderSellerStatusOverview(approvalStatus,approved);
+    if(!documentOnboarding)renderSellerStatusOverview(approvalStatus,approved);
     if(documentOnboarding&&approved){
-      location.replace("./seller-center.html");
+      var approvedGate=document.getElementById("sellerApprovedGate");
+      var approvedRef=document.getElementById("sellerApprovedRef");
+      if(approvedRef)approvedRef.textContent=currentApplication.application_ref||"Approved";
+      document.body.classList.remove("document-submit-complete");
+      document.body.classList.add("document-approved-gate");
+      if(approvedGate)approvedGate.hidden=false;
+      var pendingScreen=document.getElementById("documentSubmitSuccess");
+      if(pendingScreen)pendingScreen.hidden=true;
       return;
     }
     setApprovedSellerView(approved);
@@ -719,8 +747,8 @@ function acknowledgeReview(){
   api(SUPABASE_URL+"/functions/v1/ranova-trust-center",{action:"seller_review_seen",application_ref:currentApplication.application_ref,reviewed_at:currentApplication.reviewed_at}).catch(function(){});
 }
 document.addEventListener("visibilitychange",acknowledgeReview);
-var openSellerCenterAfterSubmit=document.getElementById("openSellerCenterAfterSubmit");
-if(openSellerCenterAfterSubmit)openSellerCenterAfterSubmit.addEventListener("click",function(){location.href="./seller-center.html"});
+var checkSellerReviewStatus=document.getElementById("checkSellerReviewStatus");
+if(checkSellerReviewStatus)checkSellerReviewStatus.addEventListener("click",function(){location.reload()});
 document.getElementById("submitForReview").addEventListener("click",async function(){
   var btn=this,msg=document.getElementById("verifyMsg");hideMsg(msg);
   if(reviewBusy)return;
@@ -743,7 +771,7 @@ document.getElementById("submitForReview").addEventListener("click",async functi
   reviewBusy=true;btn.disabled=true;var old=btn.textContent;btn.textContent="Submitting…";
   try{
     var result=await api(WORKSPACE_ENDPOINT,{action:"submit_for_review"});
-    showMsg(msg,result.approval_preserved?"Document updates saved. Your approval and Seller Dashboard access remain active.":"Seller registration submitted successfully. RANOVA Admin can now review your business, identity and fulfilment documents.");
+    showMsg(msg,result.approval_preserved?"Document updates saved.":"Seller registration submitted successfully. RANOVA Admin will review your required documents.");
     if(documentOnboarding){
       var success=document.getElementById("documentSubmitSuccess");
       var ref=document.getElementById("documentSuccessRef");
