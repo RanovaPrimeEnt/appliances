@@ -34,6 +34,9 @@ const PENDING_MARKET_SAVED_KEY="ranova_pending_saved_products_v2";
 let shoppingRefreshPromise=null;
 function readLocalJson(key,fallback){try{const v=JSON.parse(localStorage.getItem(key)||"null");return v==null?fallback:v}catch{return fallback}}
 function writeLocalJson(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
+function buyerScopedLocalKey(base,uid=user?.id){return base+":"+(uid||"guest")}
+function currentMarketCartDraftKey(){return buyerScopedLocalKey(UNIVERSAL_MARKET_CART_DRAFT_KEY)}
+function currentPendingSavedKey(){return buyerScopedLocalKey(PENDING_MARKET_SAVED_KEY)}
 const SHOPPING_SYNC_CHANNEL="ranova-shopping-sync-v1";
 let shoppingSyncChannel=null;
 function marketplaceDraftSnapshot(){
@@ -42,14 +45,18 @@ function marketplaceDraftSnapshot(){
   return out;
 }
 function saveMarketplaceCartDrafts(){
-  writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,marketplaceDraftSnapshot());
+  if(!user)return;
+  writeLocalJson(currentMarketCartDraftKey(),marketplaceDraftSnapshot());
 }
 function clearMarketplaceCartDraft(storeId){
-  const drafts=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});
-  delete drafts[storeId];writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,drafts);
+  if(!user)return;
+  const key=currentMarketCartDraftKey();
+  const drafts=readLocalJson(key,{});
+  delete drafts[storeId];writeLocalJson(key,drafts);
 }
 function restoreMarketplaceCartDrafts(){
-  const drafts=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});
+  if(!user)return false;
+  const drafts=readLocalJson(currentMarketCartDraftKey(),{});
   if(!drafts||typeof drafts!=="object")return false;
   let changed=false;
   for(const [storeId,items] of Object.entries(drafts)){
@@ -75,6 +82,43 @@ let toPayStores = [];
 let toPayRecommendations = [];
 let marketStores=[],marketSellerProducts=[],marketLoadedAt=0,marketFetchInFlight=false;
 let myStoresMode="saved";
+
+function resetUserScopedState(){
+  profile=null;
+  favorites=new Set();
+  marketSavedProducts=new Set();
+  recentIds=[];
+  cartId=null;
+  cartItems=[];
+  marketCartRows=[];
+  marketCartProducts=new Map();
+  marketCartStores=new Map();
+  cartSelectedKeys=new Set();
+  cartEditMode=false;
+  cartViewMode="all";
+  marketCartLoaded=false;
+  marketCartLoadPromise=null;
+  shoppingRefreshPromise=null;
+  orders=[];
+  notifications=[];
+  addresses=[];
+  returns=[];
+  toPayOrders=[];
+  toPayStores=[];
+  toPayRecommendations=[];
+  orderFilter=null;
+  messageConversations=[];
+  messageCurrent=null;
+  messageRole=null;
+  msgAttachment=null;
+  msgReplyingTo=null;
+  msgEditingMessage=null;
+  messagesLoadedAt=0;
+  toPayLoadedAt=0;
+  secondaryLoadPromise=null;
+  panelPainted.clear();
+}
+
 const RECENT_STORE_RETENTION_MS=75*24*60*60*1000;
 function buyerStoreMemoryKey(kind){return "ranova-"+kind+"-stores-v1:"+(user?.id||"guest")}
 function savedStoreIds(){
@@ -504,45 +548,83 @@ $("togglePassword").onclick=()=>{
   $("togglePassword").textContent=show?"Hide":"Show";
   $("togglePassword").setAttribute("aria-label",show?"Hide password":"Show password");
 };
+function directExistingAccountToSignIn(message="An account already exists with these details. Please sign in instead."){
+  signUpMode=false;
+  authUI();
+  $("authMsg").textContent=message;
+  $("password").focus();
+}
+function looksLikeExistingAccount(error){
+  const msg=String(error?.message||"").toLowerCase();
+  return msg.includes("already registered")||msg.includes("already exists")||msg.includes("user already")||msg.includes("identity already");
+}
 $("authSubmit").onclick=async()=>{
-  const email=$("email").value.trim();
+  const email=$("email").value.trim().toLowerCase();
   const password=$("password").value;
   const countryCode=$("countryCode").value;
   const localPhone=$("phone").value.trim().replace(/\D/g,"").replace(/^0+/,"");
   const phone=countryCode+localPhone;
+  const button=$("authSubmit");
   $("authMsg").textContent="Working…";
+  button.disabled=true;
   try{
     if(password.length<8){$("authMsg").textContent="Use at least 8 characters for your password.";return}
-    let error;
+    let result;
     if(authMethod==="email"){
       if(!email){$("authMsg").textContent="Please enter your email address.";return}
-      if(signUpMode){
-        ({error}=await sb.auth.signUp({
-          email,password,
-          options:{emailRedirectTo:location.origin+location.pathname+location.search}
-        }));
-      }else{
-        ({error}=await sb.auth.signInWithPassword({email,password}));
-      }
+      result=signUpMode
+        ? await sb.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname+location.search}})
+        : await sb.auth.signInWithPassword({email,password});
     }else{
       if(localPhone.length<7){$("authMsg").textContent="Please enter a valid phone number.";return}
-      if(signUpMode){
-        ({error}=await sb.auth.signUp({
-          phone,password,
-          options:{data:{phone}}
-        }));
-      }else{
-        ({error}=await sb.auth.signInWithPassword({phone,password}));
+      result=signUpMode
+        ? await sb.auth.signUp({phone,password,options:{data:{phone}}})
+        : await sb.auth.signInWithPassword({phone,password});
+    }
+
+    const {data,error}=result||{};
+    if(error){
+      if(signUpMode&&looksLikeExistingAccount(error)){
+        directExistingAccountToSignIn();
+        return;
       }
+      $("authMsg").textContent=error.message;
+      return;
     }
-    if(error){$("authMsg").textContent=error.message;return}
+
     if(signUpMode){
+      // Supabase can intentionally return a user with no identities for duplicate
+      // sign-ups instead of exposing whether an email exists. Treat that as an
+      // existing account and move the person to Sign in rather than creating a
+      // misleading second profile on the same device.
+      if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
+        directExistingAccountToSignIn();
+        return;
+      }
+
+      if(data?.session){
+        $("authMsg").textContent="Account created. Opening RANOVA…";
+        await applySession(data.session,true);
+        showPanel("marketplaceHomePanel");
+        return;
+      }
+
       $("authMsg").textContent=authMethod==="email"
-        ?"Your account has been created. Check your email if confirmation is required."
-        :"Your account has been created. Complete phone verification if RANOVA asks for it.";
+        ?"Account created. Confirm your email to finish signing in."
+        :"Account created. Complete phone verification to finish signing in.";
       $("password").value="";
+      return;
     }
-  }catch(e){$("authMsg").textContent="We couldn't complete that. Please try again."}
+
+    if(data?.session){
+      await applySession(data.session,true);
+      showPanel("marketplaceHomePanel");
+    }
+  }catch(e){
+    $("authMsg").textContent="We couldn't complete that. Please try again.";
+  }finally{
+    button.disabled=false;
+  }
 };
 $("signOut").onclick=()=>sb.auth.signOut();
 
@@ -594,6 +676,7 @@ async function applySession(session,initial=false){
     cleanupRealtime();
     initializedUserId=null;
     user=null;
+    resetUserScopedState();
     setup.classList.add("hide");
     setAuthOnlyMode(true);
     authUI();
@@ -611,6 +694,7 @@ async function applySession(session,initial=false){
 
   cleanupRealtime();
   guestBrowseMode=false;
+  if(user?.id&&user.id!==nextId)resetUserScopedState();
   user=nextUser;
   setAuthOnlyMode(false);
 
@@ -623,7 +707,7 @@ async function applySession(session,initial=false){
   // When arriving from a seller store, honor the requested bottom-tab
   // destination before painting anything else. This prevents an intermediate
   // Home/store flash before Message, Cart or Me opens.
-  if(initial&&!handleRequestedPanel()){
+  if(!handleRequestedPanel()){
     showPanel("marketplaceHomePanel");
   }
   if(!cached){
@@ -701,7 +785,7 @@ async function loadCartItems(){
 async function importStoreShoppingDrafts(){
   if(!user||!navigator.onLine)return false;
   let changed=false;
-  const drafts=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});
+  const drafts=readLocalJson(currentMarketCartDraftKey(),{});
   for(const [storeId,items] of Object.entries(drafts||{})){
     try{
       const clean=items&&typeof items==="object"?items:{};
@@ -712,9 +796,9 @@ async function importStoreShoppingDrafts(){
       delete drafts[storeId];changed=true;
     }catch{}
   }
-  writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,drafts);
+  writeLocalJson(currentMarketCartDraftKey(),drafts);
 
-  const pending=readLocalJson(PENDING_MARKET_SAVED_KEY,{});
+  const pending=readLocalJson(currentPendingSavedKey(),{});
   for(const [productId,save] of Object.entries(pending||{})){
     try{
       const req=save
@@ -724,7 +808,7 @@ async function importStoreShoppingDrafts(){
       delete pending[productId];changed=true;
     }catch{}
   }
-  writeLocalJson(PENDING_MARKET_SAVED_KEY,pending);
+  writeLocalJson(currentPendingSavedKey(),pending);
   return changed;
 }
 async function refreshBuyerShoppingState(){
@@ -751,7 +835,7 @@ function setupShoppingSynchronization(){
     }
   }catch{}
   window.addEventListener("storage",e=>{
-    if((e.key==="ranova-shopping-ping"||e.key===UNIVERSAL_MARKET_CART_DRAFT_KEY||e.key===PENDING_MARKET_SAVED_KEY)&&user){
+    if((e.key==="ranova-shopping-ping"||e.key===currentMarketCartDraftKey()||e.key===currentPendingSavedKey())&&user){
       refreshBuyerShoppingState().catch(()=>{});
     }
   });
@@ -1091,8 +1175,8 @@ async function toggleMarketplaceSaved(id){
   if(error){
     const offline=!navigator.onLine||/fetch|network|connection/i.test(String(error.message||error));
     if(offline){
-      const pending=readLocalJson(PENDING_MARKET_SAVED_KEY,{});
-      pending[id]=!wasSaved;writeLocalJson(PENDING_MARKET_SAVED_KEY,pending);
+      const pending=readLocalJson(currentPendingSavedKey(),{});
+      pending[id]=!wasSaved;writeLocalJson(currentPendingSavedKey(),pending);
       showToast((wasSaved?"Removed":"Saved")+" — will sync when online");
     }else{
       if(wasSaved)marketSavedProducts.add(id);else marketSavedProducts.delete(id);
