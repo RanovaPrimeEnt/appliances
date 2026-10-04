@@ -49,7 +49,7 @@ async function api(name, body, currentSession) {
   if (!response.ok || !out.ok) throw Error(out.error || 'Could not complete this step. Please try again.');
   return out;
 }
-function continueSeller(ref) { location.href = '../all/seller-center.html' + (ref ? '?ref=' + encodeURIComponent(ref) : ''); }
+function continueSeller(ref,documents=false) { const params=new URLSearchParams(); if(ref)params.set('ref',ref); if(documents)params.set('onboarding','documents'); location.href='../all/seller-center.html'+(params.toString()?'?'+params.toString():''); }
 async function existingSeller(currentSession) {
   const out = await api('ranova-seller-workspace', {action: 'workspace'}, currentSession);
   if (out.linked) { continueSeller(out.application?.application_ref); return true; }
@@ -70,8 +70,37 @@ async function showBusiness() {
 function validDetails() {
   const d = details();
   if (!d.member || !d.company || !validPhone(d.phone) || (!session && method() === 'email' && !$('email').checkValidity())) throw Error('Enter your name, company, a valid phone number and email address.');
+  if (!$('location').value.trim() || !$('type').value || !$('categories').value.trim()) throw Error('Complete your business location, business type and products you sell.');
   if (!$('consent').checked) throw Error('Please read and accept the terms and privacy policy first.');
   return d;
+}
+async function createAndLinkSellerApplication(currentSession,d){
+  if(await existingSeller(currentSession))return true;
+  const body={
+    business_name:d.company,
+    contact_person:d.member,
+    phone:d.phone,
+    email:currentSession.user.email||'',
+    business_location:$('location').value.trim(),
+    supplier_type:$('type').value,
+    categories:$('categories').value.trim()
+  };
+  const saved=pending||readSaved('ranova_new_seller_application');
+  pending=saved?.user===currentSession.user.id&&saved.phone===d.phone&&typeof saved.ref==='string'?saved:null;
+  if(!pending){
+    const out=await api('ranova-seller-apply',body,currentSession);
+    if(!out.application_ref)throw Error('The application service did not return a reference. Please contact RANOVA support before submitting again.');
+    pending={user:currentSession.user.id,phone:d.phone,ref:out.application_ref};
+    save('ranova_new_seller_application',pending);
+  }
+  try{
+    sessionStorage.setItem('ranovaSellerApplicationRef',pending.ref);
+    sessionStorage.setItem('ranovaSellerApplicationPhone',d.phone);
+    sessionStorage.setItem('ranovaSellerApplicationEmail',currentSession.user.email||'');
+  }catch{}
+  await api('ranova-seller-link',{application_ref:pending.ref,phone:d.phone},currentSession);
+  continueSeller(pending.ref,true);
+  return true;
 }
 document.querySelectorAll('[name=method]').forEach(el => el.onchange = () => {
   const email = method() === 'email';
@@ -117,7 +146,9 @@ $('registerForm').onsubmit = async e => {
     setBusy(true);
     const updated = await sb.auth.updateUser({data: {full_name: d.member, business_name: d.company, contact_phone: d.phone}});
     if (updated.error) throw updated.error;
-    await showBusiness();
+    const currentSession=(await sb.auth.getSession()).data.session;
+    if(!currentSession)throw Error('Please sign in again before continuing.');
+    await createAndLinkSellerApplication(currentSession,d);
   } catch (e) { $('formStatus').textContent = err(e); } finally { setBusy(false); }
 };
 $('businessForm').onsubmit = async e => {
