@@ -440,3 +440,49 @@ linear-gradient(135deg,#ff8a00 0%,#ff6900 46%,#f4511e 100%);color:#fff;box-shado
 .rnv-my-stores-info{margin:2px 12px 10px;padding:9px 11px;border-radius:12px;background:#fff;color:#6f7773;font-size:9px;line-height:1.45;border:1px solid #eee8e3}
 .rnv-stores-empty{padding:48px 18px;text-align:center;background:#fff;border-radius:18px;color:#7d8783;font-size:11px;border:1px solid #eee5df;box-shadow:0 5px 18px rgba(0,0,0,.04)}.rnv-stores-empty b{display:block;color:#222;margin-bottom:5px;font-size:13px}
 @media(min-width:560px){.rnv-stores-list{grid-template-columns:1fr 1fr}.rnv-store-main{grid-template-columns:60px minmax(0,1fr) auto}.rnv-store-logo{width:60px;height:60px}.rnv-store-save,.rnv-store-expiry{margin-left:82px}}
+
+
+/* Premium buyer Me interface */
+#homePanel{background:#f6f7f6;min-height:calc(100dvh - 70px);padding-bottom:14px}
+#homePanel .me-premium-head{position:relative;overflow:hidden;margin:-10px -9px 10px;padding:18px 15px 19px;min-height:126px;align-items:flex-start;background:
+radial-gradient(circle at 92% 10%,rgba(255,255,255,.22),transparent 24%),
+linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shadow:0 10px 28px rgba(193,76,8,.16)}
+#homePanel .me-premium-head:after{content:"";position:absolute;width:120px;height:120px;border-radius:50%;border:1px solid rgba(255,255,255,.13);right:-55px;bottom:-78px}
+#homePanel .me-premium-head .account-identity{position:relative;z-index:2;align-items:center;gap:12px}
+#homePanel .me-premium-head .account-avatar{width:58px;height:58px;min-width:58px;border:2px solid rgba(255,255,255,.9);background:rgba(255,255,255,.18);box-shadow:0 6px 18px rgba(135,48,0,.16);font-size:18px;backdrop-filter:blur(8px)}
+#homePanel .me-premium-head .account-name small{display:block;margin:0 0 4px;color:rgba(255,255,255,.72);font-size:7.5px;letter-spacing:1.3px;font-weight:900}
+#homePanel .me-premium-head .account-name b{display:block;color:#fff;font-size:17px;line-height:1.15;letter-spacing:.1px}
+#homePanel .me-premium-head .account-name span{display:block;margin-top:6px;max-width:245px;color:rgba(255,255,255,.82);font-size:9px;line-height:1.35;font-weight:550}
+#homePanel .me-premium-head .account-tools{position:relative;z-index:2;display:flex;align-items:center;gap:7px;margin:0;padding:0}
+#homePanel .me-premium-head .seller-switch{height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border:1px solid rgba(255,255,255,.26);border-radius:999px;background:rgba(255,255,255,.13);color:#fff;font-size:8.5px;font-weight:850;box-shadow:inset 0 1px 0 rgba(255,255,255,.13);backdrop-filter:blur(8px)}
+#homePanel .me-premium-head .seller-switch b{font-size:16px;line-height:1}
+#homePanel .me-premium-head .gear{width:36px;height:36px;border:1px solid rgba(255,255,255,.26);background:rgba(255,255,255,.14);color:#fff;box-shadow:none;backdrop-filter:blur(8px)}
+#homePanel .me-premium-head .gear svg{width:19px;height:19px;stroke-width:1.8}
+#homePanel>.card{margin:10px 4px 0;border:1px solid #eceeed;border-radius:18px;background:#fff;box-shadow:0 4px 16px rgba(22,34,29,.045)}
+#homePanel>.card .section-head{padding:15px 14px 8px}
+#homePanel>.card .section-head h2{font-size:15px;font-weight:900;color:#202823}
+#homePanel>.card .section-head button{font-size:9px;color:#747d79;font-weight:800}
+#homePanel .order-statuses{padding:6px 5px 15px}
+#homePanel .status{gap:5px;padding:6px 1px}
+#homePanel .status .ico{width:42px;height:42px;border-radius:14px;background:#fff8f2;color:#252c29}
+#homePanel .status svg{width:23px;height:23px;stroke-width:1.7}
+#homePanel .status b{font-size:8.5px;font-weight:750;color:#3b423f}
+#homePanel .account-services{grid-template-columns:repeat(4,1fr);gap:15px 4px;padding:16px 8px 18px}
+#homePanel .account-service{gap:7px;padding:2px 1px}
+#homePanel .account-service .ico{width:44px;height:44px;border-radius:14px;background:#fff7ef;color:#2b312e;box-shadow:inset 0 0 0 1px #fff0e1}
+#homePanel .account-service svg{width:23px;height:23px;stroke-width:1.7}
+#homePanel .account-service b{font-size:8px;line-height:1.2;font-weight:760;min-height:19px;color:#343b38}
+#homePanel .soon{top:-5px;right:-8px;background:#2c302e;font-size:5.5px}
+#homePanel .home-products-card{margin:13px 4px 0}
+#homePanel .home-products-card .section-head{padding-left:2px;padding-right:2px}
+@media(max-width:390px){
+  #homePanel .me-premium-head{margin-left:-7px;margin-right:-7px;padding:16px 11px 17px;min-height:118px}
+  #homePanel .me-premium-head .account-avatar{width:52px;height:52px;min-width:52px}
+  #homePanel .me-premium-head .account-name b{font-size:15px}
+  #homePanel .me-premium-head .account-name span{font-size:8px;max-width:190px}
+  #homePanel .me-premium-head .seller-switch{padding:0 8px;font-size:7.5px}
+  #homePanel .account-services{grid-template-columns:repeat(4,1fr);gap:13px 1px}
+}
+@media(min-width:760px){
+  #homePanel .me-premium-head{margin-left:-14px;margin-right:-14px;border-radius:0 0 22px 22px}
+}
