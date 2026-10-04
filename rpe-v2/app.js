@@ -918,6 +918,7 @@ function homeSellerCard(p){
       (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" loading="lazy" decoding="async" alt="'+esc(p.name)+'">':'<div style="height:155px;display:grid;place-items:center;background:#f5f7f6;color:#93a49e;font-size:10px">Marketplace Product</div>')+
       '<div class="product-copy"><h3>'+esc(p.name||"Product")+'</h3>'+
       '<small class="home-store-name">'+esc(store.store_name||p.category||"Marketplace Store")+'</small>'+
+      '<small class="home-store-location">⌖ '+esc(storeLocationLabel(store))+'</small>'+
       '<small class="ranova-product-price" style="font-weight:800;color:#f05a21">'+esc(p.price==null?"Ask for quote":money(p.price,p.currency||"GHS"))+'</small>'+
       (moq>1?'<span class="home-moq">MOQ '+esc(moq)+(p.unit_label?" "+esc(p.unit_label):"")+'</span>':'')+
       '</div>'+
@@ -2087,7 +2088,7 @@ function renderMarketplaceHome(filter=""){
         '<button class="market-card-save '+(marketSavedProducts.has(p.id)?"active":"")+'" type="button" data-market-save="'+esc(p.id)+'" aria-label="'+(marketSavedProducts.has(p.id)?"Remove saved product":"Save product")+'">'+(marketSavedProducts.has(p.id)?"★":"☆")+'</button>'+
         '<button class="market-product-card" type="button" data-mh-product="'+esc(p.id)+'">'+
         (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="'+esc(p.name||"Product")+'" loading="lazy">':'<span class="market-product-placeholder">Product image</span>')+
-        '<span class="market-product-copy"><b>'+esc(p.name||"Product")+'</b><small>'+esc(store.store_name||p.category||"RANOVA Store")+'</small><strong>'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</strong>'+
+        '<span class="market-product-copy"><b>'+esc(p.name||"Product")+'</b><small>'+esc(store.store_name||p.category||"RANOVA Store")+'</small><small class="market-product-location">⌖ '+esc(storeLocationLabel(store))+'</small><strong>'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</strong>'+
         (moq>1?'<em>MOQ '+esc(moq)+(p.unit_label?" "+esc(p.unit_label):"")+'</em>':"")+
         '</span></button></article>';
     }).join(""):'<div class="market-empty"><b>No matching products</b>Try another product, store, category or location.</div>';
