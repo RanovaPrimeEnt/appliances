@@ -25,6 +25,12 @@ has(sellerCenter,'id="openSellerCenterAfterSubmit"',"Seller Center continuation 
 has(sellerCenter,'id="sellerStatusOverview"',"status-aware Seller Center");
 has(sellerCenter,"DO YOU WANT TO UPDATE ANY DOCUMENT?","approved seller document-update state");
 has(sellerCenter,"OPEN SELLER DASHBOARD","approved dashboard entry");
+has(sellerCenter,"Your documents are now under review","pending Admin-review screen");
+has(sellerCenter,"Your Store Has Been Approved","approved-store screen");
+has(sellerCenter,"ACCESS RANOVA SELLER CENTER","approved Seller Center access");
+has(sellerCenter,"OPEN RANOVA SELLER DASHBOARD","approved Seller Center dashboard CTA");
+assert.ok(!sellerCenter.includes('["business_registration","identity_document","location_proof","fulfilment_evidence"].every'),"Optional location proof must not block approved seller access");
+
 
 has(buyerApp,'class="home-store-location">⌖ ',"buyer Me recommendation product location");
 has(buyerApp,'class="market-product-location">⌖ ',"marketplace product location");
