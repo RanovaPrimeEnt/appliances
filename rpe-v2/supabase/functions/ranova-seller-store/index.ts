@@ -358,7 +358,7 @@ Deno.serve(async(req:Request)=>{
       }
       const public_phone=clean(b.public_phone,40)||clean(seller.application.phone,40);
       const public_email=clean(b.public_email,180)||clean(seller.application.email,180);
-      const business_location=clean(b.business_location,180)||clean(seller.application.business_location,180);
+      const business_location=clean(seller.application.business_location,180)||clean(existing?.business_location,180)||clean(b.business_location,180);
       const description=clean(b.description,2500);
       const country_code=/^[A-Z]{2}$/.test(clean(b.country_code,2).toUpperCase())?clean(b.country_code,2).toUpperCase():(existing?.country_code||null);
       const country_name=clean(b.country_name,120)||existing?.country_name||null;
