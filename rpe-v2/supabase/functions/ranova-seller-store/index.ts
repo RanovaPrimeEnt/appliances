@@ -138,7 +138,7 @@ async function syncParentOrder(parentId:string|null){
   });
 }
 async function loadDashboard(userId:string,seller:any){
-  const stores=await serviceGet("ranova_seller_stores",{select:"*",seller_id:"eq."+userId,limit:"1"});
+  const stores=await serviceGet("ranova_seller_stores",{select:"*",seller_id:"eq."+userId,application_ref:"eq."+seller.application_ref,limit:"1"});
   const store=stores[0]||null;
   const products=store?await serviceGet("ranova_seller_products",{
     select:"id,name,slug,sku,category,short_description,description,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,specifications,pricing_tiers,product_status,moderation_note,created_at,updated_at",
@@ -340,7 +340,7 @@ Deno.serve(async(req:Request)=>{
     }
 
     if(action==="save_store"){
-      const current=await serviceGet("ranova_seller_stores",{select:"*",seller_id:"eq."+user.id,limit:"1"});
+      const current=await serviceGet("ranova_seller_stores",{select:"*",seller_id:"eq."+user.id,application_ref:"eq."+seller.application_ref,limit:"1"});
       const existing=current[0]||null;
       const store_name=clean(b.store_name,120)||clean(seller.application.business_name,120);
       if(!store_name)return response(h,400,{ok:false,error:"Store name is required."});
@@ -393,7 +393,7 @@ Deno.serve(async(req:Request)=>{
 
       let r:Response;
       if(existing){
-        r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_stores?seller_id=eq."+encodeURIComponent(user.id),{
+        r=await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_stores?seller_id=eq."+encodeURIComponent(user.id)+"&application_ref=eq."+encodeURIComponent(seller.application_ref),{
           method:"PATCH",
           headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY,"Content-Type":"application/json",Prefer:"return=representation"},
           body:JSON.stringify(payload)
@@ -415,7 +415,7 @@ Deno.serve(async(req:Request)=>{
       return response(h,200,{ok:true,store:rows[0]||payload});
     }
 
-    const stores=await serviceGet("ranova_seller_stores",{select:"id,store_status",seller_id:"eq."+user.id,limit:"1"});
+    const stores=await serviceGet("ranova_seller_stores",{select:"id,store_status",seller_id:"eq."+user.id,application_ref:"eq."+seller.application_ref,limit:"1"});
     if(!stores.length)return response(h,400,{ok:false,error:"Create your store profile first."});
     const store=stores[0];
 
