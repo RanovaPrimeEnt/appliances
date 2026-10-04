@@ -57,8 +57,11 @@ async function existingSeller(currentSession,documents=false) {
 }
 function validDetails() {
   const d = details();
-  if (!d.member || !d.company || !validPhone(d.phone) || (!session && method() === 'email' && !$('email').checkValidity())) throw Error('Enter your name, company, a valid phone number and email address.');
-  if (!$('location').value.trim() || !$('type').value || !$('categories').value.trim()) throw Error('Complete your business location, business type and products you sell.');
+  if (!d.member || !d.company || !validPhone(d.phone) || (!session && method() === 'email' && !$('email').checkValidity())) throw Error('Enter your name, company and a valid phone number.');
+  const location=$('location').value.trim();
+  const locationParts=location.split(',').map(v=>v.trim()).filter(Boolean);
+  if(locationParts.length<2)throw Error('Enter your business location as Town, City. Example: Adum, Kumasi.');
+  if (!$('type').value || !$('categories').value.trim()) throw Error('Complete your business type.');
   if (!$('consent').checked) throw Error('Please read and accept the terms and privacy policy first.');
   return d;
 }
