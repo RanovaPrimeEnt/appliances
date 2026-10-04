@@ -1,4 +1,11 @@
 export const REQUIRED_SELLER_DOCUMENTS = ['business_registration', 'identity_document', 'fulfilment_evidence'];
+export function sellerRequiredDocumentsApproved(files = []) {
+  const rows = [...files].sort((a,b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0) || Number(b.id || 0) - Number(a.id || 0));
+  return REQUIRED_SELLER_DOCUMENTS.every(type => {
+    const latest = rows.find(file => file.document_type === type);
+    return String(latest?.review_status || '').toLowerCase() === 'approved';
+  });
+}
 export function addCalendarMonths(value, months) {
   const source = new Date(value), date = new Date(source);
   const day = source.getUTCDate();
