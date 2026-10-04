@@ -1,8 +1,10 @@
-// Approval comes from administrator-controlled records, never user metadata.
+// Seller Center / Dashboard access comes only from the administrator-controlled
+// seller application approval state. A previously active store must never bypass
+// the required-document review and final RANOVA Admin approval.
 export function sellerAccessApproved(application, store = null) {
   if (!application) return false;
   const state = String(application?.verification_status || application?.status || '').toLowerCase();
-  if (['rejected', 'suspended'].includes(state)) return false;
+  if (state !== 'approved') return false;
   if (store?.store_status === 'suspended' && Date.parse(store.moderated_at || '') >= Date.parse(application?.reviewed_at || '1970-01-01')) return false;
-  return state === 'approved' || !!(store?.store_status === 'active' && store.moderated_by);
+  return true;
 }
