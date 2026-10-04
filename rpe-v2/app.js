@@ -575,23 +575,20 @@ function phoneLoginEmail(phone){
   return "phone-"+digits+"@accounts.ranova.invalid";
 }
 async function createRanovaPasswordAccount({method,email,phone,password}){
-  const res=await fetch(cfg.supabaseUrl+"/functions/v1/ranova-account-signup",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "apikey":cfg.supabasePublishableKey,
-      "Authorization":"Bearer "+cfg.supabasePublishableKey
-    },
-    body:JSON.stringify({method,email,phone,password})
-  });
-  let out={};
-  try{out=await res.json()}catch{}
-  if(!res.ok){
-    const err=new Error(out?.error||"Could not create account.");
-    err.code=out?.code||"";
-    throw err;
+  const payload={method,email,phone,password};
+  let lastError=null;
+  for(let attempt=0;attempt<2;attempt++){
+    const {data,error}=await sb.functions.invoke("ranova-account-signup",{body:payload});
+    if(!error)return data||{};
+    lastError=error;
+    if(attempt===0)await new Promise(resolve=>setTimeout(resolve,350));
   }
-  return out;
+  const context=lastError?.context;
+  let details=null;
+  try{details=context&&typeof context.json==="function"?await context.json():null}catch{}
+  const err=new Error(details?.error||lastError?.message||"Could not create account.");
+  err.code=details?.code||lastError?.code||"";
+  throw err;
 }
 $("authSubmit").onclick=async()=>{
   const email=$("email").value.trim().toLowerCase();
