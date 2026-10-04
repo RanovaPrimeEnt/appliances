@@ -62,6 +62,8 @@ body.document-onboarding #storeSetupCard{display:none!important}
 body.document-onboarding main.wrap{width:min(720px,100%);padding:0;margin:0 auto}
 body.document-onboarding #workspace{display:block;padding:0 0 46px}
 body.document-onboarding #sellerOnboardingGrid{display:block}
+body.document-onboarding.document-submit-complete #workspace,
+body.document-onboarding.document-approved-gate #workspace{display:block!important}
 body.document-onboarding #verificationChecklist{margin:0;border:0;border-radius:0;box-shadow:none;min-height:100dvh;padding:0 14px 30px;background:#f7f8f7}
 .document-onboarding-intro{display:none}
 body.document-onboarding .document-onboarding-intro{display:block;margin:0 -14px 16px;padding:20px max(16px,env(safe-area-inset-right)) 22px max(16px,env(safe-area-inset-left));background:linear-gradient(135deg,#ff8a00,#ff5a2d);color:#fff;box-shadow:0 8px 24px rgba(220,83,19,.18)}
@@ -102,7 +104,15 @@ body.document-onboarding #uploadedDocumentsTitle{font-size:17px}
 .document-success-ref{width:min(100%,480px);margin:22px auto 0;padding:14px 16px;border:1px solid #e5eae7;border-radius:14px;background:#f8faf9;text-align:left}
 .document-success-ref span{display:block;color:#87918d;font-size:9px;font-weight:800}.document-success-ref b{display:block;margin-top:3px;color:#203a32;font-size:14px;word-break:break-all}
 #openSellerCenterAfterSubmit{width:min(100%,480px);min-height:54px;margin:18px auto 0;border:0;border-radius:15px;background:#ff5a2d;color:#fff;font-size:15px;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(237,87,33,.17)}
-body.document-submit-complete #sellerReviewAlert,body.document-submit-complete #sellerStatusOverview,body.document-submit-complete #sellerOnboardingGrid{display:none!important}
+body.document-submit-complete #sellerReviewAlert,
+body.document-submit-complete #sellerStatusOverview,
+body.document-submit-complete #sellerOnboardingSide,
+body.document-submit-complete #sellerProgressSummary,
+body.document-submit-complete #verificationChecklist,
+body.document-submit-complete #storeSetupCard,
+body.document-submit-complete #sellerApprovedGate{display:none!important}
+body.document-submit-complete #sellerOnboardingGrid{display:block!important}
+body.document-submit-complete #documentSubmitSuccess{display:block!important}
 @media(max-width:620px){.seller-status-overview{margin:10px 10px 12px;padding:13px 14px}.seller-status-overview strong{font-size:15px}.seller-status-overview span{font-size:11px}.document-submit-success{padding:48px 18px 28px}.document-submit-success h2{font-size:25px}}
 
 /* Professional Seller Center visual layer */
@@ -137,7 +147,15 @@ body:not(.document-onboarding) .upload button,body:not(.document-onboarding) .su
 .seller-approved-ref span{display:block;color:#87918d;font-size:9px;font-weight:800}.seller-approved-ref b{display:block;margin-top:3px;color:#203a32;font-size:14px;word-break:break-all}
 #accessSellerCenter,#checkSellerReviewStatus{display:block;width:min(100%,480px);box-sizing:border-box;min-height:54px;margin:18px auto 0;border:0;border-radius:15px;background:#ff5a2d;color:#fff;font-size:15px;font-weight:950;cursor:pointer;text-decoration:none;line-height:54px;text-align:center;box-shadow:0 8px 22px rgba(237,87,33,.17)}
 #checkSellerReviewStatus{background:#173f35}
-body.document-approved-gate #sellerReviewAlert,body.document-approved-gate #sellerStatusOverview,body.document-approved-gate #sellerOnboardingGrid,body.document-approved-gate #documentSubmitSuccess{display:none!important}
+body.document-approved-gate #sellerReviewAlert,
+body.document-approved-gate #sellerStatusOverview,
+body.document-approved-gate #sellerOnboardingSide,
+body.document-approved-gate #sellerProgressSummary,
+body.document-approved-gate #verificationChecklist,
+body.document-approved-gate #storeSetupCard,
+body.document-approved-gate #documentSubmitSuccess{display:none!important}
+body.document-approved-gate #sellerOnboardingGrid{display:block!important}
+body.document-approved-gate #sellerApprovedGate{display:block!important}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
