@@ -235,7 +235,136 @@ body.ranova-chat-open .bottom{display:none!important}body.ranova-chat-open{overf
 @media(max-width:420px){.rpe-pay-actions:has(#manualPayCheck){grid-template-columns:1fr}.rpe-pay-actions:has(#manualPayCheck) button{min-height:46px}}
 
 body.ranova-auth-only #app{display:none!important}
-body.ranova-auth-only #auth{display:block!important}
+body.ranova-auth-only #auth{display:flex!important}
+
+/* RANOVA glass login console — adapted from the supplied Auth.tsx visual format. */
+body.ranova-auth-only{
+  min-height:100dvh;
+  overflow:auto;
+  background:
+    radial-gradient(circle at 18% 18%,rgba(255,122,0,.24),transparent 28%),
+    radial-gradient(circle at 82% 78%,rgba(23,107,97,.24),transparent 32%),
+    linear-gradient(135deg,#071b1a 0%,#102824 42%,#09120f 100%)!important;
+  display:grid;
+  place-items:center;
+  padding:28px 14px;
+}
+body.ranova-auth-only::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background-image:
+    linear-gradient(180deg,rgba(0,18,20,.38),rgba(0,12,14,.78)),
+    var(--ranova-auth-background,none);
+  background-position:center;
+  background-size:cover;
+  filter:saturate(.92) contrast(1.04);
+}
+body.ranova-auth-only::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:rgba(0,19,26,.26);
+  backdrop-filter:blur(3px);
+}
+body.ranova-auth-only #auth.auth{
+  width:min(440px,calc(100vw - 28px));
+  margin:0 auto;
+  min-height:0;
+  padding:30px 30px 26px;
+  border:1px solid rgba(255,255,255,.68);
+  border-radius:24px;
+  background:rgba(255,255,255,.94);
+  box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 32px rgba(255,122,0,.16);
+  backdrop-filter:blur(18px);
+  flex-direction:column;
+  align-items:stretch;
+  animation:ranovaAuthEnter .34s ease-out both;
+}
+@keyframes ranovaAuthEnter{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.auth-brand{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:5px}
+.auth-logo{width:82px;height:82px;object-fit:contain;border-radius:22px;box-shadow:0 10px 30px rgba(13,51,41,.16)}
+.auth-brand-copy{margin-top:10px}.auth-brand-copy b{display:block;font-size:13px;color:#183330;letter-spacing:.1px}.auth-brand-copy small{display:block;margin-top:2px;font-size:9px;font-weight:900;letter-spacing:1.7px;color:#ff7a00}
+body.ranova-auth-only #auth h1{margin:12px 0 5px;text-align:center;font-family:Inter,system-ui,sans-serif;font-size:29px;line-height:1.08;letter-spacing:-.8px;color:#202a27}
+.auth-intro{text-align:center!important;margin:0 0 18px!important;font-size:12px!important;color:#6c7773!important}
+body.ranova-auth-only .auth-tabs,
+body.ranova-auth-only .auth-method-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#eef2f1;border-radius:14px;padding:4px;margin:10px 0}
+body.ranova-auth-only .auth-method-tabs{margin:8px 0 17px}
+body.ranova-auth-only .auth-tab{min-height:40px;border-radius:10px;color:#697570;font-size:11px;font-weight:900}
+body.ranova-auth-only .auth-tab.active{background:#fff;color:#183330;box-shadow:0 5px 16px rgba(7,42,32,.09)}
+body.ranova-auth-only .auth-field{margin-top:13px}
+body.ranova-auth-only .auth-field label{margin:0 0 5px;font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:#6b7772}
+body.ranova-auth-only #auth input{
+  width:100%;
+  height:46px;
+  padding:10px 38px 8px 3px;
+  border:0;
+  border-bottom:2px solid #f0a363;
+  border-radius:0;
+  background:transparent;
+  color:#1e2a26;
+  font-size:13px;
+  outline:0;
+}
+body.ranova-auth-only #auth input::placeholder{color:#9aa5a1}
+body.ranova-auth-only #auth input:focus{border-bottom-color:#ff7a00;box-shadow:0 2px 0 rgba(255,122,0,.08)}
+.auth-phone-row{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:end}
+body.ranova-auth-only #countryCode{
+  height:46px;
+  width:100%;
+  border:0;
+  border-bottom:2px solid #f0a363;
+  border-radius:0;
+  background:transparent;
+  color:#263632;
+  font-size:12px;
+  padding:8px 4px;
+  outline:0;
+}
+body.ranova-auth-only .password-wrap{
+  display:grid;
+  grid-template-columns:1fr auto;
+  border:0;
+  border-radius:0;
+  overflow:visible;
+}
+body.ranova-auth-only .password-wrap input{padding-right:12px!important}
+body.ranova-auth-only .password-wrap button{
+  min-width:54px;
+  border:0;
+  border-bottom:2px solid #f0a363;
+  background:transparent;
+  color:#176b61;
+  font-size:10px;
+  font-weight:900;
+}
+body.ranova-auth-only .auth .actions{margin-top:25px}
+body.ranova-auth-only #authSubmit{
+  width:100%;
+  min-height:48px;
+  border-radius:999px;
+  border:0;
+  background:linear-gradient(90deg,#ff7a00,#ff9d2f);
+  color:#fff;
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.2px;
+  box-shadow:0 10px 26px rgba(255,122,0,.28);
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+body.ranova-auth-only #authSubmit:hover{transform:translateY(-1px);box-shadow:0 14px 34px rgba(255,122,0,.36);filter:saturate(1.04)}
+body.ranova-auth-only #authSubmit:disabled{opacity:.62;transform:none}
+body.ranova-auth-only .auth-msg{min-height:18px;margin-top:9px;text-align:center;font-size:10px;color:#697570}
+.auth-note{margin:7px 0 0!important;text-align:center!important;font-size:9px!important;line-height:1.5;color:#8a9591!important}
+@media(max-width:520px){
+  body.ranova-auth-only{padding:18px 10px}
+  body.ranova-auth-only #auth.auth{width:min(100%,410px);padding:25px 20px 22px;border-radius:21px}
+  .auth-logo{width:72px;height:72px}
+  body.ranova-auth-only #auth h1{font-size:26px}
+  .auth-phone-row{grid-template-columns:108px 1fr}
+}
 </style>
 <link rel="stylesheet" href="./design-system.css">
 <link rel="stylesheet" href="../all/ranova-typography.css?v=20260930-7">
@@ -268,21 +397,26 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
 <div id="setup" class="loading hide" aria-hidden="true"></div>
 
 <section id="auth" class="auth hide">
-  <div class="brand"><span class="mark">RPE</span><span><b>Ranova Prime Enterprise</b><small>My RPE</small></span></div>
+  <div class="auth-brand">
+    <img src="../all/rpe-mark.svg" alt="Ranova Prime Enterprise logo" class="auth-logo">
+    <div class="auth-brand-copy"><b>Ranova Prime Enterprise</b><small>RANOVA APP</small></div>
+  </div>
+  <h1 id="authTitle">Welcome Back</h1>
+  <p id="authCopy" class="auth-intro">Sign in to continue to your RANOVA home.</p>
   <div class="auth-tabs" role="tablist" aria-label="Account options">
     <button id="signInTab" class="auth-tab active" type="button">Sign in</button>
     <button id="createTab" class="auth-tab" type="button">Create account</button>
   </div>
-  <div class="auth-method-tabs" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 12px">
+  <div class="auth-method-tabs">
     <button id="authMethodEmail" class="auth-tab active" type="button">Email</button>
     <button id="authMethodPhone" class="auth-tab" type="button">Phone</button>
   </div>
-  <div id="authEmailFields">
-    <label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+  <div id="authEmailFields" class="auth-field">
+    <label>Email</label><input id="email" type="email" autocomplete="email" placeholder="Email address">
   </div>
-  <div id="authPhoneFields" class="hide">
-    <div style="display:grid;grid-template-columns:118px 1fr;gap:8px">
-      <select id="countryCode" aria-label="Country code" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff">
+  <div id="authPhoneFields" class="auth-field hide">
+    <div class="auth-phone-row">
+      <select id="countryCode" aria-label="Country code">
         <option value="+233" selected>🇬🇭 +233</option>
         <option value="+234">🇳🇬 +234</option>
         <option value="+225">🇨🇮 +225</option>
@@ -307,12 +441,16 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
         <option value="+91">🇮🇳 +91</option>
         <option value="+971">🇦🇪 +971</option>
       </select>
-      <input id="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="54 123 4567">
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="Phone number">
     </div>
   </div>
-  <label>Password</label><div class="password-wrap"><input id="password" type="password" autocomplete="current-password" minlength="8"><button id="togglePassword" type="button" aria-label="Show password">Show</button></div>
+  <div class="auth-field">
+    <label>Password</label>
+    <div class="password-wrap"><input id="password" type="password" autocomplete="current-password" minlength="8" placeholder="Password"><button id="togglePassword" type="button" aria-label="Show password">Show</button></div>
+  </div>
   <div class="actions"><button id="authSubmit" class="btn primary">Sign in</button></div>
   <div id="authMsg" class="auth-msg" role="status"></div>
+  <p class="auth-note">Your account opens directly to Home after a successful sign in or account creation.</p>
 </section>
 
 <div id="app" class="shell hide">

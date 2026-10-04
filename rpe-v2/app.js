@@ -530,6 +530,8 @@ document.addEventListener("click",e=>{
 },true);
 
 function authUI(){
+  if($("authTitle"))$("authTitle").textContent=signUpMode?"Welcome":"Welcome Back";
+  if($("authCopy"))$("authCopy").textContent=signUpMode?"Create your account and start exploring RANOVA.":"Sign in to continue to your RANOVA home.";
   $("authSubmit").textContent=signUpMode?"Create my account":"Sign in";
   $("signInTab").classList.toggle("active",!signUpMode);
   $("createTab").classList.toggle("active",signUpMode);
