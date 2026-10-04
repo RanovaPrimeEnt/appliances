@@ -1,4 +1,4 @@
-import { sellerDocumentCompliance } from "../_shared/seller-documents.ts";
+import { sellerDocumentCompliance, sellerRequiredDocumentsApproved } from "../_shared/seller-documents.ts";
 import { sellerAccessApproved } from "../_shared/seller-approval.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
@@ -60,6 +60,7 @@ Deno.serve(async(req:Request)=>{
 
   if(!fr.ok)return new Response(JSON.stringify({ok:false,error:"Could not check uploaded documents."}),{status:500,headers:h});
   const document_compliance=sellerDocumentCompliance(apps[0],files);
+  const required_documents_approved=sellerRequiredDocumentsApproved(files);
 
   const storeQ=new URL(SUPABASE_URL+"/rest/v1/ranova_seller_stores");
   storeQ.searchParams.set("select","store_status,moderated_by,moderated_at");
@@ -69,7 +70,7 @@ Deno.serve(async(req:Request)=>{
   const storeRes=await fetch(storeQ.toString(),{headers:{apikey:SERVICE_KEY,Authorization:"Bearer "+SERVICE_KEY}});
   const stores=await storeRes.json().catch(()=>[]);
   if(!storeRes.ok)return new Response(JSON.stringify({ok:false,error:"Could not check store approval."}),{status:500,headers:h});
-  const approved=sellerAccessApproved(apps[0],stores[0]||null);
+  const approved=sellerAccessApproved(apps[0],stores[0]||null)&&required_documents_approved;
 
   if(action==="document_submitted"){
     const type=String(body?.document_type||"").trim().toLowerCase();
