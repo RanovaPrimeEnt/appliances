@@ -570,6 +570,29 @@ function authFriendlyError(error){
   if(/email not confirmed/i.test(msg))return "This email account is waiting for confirmation.";
   return msg||"We couldn't complete that. Please try again.";
 }
+function phoneLoginEmail(phone){
+  const digits=String(phone||"").replace(/\D/g,"");
+  return "phone-"+digits+"@accounts.ranova.invalid";
+}
+async function createRanovaPasswordAccount({method,email,phone,password}){
+  const res=await fetch(cfg.supabaseUrl+"/functions/v1/ranova-account-signup",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":cfg.supabasePublishableKey,
+      "Authorization":"Bearer "+cfg.supabasePublishableKey
+    },
+    body:JSON.stringify({method,email,phone,password})
+  });
+  let out={};
+  try{out=await res.json()}catch{}
+  if(!res.ok){
+    const err=new Error(out?.error||"Could not create account.");
+    err.code=out?.code||"";
+    throw err;
+  }
+  return out;
+}
 $("authSubmit").onclick=async()=>{
   const email=$("email").value.trim().toLowerCase();
   const password=$("password").value;
@@ -581,63 +604,61 @@ $("authSubmit").onclick=async()=>{
   button.disabled=true;
   try{
     if(password.length<8){$("authMsg").textContent="Use at least 8 characters for your password.";return}
-    let result;
-    if(authMethod==="email"){
-      if(!email){$("authMsg").textContent="Please enter your email address.";return}
-      result=signUpMode
-        ? await sb.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname+location.search}})
-        : await sb.auth.signInWithPassword({email,password});
-    }else{
-      if(localPhone.length<7){$("authMsg").textContent="Please enter a valid phone number.";return}
-      result=signUpMode
-        ? await sb.auth.signUp({phone,password,options:{data:{phone}}})
-        : await sb.auth.signInWithPassword({phone,password});
+
+    if(authMethod==="email"&&!email){
+      $("authMsg").textContent="Please enter your email address.";
+      return;
+    }
+    if(authMethod==="phone"&&localPhone.length<7){
+      $("authMsg").textContent="Please enter a valid phone number.";
+      return;
     }
 
-    const {data,error}=result||{};
-    if(error){
-      if(signUpMode&&looksLikeExistingAccount(error)){
-        directExistingAccountToSignIn();
+    let loginEmail=authMethod==="phone"?phoneLoginEmail(phone):email;
+
+    if(signUpMode){
+      try{
+        const created=await createRanovaPasswordAccount({
+          method:authMethod,
+          email,
+          phone,
+          password
+        });
+        loginEmail=created?.login_email||loginEmail;
+      }catch(error){
+        if(error?.code==="account_exists"||looksLikeExistingAccount(error)){
+          directExistingAccountToSignIn();
+          return;
+        }
+        $("authMsg").textContent=authFriendlyError(error);
         return;
       }
+    }
+
+    const {data,error}=await sb.auth.signInWithPassword({
+      email:loginEmail,
+      password
+    });
+
+    if(error){
       $("authMsg").textContent=authFriendlyError(error);
       return;
     }
 
-    if(signUpMode){
-      // Supabase can intentionally return a user with no identities for duplicate
-      // sign-ups instead of exposing whether an email exists. Treat that as an
-      // existing account and move the person to Sign in rather than creating a
-      // misleading second profile on the same device.
-      if(data?.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
-        directExistingAccountToSignIn();
-        return;
-      }
-
-      if(data?.session){
-        $("authMsg").textContent="Account created. Opening RANOVA…";
-        await applySession(data.session,true);
-        showPanel("marketplaceHomePanel");
-        return;
-      }
-
-      $("authMsg").textContent=authMethod==="email"
-        ?"Account created. Confirm your email to finish signing in."
-        :"Account created. Complete phone verification to finish signing in.";
-      $("password").value="";
+    if(data?.session){
+      $("authMsg").textContent=signUpMode?"Account created. Opening RANOVA…":"Signed in. Opening RANOVA…";
+      await applySession(data.session,true);
+      showPanel("marketplaceHomePanel");
       return;
     }
 
-    if(data?.session){
-      await applySession(data.session,true);
-      showPanel("marketplaceHomePanel");
-    }
+    $("authMsg").textContent="We couldn't open your account. Please try again.";
   }catch(e){
-    $("authMsg").textContent="We couldn't complete that. Please try again.";
+    $("authMsg").textContent=authFriendlyError(e);
   }finally{
     button.disabled=false;
   }
-};
+}
 $("signOut").onclick=()=>sb.auth.signOut();
 
 function handleRequestedPanel(){
