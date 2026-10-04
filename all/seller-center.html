@@ -653,7 +653,8 @@ async function loadWorkspace(){
     documentCompliance=out.document_compliance;complianceReceivedAt=Date.now();
     document.getElementById("businessName").textContent=currentApplication.business_name||"Seller";
     document.getElementById("applicationMeta").textContent=(currentApplication.application_ref||"")+" · "+(currentApplication.supplier_type||"Seller")+" · "+(currentApplication.business_location||"");
-    var approvalStatus=String(currentApplication.verification_status||currentApplication.status||"in_progress").toLowerCase();
+    var verificationStatus=String(currentApplication.verification_status||"").toLowerCase(),applicationStatus=String(currentApplication.status||"").toLowerCase();
+    var approvalStatus=verificationStatus==="in_progress"&&applicationStatus==="under_review"?"under_review":(verificationStatus||applicationStatus||"in_progress");
     var approved=out.approved===true;
     currentApplication.dashboard_approved=approved;
     currentApplication.store_accessible=out.store_accessible===true;
