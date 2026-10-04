@@ -505,6 +505,21 @@ Deno.serve(async(req:Request)=>{
       if(["rejected","needs_information","suspended"].includes(decision)&&!note){
         return response(h,400,{ok:false,error:"Add a review note explaining this decision."});
       }
+      if(decision==="approved"){
+        const requiredTypes=["business_registration","identity_document","fulfilment_evidence"];
+        const {data:reviewFiles,error:fileError}=await admin.from("ranova_seller_verification_files")
+          .select("id,document_type,review_status,created_at")
+          .eq("application_ref",ref)
+          .in("document_type",requiredTypes)
+          .order("created_at",{ascending:false});
+        if(fileError)throw fileError;
+        const latestByType=new Map<string,any>();
+        for(const file of reviewFiles||[])if(!latestByType.has(file.document_type))latestByType.set(file.document_type,file);
+        const notApproved=requiredTypes.filter(type=>String(latestByType.get(type)?.review_status||"").toLowerCase()!=="approved");
+        if(notApproved.length){
+          return response(h,409,{ok:false,error:"Approve all required seller documents before approving this store.",missing_document_approvals:notApproved});
+        }
+      }
       const now=new Date().toISOString();
       let status=decision;
       let storeSetup=app.store_setup_status;
@@ -512,7 +527,7 @@ Deno.serve(async(req:Request)=>{
       if(decision==="approved"&&String(storeSetup||"").toLowerCase()==="locked")storeSetup="in_progress";
       if(["rejected","suspended"].includes(decision))storeSetup="locked";
       const sellerNote=decision==="approved"
-        ? (note||"Seller verification approved. Store Builder is now available.")
+        ? (note||"Your required seller documents have been approved. RANOVA Seller Center access is now available.")
         : (note||(decision==="under_review"?"Your application is being reviewed by RANOVA.":app.verification_notes||null));
       const {error}=await admin.from("ranova_seller_applications").update({
         status,
@@ -539,7 +554,7 @@ Deno.serve(async(req:Request)=>{
         const {data:account}=await admin.from("ranova_seller_accounts").select("user_id").eq("application_ref",ref).maybeSingle();
         try{
           await queueNotice("seller",account?.user_id||null,clean(app.email,250)||null,null,null,
-            "seller_review_"+decision,({under_review:"RANOVA is reviewing your application",needs_information:"RANOVA needs more information",approved:"Your seller account is approved",rejected:"Seller application decision",suspended:"Seller account update"} as any)[decision],sellerNote||decision.replace(/_/g," "),
+            "seller_review_"+decision,({under_review:"RANOVA is reviewing your application",needs_information:"RANOVA needs more information",approved:"Your Store Has Been Approved",rejected:"Seller application decision",suspended:"Seller account update"} as any)[decision],sellerNote||decision.replace(/_/g," "),
             {application_ref:ref,decision,reviewed_at:now},"/appliances/all/seller-center.html?ref="+encodeURIComponent(ref),
             "seller-review:"+ref+":"+now);
           notificationQueued=true;
