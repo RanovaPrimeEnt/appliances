@@ -28,7 +28,7 @@ let smsEnabled = false;
 function setSignedIn(user) {
   session = user ? session : null;
   $('verificationFields').hidden = !!user;
-  $('email').required = !user && method() === 'email';
+  $('email').required = false;
   $('code').required = !user;
   $('registerButton').innerHTML = user ? 'Continue with this account <span>→</span>' : 'Register and continue <span>→</span>';
   $('accountStatus').textContent = '';
@@ -92,8 +92,8 @@ async function createAndLinkSellerApplication(currentSession,d){
 }
 document.querySelectorAll('[name=method]').forEach(el => el.onchange = () => {
   const email = method() === 'email';
-  $('emailField').hidden = !email;
-  $('email').required = email && !session;
+  $('emailField').hidden = true;
+  $('email').required = false;
   destination = null;
   $('code').value = '';
   $('codeHelp').textContent = email ? 'Your email may contain a code or a sign-in link. Use either to continue.' : 'Enter the verification code sent to your phone.';
