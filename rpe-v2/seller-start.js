@@ -88,6 +88,7 @@ async function createAndLinkSellerApplication(currentSession,d){
     sessionStorage.setItem('ranovaSellerApplicationRef',pending.ref);
     sessionStorage.setItem('ranovaSellerApplicationPhone',d.phone);
     sessionStorage.setItem('ranovaSellerApplicationEmail',currentSession.user.email||'');
+    sessionStorage.setItem('ranovaSellerApplicationUserId',currentSession.user.id);
   }catch{}
   await api('ranova-seller-link',{application_ref:pending.ref,phone:d.phone},currentSession);
   continueSeller(pending.ref,true);
