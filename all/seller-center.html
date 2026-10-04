@@ -178,7 +178,7 @@ body.document-approved-gate #sellerApprovedGate{display:block!important}
       <p>RANOVA Admin has approved your required seller documents. You can now manage your products, store information, stock and delivery settings.</p>
     </div>
   </div>
-  <a class="approved-launch-btn" href="./seller-dashboard.html">ACCESS RANOVA SELLER CENTER →</a>
+  <a class="approved-launch-btn" href="./seller-dashboard.html">OPEN RANOVA SELLER DASHBOARD →</a>
 </div>
 </div></section>
 
@@ -568,7 +568,7 @@ function renderDocumentReminder(){
 }
 setInterval(function(){if(document.visibilityState==="visible")renderDocumentReminder()},60000);
 function approvedSellerHasAllDocuments(){
-  return ["business_registration","identity_document","location_proof","fulfilment_evidence"].every(function(type){
+  return ["business_registration","identity_document","fulfilment_evidence"].every(function(type){
     return acceptableDocument(latestFile(currentFiles,type));
   });
 }
