@@ -558,6 +558,18 @@ function looksLikeExistingAccount(error){
   const msg=String(error?.message||"").toLowerCase();
   return msg.includes("already registered")||msg.includes("already exists")||msg.includes("user already")||msg.includes("identity already");
 }
+function isPhoneProviderDisabled(error){
+  const code=String(error?.code||error?.error_code||"").toLowerCase();
+  const msg=String(error?.message||"").toLowerCase();
+  return code==="phone_provider_disabled"||msg.includes("phone signups are disabled")||msg.includes("phone provider");
+}
+function authFriendlyError(error){
+  if(isPhoneProviderDisabled(error))return "Phone accounts are temporarily unavailable because RANOVA Phone Authentication is not enabled on the authentication server.";
+  const msg=String(error?.message||"").trim();
+  if(/invalid login credentials/i.test(msg))return "The account details or password are incorrect.";
+  if(/email not confirmed/i.test(msg))return "This email account is waiting for confirmation.";
+  return msg||"We couldn't complete that. Please try again.";
+}
 $("authSubmit").onclick=async()=>{
   const email=$("email").value.trim().toLowerCase();
   const password=$("password").value;
@@ -588,7 +600,7 @@ $("authSubmit").onclick=async()=>{
         directExistingAccountToSignIn();
         return;
       }
-      $("authMsg").textContent=error.message;
+      $("authMsg").textContent=authFriendlyError(error);
       return;
     }
 
