@@ -83,6 +83,27 @@ body.document-onboarding #uploadedDocumentsTitle{font-size:17px}
 #storeSetupCard a[href="./seller-dashboard.html"],
 #verificationChecklist a[href="./seller-dashboard.html"]{display:none!important}
 
+
+/* Seller onboarding 2026-10-04: status-aware professional flow */
+.seller-status-overview{display:grid;grid-template-columns:48px minmax(0,1fr);gap:12px;align-items:center;margin:0 0 14px;padding:15px 17px;border:1px solid #e5ebe8;border-radius:18px;background:#fff;box-shadow:0 6px 20px rgba(18,52,43,.05)}
+.seller-status-icon{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,#ff8a00,#ff5a2d);color:#fff;font-size:18px;font-weight:950;box-shadow:0 6px 16px rgba(230,92,24,.16)}
+.seller-status-overview small{display:block;color:#87918d;font-size:8px;letter-spacing:1.2px;font-weight:900}
+.seller-status-overview strong{display:block;margin-top:3px;color:#173d33;font-size:17px;line-height:1.2}
+.seller-status-overview span{display:block;margin-top:5px;color:#66756f;font-size:12px;line-height:1.45}
+.seller-status-overview.approved{border-color:#cce6d9;background:#f6fcf9}.seller-status-overview.approved .seller-status-icon{background:#14a064}
+.seller-status-overview.attention{border-color:#f0cc9d;background:#fffaf2}.seller-status-overview.attention .seller-status-icon{background:#d98520}
+.seller-status-overview.rejected{border-color:#efc5c2;background:#fff7f7}.seller-status-overview.rejected .seller-status-icon{background:#c94b43}
+.document-submit-success{margin:0;min-height:calc(100dvh - 40px);padding:58px 24px 36px;text-align:center;background:#fff;box-shadow:none}
+.document-submit-success[hidden]{display:none!important}
+.document-success-mark{width:74px;height:74px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:#e9f8f0;color:#0a8f58;font-size:38px;font-weight:950;box-shadow:0 8px 24px rgba(15,139,88,.13)}
+.document-submit-success>small{display:block;color:#ff6b25;font-size:9px;letter-spacing:1.45px;font-weight:950}
+.document-submit-success h2{max-width:480px;margin:7px auto 10px;color:#173d33;font-size:28px;line-height:1.12}
+.document-submit-success p{max-width:540px;margin:0 auto;color:#64736d;font-size:14px;line-height:1.7}
+.document-success-ref{width:min(100%,480px);margin:22px auto 0;padding:14px 16px;border:1px solid #e5eae7;border-radius:14px;background:#f8faf9;text-align:left}
+.document-success-ref span{display:block;color:#87918d;font-size:9px;font-weight:800}.document-success-ref b{display:block;margin-top:3px;color:#203a32;font-size:14px;word-break:break-all}
+#openSellerCenterAfterSubmit{width:min(100%,480px);min-height:54px;margin:18px auto 0;border:0;border-radius:15px;background:#ff5a2d;color:#fff;font-size:15px;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(237,87,33,.17)}
+body.document-submit-complete #sellerReviewAlert,body.document-submit-complete #sellerStatusOverview,body.document-submit-complete #sellerOnboardingGrid{display:none!important}
+@media(max-width:620px){.seller-status-overview{margin:10px 10px 12px;padding:13px 14px}.seller-status-overview strong{font-size:15px}.seller-status-overview span{font-size:11px}.document-submit-success{padding:48px 18px 28px}.document-submit-success h2{font-size:25px}}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -152,6 +173,7 @@ body.document-onboarding #uploadedDocumentsTitle{font-size:17px}
   </section>
 
   <section id="workspace" class="workspace">
+    <div id="sellerStatusOverview" class="seller-status-overview" role="status"><div class="seller-status-icon">R</div><div><small>SELLER REGISTRATION STATUS</small><strong id="sellerStatusTitle">Loading your status…</strong><span id="sellerStatusText">We are checking your seller account.</span></div></div>
     <div id="sellerReviewAlert" class="seller-review-alert" role="status" hidden><strong id="sellerReviewHeading">RANOVA Admin requests more information</strong><p id="sellerReviewNote"></p><a id="sellerReviewAction" href="#verificationChecklist">Review and resubmit documents →</a></div>
     <div class="grid" id="sellerOnboardingGrid">
       <aside class="side" id="sellerOnboardingSide">
@@ -225,6 +247,15 @@ body.document-onboarding #uploadedDocumentsTitle{font-size:17px}
             <button id="submitForReview" type="button">Submit for RANOVA Review</button>
           </div>
         </div>
+
+        <section id="documentSubmitSuccess" class="document-submit-success" hidden aria-live="polite">
+          <div class="document-success-mark">✓</div>
+          <small>SELLER REGISTRATION SENT</small>
+          <h2>Your documents have been submitted</h2>
+          <p>RANOVA Admin can now review your business, identity and fulfilment documents. You can continue to the Seller Center and follow the status of your application.</p>
+          <div class="document-success-ref"><span>Application reference</span><b id="documentSuccessRef">—</b></div>
+          <button id="openSellerCenterAfterSubmit" type="button">Open RANOVA Seller Center →</button>
+        </section>
 
         <div class="card" id="storeSetupCard">
           <h2>Step 5 · Create your RANOVA Store</h2>
@@ -553,6 +584,26 @@ function renderFiles(files){
   }).join("");
   renderProgress(files);
 }
+function renderSellerStatusOverview(status,approved){
+  var box=document.getElementById("sellerStatusOverview"),title=document.getElementById("sellerStatusTitle"),text=document.getElementById("sellerStatusText");
+  if(!box||!title||!text)return;
+  box.classList.remove("approved","attention","rejected");
+  var map={
+    approved:["Seller account approved","Your verification is approved. You can build and manage your RANOVA store."],
+    needs_information:["Action required","RANOVA Admin needs more information. Review the highlighted document or note and submit the correction."],
+    under_review:["Documents under review","Your submitted documents are with RANOVA Admin. You can return here to follow the decision."],
+    rejected:["Application needs attention","Review the Admin note carefully before making corrections or contacting RANOVA support."],
+    suspended:["Seller account restricted","Your seller account currently has a restriction. Check the Admin notice for the required next action."],
+    in_progress:["Complete your registration","Finish the required documents below, then submit them to RANOVA Admin for review."],
+    submitted:["Complete your registration","Finish the required documents below, then submit them to RANOVA Admin for review."]
+  };
+  var key=approved?"approved":status;
+  var copy=map[key]||map.in_progress;
+  title.textContent=copy[0];text.textContent=copy[1];
+  if(approved)box.classList.add("approved");
+  else if(["needs_information","under_review"].includes(status))box.classList.add("attention");
+  else if(["rejected","suspended"].includes(status))box.classList.add("rejected");
+}
 async function loadWorkspace(){
   try{
     var out=await api(WORKSPACE_ENDPOINT,{});
@@ -583,6 +634,7 @@ async function loadWorkspace(){
     var approved=out.approved===true;
     currentApplication.dashboard_approved=approved;
     currentApplication.store_accessible=out.store_accessible===true;
+    renderSellerStatusOverview(approvalStatus,approved);
     if(documentOnboarding&&approved){
       location.replace("./seller-center.html");
       return;
@@ -643,6 +695,8 @@ function acknowledgeReview(){
   api(SUPABASE_URL+"/functions/v1/ranova-trust-center",{action:"seller_review_seen",application_ref:currentApplication.application_ref,reviewed_at:currentApplication.reviewed_at}).catch(function(){});
 }
 document.addEventListener("visibilitychange",acknowledgeReview);
+var openSellerCenterAfterSubmit=document.getElementById("openSellerCenterAfterSubmit");
+if(openSellerCenterAfterSubmit)openSellerCenterAfterSubmit.addEventListener("click",function(){location.href="./seller-center.html"});
 document.getElementById("submitForReview").addEventListener("click",async function(){
   var btn=this,msg=document.getElementById("verifyMsg");hideMsg(msg);
   if(reviewBusy)return;
@@ -667,7 +721,12 @@ document.getElementById("submitForReview").addEventListener("click",async functi
     var result=await api(WORKSPACE_ENDPOINT,{action:"submit_for_review"});
     showMsg(msg,result.approval_preserved?"Document updates saved. Your approval and Seller Dashboard access remain active.":"Seller registration submitted successfully. RANOVA Admin can now review your business, identity and fulfilment documents.");
     if(documentOnboarding){
-      location.href="./seller-center.html";
+      var success=document.getElementById("documentSubmitSuccess");
+      var ref=document.getElementById("documentSuccessRef");
+      if(ref)ref.textContent=currentApplication.application_ref||"Submitted";
+      document.body.classList.add("document-submit-complete");
+      if(success)success.hidden=false;
+      window.scrollTo({top:0,behavior:"smooth"});
       return;
     }
     await loadWorkspace();
