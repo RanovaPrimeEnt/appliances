@@ -1,4 +1,4 @@
-import { sellerDocumentCompliance } from "../_shared/seller-documents.ts";
+import { sellerDocumentCompliance, sellerRequiredDocumentsApproved } from "../_shared/seller-documents.ts";
 import { sellerAccessApproved } from "../_shared/seller-approval.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -69,9 +69,11 @@ async function resolveSeller(userId:string){
   const application=apps[0];
   const stores=await serviceGet("ranova_seller_stores",{select:"store_status,moderated_by,moderated_at",seller_id:"eq."+userId,application_ref:"eq."+ref,limit:"1"});
   const approved=sellerAccessApproved(application,stores[0]||null);
-  const verificationFiles=await serviceGet("ranova_seller_verification_files",{select:"id,document_type,original_filename,created_at",seller_id:"eq."+userId,application_ref:"eq."+ref});
+  const verificationFiles=await serviceGet("ranova_seller_verification_files",{select:"id,document_type,original_filename,review_status,created_at",seller_id:"eq."+userId,application_ref:"eq."+ref});
   const document_compliance=sellerDocumentCompliance(application,verificationFiles);
-  return {application_ref:ref,application,approved,document_compliance,store_accessible:approved&&!document_compliance.blocked};
+  const required_documents_approved=sellerRequiredDocumentsApproved(verificationFiles);
+  const finalApproved=approved&&required_documents_approved;
+  return {application_ref:ref,application,approved:finalApproved,required_documents_approved,document_compliance,store_accessible:finalApproved&&!document_compliance.blocked};
 }
 async function patchApplication(ref:string,body:any){
   await fetch(SUPABASE_URL+"/rest/v1/ranova_seller_applications?application_ref=eq."+encodeURIComponent(ref),{
