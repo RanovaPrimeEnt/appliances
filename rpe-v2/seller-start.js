@@ -31,7 +31,7 @@ function setSignedIn(user) {
   $('email').required = !user && method() === 'email';
   $('code').required = !user;
   $('registerButton').innerHTML = user ? 'Continue with this account <span>→</span>' : 'Register and continue <span>→</span>';
-  $('accountStatus').textContent = user ? 'Signed in as ' + (user.email || user.phone || 'your customer account') + '. Use this account for your store.' : '';
+  $('accountStatus').textContent = '';
 }
 function fill(user) {
   const m = user.user_metadata || {};
