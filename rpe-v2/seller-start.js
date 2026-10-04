@@ -50,22 +50,10 @@ async function api(name, body, currentSession) {
   return out;
 }
 function continueSeller(ref,documents=false) { const params=new URLSearchParams(); if(ref)params.set('ref',ref); if(documents)params.set('onboarding','documents'); location.href='../all/seller-center.html'+(params.toString()?'?'+params.toString():''); }
-async function existingSeller(currentSession) {
+async function existingSeller(currentSession,documents=false) {
   const out = await api('ranova-seller-workspace', {action: 'workspace'}, currentSession);
-  if (out.linked) { continueSeller(out.application?.application_ref); return true; }
+  if (out.linked) { continueSeller(out.application?.application_ref,documents); return true; }
   return false;
-}
-async function showBusiness() {
-  const result = await sb.auth.getSession();
-  if (result.error) throw result.error;
-  session = result.data.session;
-  if (!session) throw Error('Please sign in again before continuing.');
-  if (await existingSeller(session)) return;
-  $('registerForm').hidden = true;
-  $('businessStep').hidden = false;
-  location.hash = 'register';
-  route();
-  $('businessStep').scrollIntoView({behavior: 'smooth', block: 'center'});
 }
 function validDetails() {
   const d = details();
@@ -75,7 +63,7 @@ function validDetails() {
   return d;
 }
 async function createAndLinkSellerApplication(currentSession,d){
-  if(await existingSeller(currentSession))return true;
+  if(await existingSeller(currentSession,true))return true;
   const body={
     business_name:d.company,
     contact_person:d.member,
@@ -150,38 +138,6 @@ $('registerForm').onsubmit = async e => {
     if(!currentSession)throw Error('Please sign in again before continuing.');
     await createAndLinkSellerApplication(currentSession,d);
   } catch (e) { $('formStatus').textContent = err(e); } finally { setBusy(false); }
-};
-$('businessForm').onsubmit = async e => {
-  e.preventDefault();
-  if (busy) return;
-  try {
-    setBusy(true);
-    const {data, error} = await sb.auth.getSession();
-    if (error) throw error;
-    const currentSession = data.session;
-    if (!currentSession || currentSession.user.id !== session?.user.id) throw Error('Your session changed. Reload this page and sign in again.');
-    if (await existingSeller(currentSession)) return;
-    const d = details();
-    if (!d.member || !d.company || !validPhone(d.phone)) throw Error('Your business contact details are incomplete. Reload this page to complete them.');
-    const body = {business_name: d.company, contact_person: d.member, phone: d.phone, email: currentSession.user.email || '', business_location: $('location').value.trim(), supplier_type: $('type').value, categories: $('categories').value.trim()};
-    if (!body.business_location || !body.supplier_type || !body.categories) throw Error('Complete your business location, type and products.');
-    const saved = pending || readSaved('ranova_new_seller_application');
-    pending = saved?.user === currentSession.user.id && saved.phone === d.phone && typeof saved.ref === 'string' ? saved : null;
-    if (!pending) {
-      const out = await api('ranova-seller-apply', body, currentSession);
-      if (!out.application_ref) throw Error('The application service did not return a reference. Please contact RANOVA support before submitting again.');
-      pending = {user: currentSession.user.id, phone: d.phone, ref: out.application_ref};
-      save('ranova_new_seller_application', pending);
-    }
-    $('businessStatus').textContent = 'Application saved. Reference: ' + pending.ref + '. Connecting your account…';
-    try {
-      sessionStorage.setItem('ranovaSellerApplicationRef', pending.ref);
-      sessionStorage.setItem('ranovaSellerApplicationPhone', d.phone);
-      sessionStorage.setItem('ranovaSellerApplicationEmail', currentSession.user.email || '');
-    } catch {}
-    await api('ranova-seller-link', {application_ref: pending.ref, phone: d.phone}, currentSession);
-    continueSeller(pending.ref);
-  } catch (e) { $('businessStatus').textContent = (pending ? 'Application ' + pending.ref + ' is saved. ' : '') + err(e); } finally { setBusy(false); }
 };
 async function initialize() {
   setBusy(true);
