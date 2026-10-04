@@ -104,6 +104,28 @@ body.document-onboarding #uploadedDocumentsTitle{font-size:17px}
 #openSellerCenterAfterSubmit{width:min(100%,480px);min-height:54px;margin:18px auto 0;border:0;border-radius:15px;background:#ff5a2d;color:#fff;font-size:15px;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(237,87,33,.17)}
 body.document-submit-complete #sellerReviewAlert,body.document-submit-complete #sellerStatusOverview,body.document-submit-complete #sellerOnboardingGrid{display:none!important}
 @media(max-width:620px){.seller-status-overview{margin:10px 10px 12px;padding:13px 14px}.seller-status-overview strong{font-size:15px}.seller-status-overview span{font-size:11px}.document-submit-success{padding:48px 18px 28px}.document-submit-success h2{font-size:25px}}
+
+/* Professional Seller Center visual layer */
+body:not(.document-onboarding){background:#f3f5f4}
+body:not(.document-onboarding) .top{background:rgba(255,255,255,.96);color:#183b32;border-bottom:1px solid #e6ebe8;box-shadow:0 4px 18px rgba(22,48,40,.05);backdrop-filter:blur(14px)}
+body:not(.document-onboarding) .top .brand{font-size:14px;letter-spacing:.03em}
+body:not(.document-onboarding) .top .brand:before{content:"R";display:inline-grid;place-items:center;width:30px;height:30px;margin-right:8px;border-radius:10px;background:linear-gradient(135deg,#ff8a00,#ff5a2d);color:#fff;font-weight:950;vertical-align:middle}
+body:not(.document-onboarding) .nav a,body:not(.document-onboarding) .nav button{border-color:#e2e8e5;background:#fff;color:#315348}
+body:not(.document-onboarding) .hero{padding:24px 0 16px;background:linear-gradient(180deg,#fff,#f4f7f5)}
+body:not(.document-onboarding) .workspace{padding-top:14px}
+body:not(.document-onboarding) .card{border-color:#e5ebe8;border-radius:18px;box-shadow:0 6px 22px rgba(18,52,43,.045)}
+body:not(.document-onboarding) .progress-summary{border-radius:20px;background:linear-gradient(135deg,#173f35,#126c55);box-shadow:0 10px 26px rgba(17,85,65,.12)}
+body:not(.document-onboarding) .verify-card{border-radius:15px}
+body:not(.document-onboarding) .upload button,body:not(.document-onboarding) .submit-review button{background:#ff5a2d}
+.doc-requirements-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:16px}
+.doc-requirements-strip span{padding:9px 7px;border:1px solid rgba(255,255,255,.24);border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font-size:9px;font-weight:850;text-align:center;backdrop-filter:blur(4px)}
+@media(max-width:620px){
+  body:not(.document-onboarding) .top .wrap{align-items:center}
+  body:not(.document-onboarding) .nav{gap:4px}
+  body:not(.document-onboarding) .nav a,body:not(.document-onboarding) .nav button{padding:8px 9px;font-size:11px}
+  body:not(.document-onboarding) .hero{padding:14px 0 8px}
+  .doc-requirements-strip{grid-template-columns:1fr}
+}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -203,6 +225,7 @@ body.document-submit-complete #sellerReviewAlert,body.document-submit-complete #
           <div id="documentOnboardingIntro" class="document-onboarding-intro">
             <div class="doc-top"><div class="doc-mark">R</div><div><small>SELLER REGISTRATION · DOCUMENTS</small><h1>Verify your seller account</h1></div></div>
             <p>Upload the required documents below. After you send them to RANOVA for review, you will continue to the RANOVA Seller Center.</p>
+            <div class="doc-requirements-strip"><span>1 · Business proof</span><span>2 · Identity ID</span><span>3 · Orders & delivery proof</span></div>
           </div>
           <h2 id="verificationChecklistTitle">Your verification checklist</h2>
           <p id="verificationChecklistIntro">Do one step at a time. Choose the requested file, upload it, then move to the next step. RANOVA Admin will review the real document securely.</p>
