@@ -239,6 +239,12 @@ function sellerReadyForAdminReview(a){
     || !!a?.reviewed_at;
 }
 function filesFor(ref){return (market.files||[]).filter(f=>f.application_ref===ref)}
+function sellerRequiredDocSummary(ref){
+  const required=["business_registration","identity_document","fulfilment_evidence"],files=filesFor(ref);
+  const latest=type=>files.filter(f=>f.document_type===type).sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0))[0];
+  const rows=required.map(type=>latest(type));
+  return {ready:rows.filter(Boolean).length,approved:rows.filter(f=>f&&f.review_status==="approved").length,total:required.length};
+}
 function storeForRef(ref){return (market.stores||[]).find(s=>s.application_ref===ref)}
 function renderSellerApplications(){
   const host=$("sellerApplicationsList");if(!host)return;
@@ -246,8 +252,8 @@ function renderSellerApplications(){
   if(marketError){host.innerHTML='<div class="empty">Marketplace moderation could not load. Refresh and try again.</div>';return}
   const apps=(market.applications||[]).filter(sellerReadyForAdminReview);
   host.innerHTML=apps.length?apps.map(a=>{
-    const st=appStatus(a),fc=filesFor(a.application_ref).length,store=storeForRef(a.application_ref);
-    return `<div class="market-row"><div><b>${esc(a.business_name)}</b><small>${esc(a.application_ref)} • ${esc(a.supplier_type||"Seller")} • ${esc(a.business_location||"Location not provided")}</small></div><span class="chip ${statusClass(st)}">${esc(label(st))}</span><div><small>Verification files</small><b>${fc}</b><small>${a.linked_user_id?"Seller account linked":"Not linked yet"}${store?" • Store created":""}</small></div><div class="actions"><button class="primary" data-review-seller="${esc(a.application_ref)}">Review</button></div></div>`;
+    const st=appStatus(a),fc=filesFor(a.application_ref).length,store=storeForRef(a.application_ref),docs=sellerRequiredDocSummary(a.application_ref);
+    return `<div class="market-row"><div><b>${esc(a.business_name)}</b><small>${esc(a.application_ref)} • ${esc(a.supplier_type||"Seller")}</small><small>⌖ ${esc(a.business_location||"Location not provided")} • ${esc(a.phone||"No phone")}</small></div><span class="chip ${statusClass(st)}">${esc(label(st))}</span><div><small>Required documents</small><b>${docs.ready}/${docs.total} uploaded</b><small>${docs.approved}/${docs.total} approved • ${fc} total file${fc===1?"":"s"} • ${a.linked_user_id?"Account linked":"Not linked"}${store?" • Store created":""}</small></div><div class="actions"><button class="primary" data-review-seller="${esc(a.application_ref)}">Review</button></div></div>`;
   }).join(""):'<div class="empty">No seller applications yet.</div>';
   host.querySelectorAll("[data-review-seller]").forEach(b=>b.onclick=()=>{selectedApplicationRef=b.dataset.reviewSeller;renderSellerDetail(selectedApplicationRef);$("sellerReviewDetail").scrollIntoView({behavior:"smooth",block:"start"})});
 }
