@@ -43,3 +43,10 @@ has(adminApp,"Required documents","Admin document completeness label");
 has(sellerStoreFn,'clean(seller.application.business_location,180)||clean(existing?.business_location,180)||clean(b.business_location,180)',"registered business location authority");
 
 console.log("PASS seller-flow contract: registration → documents → review → approval → marketplace location");
+
+// Seller account isolation: each authenticated seller must work only in its own store/application.
+const sellerStoreFn=read("rpe-v2/supabase/functions/ranova-seller-store/index.ts");
+has(sellerStoreFn,'seller_id:"eq."+userId,application_ref:"eq."+seller.application_ref',"seller dashboard store lookup is account/application scoped");
+has(sellerStoreFn,'seller_id:"eq."+user.id,application_ref:"eq."+seller.application_ref',"seller store writes are account/application scoped");
+const sellerCenterIsolation=read("all/seller-center.html");
+assert.ok(!sellerCenterIsolation.includes('savedPhone=sessionStorage.getItem("ranovaSellerApplicationPhone")'),"seller account isolation: Seller Center must not inherit a previous seller phone from browser session");
