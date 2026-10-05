@@ -789,6 +789,34 @@ $("authSubmit").onclick=async()=>{
 }
 $("signOut").onclick=()=>sb.auth.signOut();
 
+$("deleteAccount").onclick=async()=>{
+  if(!user)return;
+  const first=confirm("Delete your RANOVA account? This will permanently close the account. Transaction records that must be retained may be kept without an active account link.");
+  if(!first)return;
+  const second=confirm("This cannot be undone. Select OK to permanently delete your RANOVA account.");
+  if(!second)return;
+
+  const button=$("deleteAccount");
+  button.disabled=true;
+  button.textContent="Deleting…";
+  try{
+    const {data,error}=await sb.functions.invoke("ranova-delete-account",{body:{confirm:true}});
+    if(error)throw error;
+    if(!data?.ok)throw new Error(data?.error||"Could not delete account.");
+    try{await sb.auth.signOut({scope:"global"})}catch{}
+    try{
+      Object.keys(localStorage).filter(k=>k.startsWith("ranova_")||k.startsWith("rpe_")).forEach(k=>localStorage.removeItem(k));
+    }catch{}
+    alert("Your RANOVA account has been deleted.");
+    location.reload();
+  }catch(e){
+    console.error(e);
+    showToast(e?.message||"Could not delete account. Please try again.");
+    button.disabled=false;
+    button.textContent="Delete account";
+  }
+};
+
 function handleRequestedPanel(){
   const qs=new URLSearchParams(location.search);
   const forceHome=qs.get("home")==="1";
