@@ -1,0 +1,22 @@
+name: RANOVA
+options:
+  bundleIdPrefix: com.ranova
+  deploymentTarget:
+    iOS: "15.0"
+targets:
+  RANOVA:
+    type: application
+    platform: iOS
+    sources:
+      - RANOVA
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ranova.marketplace
+        PRODUCT_NAME: RANOVA
+        SWIFT_VERSION: 5.0
+        MARKETING_VERSION: 1.1.0
+        CURRENT_PROJECT_VERSION: 5
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1,2"
+    info:
+      path: RANOVA/Info.plist

@@ -2,16 +2,29 @@ plugins {
     id 'com.android.application'
 }
 
+def uploadKeystore = System.getenv("RANOVA_UPLOAD_KEYSTORE")
+
 android {
     namespace 'com.ranova.marketplace'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.ranova.marketplace"
         minSdk 24
-        targetSdk 35
-        versionCode 4
-        versionName "1.0.3"
+        targetSdk 36
+        versionCode 5
+        versionName "1.1.0"
+    }
+
+    signingConfigs {
+        release {
+            if (uploadKeystore) {
+                storeFile file(uploadKeystore)
+                storePassword System.getenv("RANOVA_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("RANOVA_KEY_ALIAS")
+                keyPassword System.getenv("RANOVA_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -20,7 +33,10 @@ android {
             versionNameSuffix "-debug"
         }
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (uploadKeystore) signingConfig signingConfigs.release
         }
     }
 

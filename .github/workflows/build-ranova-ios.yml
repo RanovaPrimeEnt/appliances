@@ -1,0 +1,19 @@
+name: Validate RANOVA iOS Build
+on:
+  push:
+    branches: [main, ranova-store-ready-mobile]
+    paths: ["ios-app/**", ".github/workflows/build-ranova-ios.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  simulator-build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: cd ios-app && xcodegen generate
+      - name: Build for iOS Simulator
+        run: xcodebuild -project ios-app/RANOVA.xcodeproj -scheme RANOVA -sdk iphonesimulator -configuration Release CODE_SIGNING_ALLOWED=NO build

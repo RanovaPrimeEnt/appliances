@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleDisplayName</key><string>RANOVA</string>
+<key>CFBundleName</key><string>RANOVA</string>
+<key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+<key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
+<key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+<key>UILaunchScreen</key><dict/>
+<key>UIApplicationSceneManifest</key><dict>
+<key>UIApplicationSupportsMultipleScenes</key><false/>
+<key>UISceneConfigurations</key><dict><key>UIWindowSceneSessionRoleApplication</key><array><dict>
+<key>UISceneConfigurationName</key><string>Default Configuration</string>
+<key>UISceneDelegateClassName</key><string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+</dict></array></dict></dict>
+<key>NSCameraUsageDescription</key><string>RANOVA uses the camera when you choose to add product, seller-document, or message images.</string>
+<key>NSMicrophoneUsageDescription</key><string>RANOVA uses the microphone when you choose to record voice content in messaging.</string>
+<key>CFBundleURLTypes</key><array><dict><key>CFBundleURLName</key><string>com.ranova.marketplace</string><key>CFBundleURLSchemes</key><array><string>ranova</string></array></dict></array>
+</dict></plist>

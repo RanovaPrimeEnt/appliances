@@ -1,0 +1,39 @@
+name: Validate RANOVA Android Store Build
+
+on:
+  push:
+    branches:
+      - main
+      - ranova-store-ready-mobile
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-ranova-android-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - name: Build release Android App Bundle
+        run: gradle -p android-app :app:bundleRelease --no-daemon
+      - name: Upload AAB validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RANOVA-Play-Store-AAB-unsigned
+          path: android-app/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
