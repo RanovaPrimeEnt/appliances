@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v74";
+const CACHE="ranova-rpe-v2-shell-v75";
 const IMAGE_CACHE="ranova-rpe-v2-images-v1";
 const CORE=[
   "../all/fonts/inter-0.woff2",
@@ -13,7 +13,7 @@ const CORE=[
   "./",
   "./index.html",
   "./offline-marketplace.json",
-  "./app.js?v=20261004-v3a74",
+  "./app.js?v=20261005-v3a75",
   "./config.js",
   "./design-system.css",
   "./customer-icon.svg",
@@ -22,9 +22,9 @@ const CORE=[
   "./customer-icon-512.svg",
   "./customer-icon-maskable.svg",
   "./customer-app.webmanifest",
-  "./customer-pwa.js?v=20261004-v3a74",
-  "./customer-pro.js?v=20261004-v3a74",
-  "./customer-pro.css?v=20261004-v3a74",
+  "./customer-pwa.js?v=20261005-v3a75",
+  "./customer-pro.js?v=20261005-v3a75",
+  "./customer-pro.css?v=20261005-v3a75",
   "./report-store.html",
   "./ranova-prime-store.html",
   "./admin.html",

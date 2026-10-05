@@ -29,6 +29,8 @@ jobs:
           node-version: '22'
       - name: Customer authentication contract
         run: node tests/auth-release-contract.cjs
+      - name: Password recovery contract
+        run: node tests/password-recovery-contract.cjs
       - name: Seller session-only authentication contract
         run: node tests/seller-session-auth-contract.cjs
       - name: Seller flow and account-isolation contract

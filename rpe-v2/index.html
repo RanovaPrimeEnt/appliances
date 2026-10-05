@@ -256,7 +256,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7A00!important}
 ::selection{background:#FFE1CC;color:#243936}
 </style>
-  <link rel="stylesheet" href="./customer-pro.css?v=20261004-v3a74">
+  <link rel="stylesheet" href="./customer-pro.css?v=20261005-v3a75">
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
@@ -311,6 +311,7 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
     </div>
   </div>
   <label>Password</label><div class="password-wrap"><input id="password" type="password" autocomplete="current-password" minlength="8"><button id="togglePassword" type="button" aria-label="Show password">Show</button></div>
+  <div id="forgotPasswordRow" class="auth-switch"><button id="forgotPassword" type="button">Forgot password?</button></div>
   <div class="actions"><button id="authSubmit" class="btn primary">Sign in</button></div>
   <div id="authMsg" class="auth-msg" role="status"></div>
 </section>
@@ -543,7 +544,7 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
 <section id="addressPanel" class="panel card"><div class="section-head"><h2>Delivery Addresses</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><div id="addressList" class="list"></div><button id="addAddress" class="btn primary" style="margin-top:12px">Add address</button></div></section>
 <section id="notifPanel" class="panel card"><div class="section-head"><h2>Notifications</h2><button data-panel="homePanel">Back</button></div><div id="notifList" class="panel-body list"></div></section>
 <section id="helpPanel" class="panel card"><div class="section-head"><h2>Help Centre</h2><button data-panel="homePanel">Back</button></div><div class="panel-body list"><div class="list-row"><div><b>Ordering</b><small>Add products to your cart and send one order request.</small></div></div><div class="list-row"><div><b>Prices & availability</b><small>Until RPE publishes confirmed prices and stock, your order is sent as a quote request first.</small></div></div><div class="list-row"><div><b>Order updates</b><small>Your order status updates here automatically when RPE changes it.</small></div></div><div class="list-row"><div><b>Need a person?</b><small>Send your enquiry through RANOVA Messages.</small></div><button id="helpContact" class="btn primary">Message RANOVA</button></div></div></section>
-<section id="profilePanel" class="panel card"><div class="section-head"><h2>My Details</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><label style="font-size:10px;font-weight:800">First name</label><input id="profileFirst" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Last name</label><input id="profileLast" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Phone</label><input id="profilePhone" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><button id="saveProfile" class="btn primary">Save details</button><div class="profile-actions"><button id="installCustomerApp" class="btn soft" type="button">Install RANOVA App</button><button class="btn soft" data-panel="messagesPanel" type="button">Messages</button><a class="btn soft" href="../all/documents.html">Documents</a><a class="btn soft" href="../all/after-sales.html">Returns & Refunds</a><button id="signOut" class="btn outline" type="button">Sign out</button></div><div id="customerUpdateNote" class="notice hide" style="margin-top:10px"></div></div></section>
+<section id="profilePanel" class="panel card"><div class="section-head"><h2>My Details</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><label style="font-size:10px;font-weight:800">First name</label><input id="profileFirst" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Last name</label><input id="profileLast" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Phone</label><input id="profilePhone" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><button id="saveProfile" class="btn primary">Save details</button><div class="profile-actions"><button id="changePassword" class="btn soft" type="button">Change password</button><button id="installCustomerApp" class="btn soft" type="button">Install RANOVA App</button><button class="btn soft" data-panel="messagesPanel" type="button">Messages</button><a class="btn soft" href="../all/documents.html">Documents</a><a class="btn soft" href="../all/after-sales.html">Returns & Refunds</a><button id="signOut" class="btn outline" type="button">Sign out</button></div><div id="customerUpdateNote" class="notice hide" style="margin-top:10px"></div></div></section>
 </main>
 
 <nav class="bottom" aria-label="Main navigation">
@@ -552,6 +553,23 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
 <button id="bottomCart" data-panel="cartPanel" aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11h10.8l2-7H6"/></svg><span>Cart</span><span id="bottomCartCount" class="bubble hide">0</span></button>
 <button id="bottomMe" data-panel="homePanel" aria-label="My account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Me</span></button>
 </nav>
+</div>
+
+<div id="passwordRecoveryOverlay" class="rpe-pay-overlay" aria-hidden="true">
+  <div class="rpe-pay-card" role="dialog" aria-modal="true" aria-labelledby="passwordRecoveryTitle">
+    <div class="rpe-pay-head"><h2 id="passwordRecoveryTitle">Update password</h2><button id="passwordRecoveryClose" type="button" aria-label="Close">×</button></div>
+    <p id="passwordRecoveryIntro" class="auth-fine">Choose a new password for your RANOVA account.</p>
+    <div id="currentPasswordField">
+      <label>Current password</label>
+      <div class="password-wrap"><input id="currentPassword" type="password" autocomplete="current-password" minlength="8"><button id="toggleCurrentPassword" type="button">Show</button></div>
+    </div>
+    <label>New password</label>
+    <div class="password-wrap"><input id="newPassword" type="password" autocomplete="new-password" minlength="8"><button id="toggleNewPassword" type="button">Show</button></div>
+    <label style="margin-top:10px;display:block">Confirm new password</label>
+    <div class="password-wrap"><input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8"><button id="toggleConfirmNewPassword" type="button">Show</button></div>
+    <div class="actions"><button id="passwordRecoverySave" class="btn primary" type="button">Save new password</button></div>
+    <div id="passwordRecoveryMsg" class="auth-msg" role="status"></div>
+  </div>
 </div>
 
 <div id="cartDrawer" class="cart-drawer"><aside class="drawer"><div class="drawer-head"><h3>My Cart</h3><button id="closeCart" class="icon-btn">×</button></div><div id="cartList" class="drawer-list"></div><div class="drawer-foot"><div id="cartGrandTotal" class="rnv-cart-grand"></div><button id="sendOrder" class="btn primary">Proceed to checkout</button><small class="rnv-cart-note">Review your products and quantities before checkout.</small></div></aside></div>
@@ -584,9 +602,9 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20261004-v3a74"></script>
-<script src="./customer-pwa.js?v=20261004-v3a74"></script>
-<script src="./customer-pro.js?v=20261004-v3a74"></script>
+<script src="./app.js?v=20261005-v3a75"></script>
+<script src="./customer-pwa.js?v=20261005-v3a75"></script>
+<script src="./customer-pro.js?v=20261005-v3a75"></script>
 
 <div id="manualPaymentOverlay" class="rpe-pay-overlay" aria-hidden="true">
   <div class="rpe-pay-card" role="dialog" aria-modal="true" aria-labelledby="manualPaymentTitle">

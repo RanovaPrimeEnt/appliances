@@ -531,6 +531,7 @@ document.addEventListener("click",e=>{
 
 function authUI(){
   $("authSubmit").textContent=signUpMode?"Create my account":"Sign in";
+  if($("forgotPasswordRow"))$("forgotPasswordRow").classList.toggle("hide",signUpMode);
   $("signInTab").classList.toggle("active",!signUpMode);
   $("createTab").classList.toggle("active",signUpMode);
   $("authMethodEmail").classList.toggle("active",authMethod==="email");
@@ -602,6 +603,104 @@ async function createRanovaPasswordAccount({method,email,phone,password}){
   err.code=details?.code||lastError?.code||"";
   throw err;
 }
+
+let passwordRecoveryMode=false;
+function setPasswordInputToggle(buttonId,inputId){
+  const button=$(buttonId),input=$(inputId);
+  if(!button||!input)return;
+  button.onclick=()=>{
+    const showing=input.type==="text";
+    input.type=showing?"password":"text";
+    button.textContent=showing?"Show":"Hide";
+  };
+}
+function openPasswordRecovery({recovery=false}={}){
+  passwordRecoveryMode=!!recovery;
+  const overlay=$("passwordRecoveryOverlay");
+  if(!overlay)return;
+  $("passwordRecoveryTitle").textContent=recovery?"Set a new password":"Change password";
+  $("passwordRecoveryIntro").textContent=recovery
+    ?"Your recovery link is valid. Choose a new password."
+    :"Enter your current password, then choose a new password.";
+  $("currentPasswordField").classList.toggle("hide",recovery);
+  $("currentPassword").value="";
+  $("newPassword").value="";
+  $("confirmNewPassword").value="";
+  $("passwordRecoveryMsg").textContent="";
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden","false");
+  setTimeout(()=>(recovery?$("newPassword"):$("currentPassword"))?.focus(),0);
+}
+function closePasswordRecovery(){
+  const overlay=$("passwordRecoveryOverlay");
+  if(!overlay)return;
+  overlay.classList.remove("show");
+  overlay.setAttribute("aria-hidden","true");
+}
+async function requestPasswordRecovery(){
+  if(signUpMode)return;
+  const email=$("email").value.trim().toLowerCase();
+  if(authMethod==="phone"){
+    $("authMsg").textContent="Phone accounts do not use insecure SMS-free password resets. If you are signed in on another device, change your password from Me → Settings. If you are signed out everywhere, contact RANOVA Support.";
+    return;
+  }
+  if(!email){
+    $("authMsg").textContent="Enter your email address first, then select Forgot password.";
+    $("email").focus();
+    return;
+  }
+  $("authMsg").textContent="Sending password reset link…";
+  const redirectTo=location.origin+location.pathname+"?passwordRecovery=1";
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
+  if(error){
+    $("authMsg").textContent=authFriendlyError(error);
+    return;
+  }
+  // Keep this generic so account existence is not disclosed.
+  $("authMsg").textContent="If a RANOVA account exists for this email, a password reset link has been sent.";
+}
+async function savePasswordChange(){
+  const current=$("currentPassword").value;
+  const next=$("newPassword").value;
+  const confirm=$("confirmNewPassword").value;
+  const button=$("passwordRecoverySave");
+  const msg=$("passwordRecoveryMsg");
+  if(next.length<8){msg.textContent="Use at least 8 characters for your new password.";return}
+  if(next!==confirm){msg.textContent="The new passwords do not match.";return}
+  if(!passwordRecoveryMode&&current.length<8){msg.textContent="Enter your current password.";return}
+  button.disabled=true;
+  msg.textContent="Updating password…";
+  try{
+    const payload=passwordRecoveryMode
+      ? {password:next}
+      : {password:next,currentPassword:current};
+    const {error}=await sb.auth.updateUser(payload);
+    if(error)throw error;
+    msg.textContent="Password updated successfully.";
+    setTimeout(()=>{
+      closePasswordRecovery();
+      if(passwordRecoveryMode){
+        const url=new URL(location.href);
+        url.searchParams.delete("passwordRecovery");
+        history.replaceState(null,"",url.pathname+(url.searchParams.toString()?"?"+url.searchParams.toString():""));
+        passwordRecoveryMode=false;
+      }
+    },700);
+  }catch(error){
+    msg.textContent=authFriendlyError(error);
+  }finally{
+    button.disabled=false;
+  }
+}
+if($("forgotPassword"))$("forgotPassword").onclick=requestPasswordRecovery;
+if($("changePassword"))$("changePassword").onclick=()=>openPasswordRecovery({recovery:false});
+if($("passwordRecoveryClose"))$("passwordRecoveryClose").onclick=closePasswordRecovery;
+if($("passwordRecoverySave"))$("passwordRecoverySave").onclick=savePasswordChange;
+if($("passwordRecoveryOverlay"))$("passwordRecoveryOverlay").onclick=e=>{if(e.target===$("passwordRecoveryOverlay"))closePasswordRecovery()};
+setPasswordInputToggle("toggleCurrentPassword","currentPassword");
+setPasswordInputToggle("toggleNewPassword","newPassword");
+setPasswordInputToggle("toggleConfirmNewPassword","confirmNewPassword");
+
 $("authSubmit").onclick=async()=>{
   const email=$("email").value.trim().toLowerCase();
   const password=$("password").value;
@@ -718,8 +817,16 @@ async function handleRequestedConversation(){
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
   await applySession(session,true);
+  if(new URLSearchParams(location.search).get("passwordRecovery")==="1"&&session){
+    passwordRecoveryMode=true;
+    openPasswordRecovery({recovery:true});
+  }
   sb.auth.onAuthStateChange((event,session)=>{
     setTimeout(()=>{
+      if(event==="PASSWORD_RECOVERY"){
+        passwordRecoveryMode=true;
+        openPasswordRecovery({recovery:true});
+      }
       const nextId=session?.user?.id||null;
       if(event==="SIGNED_OUT"||!nextId){applySession(null,false);return}
       if(initializedUserId===nextId){
