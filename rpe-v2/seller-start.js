@@ -27,11 +27,11 @@ function setBusy(value) {
 let smsEnabled = false;
 function setSignedIn(user) {
   session = user ? session : null;
-  $('verificationFields').hidden = !!user;
+  $('verificationFields').hidden = true;
   $('email').required = false;
-  $('code').required = !user;
-  $('registerButton').innerHTML = user ? 'Continue with this account <span>→</span>' : 'Register and continue <span>→</span>';
-  $('accountStatus').textContent = '';
+  $('code').required = false;
+  $('registerButton').innerHTML = user ? 'Continue with this account <span>→</span>' : 'Return to RANOVA Sign in <span>→</span>';
+  $('accountStatus').textContent = user ? 'Using your signed-in RANOVA customer account.' : 'Sign in to your RANOVA customer account before starting seller registration.';
 }
 function fill(user) {
   const m = user.user_metadata || {};
@@ -57,7 +57,7 @@ async function existingSeller(currentSession,documents=false) {
 }
 function validDetails() {
   const d = details();
-  if (!d.member || !d.company || !validPhone(d.phone) || (!session && method() === 'email' && !$('email').checkValidity())) throw Error('Enter your name, company and a valid phone number.');
+  if (!d.member || !d.company || !validPhone(d.phone)) throw Error('Enter your name, company and a valid phone number.');
   const location=$('location').value.trim();
   const locationParts=location.split(',').map(v=>v.trim()).filter(Boolean);
   if(locationParts.length<2)throw Error('Enter your business location as Town, City. Example: Adum, Kumasi.');
@@ -125,15 +125,8 @@ $('registerForm').onsubmit = async e => {
     const d = validDetails();
     if (!sb) throw Error('Registration is temporarily unavailable. Please reload the page.');
     if (!session) {
-      if (!destination) throw Error('Send a verification code first.');
-      if (destination.method !== method() || destination.value !== (method() === 'email' ? d.email : d.phone)) throw Error('Your contact details changed. Request a new code.');
-      setBusy(true);
-      const req = destination.method === 'email' ? {email: destination.value, token: $('code').value.trim(), type: 'email'} : {phone: destination.value, token: $('code').value.trim(), type: 'sms'};
-      const result = await sb.auth.verifyOtp(req);
-      if (result.error) throw result.error;
-      session = result.data.session;
-      if (!session) throw Error('Verification did not create a session. Request a new code.');
-      setSignedIn(session.user);
+      location.href = './index.html';
+      return;
     }
     setBusy(true);
     const updated = await sb.auth.updateUser({data: {full_name: d.member, business_name: d.company, contact_phone: d.phone}});
