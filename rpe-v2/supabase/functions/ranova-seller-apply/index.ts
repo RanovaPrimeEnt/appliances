@@ -9,7 +9,7 @@ function headers(origin:string|null){
   return {
     "Content-Type":"application/json",
     "Access-Control-Allow-Origin":allow||ALLOWED_ORIGIN,
-    "Access-Control-Allow-Headers":"content-type,x-ranova-client",
+    "Access-Control-Allow-Headers":"content-type,x-ranova-client,authorization,apikey",
     "Access-Control-Allow-Methods":"POST,OPTIONS"
   };
 }
