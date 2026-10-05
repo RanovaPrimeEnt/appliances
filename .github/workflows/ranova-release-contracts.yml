@@ -1,0 +1,35 @@
+name: RANOVA release contracts
+
+on:
+  pull_request:
+    paths:
+      - 'rpe-v2/**'
+      - 'all/**'
+      - 'tests/**'
+      - '.github/workflows/ranova-release-contracts.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'rpe-v2/**'
+      - 'all/**'
+      - 'tests/**'
+      - '.github/workflows/ranova-release-contracts.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  release-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Customer authentication contract
+        run: node tests/auth-release-contract.cjs
+      - name: Seller session-only authentication contract
+        run: node tests/seller-session-auth-contract.cjs
+      - name: Seller flow and account-isolation contract
+        run: node tests/seller-flow-contract.cjs
