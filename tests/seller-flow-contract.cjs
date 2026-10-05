@@ -21,11 +21,10 @@ for(const type of ["business_registration","identity_document","fulfilment_evide
 }
 has(sellerCenter,"Please fill this part","missing-document guidance");
 has(sellerCenter,'id="documentSubmitSuccess"',"post-submit success interface");
-has(sellerCenter,'id="openSellerCenterAfterSubmit"',"Seller Center continuation button");
 has(sellerCenter,'id="sellerStatusOverview"',"status-aware Seller Center");
 has(sellerCenter,"DO YOU WANT TO UPDATE ANY DOCUMENT?","approved seller document-update state");
-has(sellerCenter,"OPEN SELLER DASHBOARD","approved dashboard entry");
 has(sellerCenter,"Your documents are now under review","pending Admin-review screen");
+has(sellerCenter,'id="checkSellerReviewStatus"',"pending seller review-status action");
 has(sellerCenter,"Your Store Has Been Approved","approved-store screen");
 has(sellerCenter,"ACCESS RANOVA SELLER CENTER","approved Seller Center access");
 has(sellerCenter,"OPEN RANOVA SELLER DASHBOARD","approved Seller Center dashboard CTA");
