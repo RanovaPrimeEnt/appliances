@@ -337,6 +337,22 @@ var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 var LINK_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-link";
 var WORKSPACE_ENDPOINT=SUPABASE_URL+"/functions/v1/ranova-seller-workspace";
 var mode="login",currentSession=null,currentApplication=null,currentFiles=[],documentCompliance=null,complianceReceivedAt=0;
+function sellerScopedSessionKey(name){
+  var uid=currentSession&&currentSession.user&&currentSession.user.id?currentSession.user.id:"guest";
+  return "ranovaSeller:"+uid+":"+name;
+}
+function clearLegacySellerSession(){
+  ["ranovaSellerApplicationRef","ranovaSellerApplicationPhone","ranovaSellerApplicationEmail","ranovaSellerApplicationUserId"].forEach(function(k){try{sessionStorage.removeItem(k)}catch(e){}});
+}
+function clearSellerUiState(){
+  currentApplication=null;currentFiles=[];documentCompliance=null;complianceReceivedAt=0;
+  try{
+    var previous=sessionStorage.getItem("ranovaSeller:lastUser");
+    var current=currentSession&&currentSession.user?currentSession.user.id:"";
+    if(previous&&current&&previous!==current)clearLegacySellerSession();
+    if(current)sessionStorage.setItem("ranovaSeller:lastUser",current);
+  }catch(e){}
+}
 var documentOnboarding=new URLSearchParams(location.search).get("onboarding")==="documents";
 if(documentOnboarding)document.body.classList.add("document-onboarding");
 var reviewBusy=false,uploadCount=0,validationAttempted=false,autoLinkTried=false;
@@ -384,7 +400,8 @@ try{
 var authPanel=document.getElementById("authPanel"),resetPanel=document.getElementById("resetPanel"),linkPanel=document.getElementById("linkPanel"),workspace=document.getElementById("workspace"),signOut=document.getElementById("signOut");
 var loginTab=document.getElementById("loginTab"),signupTab=document.getElementById("signupTab"),authSubmit=document.getElementById("authSubmit"),authMsg=document.getElementById("authMsg");
 // Do not prefill another seller's saved account details on a shared device.
-if(savedRef)document.getElementById("applicationRef").value=savedRef;
+// Do not hydrate a seller application into the UI until the authenticated account has been checked.
+if(savedRef&&documentOnboarding)document.getElementById("applicationRef").value=savedRef;
 
 function showMsg(el,text){el.textContent=text;el.style.display="block"}
 function hideMsg(el){el.style.display="none"}
@@ -431,6 +448,7 @@ document.getElementById("authForm").addEventListener("submit",async function(e){
 
 async function refreshSession(){
   var gs=await sb.auth.getSession();currentSession=gs.data.session;
+  clearSellerUiState();
   if(!currentSession){
     authPanel.style.display="block";resetPanel.style.display="none";linkPanel.style.display="none";workspace.style.display="none";signOut.style.display="none";return;
   }
@@ -440,7 +458,17 @@ async function refreshSession(){
   resetPanel.style.display="none";authPanel.style.display="none";signOut.style.display="inline-block";
   await loadWorkspace();
 }
-signOut.onclick=async function(){await sb.auth.signOut();location.reload()};
+signOut.onclick=async function(){
+  try{
+    if(currentSession&&currentSession.user){
+      sessionStorage.removeItem(sellerScopedSessionKey("applicationRef"));
+      sessionStorage.removeItem(sellerScopedSessionKey("applicationPhone"));
+      sessionStorage.removeItem(sellerScopedSessionKey("applicationEmail"));
+    }
+  }catch(e){}
+  clearLegacySellerSession();
+  await sb.auth.signOut();location.reload()
+};
 
 document.getElementById("forgotPassword").onclick=async function(){
   hideMsg(authMsg);
@@ -483,7 +511,11 @@ document.getElementById("linkForm").addEventListener("submit",async function(e){
   try{
     var ref=document.getElementById("applicationRef").value.trim(),phone=document.getElementById("applicationPhone").value.trim();
     await api(LINK_ENDPOINT,{application_ref:ref,phone:phone});
-    try{sessionStorage.setItem("ranovaSellerApplicationRef",ref);sessionStorage.setItem("ranovaSellerApplicationPhone",phone)}catch(e){}
+    try{
+      sessionStorage.setItem(sellerScopedSessionKey("applicationRef"),ref);
+      sessionStorage.setItem(sellerScopedSessionKey("applicationPhone"),phone);
+      clearLegacySellerSession();
+    }catch(e){}
     await loadWorkspace();
   }catch(err){showMsg(msg,err.message||"Could not connect this seller application.")}
   finally{btn.disabled=false;btn.textContent="Connect & continue"}
@@ -664,8 +696,10 @@ async function loadWorkspace(){
   try{
     var out=await api(WORKSPACE_ENDPOINT,{});
     if(!out.linked){
+      // A new authenticated seller starts with a completely clean workspace.
+      currentApplication=null;currentFiles=[];documentCompliance=null;
       linkPanel.style.display="block";workspace.style.display="none";
-      if(savedRef&&!document.getElementById("applicationRef").value)document.getElementById("applicationRef").value=savedRef;
+      document.getElementById("applicationRef").value=documentOnboarding&&savedRef?savedRef:"";
       document.getElementById("applicationPhone").value="";
       return
     }
@@ -732,8 +766,9 @@ async function loadWorkspace(){
       storeBox.innerHTML='<b>Available after RANOVA approval.</b><br>Nothing is required here yet. Finish Steps 1–4 and submit them for review. After approval, this section becomes your Store Builder.';
     }
     try{
-      sessionStorage.setItem("ranovaSellerApplicationRef",currentApplication.application_ref||"");
-      if(document.getElementById("applicationPhone").value)sessionStorage.setItem("ranovaSellerApplicationPhone",document.getElementById("applicationPhone").value);
+      sessionStorage.setItem(sellerScopedSessionKey("applicationRef"),currentApplication.application_ref||"");
+      if(document.getElementById("applicationPhone").value)sessionStorage.setItem(sellerScopedSessionKey("applicationPhone"),document.getElementById("applicationPhone").value);
+      clearLegacySellerSession();
     }catch(e){}
     renderFiles(currentFiles);
     setApprovedSellerView(approved);
