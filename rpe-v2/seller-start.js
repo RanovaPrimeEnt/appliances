@@ -10,8 +10,12 @@ $('benefitGrid').onclick=e=>{const b=e.target.closest('[data-benefit]');if(!b)re
 function route(){const register=location.hash==='#register';$('welcome').hidden=register;$('registration').hidden=!register;window.scrollTo(0,0)}document.querySelectorAll('[data-register]').forEach(b=>b.onclick=()=>{location.hash='register'});$('back').onclick=()=>{location.hash=''};window.addEventListener('hashchange',route);route();
 let destination = null, session = null, busy = false, pending = null;
 const validPhone = value => /^\+[1-9]\d{7,14}$/.test(value);
+function sellerScopedKey(name,userId=session?.user?.id) { return 'ranovaSeller:' + (userId || 'guest') + ':' + name; }
 function readSaved(key) { try { return JSON.parse(sessionStorage.getItem(key) || 'null'); } catch { return null; } }
 function save(key, value) { try { sessionStorage.setItem(key, JSON.stringify(value)); } catch {} }
+function clearLegacySellerSession() {
+  ['ranovaSellerApplicationRef','ranovaSellerApplicationPhone','ranovaSellerApplicationEmail','ranovaSellerApplicationUserId'].forEach(k=>{try{sessionStorage.removeItem(k)}catch{}});
+}
 function phone() {
   const n = $('phone').value.replace(/[\s()-]/g, '');
   return n.startsWith('+') || $('dial').value === 'other' ? n : $('dial').value + n.replace(/^0+/, '');
@@ -76,19 +80,20 @@ async function createAndLinkSellerApplication(currentSession,d){
     supplier_type:$('type').value,
     categories:$('categories').value.trim()
   };
-  const saved=pending||readSaved('ranova_new_seller_application');
+  const saved=pending||readSaved(sellerScopedKey('pendingApplication',currentSession.user.id));
   pending=saved?.user===currentSession.user.id&&saved.phone===d.phone&&typeof saved.ref==='string'?saved:null;
   if(!pending){
     const out=await api('ranova-seller-apply',body,currentSession);
     if(!out.application_ref)throw Error('The application service did not return a reference. Please contact RANOVA support before submitting again.');
     pending={user:currentSession.user.id,phone:d.phone,ref:out.application_ref};
-    save('ranova_new_seller_application',pending);
+    save(sellerScopedKey('pendingApplication',currentSession.user.id),pending);
   }
   try{
-    sessionStorage.setItem('ranovaSellerApplicationRef',pending.ref);
-    sessionStorage.setItem('ranovaSellerApplicationPhone',d.phone);
-    sessionStorage.setItem('ranovaSellerApplicationEmail',currentSession.user.email||'');
-    sessionStorage.setItem('ranovaSellerApplicationUserId',currentSession.user.id);
+    sessionStorage.setItem(sellerScopedKey('applicationRef',currentSession.user.id),pending.ref);
+    sessionStorage.setItem(sellerScopedKey('applicationPhone',currentSession.user.id),d.phone);
+    sessionStorage.setItem(sellerScopedKey('applicationEmail',currentSession.user.id),currentSession.user.email||'');
+    sessionStorage.setItem('ranovaSeller:lastUser',currentSession.user.id);
+    clearLegacySellerSession();
   }catch{}
   await api('ranova-seller-link',{application_ref:pending.ref,phone:d.phone},currentSession);
   continueSeller(pending.ref,true);
@@ -143,7 +148,14 @@ async function initialize() {
     const {data, error} = await sb.auth.getSession();
     if (error) throw error;
     session = data.session;
-    if (session) { fill(session.user); setSignedIn(session.user); }
+    if (session) {
+      try{
+        const previous=sessionStorage.getItem('ranovaSeller:lastUser');
+        if(previous&&previous!==session.user.id)clearLegacySellerSession();
+        sessionStorage.setItem('ranovaSeller:lastUser',session.user.id);
+      }catch{}
+      fill(session.user); setSignedIn(session.user);
+    }
     if (authReturn) {
       location.hash = 'register';
       route();
