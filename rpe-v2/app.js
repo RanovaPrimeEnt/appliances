@@ -1813,14 +1813,22 @@ function sellerTrackingHtml(seller){
   '</section>';
 }
 async function hydrateOrderTracking(order,overlay){
-  const host=overlay.querySelector("[data-live-order-tracking]");if(!host)return;
+  const host=overlay.querySelector("[data-live-order-tracking]");
+  if(!host||!overlay.isConnected)return;
+  const requestId=String(Date.now())+"-"+Math.random().toString(36).slice(2);
+  host.dataset.requestId=requestId;
+  host.setAttribute("aria-live","polite");
+  host.innerHTML='<small style="display:block;color:var(--muted);padding:8px 0">Checking live delivery tracking…</small>';
   try{
     const out=await orderStatusApi(order.order_number);
+    if(!host.isConnected||host.dataset.requestId!==requestId)return;
     const sellers=Array.isArray(out.seller_orders)?out.seller_orders:[];
-    if(!sellers.length){host.remove();return}
-    host.innerHTML='<h4 style="margin:14px 0 8px">Live delivery tracking</h4>'+sellers.map(sellerTrackingHtml).join("");
-  }catch{
-    host.remove();
+    host.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px"><h4 style="margin:0">Live delivery tracking</h4><button type="button" class="btn" data-refresh-tracking aria-label="Refresh tracking">Refresh</button></div>'+
+      (sellers.length?sellers.map(sellerTrackingHtml).join(""):'<p style="color:var(--muted);font-size:12px">No seller shipment is available yet. Tracking updates will appear after the seller creates a shipment.</p>')+
+      '<small style="display:block;color:var(--muted)">Last checked: '+esc(dateTimeLabel(new Date().toISOString()))+'</small>';
+  }catch(error){
+    if(!host.isConnected||host.dataset.requestId!==requestId)return;
+    host.innerHTML='<div role="status" style="margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:12px"><b>Tracking temporarily unavailable</b><small style="display:block;color:var(--muted);margin:5px 0 10px">Your order is still saved. '+esc(error?.message||"Could not load live updates.")+'</small><button type="button" class="btn" data-refresh-tracking>Try again</button></div>';
   }
 }
 function openOrder(id){
@@ -1835,6 +1843,7 @@ function openOrder(id){
   document.body.appendChild(overlay);
   hydrateOrderTracking(o,overlay);
   overlay.addEventListener("click",e=>{
+    if(e.target.closest("[data-refresh-tracking]")){hydrateOrderTracking(o,overlay);return;}
     if(e.target===overlay||e.target.closest("[data-close-order]"))overlay.remove();
     if(e.target.closest("[data-order-help]"))contactRpe("Order support","Hello Ranova Prime Enterprise, I need help with order "+o.order_number+".");
   })
