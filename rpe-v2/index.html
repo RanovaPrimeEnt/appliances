@@ -335,6 +335,31 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
   body:not(.ranova-auth-only) .main {width:calc(100% - 96px)!important}
 }
 </style>
+<style id="ranova-product-image-clarity">
+/* Product-first imaging: preserve full shape and avoid aggressive cropping. */
+#marketplaceHomePanel .market-product-card,
+#marketplaceHomePanel .product {background:#fff;overflow:hidden}
+#marketplaceHomePanel .market-product-card img,
+#marketplaceHomePanel .product img,
+#marketplaceHomePanel .market-product-placeholder {
+  display:block;width:100%;height:auto;aspect-ratio:1/1;
+  object-fit:contain!important;object-position:center center;
+  background:#fff!important;
+}
+#marketplaceHomePanel .market-product-card img,
+#marketplaceHomePanel .product img {image-rendering:auto}
+@media (min-width:1024px) {
+  #marketplaceHomePanel .market-product-card img,
+  #marketplaceHomePanel .product img {
+    aspect-ratio:1/1;min-height:240px;max-height:380px;
+    padding:8px;box-sizing:border-box;
+  }
+  #marketplaceHomePanel .market-product-card,
+  #marketplaceHomePanel .product {border:1px solid #e6e8e7!important;box-shadow:0 2px 12px rgba(0,0,0,.045)}
+  #marketplaceHomePanel .market-product-card:hover,
+  #marketplaceHomePanel .product:hover {box-shadow:0 7px 24px rgba(0,0,0,.09);border-color:#dadfdd!important}
+}
+</style>
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
