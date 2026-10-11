@@ -96,7 +96,7 @@ async function createAndLinkSellerApplication(currentSession,d){
     clearLegacySellerSession();
   }catch{}
   await api('ranova-seller-link',{application_ref:pending.ref,phone:d.phone},currentSession);
-  continueSeller(pending.ref,false);
+  continueSeller(pending.ref,true);
   return true;
 }
 document.querySelectorAll('[name=method]').forEach(el => el.onchange = () => {
