@@ -334,7 +334,7 @@ function openMarketplaceStore(store){
   if(!store?.slug)return showToast("Store unavailable");
   rememberRecentStore(store);
   try{localStorage.setItem(SELLER_STORE_FAST_CACHE_PREFIX+store.slug,JSON.stringify({t:Date.now(),store,products:marketSellerProducts.filter(p=>p.store_id===store.id)}))}catch{}
-  location.href="../all/seller-store.html?store="+encodeURIComponent(store.slug);
+  location.href="../all/seller-store.html?ui=20261011-store2&store="+encodeURIComponent(store.slug);
 }
 function bindStoreCards(host){
   host?.querySelectorAll("[data-store-open]").forEach(btn=>btn.onclick=()=>{
@@ -2139,7 +2139,7 @@ function sellerStoreProductUrl(product){
   if(!product)return null;
   const store=primeSellerStoreCache(product)||marketStores.find(s=>s.id===product.store_id);
   if(!store?.slug)return null;
-  return "../all/seller-store.html?store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(product.id);
+  return "../all/seller-store.html?ui=20261011-store2&store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(product.id);
 }
 function matchingSellerProduct(product){
   if(!product)return null;
@@ -2316,7 +2316,7 @@ function prefetchDocument(url){
   }catch{}
 }
 function sellerStoreUrlFromSlug(slug){
-  return slug?"../all/seller-store.html?store="+encodeURIComponent(slug):"";
+  return slug?"../all/seller-store.html?ui=20261011-store2&store="+encodeURIComponent(slug):"";
 }
 function shareMarketplaceProduct(){
   const p=marketProductCurrent;if(!p)return;
@@ -2682,7 +2682,7 @@ document.addEventListener("click",async e=>{
     finally{pay.disabled=false;pay.textContent="Pay Now"}
     return
   }
-  const product=e.target.closest("[data-pay-product]");if(product){const p=toPayRecommendations.find(x=>x.id===product.dataset.payProduct);if(!p)return;const store=toPayStores.find(s=>s.id===p.store_id);if(store?.slug){rememberRecentStore(store);location.href="../all/seller-store.html?store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(p.id)}else showToast("This seller store is not available right now.");return}
+  const product=e.target.closest("[data-pay-product]");if(product){const p=toPayRecommendations.find(x=>x.id===product.dataset.payProduct);if(!p)return;const store=toPayStores.find(s=>s.id===p.store_id);if(store?.slug){rememberRecentStore(store);location.href="../all/seller-store.html?ui=20261011-store2&store="+encodeURIComponent(store.slug)+"&product="+encodeURIComponent(p.id)}else showToast("This seller store is not available right now.");return}
 });
 
 // RANOVA in-app buyer messenger 2026-09-29
@@ -2970,7 +2970,7 @@ function renderMessageThread({preserveScroll=false}={}){
   if(!preserveScroll||wasNearBottom)host.scrollTop=host.scrollHeight;else host.scrollTop=previousTop;
 }
 $("messageBack").onclick=()=>{$("messagesPanel").classList.remove("chat-open");document.body.classList.remove("ranova-chat-open");clearChatViewport();messageCurrent=null;messageRefreshQueued=false;clearMsgAction();stopMessageRealtime();clearInterval(messagePoll);loadMessageConversations().catch(()=>{})};
-$("messageStoreButton").onclick=()=>{if(messageCurrent?.store?.slug){rememberRecentStore(messageCurrent.store);location.href="../all/seller-store.html?store="+encodeURIComponent(messageCurrent.store.slug)}};
+$("messageStoreButton").onclick=()=>{if(messageCurrent?.store?.slug){rememberRecentStore(messageCurrent.store);location.href="../all/seller-store.html?ui=20261011-store2&store="+encodeURIComponent(messageCurrent.store.slug)}};
 $("messageSearchButton").onclick=()=>{const q=prompt("Search store conversations:","");if(q==null)return;const s=q.trim().toLowerCase();document.querySelectorAll("#messageConversationList .msg-row").forEach(row=>{row.style.display=!s||row.textContent.toLowerCase().includes(s)?"grid":"none"})};
 
 const msgEmojiGroups={
