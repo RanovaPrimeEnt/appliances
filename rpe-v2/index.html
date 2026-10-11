@@ -501,6 +501,39 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
   #marketPromoGrid .mh-promo h3 {font-size:12px!important}
 }
 </style>
+<style id="ranova-marketplace-toolbar-polish">
+/* Desktop discovery controls, following the centered catalogue width. */
+.market-quicklinks{display:flex;gap:10px;overflow-x:auto;padding:10px 12px 14px;scrollbar-width:none}
+.market-quicklink{display:flex;align-items:center;gap:8px;flex:none;color:#39423e}
+.market-quicklink-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#f5f6f5;color:#55645b}
+.market-quicklink-icon svg{width:19px;height:19px}
+.market-quicklink small{font-size:11px;white-space:nowrap}
+@media (min-width:1024px){
+  #marketplaceHomePanel .market-tabs{padding:12px 16px 3px!important;border-bottom:1px solid #eff0ef;gap:10px}
+  #marketplaceHomePanel .market-tab{font-size:15px!important;font-weight:650!important;min-height:43px;padding:8px 10px 14px!important}
+  #marketplaceHomePanel .market-tab.active{font-weight:800!important}
+  #marketplaceHomePanel .market-tab.active::after{left:23%;right:23%;height:3px}
+  #marketplaceHomePanel .market-search-wrap{padding:14px 20px 4px}
+  #marketplaceHomePanel .market-search{margin:0!important;height:52px!important;border:1px solid #ccd3cf!important;border-radius:13px!important;box-shadow:0 1px 5px rgba(25,43,32,.035)}
+  #marketplaceHomePanel .market-search:focus-within{border-color:#f47a30!important;box-shadow:0 0 0 3px rgba(242,111,34,.10)}
+  #marketplaceHomePanel .market-search input{font-size:15px!important;padding:0 13px!important}
+  #marketplaceHomePanel .market-search>span{font-size:22px;padding-left:17px!important;color:#596861}
+  #marketplaceHomePanel .market-search button{font-size:14px!important;padding:0 30px!important;background:#ff6529!important}
+  #marketplaceHomePanel .market-filter-row{gap:10px!important;padding:12px 20px!important;overflow-x:auto}
+  #marketplaceHomePanel .market-filter-row select{flex:0 1 auto!important;min-width:160px!important;max-width:220px!important}
+  #marketplaceHomePanel .market-filter-row select,
+  #marketplaceHomePanel .market-filter-btn,
+  #marketplaceHomePanel .market-clear-btn{height:41px!important;min-height:41px!important;border-radius:10px!important;font-size:13px!important;font-weight:650!important;padding-left:13px!important;padding-right:30px!important;background-color:#fafbfa!important}
+  #marketplaceHomePanel .market-filter-btn,
+  #marketplaceHomePanel .market-clear-btn{padding-right:14px!important}
+  #marketplaceHomePanel .market-clear-btn{background:#fff!important;color:#e96122!important}
+  #marketplaceHomePanel .market-quicklinks{gap:12px;padding:10px 20px 17px!important;justify-content:space-between;flex-wrap:wrap;border-top:1px solid #f1f2f1}
+  #marketplaceHomePanel .market-quicklink{gap:9px}
+  #marketplaceHomePanel .market-quicklink-icon{width:40px;height:40px;border-radius:12px;background:#fff6ef;color:#df702f}
+  #marketplaceHomePanel .market-quicklink-icon svg{width:21px;height:21px}
+  #marketplaceHomePanel .market-quicklink small{font-size:12px!important;font-weight:600}
+}
+</style>
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
@@ -597,12 +630,12 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
         <button id="marketMoqFilter" class="market-filter-btn" type="button" aria-pressed="false">MOQ 1</button>
         <button id="marketClearFilters" class="market-clear-btn" type="button">Reset</button>
       </div>
-      <div style="display:flex;gap:14px;overflow:auto;padding:8px 12px 12px">
-        <span style="min-width:62px;text-align:center">🏭<small style="display:block">Top Factories</small></span>
-        <span style="min-width:62px;text-align:center">✨<small style="display:block">Custom Orders</small></span>
-        <span style="min-width:62px;text-align:center">🏢<small style="display:block">Official Stores</small></span>
-        <span style="min-width:62px;text-align:center">🆕<small style="display:block">New Products</small></span>
-        <span style="min-width:62px;text-align:center">💬<small style="display:block">Bulk Quotes</small></span>
+      <div class="market-quicklinks" aria-label="Marketplace highlights">
+        <span class="market-quicklink"><span class="market-quicklink-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l6 3V5l6 4V3l6 3v15H3Z"/><path d="M7 16h2m4 0h2m3 0h1"/></svg></span><small>Top Factories</small></span>
+        <span class="market-quicklink"><span class="market-quicklink-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="m8 11 3 3 5-5"/></svg></span><small>Custom Orders</small></span>
+        <span class="market-quicklink"><span class="market-quicklink-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h3m2 0h3M8 12h3m2 0h3M8 16h8"/></svg></span><small>Official Stores</small></span>
+        <span class="market-quicklink"><span class="market-quicklink-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 12h8m-4-4v8"/></svg></span><small>New Products</small></span>
+        <span class="market-quicklink"><span class="market-quicklink-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v12H8l-4 3V5Z"/><path d="M8 10h8m-8 4h5"/></svg></span><small>Bulk Quotes</small></span>
       </div>
     </div>
     <div id="marketPromoGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px"></div>
