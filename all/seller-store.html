@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>RANOVA Seller Store</title>
 <meta name="theme-color" content="#116a52">
-<meta name="description" content="Shop products from a verified RANOVA marketplace seller.">
+<meta name="description" content="Browse products from a RANOVA marketplace store.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -712,6 +712,7 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
   .banner:after{height:44px}
 }
 .product .price small{color:var(--muted);font-weight:600}.cart-unit-price{font-size:14px}.detail-price{font-size:20px}
+
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -726,6 +727,85 @@ body{padding-bottom:84px}
 .customer-store-bottom-nav button:active,.customer-store-bottom-nav a:active{transform:scale(.97)}
 @media(min-width:760px){.customer-store-bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(720px,calc(100% - 36px));border:1px solid #e9e9e9;border-bottom:0;border-radius:18px 18px 0 0}}
 </style>
+<style id="ranova-storefront-standard">
+/* RANOVA storefront polish: product-first layout and consistent store identity */
+:root{--orange:#f45b13}
+html{scroll-padding-top:84px}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+.hero{background:#fff}
+.banner{background:#eaf3ee}
+.store-copy h1{letter-spacing:-.025em;line-height:1.12;overflow-wrap:anywhere}
+.store-copy p{font-size:13px}
+.verified{background:#eaf3ef;color:#235745;letter-spacing:.035em}
+.products{padding:26px 0 44px}
+.products .head{align-items:center}
+.products .head h2{font-size:clamp(22px,2.8vw,29px);letter-spacing:-.025em;color:#173d32}
+.products .head p{font-size:12px;line-height:1.5}
+.search{border-radius:12px;min-height:46px;font-size:14px}
+.search:focus-visible,.store-category-btn:focus-visible,.product button:focus-visible,.contact a:focus-visible{
+ outline:3px solid #ffb484;outline-offset:2px;
+}
+.store-category-nav{padding:6px 0 16px;gap:8px}
+.store-category-btn{font-size:12px;min-height:42px;padding:9px 15px;white-space:nowrap}
+.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch}
+.product{min-width:0;border-radius:14px;box-shadow:0 3px 13px rgba(22,54,43,.035)}
+.product .img{height:auto;aspect-ratio:1/1;background:#f7f9f8}
+.product .img img{object-fit:contain;padding:10px}
+.product .copy{padding:12px}
+.product .copy h3{font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.product .price{font-size:16px;color:#f45b13;overflow-wrap:anywhere}
+.product .buy,.product .contact-btn{min-height:44px;border-radius:10px;font-size:12px}
+.about{padding:24px 0 8px;border-top:1px solid #e5eae7}
+.about-grid{grid-template-columns:1.4fr 1fr 1fr}
+.info{padding:19px;border-radius:14px}
+.info b{font-size:14px;line-height:1.45}
+.info span,.info p{font-size:12px;line-height:1.6}
+.trust{padding:12px 0 38px}
+.trust-head p{font-size:12px;line-height:1.5}
+.trust-metric span{font-size:10px}
+.trust-metric b{font-size:13px}
+@media(max-width:900px){
+ .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .about-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .about-grid .info:first-child{grid-column:1/-1}
+}
+@media(max-width:620px){
+ .top .wrap{height:56px}
+ .store-head{grid-template-columns:70px minmax(0,1fr);gap:12px;align-items:center;margin-top:-32px;padding-bottom:15px}
+ .logo{width:70px;height:70px;border-radius:17px;border-width:3px}
+ .store-copy h1{font-size:22px;line-height:1.2;margin:7px 0 4px}
+ .store-copy p{font-size:12px}
+ .verified{font-size:9px;padding:5px 8px}
+ .contact{grid-column:1/-1;justify-content:stretch;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .contact a{min-width:0;min-height:44px;padding:0 9px;font-size:12px;border-radius:11px;text-align:center}
+ .products{padding:20px 0 30px}
+ .products .head{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:8px}
+ .products .head h2{font-size:22px}
+ .products .head p{font-size:12px}
+ .search{width:100%;height:46px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}
+ .product .img{height:auto;aspect-ratio:1/1}
+ .product .copy{padding:10px}
+ .product .copy h3{font-size:13px;line-height:1.35}
+ .product .price{font-size:15px}
+ .product .buy,.product .contact-btn{font-size:11px;min-height:44px}
+ .about-grid{grid-template-columns:1fr;gap:9px}
+ .about-grid .info:first-child{grid-column:auto}
+ .info{padding:16px}
+ .trust-card{padding:14px}
+ .trust-head h2{font-size:18px}
+ .trust-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .category-divider{padding-top:14px}
+ .category-divider h3{font-size:16px}
+}
+@media(max-width:355px){
+ .grid{gap:6px!important}
+ .product .copy{padding:8px}
+ .store-copy h1{font-size:20px}
+}
+
+
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -735,10 +815,11 @@ body{padding-bottom:84px}
     <div id="banner" class="banner"></div>
     <div class="wrap store-head">
       <div id="logo" class="logo">R</div>
-      <div class="store-copy"><span class="verified">✓ VERIFIED RANOVA SELLER</span><h1 id="storeName">Seller store</h1><p id="tagline"></p></div>
+      <div class="store-copy"><span class="verified">RANOVA MARKETPLACE STORE</span><h1 id="storeName">Seller store</h1><p id="tagline"></p></div>
       <div id="contact" class="contact"></div>
     </div>
   </section>
+  <section class="products"><div class="wrap"><div class="head"><div><h2>Shop this store</h2><p>Explore products, browse categories and find what you need.</p></div><input id="search" class="search" type="search" aria-label="Search products in this store" placeholder="Search products in this store"></div><div id="categoryNav" class="store-category-nav"></div><div id="grid" class="grid"></div></div></section>
   <section class="about"><div class="wrap about-grid">
     <div class="info"><b>About this store</b><p id="description"></p></div>
     <div class="info"><b>Location</b><span id="location"></span><b style="margin-top:10px">Minimum order</b><span id="minimum"></span></div>
@@ -749,7 +830,6 @@ body{padding-bottom:84px}
     <div id="publicTrustMetrics" class="trust-metrics"></div>
     <div id="publicReviews" class="review-list"><div class="empty">No published verified reviews yet.</div></div>
   </div></div></section>
-  <section class="products"><div class="wrap"><div class="head"><div><h2>Products by category</h2><p>Browse the same RANOVA Prime catalogue categories used on the main website.</p></div><input id="search" class="search" placeholder="Search this store"></div><div id="categoryNav" class="store-category-nav"></div><div id="grid" class="grid"></div></div></section>
   <footer class="footer"><div class="wrap">RANOVA marketplace seller storefront • <a href="../rpe-v2/?home=1">Browse the main marketplace</a></div></footer>
 </div>
 
@@ -1203,7 +1283,7 @@ function paintFastStoreShell(deepProduct){
   try{savedProducts=new Set(JSON.parse(localStorage.getItem("ranova_saved_store_"+store.id)||"[]"))}catch(e){savedProducts=new Set()}
   loadCart();
   el("storeName").textContent=store.store_name||"Seller store";
-  el("tagline").textContent=store.tagline||"Verified seller on RANOVA";
+  el("tagline").textContent=store.tagline||"Shop products from this RANOVA store";
   el("drawerStoreName").textContent=store.store_name||"Seller store";
   el("description").textContent=store.description||"Browse products from this RANOVA seller.";
   el("location").textContent=store.business_location||store.country_name||"Seller location";
@@ -1239,7 +1319,7 @@ async function boot(){
   products=pr.data||[];
   try{savedProducts=new Set(JSON.parse(localStorage.getItem("ranova_saved_store_"+store.id)||"[]"))}catch(e){savedProducts=new Set()}
   await loadCountries();loadCart();await hydrateBuyerAccount();await loadTrust();
-  el("storeName").textContent=store.store_name;el("tagline").textContent=store.tagline||"Verified seller on RANOVA";el("drawerStoreName").textContent=store.store_name;
+  el("storeName").textContent=store.store_name;el("tagline").textContent=store.tagline||"Shop products from this RANOVA store";el("drawerStoreName").textContent=store.store_name;
   el("description").textContent=store.description||"Contact this seller for business information.";
   el("location").textContent=store.business_location||"Confirm with seller";el("minimum").textContent=store.minimum_order_note||"Varies by product";
   el("fulfilment").textContent=store.fulfilment_summary||"Confirm with seller";el("returns").textContent=store.return_policy_summary||"Confirm applicable terms with seller before purchase.";
