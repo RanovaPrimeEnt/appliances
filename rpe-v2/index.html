@@ -458,6 +458,49 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
   #marketplaceHomePanel .product img {transition:none!important;transform:none!important}
 }
 </style>
+<style id="ranova-desktop-featured-sections">
+/* Compact above-the-fold feature tiles: four sections, two well-framed images each. */
+@media screen and (min-width:1024px) {
+  #marketPromoGrid {
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:12px!important;
+    padding:14px 14px 16px!important;
+    align-items:stretch;
+  }
+  #marketPromoGrid .mh-promo {
+    min-width:0;background:#fff!important;
+    border:1px solid #e8ebe9!important;border-radius:12px!important;
+    padding:11px!important;box-shadow:0 2px 8px rgba(25,37,30,.035);
+  }
+  #marketPromoGrid .mh-promo h3 {
+    font-size:14px!important;font-weight:750!important;letter-spacing:-.15px;
+    line-height:1.3!important;color:#24332b!important;margin:0 0 10px!important;
+  }
+  #marketPromoGrid .mh-mini {
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;align-items:start;
+  }
+  #marketPromoGrid .mh-mini button {min-width:0!important;overflow:hidden}
+  #marketPromoGrid .mh-mini img {
+    width:100%!important;height:auto!important;aspect-ratio:1/1!important;
+    object-fit:contain!important;object-position:center!important;
+    background:#f8f9f8!important;border-radius:8px!important;
+    padding:5px!important;box-sizing:border-box;
+  }
+  #marketPromoGrid .mh-mini button>div {
+    font-size:12px!important;line-height:1.35!important;margin-top:7px!important;
+    color:#ee641f!important;font-weight:750!important;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  #marketPromoGrid .mh-mini button:hover img {background:#f1f4f2!important}
+}
+@media screen and (min-width:1024px) and (max-width:1120px) {
+  #marketPromoGrid {gap:9px!important;padding-inline:10px!important}
+  #marketPromoGrid .mh-promo {padding:8px!important}
+  #marketPromoGrid .mh-promo h3 {font-size:12px!important}
+}
+</style>
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
