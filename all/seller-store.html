@@ -713,6 +713,21 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
 }
 .product .price small{color:var(--muted);font-weight:600}.cart-unit-price{font-size:14px}.detail-price{font-size:20px}
 
+</style>
+<link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
+<script defer src="./ranova-typography.js?v=20260930-5"></script>
+
+<style id="customer-store-bottom-nav-style">
+:root{--customer-nav-orange:#f47a00}
+body{padding-bottom:84px}
+.customer-store-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:160;height:76px;padding:7px 10px max(7px,env(safe-area-inset-bottom));background:#fff;border-top:1px solid #ececec;box-shadow:0 -3px 16px rgba(0,0,0,.07);display:grid;grid-template-columns:repeat(4,1fr);align-items:center}
+.customer-store-bottom-nav a,.customer-store-bottom-nav button{border:0;background:transparent;color:#171717;text-decoration:none;height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:2px 6px;border-radius:12px;font:500 12px/1 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;position:relative}
+.customer-store-bottom-nav svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8}
+.customer-store-bottom-nav a.home{color:var(--customer-nav-orange)}
+.customer-store-bottom-nav button:active,.customer-store-bottom-nav a:active{transform:scale(.97)}
+@media(min-width:760px){.customer-store-bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(720px,calc(100% - 36px));border:1px solid #e9e9e9;border-bottom:0;border-radius:18px 18px 0 0}}
+</style>
+<style id="ranova-storefront-standard">
 /* RANOVA storefront polish: product-first layout and consistent store identity */
 :root{--orange:#f45b13}
 html{scroll-padding-top:84px}
@@ -789,19 +804,7 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
  .store-copy h1{font-size:20px}
 }
 
-</style>
-<link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
-<script defer src="./ranova-typography.js?v=20260930-5"></script>
 
-<style id="customer-store-bottom-nav-style">
-:root{--customer-nav-orange:#f47a00}
-body{padding-bottom:84px}
-.customer-store-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:160;height:76px;padding:7px 10px max(7px,env(safe-area-inset-bottom));background:#fff;border-top:1px solid #ececec;box-shadow:0 -3px 16px rgba(0,0,0,.07);display:grid;grid-template-columns:repeat(4,1fr);align-items:center}
-.customer-store-bottom-nav a,.customer-store-bottom-nav button{border:0;background:transparent;color:#171717;text-decoration:none;height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:2px 6px;border-radius:12px;font:500 12px/1 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;position:relative}
-.customer-store-bottom-nav svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8}
-.customer-store-bottom-nav a.home{color:var(--customer-nav-orange)}
-.customer-store-bottom-nav button:active,.customer-store-bottom-nav a:active{transform:scale(.97)}
-@media(min-width:760px){.customer-store-bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(720px,calc(100% - 36px));border:1px solid #e9e9e9;border-bottom:0;border-radius:18px 18px 0 0}}
 </style>
 </head>
 <body>
