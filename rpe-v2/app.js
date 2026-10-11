@@ -1706,9 +1706,17 @@ async function placeMarketplaceCartOrder(){
   const country=$("marketCheckoutCountry").value,locationText=$("marketCheckoutLocation").value.trim(),method=$("marketCheckoutPayment").value;
   const network=$("marketCheckoutNetwork").value,payPhone=$("marketCheckoutPayPhone").value.trim(),note=$("marketCheckoutNote").value.trim();
   const msg=$("marketCheckoutMsg");
-  const fail=t=>{msg.textContent=t;msg.classList.remove("hide")};
-  if(!name||!phone||!country||!locationText)return fail("Complete your name, phone number, delivery country and delivery location.");
-  if(method==="Mobile Money"&&!payPhone)return fail("Enter the Mobile Money number for payment authorization.");
+  const fail=(t,field)=>{
+    msg.textContent=t;msg.classList.remove("hide");
+    if(field){field.setAttribute("aria-invalid","true");field.focus({preventScroll:true})}
+    const overlay=$("marketCheckoutOverlay");
+    const scrollBox=overlay?.querySelector(".rnv-checkout-card")||overlay;
+    if(scrollBox&&typeof scrollBox.scrollTo==="function")scrollBox.scrollTo({top:0,behavior:"smooth"});
+    msg.scrollIntoView({block:"nearest",behavior:"smooth"});
+    showToast(t);
+  };
+  if(!name||!phone||!country||!locationText)return fail("Complete your name, phone number, delivery country and delivery location.",!name?$("marketCheckoutName"):!phone?$("marketCheckoutPhone"):!country?$("marketCheckoutCountry"):$("marketCheckoutLocation"));
+  if(method==="Mobile Money"&&!payPhone)return fail("Enter the Mobile Money number for payment authorization.",$("marketCheckoutPayPhone"));
   const selected=selectedCartEntries();
   const items=selected.map(i=>i.kind==="market"
     ?({seller_product_id:i.product_id,quantity:i.quantity})
@@ -1735,7 +1743,9 @@ async function placeMarketplaceCartOrder(){
     const out=await res.json().catch(()=>({}));
     if(!res.ok||!out.ok)throw new Error(out.error||"Could not place the order.");
     if(out.order_ref&&out.buyer_access_code)try{localStorage.setItem("ranova_buyer_code_"+out.order_ref,String(out.buyer_access_code))}catch{}
-    const checkedOut=selectedCartEntries();
+    // The order exists once the API confirms success. Cart syncing must not
+    // prevent opening the payment screen or cause an accidental second order.
+    const checkedOut=selected;
     const touchedStores=new Set();
     checkedOut.forEach(i=>{
       if(i.kind==="market"){
@@ -1743,14 +1753,20 @@ async function placeMarketplaceCartOrder(){
         if(row&&row.items){delete row.items[i.product_id];touchedStores.add(i.store_id)}
       }
     });
-    for(const storeId of touchedStores){await persistMarketCartRow(storeId);clearMarketplaceCartDraft(storeId);announceShoppingChange("cart",storeId,null)}
-    const legacyIds=checkedOut.filter(i=>i.kind==="legacy").map(i=>i.id);
-    if(legacyIds.length&&cartId)await sb.from("cart_items").delete().eq("cart_id",cartId).in("id",legacyIds);
-    cartItems=cartItems.filter(i=>!legacyIds.includes(i.id));
-    checkedOut.forEach(i=>cartSelectedKeys.delete(cartItemKey(i)));
-    renderCart();closeMarketplaceCheckout();
-    await loadToPayOrders(false).catch(()=>{});
+    try{
+      for(const storeId of touchedStores){await persistMarketCartRow(storeId);clearMarketplaceCartDraft(storeId);announceShoppingChange("cart",storeId,null)}
+      const legacyIds=checkedOut.filter(i=>i.kind==="legacy").map(i=>i.id);
+      if(legacyIds.length&&cartId)await sb.from("cart_items").delete().eq("cart_id",cartId).in("id",legacyIds);
+      cartItems=cartItems.filter(i=>!legacyIds.includes(i.id));
+      checkedOut.forEach(i=>cartSelectedKeys.delete(cartItemKey(i)));
+      renderCart();
+    }catch(cartError){console.warn("Order created; cart sync will need refreshing",cartError)}
+    closeMarketplaceCheckout();
     showPanel("toPayPanel");
+    try{await loadToPayOrders(false)}catch(paymentListError){
+      console.warn("Order created; payment list refresh failed",paymentListError);
+      showToast("Order placed. Open To Pay to refresh your payment details.");
+    }
     showToast("Order placed. Continue to payment.");
   }catch(e){fail(e.message||"Could not place the order.")}
   finally{button.disabled=false;button.textContent=old}
