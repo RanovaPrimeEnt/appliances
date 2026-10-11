@@ -2665,15 +2665,18 @@ document.addEventListener("click",async e=>{
   const address=e.target.closest("[data-pay-address]");if(address){showPanel("addressPanel");return}
   const pay=e.target.closest("[data-pay-now]");if(pay){
     const order=toPayOrders.find(x=>x.id===pay.dataset.payNow);if(!order)return;
-    if(order.total==null){showToast("This order total is not ready for payment yet.");return}
+    const parent=order.parent_order||null;
+    const paymentRef=parent?.order_ref;
+    if(!paymentRef){showToast("This order is not linked to a payable customer order. Refresh To Pay.");return}
+    if(parent.total_payment==null||Number(parent.total_payment)<=0){showToast("The full order total is not ready for payment yet.");return}
     pay.disabled=true;pay.textContent="Opening secure payment…";
     try{
-      const out=await paymentApi({action:"initialize",order_ref:order.order_ref});
+      const out=await paymentApi({action:"initialize",order_ref:paymentRef});
       if(out.authorization_url){location.href=out.authorization_url;return}
       if(out.payment_mode==="manual_collection_account"){showManualPayment(out);return}
       if(out.payment_mode==="mobile_money_prompt"){
         showToast(out.display_text||"Check your phone and authorize the Mobile Money payment.");
-        watchPaymentStatus(out.order_ref||order.order_ref);
+        watchPaymentStatus(out.order_ref||paymentRef);
       }else showToast("Payment started securely.");
     }catch(err){showToast(err.message||"Could not start payment.")}
     finally{pay.disabled=false;pay.textContent="Pay Now"}
