@@ -670,6 +670,10 @@ setInterval(function(){if(document.visibilityState==="visible")renderSellerDocum
 
 async function refresh(){
   state=await api({action:"dashboard"});
+  if(state.linked&&state.application&&!state.store){
+    await api({action:"initialize_store"});
+    state=await api({action:"dashboard"});
+  }
   state.compliance_received_at=Date.now();
   renderSellerDocumentNotice();
   if(state.approved&&state.store_accessible===false){
