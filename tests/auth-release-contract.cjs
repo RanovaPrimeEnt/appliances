@@ -16,8 +16,8 @@ assert.doesNotMatch(app, /sb\.auth\.signUp\(\{phone,password/, 'customer phone s
 assert.doesNotMatch(app, /sb\.auth\.signInWithPassword\(\{phone,password/, 'customer phone login must not use disabled Supabase Phone provider');
 assert.match(app, /phoneLoginEmail\(phone\)/, 'phone/password accounts must use the RANOVA internal login identifier');
 assert.match(app, /directExistingAccountToSignIn/, 'duplicate accounts must route users back to sign in');
-assert.match(html, /app\.js\?v=20261004-v3a74/, 'HTML must reference the working pre-video auth release');
-assert.match(sw, /ranova-rpe-v2-shell-v74/, 'service worker cache must match the working auth release');
+assert.match(html, /app\.js\?v=20261011-payment88/, 'HTML must reference the current customer app release');
+assert.match(sw, /ranova-rpe-v2-shell-v75/, 'service worker cache must match the current customer release');
 assert.match(sellerApply, /authorization,apikey/, 'JWT-protected seller application endpoint must allow auth headers');
 
 console.log('RANOVA auth/release contract: PASS');
