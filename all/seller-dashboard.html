@@ -231,7 +231,9 @@ body.preapproval-workspace .side>a,
 body.preapproval-workspace #previewStore,
 body.preapproval-workspace [data-action="submit"],
 body.preapproval-workspace [data-action="pause"],
-body.preapproval-workspace [data-action="archive"]{display:none!important}
+body.preapproval-workspace [data-action="archive"],
+body.preapproval-workspace #publishStore,
+body.preapproval-workspace #activateStore{display:none!important}
 body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data-panel="products"]{display:block}
 </style>
 </head>
@@ -688,6 +690,7 @@ async function refresh(){
   if(state.approved){try{payoutChannels=await api({action:"payout_channels"})}catch(e){payoutChannels={banks:[],mobile_money:[],provider_configured:false}}}
   else payoutChannels={banks:[],mobile_money:[],provider_configured:false};
   renderOverview();fillStore();renderProducts();renderInventory();renderMyOrders();renderDelivery();renderTrust();renderFinance();renderHelpIssues();renderSellerActionCenter();renderRecentSellerActivity();renderSellerAttention();syncDraftNotices();
+  if(!state.approved)setPanel("store");
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
