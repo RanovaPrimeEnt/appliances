@@ -278,6 +278,26 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
 .rs-footer p{font-size:11px;color:#a4aaa6;margin:16px 0 0}
 @media (min-width:741px){.ranova-settings{border-left:1px solid #ececec;border-right:1px solid #ececec;min-height:75vh}}
 </style>
+<style id="ranova-desktop-marketplace-layout">
+/* Full-width desktop shopping layout; mobile and tablet retain their current design. */
+@media (min-width: 1024px) {
+  body:not(.ranova-auth-only) {background:#f4f5f4}
+  body:not(.ranova-auth-only) .shell {width:min(100%,1280px);max-width:1280px;margin-inline:auto;box-shadow:none;background:#f7f8f7}
+  body:not(.ranova-auth-only) .main {width:100%;max-width:1240px;margin:18px auto;padding-inline:20px}
+  body:not(.ranova-auth-only) .topbar-in {width:min(100% - 40px,1200px);max-width:1200px}
+  #marketplaceHomePanel .market-product-grid,
+  #marketplaceHomePanel .grid,
+  .home-products-card .grid,
+  #marketplaceHomePanel .market-discovery-grid {grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+  #marketplaceHomePanel .market-product-card,
+  #marketplaceHomePanel .product {min-width:0;border-radius:12px}
+  #marketplaceHomePanel .market-product-card img,
+  #marketplaceHomePanel .product img {width:100%;aspect-ratio:1/1;object-fit:cover}
+  #marketplaceHomePanel .market-product-grid {padding:14px 16px 24px}
+  .home-products-card .grid {gap:16px}
+  .ranova-settings {max-width:740px!important}
+}
+</style>
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
