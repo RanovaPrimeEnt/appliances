@@ -257,6 +257,24 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
 ::selection{background:#FFE1CC;color:#243936}
 </style>
   <link rel="stylesheet" href="./customer-pro.css?v=20261005-v3a75">
+<style>
+.ranova-settings{max-width:740px!important;margin:0 auto;padding:0 12px 96px!important;background:#f7f8f8!important;color:#233932}
+.rs-head{display:flex;gap:14px;align-items:center;padding:24px 8px 18px;background:#f7f8f8}
+.rs-head>button{width:42px;height:42px;border:0;border-radius:14px;background:white;font-size:32px;color:#253d35}
+.rs-head>div{flex:1}.rs-head small{color:#a06b3b;letter-spacing:1.8px;font-size:9px;font-weight:800}
+.rs-head h2{margin:1px 0;font-size:25px;font-weight:900;letter-spacing:-.6px}
+.rs-symbol{display:grid;place-items:center;border-radius:14px;background:#ff7429;color:white;width:38px;height:38px;font-weight:900}
+.rs-intro{background:linear-gradient(120deg,#173e32,#286751);color:white;border-radius:20px;padding:20px;margin:4px 0 18px}
+.rs-intro b{font-size:19px}.rs-intro p{margin:5px 0 0;font-size:12px;color:#deeee6}
+.rs-group{margin:16px 0;background:white;border:1px solid #e7ece9;border-radius:18px;overflow:hidden}
+.rs-group h3{margin:0;padding:16px 18px 7px;font-size:10px;color:#f06a24;letter-spacing:1.7px;font-weight:900}
+.rs-group>button,.rs-group>a{width:100%;display:flex;align-items:center;text-align:left;gap:14px;padding:14px 16px;border:0;border-bottom:1px solid #eff2f0;background:transparent;color:#243b34;text-decoration:none;min-height:67px}
+.rs-group>button:last-child,.rs-group>a:last-child{border-bottom:0}
+.rs-group .rs-icon{width:38px;height:38px;flex:none;border-radius:12px;background:#f3f6f3;display:grid;place-items:center;color:#245d49;font-size:20px;font-weight:700}
+.rs-group button>span:nth-child(2),.rs-group a>span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.rs-group b{font-size:14px;font-weight:750}.rs-group small{font-size:11px;color:#84918a}.rs-group em{font-size:22px;font-style:normal;color:#9ca9a3}
+.rs-footer{text-align:center;margin:23px 0}.rs-footer button{background:white;border:1px solid #f3d8c8;border-radius:15px;padding:15px 20px;width:100%;color:#dc6122;font-weight:900}.rs-footer small{display:block;margin-top:15px;color:#9aada2;font-size:11px}
+</style>
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
@@ -396,7 +414,7 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
   </div>
   <div class="account-tools">
     <a class="seller-switch" href="./seller-start.html"><span>Switch to Seller</span><b>›</b></a>
-    <button class="gear" data-panel="profilePanel" aria-label="Account settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.8-1L14.4 3h-4.8l-.4 3.1a8 8 0 0 0-1.8 1l-2.4-1-2 3.4L5.1 11a7 7 0 0 0 0 2L3 14.5l2 3.4 2.4-1a8 8 0 0 0 1.8 1l.4 3.1h4.8l.4-3.1a8 8 0 0 0 1.8-1l2.4 1 2-3.4-2.1-1.5c.1-.3.1-.7.1-1Z"/></svg></button>
+    <button class="gear" data-panel="settingsPanel" aria-label="Buyer settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.8-1L14.4 3h-4.8l-.4 3.1a8 8 0 0 0-1.8 1l-2.4-1-2 3.4L5.1 11a7 7 0 0 0 0 2L3 14.5l2 3.4 2.4-1a8 8 0 0 0 1.8 1l.4 3.1h4.8l.4-3.1a8 8 0 0 0 1.8-1l2.4 1 2-3.4-2.1-1.5c.1-.3.1-.7.1-1Z"/></svg></button>
   </div>
 </section>
 
@@ -544,6 +562,30 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
 <section id="addressPanel" class="panel card"><div class="section-head"><h2>Delivery Addresses</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><div id="addressList" class="list"></div><button id="addAddress" class="btn primary" style="margin-top:12px">Add address</button></div></section>
 <section id="notifPanel" class="panel card"><div class="section-head"><h2>Notifications</h2><button data-panel="homePanel">Back</button></div><div id="notifList" class="panel-body list"></div></section>
 <section id="helpPanel" class="panel card"><div class="section-head"><h2>Help Centre</h2><button data-panel="homePanel">Back</button></div><div class="panel-body list"><div class="list-row"><div><b>Ordering</b><small>Add products to your cart and send one order request.</small></div></div><div class="list-row"><div><b>Prices & availability</b><small>Until RPE publishes confirmed prices and stock, your order is sent as a quote request first.</small></div></div><div class="list-row"><div><b>Order updates</b><small>Your order status updates here automatically when RPE changes it.</small></div></div><div class="list-row"><div><b>Need a person?</b><small>Send your enquiry through RANOVA Messages.</small></div><button id="helpContact" class="btn primary">Message RANOVA</button></div></div></section>
+<section id="settingsPanel" class="panel ranova-settings">
+  <header class="rs-head"><button type="button" data-panel="homePanel" aria-label="Back to Me">‹</button><div><small>YOUR RANOVA ACCOUNT</small><h2>Settings</h2></div><span class="rs-symbol" aria-hidden="true">R</span></header>
+  <div class="rs-intro"><b>Make RANOVA yours.</b><p>Manage your account, shopping preferences and privacy in one place.</p></div>
+  <div class="rs-group"><h3>YOUR ACCOUNT</h3>
+    <button data-panel="profilePanel"><span class="rs-icon">◎</span><span><b>Personal information</b><small>Update your account details</small></span><em>›</em></button>
+    <button data-panel="addressPanel"><span class="rs-icon">⌖</span><span><b>Saved addresses</b><small>Manage delivery locations</small></span><em>›</em></button>
+    <button data-settings-action="password"><span class="rs-icon">◇</span><span><b>Security & password</b><small>Keep your account protected</small></span><em>›</em></button>
+    <button data-coming="Account switching"><span class="rs-icon">⇄</span><span><b>Switch account</b><small>More account options are planned</small></span><em>›</em></button>
+  </div>
+  <div class="rs-group"><h3>SHOPPING & PREFERENCES</h3>
+    <button data-panel="ordersPanel"><span class="rs-icon">▤</span><span><b>Orders & delivery</b><small>View purchases and tracking</small></span><em>›</em></button>
+    <button data-panel="notifPanel"><span class="rs-icon">♧</span><span><b>Notifications</b><small>Order and message updates</small></span><em>›</em></button>
+    <button data-coming="Payment preferences"><span class="rs-icon">◈</span><span><b>Payment preferences</b><small>Additional payment controls planned</small></span><em>›</em></button>
+    <button data-coming="Language preferences"><span class="rs-icon">文</span><span><b>Language</b><small>English · More languages planned</small></span><em>›</em></button>
+    <button data-coming="Region preferences"><span class="rs-icon">◎</span><span><b>Country & region</b><small>Ghana · Regional settings planned</small></span><em>›</em></button>
+  </div>
+  <div class="rs-group"><h3>HELP & TRUST</h3>
+    <button data-panel="helpPanel"><span class="rs-icon">?</span><span><b>Help & feedback</b><small>Get support from RANOVA</small></span><em>›</em></button>
+    <a href="../all/privacy.html"><span class="rs-icon">♢</span><span><b>Privacy policy</b><small>How we handle your information</small></span><em>›</em></a>
+    <a href="../all/terms.html"><span class="rs-icon">≡</span><span><b>Terms of service</b><small>Your rights and responsibilities</small></span><em>›</em></a>
+    <button data-settings-action="delete"><span class="rs-icon">×</span><span><b>Delete account</b><small>Request permanent account closure</small></span><em>›</em></button>
+  </div>
+  <div class="rs-footer"><button data-settings-action="logout" type="button">Log out of RANOVA</button><small>RANOVA · Shop with confidence</small></div>
+</section>
 <section id="profilePanel" class="panel card"><div class="section-head"><h2>My Details</h2><button data-panel="homePanel">Back</button></div><div class="panel-body"><label style="font-size:10px;font-weight:800">First name</label><input id="profileFirst" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Last name</label><input id="profileLast" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><label style="font-size:10px;font-weight:800">Phone</label><input id="profilePhone" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;margin:5px 0 12px"><button id="saveProfile" class="btn primary">Save details</button><div class="profile-actions"><button id="changePassword" class="btn soft" type="button">Change password</button><button id="installCustomerApp" class="btn soft" type="button">Install RANOVA App</button><button class="btn soft" data-panel="messagesPanel" type="button">Messages</button><a class="btn soft" href="../all/documents.html">Documents</a><a class="btn soft" href="../all/after-sales.html">Returns & Refunds</a><button id="signOut" class="btn outline" type="button">Sign out</button><button id="deleteAccount" class="btn outline" type="button" style="border-color:#b42318;color:#b42318">Delete account</button></div><div id="customerUpdateNote" class="notice hide" style="margin-top:10px"></div></div></section>
 </main>
 

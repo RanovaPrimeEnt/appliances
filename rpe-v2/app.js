@@ -410,6 +410,15 @@ document.addEventListener("click",e=>{
   if(s){e.preventDefault();orderFilter=s.dataset.orderFilter;panelPainted.delete("ordersPanel");showPanel("ordersPanel");return}
   const b=e.target.closest("[data-panel]");
   if(b){e.preventDefault();orderFilter=null;showPanel(b.dataset.panel);return}
+  const settingsAction=e.target.closest("[data-settings-action]");
+  if(settingsAction){
+    e.preventDefault();
+    const action=settingsAction.dataset.settingsAction;
+    if(action==="password")$("changePassword")?.click();
+    else if(action==="logout")$("signOut")?.click();
+    else if(action==="delete")$("deleteAccount")?.click();
+    return;
+  }
   const coming=e.target.closest("[data-coming]");
   if(coming){showToast(coming.dataset.coming+" is coming soon to RANOVA.")}
 });
