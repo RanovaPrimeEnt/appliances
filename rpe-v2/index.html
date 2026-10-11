@@ -373,6 +373,43 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
   body:not(.ranova-auth-only) .main {width:calc(100% - 36px)!important}
 }
 </style>
+<style id="ranova-desktop-balanced-catalogue">
+/* Desktop: intentional breathing room, readable four-column product gallery. */
+@media screen and (min-width:1024px) {
+  body:not(.ranova-auth-only) {background:#eeeeee!important}
+  body:not(.ranova-auth-only) .main {
+    width:min(calc(100% - 96px),1120px)!important;
+    max-width:1120px!important;margin:0 auto!important;
+    padding:18px 0 110px!important;
+  }
+  #marketplaceHomePanel .market-product-grid,
+  #marketplaceHomePanel .grid,
+  .home-products-card .grid {
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:clamp(10px,1.05vw,15px)!important;
+  }
+  #marketplaceHomePanel .market-product-grid {padding:12px 12px 22px!important}
+  #marketplaceHomePanel .market-product-card,
+  #marketplaceHomePanel .product {
+    min-width:0!important;border-radius:11px!important;
+    box-shadow:0 2px 10px rgba(25,36,31,.045)!important;
+  }
+  #marketplaceHomePanel .market-product-card img,
+  #marketplaceHomePanel .product img {
+    width:100%!important;height:auto!important;
+    min-height:0!important;max-height:none!important;
+    aspect-ratio:1/1!important;object-fit:contain!important;
+    padding:clamp(5px,.6vw,8px)!important;
+    background:#fff!important;
+  }
+  #marketplaceHomePanel .market-product-copy {padding:10px 11px 12px}
+  #marketplaceHomePanel .market-product-copy b {font-size:13px;line-height:1.4}
+  #marketplaceHomePanel .market-product-copy strong {font-size:14px}
+}
+@media screen and (min-width:1024px) and (max-width:1199px) {
+  body:not(.ranova-auth-only) .main {width:calc(100% - 48px)!important}
+}
+</style>
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
