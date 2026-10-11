@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v76";
+const CACHE="ranova-rpe-v2-shell-v77";
 const IMAGE_CACHE="ranova-rpe-v2-images-v1";
 const CORE=[
   "../all/fonts/inter-0.woff2",
