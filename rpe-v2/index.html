@@ -534,6 +534,53 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
   #marketplaceHomePanel .market-quicklink small{font-size:12px!important;font-weight:600}
 }
 </style>
+<style id="ranova-unified-desktop-product-cards">
+/* Shared product-card language across desktop catalogue, store, recommendations and saved items. */
+@media screen and (min-width:1024px) {
+  :is(.market-product-card,.product,.pay-product,.saved-love-card) {
+    border:1px solid #e8ece9!important;border-radius:13px!important;
+    background:#fff!important;overflow:hidden!important;
+    box-shadow:0 2px 9px rgba(24,37,30,.045)!important;
+    min-width:0;transition:box-shadow .18s ease,border-color .18s ease,transform .18s ease;
+  }
+  :is(.market-product-card,.product,.pay-product,.saved-love-card):hover {
+    border-color:#d6ded8!important;box-shadow:0 9px 23px rgba(24,37,30,.09)!important;
+    transform:translateY(-2px);
+  }
+  :is(.market-product-card,.product,.pay-product) img {
+    display:block;width:100%!important;height:auto!important;
+    min-height:0!important;max-height:none!important;
+    aspect-ratio:1/1!important;object-fit:contain!important;
+    object-position:center center!important;
+    background:#fff!important;padding:clamp(6px,.75vw,10px)!important;
+    box-sizing:border-box;
+  }
+  :is(.market-product-copy,.product-copy,.pay-product-copy) {
+    padding:11px 12px 13px!important;
+  }
+  .market-product-copy b,.product-copy h3,.pay-product-copy b {
+    display:-webkit-box!important;-webkit-box-orient:vertical;
+    -webkit-line-clamp:2;white-space:normal!important;
+    overflow:hidden!important;font-size:13px!important;
+    line-height:1.4!important;font-weight:700!important;
+    color:#21312a!important;min-height:36px;
+  }
+  :is(.market-product-copy,.product-copy,.pay-product-copy) small {
+    color:#79867e!important;line-height:1.4;
+  }
+  .market-product-copy strong,.product .ranova-product-price,.pay-product .price {
+    color:#ef651f!important;font-size:15px!important;font-weight:800!important;
+    line-height:1.35!important;
+  }
+  .market-product-card:focus-visible,.product:focus-within,.pay-product:focus-visible {
+    outline:2px solid #f37a31;outline-offset:2px;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  :is(.market-product-card,.product,.pay-product,.saved-love-card) {transition:none!important}
+  :is(.market-product-card,.product,.pay-product,.saved-love-card):hover {transform:none!important}
+}
+</style>
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
