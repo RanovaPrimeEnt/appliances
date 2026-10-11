@@ -70,7 +70,7 @@ function validDetails() {
   return d;
 }
 async function createAndLinkSellerApplication(currentSession,d){
-  if(await existingSeller(currentSession,true))return true;
+  if(await existingSeller(currentSession,false))return true;
   const body={
     business_name:d.company,
     contact_person:d.member,
@@ -96,7 +96,7 @@ async function createAndLinkSellerApplication(currentSession,d){
     clearLegacySellerSession();
   }catch{}
   await api('ranova-seller-link',{application_ref:pending.ref,phone:d.phone},currentSession);
-  continueSeller(pending.ref,true);
+  continueSeller(pending.ref,false);
   return true;
 }
 document.querySelectorAll('[name=method]').forEach(el => el.onchange = () => {

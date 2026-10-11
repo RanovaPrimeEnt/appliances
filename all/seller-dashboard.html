@@ -225,6 +225,17 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
+<style>
+body.preapproval-workspace .side .navbtn:not([data-panel="store"]):not([data-panel="products"]),
+body.preapproval-workspace .side>a,
+body.preapproval-workspace #previewStore,
+body.preapproval-workspace [data-action="submit"],
+body.preapproval-workspace [data-action="pause"],
+body.preapproval-workspace [data-action="archive"],
+body.preapproval-workspace #publishStore,
+body.preapproval-workspace #activateStore{display:none!important}
+body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data-panel="products"]{display:block}
+</style>
 </head>
 <body>
 <button data-install-seller type="button" style="position:fixed;right:12px;bottom:14px;z-index:100;border:0;border-radius:999px;background:#ff5a2d;color:#fff;padding:11px 14px;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.16);display:inline-flex;align-items:center;gap:7px">Install RANOVA Seller</button>
@@ -659,25 +670,36 @@ setInterval(function(){if(document.visibilityState==="visible")renderSellerDocum
 
 async function refresh(){
   state=await api({action:"dashboard"});
+  if(state.linked&&state.application&&!state.store){
+    await api({action:"initialize_store"});
+    state=await api({action:"dashboard"});
+  }
   state.compliance_received_at=Date.now();
   renderSellerDocumentNotice();
   if(state.approved&&state.store_accessible===false){
     el("gate").classList.remove("hide");el("gate").innerHTML='<div class="locked"><b>Upload the outstanding documents to restore store access.</b><p><a href="./seller-center.html#verificationChecklist">Open Seller Center →</a></p></div>';
     el("dashboard").classList.add("hide");return;
   }
-  if(!state.approved){
-    el("gate").classList.remove("hide");
-    el("gate").innerHTML='<div class="locked"><b>Seller verification is not approved yet.</b>RANOVA Admin must approve all three required documents and then approve your store before dashboard access is unlocked.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Return to Seller Center →</a></div></div>';
-    el("dashboard").classList.add("hide");return;
-  }
+  document.body.classList.toggle("preapproval-workspace",!state.approved);
   el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
-  try{payoutChannels=await api({action:"payout_channels"})}catch(e){payoutChannels={banks:[],mobile_money:[],provider_configured:false}}
+  if(!state.approved){
+    var prep=document.getElementById("preapprovalNotice");
+    if(!prep){
+      prep=document.createElement("div");prep.id="preapprovalNotice";prep.setAttribute("role","status");
+      prep.style.cssText="padding:15px 18px;border:1px solid #ffbf90;border-radius:14px;background:#fff7ed;margin:15px 0;color:#643e18;font-size:14px";
+      document.querySelector("#dashboard .main").prepend(prep);
+    }
+    prep.innerHTML='<b>Prepare your store</b><p>Save store information and private product drafts now. Your store cannot publish listings, accept orders or receive payouts until RANOVA Admin approves your verification.</p><a href="./seller-center.html#verificationChecklist">Complete seller verification →</a>';
+  }else{document.getElementById("preapprovalNotice")?.remove();}
+  if(state.approved){try{payoutChannels=await api({action:"payout_channels"})}catch(e){payoutChannels={banks:[],mobile_money:[],provider_configured:false}}}
+  else payoutChannels={banks:[],mobile_money:[],provider_configured:false};
   renderOverview();fillStore();renderProducts();renderInventory();renderMyOrders();renderDelivery();renderTrust();renderFinance();renderHelpIssues();renderSellerActionCenter();renderRecentSellerActivity();renderSellerAttention();syncDraftNotices();
+  if(!state.approved)setPanel("store");
 }
 function renderOverview(){
   var app=state.application||{},store=state.store||{},c=state.counts||{};
   el("welcomeName").textContent=store.store_name||app.business_name||"Seller Dashboard";
-  el("welcomeText").textContent=store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your store has been approved. Finish Set Up Your Store and prepare products for RANOVA review.";
+  el("welcomeText").textContent=!state.approved?"Prepare store details and product drafts. Selling unlocks after verification.":store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your store has been approved. Finish Set Up Your Store and prepare products for RANOVA review.";
   el("mProducts").textContent=c.products||0;el("mActive").textContent=c.active_products||0;el("mPending").textContent=c.pending_products||0;el("mMyOrders").textContent=c.open_orders||0;
   var unreadNotes=(state.notifications||[]).filter(function(n){return !n.read_at}).length,attention=(c.open_support_cases||0)+unreadNotes;
   el("supportNav").textContent=attention>0?"Help & Issues ("+attention+")":"Help & Issues";el("deliveryNav").textContent=(c.awaiting_delivery_confirmation||0)>0?"Delivery ("+(c.awaiting_delivery_confirmation||0)+")":"Delivery";
