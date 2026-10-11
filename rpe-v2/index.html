@@ -351,13 +351,26 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
 @media (min-width:1024px) {
   #marketplaceHomePanel .market-product-card img,
   #marketplaceHomePanel .product img {
-    aspect-ratio:1/1;min-height:240px;max-height:380px;
-    padding:8px;box-sizing:border-box;
+    aspect-ratio:1/1;min-height:0;max-height:none;
+    padding:clamp(5px,.6vw,10px);box-sizing:border-box;
   }
   #marketplaceHomePanel .market-product-card,
   #marketplaceHomePanel .product {border:1px solid #e6e8e7!important;box-shadow:0 2px 12px rgba(0,0,0,.045)}
   #marketplaceHomePanel .market-product-card:hover,
   #marketplaceHomePanel .product:hover {box-shadow:0 7px 24px rgba(0,0,0,.09);border-color:#dadfdd!important}
+}
+</style>
+<style id="ranova-balanced-desktop-cards">
+@media (min-width:1024px) {
+  body:not(.ranova-auth-only) .main {max-width:1320px!important;width:calc(100% - 56px)!important}
+  #marketplaceHomePanel .market-product-grid,
+  #marketplaceHomePanel .grid,.home-products-card .grid {gap:clamp(10px,1vw,16px)!important}
+  #marketplaceHomePanel .market-product-card img,
+  #marketplaceHomePanel .product img {height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:1/1;object-fit:contain!important}
+  #marketplaceHomePanel .market-product-grid {padding:12px 14px 20px!important}
+}
+@media (min-width:1024px) and (max-width:1200px) {
+  body:not(.ranova-auth-only) .main {width:calc(100% - 36px)!important}
 }
 </style>
 </head>
