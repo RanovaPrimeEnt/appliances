@@ -1066,10 +1066,17 @@ function variantFamily(p){
   return normalized.length>=9?"name:"+normalized:"";
 }
 function productVariants(p){
+  if(!store||!store.id||!p||p.store_id!==store.id)return [];
   var key=variantFamily(p);
   if(!key)return [];
-  return products.filter(function(x){return x.id!==p.id&&x.category===p.category&&variantFamily(x)===key&&
-    (key.indexOf("group:")===0||String(x.name||"").toLowerCase()!==String(p.name||"").toLowerCase())}).slice(0,14);
+  // Strict seller boundary: never use variants from another store, even cached rows.
+  return products.filter(function(x){
+    if(!x||x.id===p.id||x.store_id!==store.id||x.store_id!==p.store_id)return false;
+    if(String(x.product_status||"active")!=="active")return false;
+    if(String(x.category||"").trim().toLowerCase()!==String(p.category||"").trim().toLowerCase())return false;
+    if(variantFamily(x)!==key)return false;
+    return key.indexOf("group:")===0||String(x.name||"").trim().toLowerCase()!==String(p.name||"").trim().toLowerCase();
+  }).slice(0,14);
 }
 function openProductDetail(id){
   var p=products.find(function(x){return x.id===id});if(!p)return;
@@ -1474,7 +1481,7 @@ async function boot(){
   var fast=readSellerFastCache(slug);
   if(fast){
     store=fast.store;
-    products=fast.products||[];
+    products=(fast.products||[]).filter(function(p){return p&&p.store_id===fast.store.id&&String(p.product_status||"active")==="active"});
     paintFastStoreShell(deepProductBoot);
   }
   var sr=await sb.from("ranova_seller_stores").select("*").eq("slug",slug).eq("store_status","active").maybeSingle();
