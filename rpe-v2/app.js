@@ -1532,7 +1532,7 @@ function cartItemKey(entry){
   return entry.kind==="market"?"m:"+entry.store_id+":"+entry.product_id:"l:"+entry.id;
 }
 function cartUnifiedEntries(){
-  const out=marketCartEntries().map(i=>({...i,kind:"market",available:i.product.product_status!=="inactive"&&i.product.stock_status!=="out_of_stock"&&Number(i.product.stock_quantity??1)>0}));
+  const out=marketCartEntries().map(i=>({...i,kind:"market",available:i.product.product_status!=="inactive"&&i.product.product_status!=="suspended"&&i.product.stock_status!=="out_of_stock"&&Number(i.quantity)>=Math.max(1,Number(i.product.moq)||1)&&(i.product.stock_quantity==null||Number(i.quantity)<=Number(i.product.stock_quantity))}));
   cartItems.forEach(i=>out.push({kind:"legacy",id:i.id,product_id:i.product_id,quantity:Number(i.quantity||1),product:i.products||{},store_id:"ranova-prime",store:{store_name:"RANOVA Prime"},available:(i.products?.stock_status||"")!=="out_of_stock"}));
   return out;
 }
