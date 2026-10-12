@@ -985,6 +985,30 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 .drawer{transition:none!important}
 </style>
 <style id="rnv-reviews-purchase-only">#productDetail #rnvReviewForm{display:none!important}</style>
+<style id="rnv-premium-store-palette">
+/* Neutral premium storefront across all sellers; orange for shopping actions.
+   Preserve green for genuine verification, availability and success states. */
+:root{--green:#293b36;--green2:#f26722;--ink:#242c2a;--muted:#727a76;--line:#e8e8e6;--soft:#f8f8f7;--orange:#ff681f}
+body{background:#f7f7f6;color:var(--ink)}
+.top{background:#fff!important;color:#26312c!important;border-bottom:1px solid #e9e9e7;box-shadow:0 2px 12px rgba(0,0,0,.035)}
+.top .brand{color:#253630!important}
+.top .toplinks a,.top .cart-top{background:#f7f7f6!important;color:#293630!important;border-color:#e5e5e2!important}
+.top .cart-top:hover,.top .toplinks a:hover{border-color:#ffb98f!important;color:#e85b12!important}
+.hero{background:#fff!important}
+.banner{background:linear-gradient(130deg,#f0f0ed,#fbf5ef)!important}
+.logo{color:#e9631b}
+.contact a.primary,.contact .contact-primary,.contact button.contact-primary{background:#ff681f!important;border-color:#ff681f!important;color:#fff!important}
+.store-category-btn.active,.store-category-btn[aria-selected="true"]{background:#fff2e9!important;color:#d95111!important;border-color:#ffae7e!important}
+.search:focus,.store-category-btn:focus-visible{outline-color:#fa752f;border-color:#fa752f}
+.product .img{background:#f8f8f7}
+.chip{background:#f6f6f4;color:#575f5a}
+.contact-btn{background:#fff7f2;border-color:#f4dbc9;color:#af511f}
+.buy,.detail-buy-now,.checkout-btn{background:#ff681f}
+.buy.in-cart{background:#e96522}
+.trust-metric,.info,.trust-card,.review-item{background:#fff}
+.customer-store-bottom-nav{background:#fff!important}
+.customer-store-bottom-nav .active{color:#f26722!important}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
