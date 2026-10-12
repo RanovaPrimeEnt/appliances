@@ -1112,6 +1112,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid #f276
   #cartFab.cart-fab{left:10px;right:10px;min-height:50px;font-size:13px}
 }
 </style>
+<style id="rnv-store-empty-state">#grid .rnv-store-empty{grid-column:1/-1;text-align:center;background:#fff;border:1px solid #e9ebe8;border-radius:17px;padding:36px 18px;margin:4px 0;color:#34413b}#grid .rnv-store-empty h3{font-size:18px;margin:5px 0 8px}#grid .rnv-store-empty p{font-size:13px;line-height:1.6;color:#768079;max-width:360px;margin:0 auto 18px}#grid #rnvClearStoreFilters{background:#fff;border:1px solid #ec7635;border-radius:10px;color:#d35e1a;font-weight:800;padding:11px 20px;min-height:44px;cursor:pointer}</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1627,7 +1628,8 @@ function renderCategoryNav(){
 function render(){
   var q=el("search").value.trim().toLowerCase();
   var list=products.filter(function(p){
-    var matches=!q||[p.name,p.category,p.short_description,p.description,p.sku].join(" ").toLowerCase().includes(q);
+    var words=q.split(/\s+/).filter(Boolean),haystack=[p.name,p.category,p.short_description,p.description,p.sku].join(" ").toLowerCase();
+    var matches=!words.length||words.every(function(w){return haystack.includes(w)});
     return matches&&(activeCategory==="All"||p.category===activeCategory)
   });
   var sortMode=el("storeSort")?.value||"name";
@@ -1653,19 +1655,22 @@ function render(){
     if(activeCategory==="All")html+='<div class="category-divider"><h3>'+esc(cat)+'</h3><span>'+rows.length+' product'+(rows.length===1?'':'s')+'</span></div>';
     html+=rows.map(productCard).join("")
   });
-  el("grid").innerHTML=html||'<div class="empty">No matching published products in this store yet.</div>';
+  el("grid").innerHTML=html||'<div class="rnv-store-empty"><h3>No products match your search</h3><p>Try another search or browse all products in this store.</p><button type="button" id="rnvClearStoreFilters">Clear filters</button></div>';
+  var clearFilters=el("rnvClearStoreFilters");if(clearFilters)clearFilters.onclick=function(){el("search").value="";activeCategory="All";if(el("storeSort"))el("storeSort").value="name";render();el("search").focus()};
   el("grid").querySelectorAll("[data-add]").forEach(function(b){b.onclick=function(){addProduct(this.dataset.add).catch(function(){})}});
   el("grid").querySelectorAll("[data-open]").forEach(function(b){b.onclick=function(){openProductDetail(this.dataset.open)}});
   renderCategoryNav()
 }
 async function addProduct(id){
-  var p=products.find(function(x){return x.id===id}),enforcement=String((marketplaceTrust.enforcement||{}).enforcement_status||"good_standing");
+  var p=products.find(function(x){return x.id===id});
   if(!p||orderUnavailable(p))return;
-  if(p.price==null&&cart[id]==null){location.href="./messages.html?product="+encodeURIComponent(id)+"&store="+encodeURIComponent(store.id)+"&quote=1";return}
-  if(cart[id]==null)cart[id]=boundedQuantity(p,p.moq||1);
-  saveCart();render();renderCart();
-  try{await syncCartRemote()}catch(e){}
-  goToMainCart();
+  if(cart[id]!=null){openCart();return}
+  if(p.price==null){location.href="./messages.html?product="+encodeURIComponent(id)+"&store="+encodeURIComponent(store.id)+"&quote=1";return}
+  var q=boundedQuantity(p,p.moq||1);
+  if(q<Math.max(1,Number(p.moq)||1))return;
+  cart[id]=q;saveCart();render();renderCart();
+  // Keep the shopper in this store until Review order is selected.
+  try{await syncCartRemote()}catch(e){console.warn("Cart will sync when online",e)}
 }
 function setQuantity(id,value){
   var p=products.find(function(x){return x.id===id});if(!p)return;
