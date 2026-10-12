@@ -1114,6 +1114,22 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid #f276
 </style>
 <style id="rnv-store-empty-state">#grid .rnv-store-empty{grid-column:1/-1;text-align:center;background:#fff;border:1px solid #e9ebe8;border-radius:17px;padding:36px 18px;margin:4px 0;color:#34413b}#grid .rnv-store-empty h3{font-size:18px;margin:5px 0 8px}#grid .rnv-store-empty p{font-size:13px;line-height:1.6;color:#768079;max-width:360px;margin:0 auto 18px}#grid #rnvClearStoreFilters{background:#fff;border:1px solid #ec7635;border-radius:10px;color:#d35e1a;font-weight:800;padding:11px 20px;min-height:44px;cursor:pointer}</style>
 <style id="rnv-store-card-polish">.product{transition:none!important;border-color:#ebebe9!important}.product .copy h3{min-height:2.6em}.product .meta{align-items:center;gap:6px}.rnv-card-stock,.rnv-card-bulk{display:inline-flex;align-items:center;border-radius:7px;padding:5px 7px;font-size:10px;font-weight:750;line-height:1.2}.rnv-card-stock{background:#eaf6ee;color:#276c43}.rnv-card-stock.low{background:#fff4e8;color:#a85b19}.rnv-card-stock.unavailable{background:#f7eded;color:#a34444}.rnv-card-bulk{background:#fff2e7;color:#c15d20}.product .price{font-size:16px;color:#e9631b}.product .buy{min-height:44px;border-radius:10px;font-size:12px}.product .product-name{text-align:left}.product .img:focus-visible,.product .buy:focus-visible{outline:2px solid #ef752b;outline-offset:2px}@media(max-width:620px){.product .copy{padding:11px}.product .price{font-size:15px}.product .meta{gap:4px}.rnv-card-stock,.rnv-card-bulk{font-size:9px}}</style>
+<style id="rnv-shopping-overlay-priority">
+/* Shopping dialogs must cover the fixed customer tabs and sticky order CTA. */
+#cartBackdrop.backdrop{z-index:250!important}
+#cartDrawer.drawer{z-index:251!important}
+#checkoutModal.modal{z-index:260!important}
+#productDetail.detail-dialog{z-index:240!important}
+body:has(#cartDrawer.open) #cartFab,
+body:has(#checkoutModal.open) #cartFab,
+body:has(#productDetail.open) #cartFab{visibility:hidden}
+@media(max-width:759px){
+ #cartDrawer.drawer{height:100dvh;max-height:100dvh;padding-bottom:env(safe-area-inset-bottom,0px)}
+ #cartDrawer .drawer-foot{padding-bottom:max(14px,env(safe-area-inset-bottom,0px))}
+ #checkoutModal.modal{padding-bottom:env(safe-area-inset-bottom,0px)}
+ #checkoutModal .modal-card{max-height:calc(100dvh - env(safe-area-inset-bottom,0px))}
+}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
