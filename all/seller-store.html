@@ -978,6 +978,12 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
  #productDetail .detail-content>div:first-child{position:static;top:auto;width:100%}
 }
 </style>
+<style id="rnv-instant-navigation">
+/* No directional entrance motion for customer product/store interfaces. */
+#productDetail,.detail-content,.rnv-detail-summary,.rnv-detail-section,.rnv-detail-order,.products .grid .product{animation:none!important}
+#productDetail .detail-content{scroll-behavior:auto}
+.drawer{transition:none!important}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
