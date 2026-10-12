@@ -958,6 +958,26 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 @media(max-width:400px){#productDetail .rnv-review-score{gap:10px;padding:12px}#productDetail .rnv-review-score>strong{font-size:30px}#productDetail .rnv-review-score-stars{font-size:19px}}
 </style>
 <style id="rnv-review-customer-label">#productDetail .rnv-review-customer-id{color:#596a60;font-size:12px;font-weight:750;margin:0 0 7px;letter-spacing:.015em}</style>
+<style id="rnv-desktop-detail-grid-fix">
+/* Desktop product-detail layout: prevent gallery overlap and misplaced content. */
+#productDetail .detail-content{min-width:0}
+#productDetail .detail-content>*{min-width:0;box-sizing:border-box}
+#productDetail .detail-main-image{max-width:100%;display:block}
+@media(min-width:761px){
+ #productDetail .detail-content{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+ #productDetail .detail-content>div:first-child{grid-column:1;grid-row:1 / span 2;position:static;top:auto;align-self:start;min-height:0}
+ #productDetail .detail-content>.rnv-detail-summary{grid-column:2;grid-row:1}
+ #productDetail .detail-content>.rnv-detail-order{grid-column:2;grid-row:2;margin:0}
+ #productDetail .detail-content>.rnv-product-reviews,
+ #productDetail .detail-content>.rnv-detail-section,
+ #productDetail .detail-content>.detail-compare{grid-column:1 / -1;grid-row:auto}
+ #productDetail .detail-content>div:first-child .detail-main-image{height:auto;max-height:540px;aspect-ratio:1/1;object-fit:contain}
+}
+@media(max-width:760px){
+ #productDetail .detail-content{display:flex;flex-direction:column}
+ #productDetail .detail-content>div:first-child{position:static;top:auto;width:100%}
+}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1279,7 +1299,7 @@ function openProductDetail(id){
   var note=informationColumn.querySelector(".detail-note");
   content.replaceChildren(galleryColumn,summary,reviews,delivery,specifications,seller,related);
   if(compare)content.appendChild(compare);
-  if(purchase){purchase.classList.add("rnv-detail-order");content.appendChild(purchase)}
+  if(purchase){purchase.classList.add("rnv-detail-order");content.insertBefore(purchase,reviews)}
   if(note)specifications.appendChild(note);
   var dialog=el("productDetail");dialog.classList.add("open");dialog.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");el("closeDetail").focus();
   dialog.querySelectorAll("[data-detail-photo]").forEach(function(b){b.onclick=function(){el("detailMainImage").src=photos[Number(b.dataset.detailPhoto)];dialog.querySelectorAll("[data-detail-photo]").forEach(function(x){x.classList.toggle("selected",x===b)})}});
