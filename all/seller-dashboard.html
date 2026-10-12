@@ -294,6 +294,7 @@ body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data
           <div id="sellerAttentionBox" class="catalogue-summary" style="margin-top:10px"></div>
           <div class="seller-syncbar"><small id="sellerSyncStatus"><span class="seller-sync-dot"></span>Connected · waiting for refresh</small><div class="actions" style="margin:0"><button id="exportProductsOverview" class="btn" type="button">Export products</button><button id="exportMyOrdersOverview" class="btn" type="button">Export orders</button></div></div>
         </div>
+        <div class="card" id="sellerAnalyticsCard"><h2>Business Insights</h2><p>Live summary based on your own store products and orders.</p><div class="metrics"><div class="metric"><small>Recorded orders</small><strong id="insightOrderCount">0</strong></div><div class="metric"><small>Low-stock products</small><strong id="insightLowStock">0</strong></div><div class="metric"><small>Out-of-stock products</small><strong id="insightOutStock">0</strong></div><div class="metric"><small>Product readiness</small><strong id="insightReadiness">—</strong></div></div><small style="display:block;margin-top:12px;color:#738078">Figures reflect the records returned to your Seller Center; they are not forecasts.</small></div>
         <div class="card"><h2>What happened recently</h2><p>Recent changes in your orders, stock, messages and money.</p><div id="recentSellerActivity" class="order-list"><div class="empty">No recent seller activity yet.</div></div></div>
         <div class="card"><h2>Before You Start Selling</h2><p>Keep your seller account approved. Add your store details, clear product information and real product photos. Send products to RANOVA for approval before customers can see them.</p></div>
       </div>
@@ -696,7 +697,18 @@ async function refresh(){
   renderOverview();fillStore();renderProducts();renderInventory();renderMyOrders();renderDelivery();renderTrust();renderFinance();renderHelpIssues();renderSellerActionCenter();renderRecentSellerActivity();renderSellerAttention();syncDraftNotices();
   if(!state.approved)setPanel("store");
 }
+function renderSellerInsights(){
+  var products=state.products||[],orders=state.orders||[];
+  var low=products.filter(function(p){return p.stock_quantity!=null&&Number(p.stock_quantity)>0&&Number(p.stock_quantity)<=5}).length;
+  var out=products.filter(function(p){return p.stock_status==="out_of_stock"||(p.stock_quantity!=null&&Number(p.stock_quantity)<=0)}).length;
+  var ready=products.length?Math.round(products.filter(function(p){return p.product_status==="active"&&p.price!=null&&p.primary_image_url}).length/products.length*100):0;
+  el("insightOrderCount").textContent=orders.length;
+  el("insightLowStock").textContent=low;
+  el("insightOutStock").textContent=out;
+  el("insightReadiness").textContent=products.length?ready+"%":"—";
+}
 function renderOverview(){
+  renderSellerInsights();
   var app=state.application||{},store=state.store||{},c=state.counts||{};
   el("welcomeName").textContent=store.store_name||app.business_name||"Seller Dashboard";
   el("welcomeText").textContent=!state.approved?"Prepare store details and product drafts. Selling unlocks after verification.":store.store_status==="active"?"Your store is published on RANOVA. Keep product information and stock status current.":"Your store has been approved. Finish Set Up Your Store and prepare products for RANOVA review.";
