@@ -10,10 +10,10 @@ function eligibleItem(o){if(String(o.product_id||"")===id)return true;let v=o.it
 async function start(){
  if(!/^[0-9a-f-]{36}$/i.test(id||"")||!/^[0-9a-f-]{36}$/i.test(orderId||"")){msg("Invalid product or order link.");return}
  const auth=await sb.auth.getUser();user=auth.data&&auth.data.user;if(!user){msg("Please sign in on Me to review this purchase.");return}
- const results=await Promise.all([sb.from("ranova_customer_orders").select("id,product_id,items,payment_status,status,buyer_user_id").eq("id",orderId).eq("buyer_user_id",user.id).maybeSingle(),sb.from("ranova_seller_products").select("id,name,primary_image_url,store_id").eq("id",id).maybeSingle(),sb.from("ranova_product_reviews").select("id,moderation_status").eq("product_id",id).eq("buyer_user_id",user.id).maybeSingle()]);
+ const results=await Promise.all([sb.rpc("ranova_order_item_review_eligible",{p_order:orderId,p_product:id}),sb.from("ranova_seller_products").select("id,name,primary_image_url,store_id").eq("id",id).maybeSingle(),sb.from("ranova_product_reviews").select("id,moderation_status").eq("product_id",id).eq("buyer_user_id",user.id).maybeSingle()]);
  if(results.some(x=>x.error)){msg("Unable to check your order at the moment.");return}
- const order=results[0].data;product=results[1].data;
- if(!order||!product||!eligibleItem(order)||!["paid","confirmed"].includes(String(order.payment_status).toLowerCase())||!["delivered","delivered_confirmed","completed"].includes(String(order.status).toLowerCase())){msg("This product can be reviewed after your purchase is paid and delivery is confirmed.");return}
+ const eligible=results[0].data;product=results[1].data;
+ if(!eligible||!product){msg("This product can be reviewed after your purchase is paid and delivery is confirmed.");return}
  if(results[2].data){msg("You have already submitted a review for this product ("+results[2].data.moderation_status+").");return}
  el("product").textContent="";if(product.primary_image_url){let im=document.createElement("img");im.src=product.primary_image_url;im.alt="";el("product").appendChild(im)}let label=document.createElement("b");label.textContent=product.name;el("product").appendChild(label);el("form").hidden=false;
 }
