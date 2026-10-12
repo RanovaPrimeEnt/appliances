@@ -806,6 +806,26 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 
 
 </style>
+<style id="ranova-storefront-catalogue-refinement">
+.store-catalogue-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:15px 0 10px;color:#687a74;font-size:12px}
+.store-catalogue-tools label{display:flex;align-items:center;gap:9px;white-space:nowrap;font-weight:700}
+.store-catalogue-tools select{min-height:38px;max-width:200px;padding:6px 30px 6px 11px;border:1px solid #dce5df;border-radius:9px;background:#fff;color:#21392f;font-size:12px}
+.store-catalogue-tools select:focus-visible,.search:focus-visible{outline:2px solid #f47a00;outline-offset:2px}
+@media(min-width:1024px){
+  .products .wrap{max-width:1120px}
+  .products .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .products .grid .product{min-width:0;border:1px solid #e8ece9;border-radius:13px;background:#fff;overflow:hidden;box-shadow:0 2px 9px rgba(24,37,30,.045)}
+  .products .grid .product img{width:100%;height:auto;min-height:0;aspect-ratio:1/1;object-fit:contain;background:#fff;padding:8px;box-sizing:border-box}
+  .products .grid .product:hover{box-shadow:0 9px 22px rgba(24,37,30,.09)}
+  .products .grid .product h3{line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .products .grid .product .price{color:#f16a21}
+}
+@media(max-width:600px){
+ .store-catalogue-tools{gap:8px;flex-wrap:wrap}
+ .store-catalogue-tools select{max-width:175px}
+}
+@media(prefers-reduced-motion:reduce){.products .grid .product{transition:none}}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -819,7 +839,7 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
       <div id="contact" class="contact"></div>
     </div>
   </section>
-  <section class="products"><div class="wrap"><div class="head"><div><h2>Shop this store</h2><p>Explore products, browse categories and find what you need.</p></div><input id="search" class="search" type="search" aria-label="Search products in this store" placeholder="Search products in this store"></div><div id="categoryNav" class="store-category-nav"></div><div id="grid" class="grid"></div></div></section>
+  <section class="products"><div class="wrap"><div class="head"><div><h2>Shop this store</h2><p>Explore products, browse categories and find what you need.</p></div><input id="search" class="search" type="search" aria-label="Search products in this store" placeholder="Search products in this store"></div><div class="store-catalogue-tools"><span id="storeResultCount" role="status" aria-live="polite">Products</span><label for="storeSort">Sort by <select id="storeSort"><option value="name">Name: A–Z</option><option value="newest">Newest products</option><option value="price_low">Price: low to high</option><option value="price_high">Price: high to low</option></select></label></div><div id="categoryNav" class="store-category-nav"></div><div id="grid" class="grid"></div></div></section>
   <section class="about"><div class="wrap about-grid">
     <div class="info"><b>About this store</b><p id="description"></p></div>
     <div class="info"><b>Location</b><span id="location"></span><b style="margin-top:10px">Minimum order</b><span id="minimum"></span></div>
@@ -1175,11 +1195,26 @@ function render(){
     var matches=!q||[p.name,p.category,p.short_description,p.description,p.sku].join(" ").toLowerCase().includes(q);
     return matches&&(activeCategory==="All"||p.category===activeCategory)
   });
+  var sortMode=el("storeSort")?.value||"name";
+  var compareProducts=function(a,b){
+    if(sortMode==="price_low"||sortMode==="price_high"){
+      var av=a.price==null?null:Number(a.price),bv=b.price==null?null:Number(b.price);
+      if(av===null||!Number.isFinite(av))return bv===null||!Number.isFinite(bv)?0:1;
+      if(bv===null||!Number.isFinite(bv))return -1;
+      return sortMode==="price_low"?av-bv:bv-av;
+    }
+    if(sortMode==="newest"){
+      var at=Date.parse(a.created_at||a.updated_at||"")||0,bt=Date.parse(b.created_at||b.updated_at||"")||0;
+      return bt-at||String(a.name||"").localeCompare(String(b.name||""));
+    }
+    return String(a.name||"").localeCompare(String(b.name||""));
+  };
+  if(el("storeResultCount"))el("storeResultCount").textContent=list.length+" product"+(list.length===1?"":"s")+" found";
   var cats=CATEGORY_ORDER.filter(function(c){return list.some(function(p){return p.category===c})});
   list.forEach(function(p){if(p.category&&!cats.includes(p.category))cats.push(p.category)});
   var html="";
   cats.forEach(function(cat){
-    var rows=list.filter(function(p){return p.category===cat}).sort(function(a,b){return String(a.name).localeCompare(String(b.name))});
+    var rows=list.filter(function(p){return p.category===cat}).sort(compareProducts);
     if(activeCategory==="All")html+='<div class="category-divider"><h3>'+esc(cat)+'</h3><span>'+rows.length+' product'+(rows.length===1?'':'s')+'</span></div>';
     html+=rows.map(productCard).join("")
   });
@@ -1352,7 +1387,7 @@ async function boot(){
     }
   }else if(deepProduct){openProductDetail(deepProduct)}
 }
-el("search").addEventListener("input",render);el("buyerCountry").addEventListener("change",loadFeePreview);el("paymentMethod").addEventListener("change",loadFeePreview);
+el("search").addEventListener("input",render);el("storeSort").addEventListener("change",render);el("buyerCountry").addEventListener("change",loadFeePreview);el("paymentMethod").addEventListener("change",loadFeePreview);
 el("topCart").onclick=el("cartFab").onclick=goToMainCart;el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
 el("closeCheckout").onclick=el("cancelCheckout").onclick=closeCheckout;el("placeOrder").onclick=placeOrder;el("doneCheckout").onclick=closeCheckout;
 el("checkoutModal").addEventListener("click",function(e){if(e.target===this)closeCheckout()});
