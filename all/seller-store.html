@@ -1030,6 +1030,54 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid #f276
 
 </style>
 <style id="rnv-review-readonly-collapse">#productDetail .rnv-review-dropdown[hidden]{display:none!important}#productDetail .rnv-review-toggle{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:17px;font-weight:800;min-height:46px;color:#21392e}#productDetail .rnv-review-toggle::-webkit-details-marker{display:none}#productDetail .rnv-review-toggle:after{content:"⌄";font-size:23px;color:#f26722;margin-left:8px}#productDetail .rnv-review-dropdown[open]>.rnv-review-toggle:after{content:"⌃"}#productDetail .rnv-review-toggle-score{font-weight:900;color:#ec691b;margin-left:auto}#productDetail .rnv-review-list{padding-top:12px}</style>
+<style id="rnv-premium-accordion-unified">
+/* RANOVA premium disclosures: restrained Shopify-inspired product information rows. */
+#productDetail details.rnv-premium-accordion{
+  width:100%;min-width:0;padding:0 22px!important;margin:0;
+  background:#fff!important;border:1px solid #e7e9e7!important;
+  border-radius:14px!important;box-shadow:0 2px 10px rgba(25,38,31,.025)!important;
+  overflow:hidden;
+}
+#productDetail details.rnv-premium-accordion[hidden]{display:none!important}
+#productDetail details.rnv-premium-accordion>summary{
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  width:100%;min-height:64px;padding:16px 33px 16px 0;margin:0!important;
+  box-sizing:border-box;position:relative;list-style:none!important;cursor:pointer;
+  color:#26342e!important;font:750 15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif!important;
+  letter-spacing:-.012em;user-select:none;background:#fff;
+}
+#productDetail details.rnv-premium-accordion>summary::-webkit-details-marker{display:none}
+#productDetail details.rnv-premium-accordion>summary::marker{content:""}
+#productDetail details.rnv-premium-accordion>summary::after{
+  content:""!important;position:absolute;right:3px;top:50%;
+  width:9px;height:9px;border-right:1.8px solid #66736c;border-bottom:1.8px solid #66736c;
+  transform:translateY(-65%) rotate(45deg)!important;
+  transition:none!important;line-height:normal;
+}
+#productDetail details.rnv-premium-accordion[open]>summary::after{
+  transform:translateY(-30%) rotate(225deg)!important;
+}
+#productDetail details.rnv-premium-accordion[open]>summary{
+  border-bottom:1px solid #eef0ed;color:#20332a!important;
+}
+#productDetail details.rnv-premium-accordion>summary:hover{color:#dc601a!important}
+#productDetail details.rnv-premium-accordion>summary:focus-visible{
+  outline:2px solid #ec702c!important;outline-offset:-4px;border-radius:6px;
+}
+#productDetail details.rnv-premium-accordion .rnv-review-toggle-score{
+  margin-left:auto;margin-right:14px;color:#b9551c;font-size:13px;font-weight:800;
+}
+#productDetail details.rnv-premium-accordion .detail-facts,
+#productDetail details.rnv-premium-accordion .rnv-review-list{
+  margin:0!important;padding:15px 0 20px!important;min-width:0;
+}
+#productDetail details.rnv-premium-accordion .detail-facts{border-top:0}
+#productDetail details.rnv-premium-accordion .detail-facts div:last-child{border-bottom:0}
+@media(max-width:620px){
+ #productDetail details.rnv-premium-accordion{padding:0 16px!important;border-radius:12px!important}
+ #productDetail details.rnv-premium-accordion>summary{min-height:58px;font-size:14px!important}
+}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1317,10 +1365,10 @@ function openProductDetail(id){
   var shippingTitle=document.createElement("h4");shippingTitle.textContent="Delivery & service";delivery.appendChild(shippingTitle);
   var deliveryText=document.createElement("p");deliveryText.textContent=store.fulfilment_summary||"Contact this seller to confirm dispatch and delivery options.";delivery.appendChild(deliveryText);
   var returnText=document.createElement("p");returnText.textContent="Returns: "+(store.return_policy_summary||"Confirm the return policy with the seller before ordering.");delivery.appendChild(returnText);
-  var specifications=document.createElement("details");specifications.className="rnv-detail-section rnv-specifications-dropdown";
+  var specifications=document.createElement("details");specifications.className="rnv-detail-section rnv-specifications-dropdown rnv-premium-accordion";
   var specTitle=document.createElement("summary");specTitle.className="rnv-specifications-toggle";specTitle.textContent="Specifications";specTitle.setAttribute("aria-label","Show or hide product specifications");specifications.appendChild(specTitle);
   var factsList=informationColumn.querySelector(".detail-facts");if(factsList)specifications.appendChild(factsList);
-  var reviews=document.createElement("details");reviews.className="rnv-detail-section rnv-product-reviews rnv-review-dropdown";reviews.hidden=true;
+  var reviews=document.createElement("details");reviews.className="rnv-detail-section rnv-product-reviews rnv-review-dropdown rnv-premium-accordion";reviews.hidden=true;
   reviews.innerHTML='<summary class="rnv-review-toggle">Customer reviews</summary><div class="rnv-review-list" id="rnvReviewList"></div>';
   setupProductReviews(reviews,p);
   var seller=document.createElement("section");seller.className="rnv-detail-section rnv-detail-seller";
