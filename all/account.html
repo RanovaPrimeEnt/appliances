@@ -53,6 +53,11 @@ svg{display:block}
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
 <style>.rnv-to-review-product{justify-content:flex-start!important}.rnv-to-review-product>img{width:66px;height:66px;object-fit:contain;border-radius:9px;background:#f7f8f6;flex-shrink:0}.rnv-to-review-info{flex:1;min-width:0}.rnv-to-review-product .actions{margin-left:auto}@media(max-width:380px){.rnv-to-review-product{flex-wrap:wrap}}</style>
+<style id="rnv-instant-navigation">
+/* Navigation panels appear immediately on tap, without directional sliding. */
+html{scroll-behavior:auto!important}
+#homeView,#detailView,.detail-panel,.product-card,.section-card{animation:none!important;transition:none!important}
+</style>
 </head>
 <body>
 <div id="loggedOut" class="auth-wrap">
