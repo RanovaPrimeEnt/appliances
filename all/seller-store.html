@@ -940,6 +940,23 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 #productDetail .rnv-review-photos{display:flex;gap:8px;overflow-x:auto}
 #productDetail .rnv-review-photos img{width:88px;height:88px;object-fit:cover;border-radius:8px}
 </style>
+<style id="rnv-review-display-polish">
+/* Product-specific feedback, immediately following product information. */
+#productDetail .rnv-product-reviews{border:1px solid #edf0ec;box-shadow:0 6px 22px rgba(20,55,38,.045)}
+#productDetail .rnv-product-reviews>h4{font-size:18px;color:#17382b;margin:0 0 14px}
+#productDetail .rnv-review-score{display:flex;align-items:center;gap:17px;padding:15px;border-radius:13px;background:#fff8f2;border:1px solid #ffeadb}
+#productDetail .rnv-review-score>strong{font-size:36px;line-height:1;color:#ee621b;white-space:nowrap}
+#productDetail .rnv-review-score>strong span{font-size:16px;color:#748078;font-weight:650}
+#productDetail .rnv-review-score-stars{font-size:23px;letter-spacing:2px;color:#eda014;line-height:1.3}
+#productDetail .rnv-review-score p{margin:3px 0 0;font-size:12px;color:#5e6b62}
+#productDetail .rnv-review-empty{padding:15px;background:#f8faf8;border-radius:10px;color:#66756b;font-size:13px}
+#productDetail .rnv-review-card{margin-top:12px;padding:14px;border-radius:12px;background:#fff;border:1px solid #e9ede9}
+#productDetail .rnv-review-card-rating{font-size:15px;letter-spacing:.4px}
+#productDetail .rnv-review-card>p{font-size:13px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;color:#37483b}
+#productDetail .rnv-review-photos{padding-top:8px}
+#productDetail .rnv-review-photos img{border:1px solid #e7ebe7;cursor:zoom-in}
+@media(max-width:400px){#productDetail .rnv-review-score{gap:10px;padding:12px}#productDetail .rnv-review-score>strong{font-size:30px}#productDetail .rnv-review-score-stars{font-size:19px}}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1152,10 +1169,10 @@ async function setupProductReviews(section,p){
     if(result.error){list.textContent="Reviews are temporarily unavailable.";return}
     var published=(result.data||[]).filter(function(r){return r.moderation_status==="published"});
     var avg=published.length?published.reduce(function(a,r){return a+Number(r.rating)},0)/published.length:0;
-    list.innerHTML='<p class="rnv-review-average">'+(published.length?esc(avg.toFixed(1))+' / 5 · '+published.length+' review'+(published.length===1?'':'s'):'No published reviews yet')+'</p>';
+    list.innerHTML=published.length?'<div class="rnv-review-score"><strong>'+esc(avg.toFixed(1))+' <span>/ 5</span></strong><div><div class="rnv-review-score-stars">'+reviewStars(Math.round(avg))+'</div><p>'+published.length+' customer review'+(published.length===1?'':'s')+'</p></div></div>':'<div class="rnv-review-empty">No customer reviews yet. Be the first to rate this product.</div>';
     published.forEach(function(r){
       var card=document.createElement("article");card.className="rnv-review-card";
-      var head=document.createElement("div");head.className="rnv-review-card-rating";head.textContent=reviewStars(r.rating)+" · "+new Date(r.created_at).toLocaleDateString();card.appendChild(head);
+      var head=document.createElement("div");head.className="rnv-review-card-rating";head.textContent=reviewStars(r.rating)+"  "+Number(r.rating)+"/5 · "+new Date(r.created_at).toLocaleDateString();card.appendChild(head);
       if(r.review_text){var comment=document.createElement("p");comment.textContent=r.review_text;card.appendChild(comment)}
       if(Array.isArray(r.photo_paths)&&r.photo_paths.length){var photos=document.createElement("div");photos.className="rnv-review-photos";r.photo_paths.slice(0,5).forEach(function(path){var img=document.createElement("img");img.loading="lazy";img.alt="Customer review photo";img.src=sb.storage.from("ranova-review-photos").getPublicUrl(path).data.publicUrl;photos.appendChild(img)});card.appendChild(photos)}
       list.appendChild(card);
@@ -1259,7 +1276,7 @@ function openProductDetail(id){
   related.appendChild(relatedGrid);
   var compare=informationColumn.querySelector(".detail-compare");
   var note=informationColumn.querySelector(".detail-note");
-  content.replaceChildren(galleryColumn,summary,delivery,specifications,reviews,seller,related);
+  content.replaceChildren(galleryColumn,summary,reviews,delivery,specifications,seller,related);
   if(compare)content.appendChild(compare);
   if(purchase){purchase.classList.add("rnv-detail-order");content.appendChild(purchase)}
   if(note)specifications.appendChild(note);
