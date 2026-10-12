@@ -263,7 +263,7 @@ function purchasedItems(o){
 async function renderReviewEligibleProducts(orders){
   var container=el("ordersList");container.innerHTML='<div class="empty">Checking products eligible for review…</div>';
   var all=[];orders.forEach(function(o){purchasedItems(o).forEach(function(item){all.push({order:o,item:item})})});
-  if(!all.length){container.innerHTML='<div class="empty">No delivered and paid products awaiting review.</div>';return}
+  if(!all.length){badge("badgeReview",0);container.innerHTML='<div class="empty">No products available for review. Paid and received purchases will appear here.</div>';return}
   var ids=Array.from(new Set(all.map(function(x){return x.item.id})));
   var results=await Promise.all([
     sb.from("ranova_seller_products").select("id,name,primary_image_url,store_id").in("id",ids),
@@ -273,7 +273,8 @@ async function renderReviewEligibleProducts(orders){
   var products=new Map((results[0].data||[]).map(function(x){return [x.id,x]}));
   var reviewed=new Set((results[1].data||[]).map(function(x){return x.product_id}));
   var unique=new Set();var available=all.filter(function(x){if(unique.has(x.item.id)||reviewed.has(x.item.id)||!products.has(x.item.id))return false;unique.add(x.item.id);return true});
-  if(!available.length){container.innerHTML='<div class="empty">All eligible products have been reviewed, or no products are ready yet.</div>';return}
+  badge("badgeReview",available.length);
+  if(!available.length){container.innerHTML='<div class="empty">No products available for review. Paid and received purchases will appear here.</div>';return}
   container.innerHTML=available.map(function(x){var p=products.get(x.item.id);return '<div class="row rnv-to-review-product">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="" loading="lazy">':'')+'<div class="rnv-to-review-info"><b>'+esc(p.name||x.item.name)+'</b><small>Order '+esc(x.order.order_ref)+' · Paid and received</small><small>Quantity '+esc(x.item.quantity)+'</small></div><div class="actions"><a class="primary" href="./review-product.html?product='+encodeURIComponent(p.id)+'&order='+encodeURIComponent(x.order.id)+'">Review</a></div></div>'}).join("");
 }
 function renderOrders(filter){
