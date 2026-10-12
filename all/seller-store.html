@@ -826,6 +826,49 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 }
 @media(prefers-reduced-motion:reduce){.products .grid .product{transition:none}}
 </style>
+<style id="ranova-product-detail-experience-v1">
+/* Image-first product detail flow, with existing commerce controls retained. */
+#productDetail .detail-card{width:min(1050px,100%);max-height:96dvh;border-radius:18px}
+#productDetail .detail-top{position:sticky;top:0;background:#fff;z-index:4}
+#productDetail .detail-content{display:flex;flex-direction:column;gap:12px;padding:16px;background:#f6f7f6}
+#productDetail .detail-content>div:first-child{background:#fff;border-radius:14px;padding:12px}
+#productDetail .detail-main-image{width:100%;height:min(56vh,480px);background:#fff;object-fit:contain}
+#productDetail .detail-gallery{gap:9px;padding:11px 0 2px}
+#productDetail .detail-gallery button{width:69px;height:69px;background:#fff;border:1px solid #e5e9e5}
+#productDetail .detail-gallery button.selected{border-color:#f36b22}
+#productDetail .rnv-photo-count{text-align:right;font-size:11px;color:#718078;padding:3px 5px}
+#productDetail .rnv-detail-summary,#productDetail .rnv-detail-section,#productDetail .rnv-detail-order{padding:18px!important;background:#fff;border-radius:14px}
+#productDetail .rnv-detail-summary small{font-size:11px;color:#66786c}
+#productDetail .rnv-detail-summary h3{font-size:21px;line-height:1.35;margin:8px 0}
+#productDetail .rnv-detail-price{display:block;color:#f06419;font-size:27px;font-weight:850}
+#productDetail .rnv-detail-availability{font-size:12px;color:#34815b;margin:7px 0!important}
+#productDetail .rnv-detail-section h4{font-size:16px;margin:0 0 10px;color:#17382b}
+#productDetail .rnv-detail-section p{margin:7px 0;font-size:13px}
+#productDetail .rnv-detail-seller button{border:1px solid #dfebe4;border-radius:9px;background:#f7faf8;padding:10px 14px;font-weight:750;color:#1a5b42}
+#productDetail .rnv-detail-related{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#productDetail .rnv-detail-related button{min-width:0;border:1px solid #edf0ed;border-radius:10px;background:#fff;text-align:left;padding:7px}
+#productDetail .rnv-detail-related img,#productDetail .rnv-related-empty{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff}
+#productDetail .rnv-detail-related span{display:block;font-size:11px;margin-top:5px;line-height:1.3}
+#productDetail .rnv-detail-related b{display:block;font-size:12px;color:#f06419;margin-top:3px}
+#productDetail .rnv-detail-order{margin-bottom:12px}
+#productDetail .detail-primary-actions .buy,#productDetail .detail-buy-now{background:#ff640f!important;color:#fff!important;border-radius:12px!important}
+@media(min-width:800px){
+ #productDetail .detail-content{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}
+ #productDetail .detail-content>div:first-child{grid-column:1;grid-row:1 / span 2;position:sticky;top:62px}
+ #productDetail .rnv-detail-summary{grid-column:2;grid-row:1}
+ #productDetail .rnv-detail-order{grid-column:2;grid-row:2}
+ #productDetail .rnv-detail-section,#productDetail .detail-compare{grid-column:1/-1}
+ #productDetail .rnv-detail-related{grid-template-columns:repeat(6,minmax(0,1fr))}
+}
+@media(max-width:620px){
+ #productDetail.detail-dialog{padding:0}
+ #productDetail .detail-card{max-height:100dvh;height:100dvh;border-radius:0}
+ #productDetail .detail-content{padding:8px;gap:8px}
+ #productDetail .detail-main-image{height:min(53vh,420px)}
+ #productDetail .rnv-detail-summary,#productDetail .rnv-detail-section,#productDetail .rnv-detail-order{padding:14px!important}
+ #productDetail .rnv-detail-order{margin-bottom:75px}
+}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1012,6 +1055,51 @@ function openProductDetail(id){
   var unavailable=orderUnavailable(p),minimum=Math.max(1,Math.floor(Number(p.moq)||1)),initial=0;
   var options=products.filter(function(x){return x.id!==id&&x.category===p.category});
   el("detailContent").innerHTML='<div>'+ (photos.length?'<img class="detail-main-image" id="detailMainImage" src="'+esc(photos[0])+'" alt="'+esc(p.name)+'">':'<div class="detail-main-image empty">Image available on enquiry</div>')+(photos.length>1?'<div class="detail-gallery" aria-label="Product images">'+photos.map(function(src,i){return '<button type="button" class="'+(i===0?'selected':'')+'" data-detail-photo="'+i+'" aria-label="Show image '+(i+1)+'"><img src="'+esc(src)+'" alt=""></button>'}).join("")+'</div>':"")+'<section class="detail-purchase" aria-label="Product ordering"><label class="detail-quantity-label" for="detailQuantity">Quantity</label><div class="qty detail-quantity"><button type="button" id="detailMinus" aria-label="Decrease quantity" '+(unavailable?'disabled':'')+'>−</button><input id="detailQuantity" type="number" step="1" min="0" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(initial)+'" '+(unavailable?'disabled':'')+'><button type="button" id="detailPlus" aria-label="Increase quantity" '+(unavailable?'disabled':'')+'>+</button></div><div class="detail-unit-price"><span>Price</span><strong>'+esc(money(p.price))+'</strong></div><p id="detailProductTotal" class="detail-product-total" role="status" aria-live="polite"></p><div class="detail-actions"><div class="detail-primary-actions"><button type="button" class="buy" data-detail-add="'+esc(id)+'" '+(unavailable?'disabled':'')+'>'+(unavailable?'Ordering unavailable':cart[id]!=null?'Update cart':'Add to cart')+'</button>'+(p.price==null?'<a class="detail-request-price" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'&quote=1">Request price</a>':'<button type="button" class="detail-buy-now" data-detail-buy-now="'+esc(id)+'" '+(unavailable?'disabled':'')+'>Buy now</button>')+'</div><div class="detail-secondary-actions"><button type="button" class="detail-save-action detail-star-action" data-detail-save="'+esc(id)+'" aria-label="'+(savedProducts.has(id)?'Remove saved product':'Save product')+'">'+(savedProducts.has(id)?'★':'☆')+'</button><a class="detail-message-action" href="./messages.html?product='+encodeURIComponent(id)+'&store='+encodeURIComponent(store.id)+'">Message seller</a></div></div>'+'</section></div><div><small>'+esc(p.category||"Product")+'</small><h3 id="detailName">'+esc(p.name)+'</h3><p>'+esc(productDescription(p))+'</p><dl class="detail-facts">'+facts.map(function(row){return '<div><dt>'+esc(row[0])+'</dt><dd>'+esc(row[1])+'</dd></div>'}).join("")+'</dl><p class="detail-note">Confirm price, stock, important specifications, delivery and applicable warranty before payment.</p>'+(options.length?'<div class="detail-compare"><label for="compareProduct">Compare with another '+esc(p.category||'product')+'</label><select id="compareProduct"><option value="">Choose a product</option>'+options.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select><div id="detailComparison" aria-live="polite"></div></div>':'')+'</div>';
+  // Present one continuous, mobile-first product journey while preserving existing purchase controls.
+  var content=el("detailContent");
+  var galleryColumn=content.children[0],informationColumn=content.children[1];
+  var purchase=galleryColumn.querySelector(".detail-purchase");
+  var mainPhoto=galleryColumn.querySelector(".detail-main-image");
+  if(mainPhoto){var imageCount=document.createElement("div");imageCount.className="rnv-photo-count";imageCount.textContent=photos.length?(photos.length+" product image"+(photos.length===1?"":"s")):"Image unavailable";galleryColumn.insertBefore(imageCount,mainPhoto.nextSibling)}
+  var summary=document.createElement("section");summary.className="rnv-detail-summary";
+  var description=informationColumn.querySelector("p");
+  var category=informationColumn.querySelector("small");
+  var heading=informationColumn.querySelector("h3");
+  var price=document.createElement("strong");price.className="rnv-detail-price";price.textContent=p.price==null?"Ask seller for price":money(p.price);
+  if(category)summary.appendChild(category);
+  if(heading)summary.appendChild(heading);
+  summary.appendChild(price);
+  var availability=document.createElement("p");availability.className="rnv-detail-availability";availability.textContent=stockLabel(p)+(minimum>1?" · MOQ "+minimum:"");summary.appendChild(availability);
+  if(description)summary.appendChild(description);
+  var delivery=document.createElement("section");delivery.className="rnv-detail-section";
+  var shippingTitle=document.createElement("h4");shippingTitle.textContent="Delivery & service";delivery.appendChild(shippingTitle);
+  var deliveryText=document.createElement("p");deliveryText.textContent=store.fulfilment_summary||"Contact this seller to confirm dispatch and delivery options.";delivery.appendChild(deliveryText);
+  var returnText=document.createElement("p");returnText.textContent="Returns: "+(store.return_policy_summary||"Confirm the return policy with the seller before ordering.");delivery.appendChild(returnText);
+  var specifications=document.createElement("section");specifications.className="rnv-detail-section";
+  var specTitle=document.createElement("h4");specTitle.textContent="Specifications";specifications.appendChild(specTitle);
+  var factsList=informationColumn.querySelector(".detail-facts");if(factsList)specifications.appendChild(factsList);
+  var reviews=document.createElement("section");reviews.className="rnv-detail-section";
+  reviews.innerHTML='<h4>Customer reviews</h4><p>Verified purchase reviews will appear here when available.</p>';
+  var seller=document.createElement("section");seller.className="rnv-detail-section rnv-detail-seller";
+  var sellerTitle=document.createElement("h4");sellerTitle.textContent="Sold by "+(store.store_name||"RANOVA Seller");seller.appendChild(sellerTitle);
+  var sellerLocation=document.createElement("p");sellerLocation.textContent=[store.business_location,store.country_name].filter(Boolean).join(" · ")||"Seller location not provided";seller.appendChild(sellerLocation);
+  var sellerLink=document.createElement("button");sellerLink.type="button";sellerLink.textContent="View store products";sellerLink.onclick=function(){closeProductDetail();el("grid").scrollIntoView({behavior:"smooth",block:"start"})};seller.appendChild(sellerLink);
+  var related=document.createElement("section");related.className="rnv-detail-section";
+  var relatedTitle=document.createElement("h4");relatedTitle.textContent="More from this store";related.appendChild(relatedTitle);
+  var relatedGrid=document.createElement("div");relatedGrid.className="rnv-detail-related";
+  options.slice(0,6).forEach(function(x){
+    var btn=document.createElement("button");btn.type="button";var image=productPhoto(x);
+    btn.innerHTML=(image?'<img src="'+esc(image)+'" alt="" loading="lazy">':'<span class="rnv-related-empty">Product</span>')+'<span>'+esc(x.name||"Product")+'</span><b>'+esc(x.price==null?"Ask for price":money(x.price))+'</b>';
+    btn.onclick=function(){openProductDetail(x.id)};relatedGrid.appendChild(btn)
+  });
+  if(!options.length){var empty=document.createElement("p");empty.textContent="More products will appear here as this store grows.";related.appendChild(empty)}
+  related.appendChild(relatedGrid);
+  var compare=informationColumn.querySelector(".detail-compare");
+  var note=informationColumn.querySelector(".detail-note");
+  content.replaceChildren(galleryColumn,summary,delivery,specifications,reviews,seller,related);
+  if(compare)content.appendChild(compare);
+  if(purchase){purchase.classList.add("rnv-detail-order");content.appendChild(purchase)}
+  if(note)specifications.appendChild(note);
   var dialog=el("productDetail");dialog.classList.add("open");dialog.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");el("closeDetail").focus();
   dialog.querySelectorAll("[data-detail-photo]").forEach(function(b){b.onclick=function(){el("detailMainImage").src=photos[Number(b.dataset.detailPhoto)];dialog.querySelectorAll("[data-detail-photo]").forEach(function(x){x.classList.toggle("selected",x===b)})}});
   var input=el("detailQuantity");
