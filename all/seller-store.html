@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>RANOVA Seller Store</title>
-<meta name="theme-color" content="#116a52">
+<meta name="theme-color" content="#ffffff">
 <meta name="description" content="Browse products from a RANOVA marketplace store.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -988,7 +988,7 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 <style id="rnv-premium-store-palette">
 /* Neutral premium storefront across all sellers; orange for shopping actions.
    Preserve green for genuine verification, availability and success states. */
-:root{--green:#293b36;--green2:#f26722;--ink:#242c2a;--muted:#727a76;--line:#e8e8e6;--soft:#f8f8f7;--orange:#ff681f}
+:root{--green:#293b36;--green2:#e9631b;--ink:#242c2a;--muted:#727a76;--line:#e8e8e6;--soft:#f8f8f7;--orange:#ff681f}
 body{background:#f7f7f6;color:var(--ink)}
 .top{background:#fff!important;color:#26312c!important;border-bottom:1px solid #e9e9e7;box-shadow:0 2px 12px rgba(0,0,0,.035)}
 .top .brand{color:#253630!important}
@@ -1008,6 +1008,26 @@ body{background:#f7f7f6;color:var(--ink)}
 .trust-metric,.info,.trust-card,.review-item{background:#fff}
 .customer-store-bottom-nav{background:#fff!important}
 .customer-store-bottom-nav .active{color:#f26722!important}
+/* Consistent neutral surfaces throughout the store, responsive at every width. */
+#page,.products,.about,.trust{background:#f7f7f6}
+#page .hero{background:#fff}
+.top .cart-count{background:#ff681f;color:#fff}
+.store-head,.store-copy{color:#27312d}
+.store-copy h1,.head h2,.trust-head h2{color:#27312d}
+.logo{background:#fff;border-color:#fff}
+.verified{background:#eef7f1!important;color:#217449!important}
+.product,.info,.trust-card,.rnv-detail-summary,.rnv-detail-section,.rnv-detail-order{background:#fff}
+.contact a:not(.primary),.contact button:not(.contact-primary){background:#fff;color:#38423d;border-color:#e6e7e4}
+.product .price,.detail-price,.rnv-detail-price{color:#e9631b}
+.product .buy,.checkout-btn,.detail-buy-now{background:#ff681f;color:#fff}
+.product .buy:disabled{opacity:.5}
+.store-category-btn.active,.store-category-btn[aria-current="true"]{background:#fff2e9!important;color:#d95111!important;border-color:#ffae7e!important}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid #f27634;outline-offset:2px}
+@media(max-width:620px){
+  .top .brand{color:#27312d!important}
+  .top .toplinks a,.top .cart-top{background:#f7f7f6!important;color:#293630!important;border-color:#e5e5e2!important}
+}
+
 </style>
 </head>
 <body>
