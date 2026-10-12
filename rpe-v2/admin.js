@@ -65,6 +65,18 @@ $("login").onclick=async()=>{
 };
 $("signOut").onclick=$("deniedSignOut").onclick=()=>sb.auth.signOut();
 $("refreshOrders").onclick=async()=>{await loadOrders();renderOrders();renderToday()};
+const refreshOperations=$("refreshOperations");
+function stampOperationsRefresh(){
+  const status=$("operationsUpdatedAt");
+  if(status)status.textContent="Last refreshed "+new Date().toLocaleString();
+}
+if(refreshOperations)refreshOperations.onclick=async()=>{
+  refreshOperations.disabled=true;refreshOperations.textContent="Refreshing…";
+  try{await loadAll();stampOperationsRefresh()}
+  catch(error){console.error(error);const status=$("operationsUpdatedAt");if(status)status.textContent="Refresh failed — please retry"}
+  finally{refreshOperations.disabled=false;refreshOperations.textContent="Refresh status"}
+};
+
 
 async function checkSession(nextSession){
   session=nextSession||null;user=session?.user||null;
