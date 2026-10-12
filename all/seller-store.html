@@ -891,6 +891,19 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 #productDetail .detail-product-total{margin:10px 0 0;padding:9px 12px;border-radius:10px;background:#fff7f1}
 @media(max-width:380px){#productDetail .rnv-price-quantity-row{gap:6px}#productDetail .rnv-quantity-box .detail-quantity button{width:32px;min-width:32px}#productDetail .rnv-quantity-box .detail-quantity input{width:38px}#productDetail .rnv-price-quantity-row .detail-unit-price{padding:9px 8px}#productDetail .rnv-price-quantity-row .detail-unit-price strong{font-size:16px}}
 </style>
+<style id="ranova-heading-quantity-layout">
+/* Quantity beside the headline orange price, total below it. */
+#productDetail .rnv-heading-price-qty{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+#productDetail .rnv-heading-price-qty .rnv-detail-price{display:block;margin:0;flex:1 1 150px;min-width:0;overflow-wrap:anywhere}
+#productDetail .rnv-heading-price-qty .rnv-quantity-box{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:auto}
+#productDetail .rnv-heading-price-qty .detail-quantity-label{font-size:12px;margin:0}
+#productDetail .rnv-heading-price-qty .detail-quantity{display:flex;align-items:center;gap:0}
+#productDetail .rnv-heading-price-qty .detail-quantity button{height:38px;width:38px;min-width:38px}
+#productDetail .rnv-heading-price-qty .detail-quantity input{width:46px;height:38px;text-align:center}
+#productDetail .rnv-detail-summary>.detail-product-total{margin:10px 0 0!important;padding:9px 12px;background:#fff7f1;border-radius:10px}
+#productDetail .rnv-detail-order>.rnv-price-quantity-row{display:none}
+@media(max-width:380px){#productDetail .rnv-heading-price-qty{gap:6px}#productDetail .rnv-heading-price-qty .rnv-detail-price{font-size:24px}#productDetail .rnv-heading-price-qty .detail-quantity button{width:32px;min-width:32px}#productDetail .rnv-heading-price-qty .detail-quantity input{width:38px}}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1133,7 +1146,14 @@ function openProductDetail(id){
   var price=document.createElement("strong");price.className="rnv-detail-price";price.textContent=p.price==null?"Ask seller for price":money(p.price);
   if(category)summary.appendChild(category);
   if(heading)summary.appendChild(heading);
-  summary.appendChild(price);
+  // Keep the large orange product price in the product heading, with quantity immediately to its right.
+  var priceQtyRow=document.createElement("div");priceQtyRow.className="rnv-heading-price-qty";
+  var qtyBox=purchase&&purchase.querySelector(".rnv-quantity-box");
+  priceQtyRow.appendChild(price);
+  if(qtyBox)priceQtyRow.appendChild(qtyBox);
+  summary.appendChild(priceQtyRow);
+  var productTotal=purchase&&purchase.querySelector("#detailProductTotal");
+  if(productTotal)summary.appendChild(productTotal);
   var availability=document.createElement("p");availability.className="rnv-detail-availability";availability.textContent=stockLabel(p)+(minimum>1?" · MOQ "+minimum:"");summary.appendChild(availability);
   if(description)summary.appendChild(description);
   var delivery=document.createElement("section");delivery.className="rnv-detail-section";
