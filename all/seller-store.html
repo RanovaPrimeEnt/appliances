@@ -1029,6 +1029,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid #f276
 }
 
 </style>
+<style id="rnv-review-readonly-collapse">#productDetail .rnv-review-dropdown[hidden]{display:none!important}#productDetail .rnv-review-toggle{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:17px;font-weight:800;min-height:46px;color:#21392e}#productDetail .rnv-review-toggle::-webkit-details-marker{display:none}#productDetail .rnv-review-toggle:after{content:"⌄";font-size:23px;color:#f26722;margin-left:8px}#productDetail .rnv-review-dropdown[open]>.rnv-review-toggle:after{content:"⌃"}#productDetail .rnv-review-toggle-score{font-weight:900;color:#ec691b;margin-left:auto}#productDetail .rnv-review-list{padding-top:12px}</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1231,44 +1232,34 @@ function productVariants(p){
 }
 function reviewStars(n){return "★".repeat(Math.max(0,Math.min(5,Number(n)||0)))+"☆".repeat(5-Math.max(0,Math.min(5,Number(n)||0)))}
 async function setupProductReviews(section,p){
-  var list=section.querySelector("#rnvReviewList"),form=section.querySelector("#rnvReviewForm"),feedback=section.querySelector("#rnvReviewFeedback");
-  var rating=0, stars=Array.from(form.querySelectorAll("[data-review-star]"));
-  function paintRating(){stars.forEach(function(b){var v=Number(b.dataset.reviewStar);b.textContent=v<=rating?"★":"☆";b.classList.toggle("selected",v<=rating);b.setAttribute("aria-checked",String(v===rating))})}
-  stars.forEach(function(b){b.onclick=function(){rating=Number(b.dataset.reviewStar);paintRating()};b.onkeydown=function(e){if(e.key==="ArrowRight"||e.key==="ArrowUp"||e.key==="ArrowLeft"||e.key==="ArrowDown"){e.preventDefault();rating=Math.max(1,Math.min(5,(rating||1)+(e.key==="ArrowRight"||e.key==="ArrowUp"?1:-1)));paintRating();stars[rating-1].focus()}}});
-  if(!buyerSession||!buyerSession.user){form.querySelector(".rnv-review-submit").textContent="Sign in to review";form.onsubmit=function(e){e.preventDefault();location.href="./account.html"}}
-  async function refresh(){
-    var result=await sb.from("ranova_product_reviews").select("id,buyer_user_id,rating,review_text,photo_paths,created_at,moderation_status").eq("product_id",p.id).eq("store_id",store.id).order("created_at",{ascending:false}).limit(50);
-    if(result.error){list.textContent="Reviews are temporarily unavailable.";return}
-    var published=(result.data||[]).filter(function(r){return r.moderation_status==="published"});
-    var avg=published.length?published.reduce(function(a,r){return a+Number(r.rating)},0)/published.length:0;
-    list.innerHTML=published.length?'<div class="rnv-review-score"><strong>'+esc(avg.toFixed(1))+' <span>/ 5</span></strong><div><div class="rnv-review-score-stars">'+reviewStars(Math.round(avg))+'</div><p>'+published.length+' customer review'+(published.length===1?'':'s')+'</p></div></div>':'<div class="rnv-review-empty">No customer reviews yet. Be the first to rate this product.</div>';
-    published.forEach(function(r){
-      var card=document.createElement("article");card.className="rnv-review-card";
-      var head=document.createElement("div");head.className="rnv-review-card-rating";head.textContent=reviewStars(r.rating)+"  "+Number(r.rating)+"/5 · "+new Date(r.created_at).toLocaleDateString();var customerId=document.createElement("div");customerId.className="rnv-review-customer-id";customerId.textContent="Customer ID: ••••"+String(r.buyer_user_id||"").replace(/-/g,"").slice(-4).toUpperCase();card.appendChild(customerId);card.appendChild(head);
-      if(r.review_text){var comment=document.createElement("p");comment.textContent=r.review_text;card.appendChild(comment)}
-      if(Array.isArray(r.photo_paths)&&r.photo_paths.length){var photos=document.createElement("div");photos.className="rnv-review-photos";r.photo_paths.slice(0,5).forEach(function(path){var img=document.createElement("img");img.loading="lazy";img.alt="Customer review photo";img.src=sb.storage.from("ranova-review-photos").getPublicUrl(path).data.publicUrl;photos.appendChild(img)});card.appendChild(photos)}
-      list.appendChild(card);
-    });
-  }
-  refresh();
-  if(buyerSession&&buyerSession.user)form.onsubmit=async function(e){
-    e.preventDefault();if(!rating){feedback.textContent="Select between 1 and 5 stars.";return}
-    var files=Array.from(form.querySelector("#rnvReviewPhotos").files||[]);
-    if(files.length>5||files.some(function(f){return f.size>5242880||!["image/jpeg","image/png","image/webp"].includes(f.type)})){feedback.textContent="Choose up to five JPG, PNG or WebP photos, maximum 5 MB each.";return}
-    var submit=form.querySelector(".rnv-review-submit");submit.disabled=true;feedback.textContent="Submitting review…";
-    try{
-      var paths=[];
-      for(var i=0;i<files.length;i++){
-        var file=files[i],extension=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
-        var path=buyerSession.user.id+"/"+crypto.randomUUID()+"."+extension;
-        var uploaded=await sb.storage.from("ranova-review-photos").upload(path,file,{contentType:file.type,upsert:false});
-        if(uploaded.error)throw uploaded.error;paths.push(path);
-      }
-      var saved=await sb.from("ranova_product_reviews").insert({product_id:p.id,store_id:store.id,buyer_user_id:buyerSession.user.id,rating:rating,review_text:form.querySelector("#rnvReviewText").value.trim(),photo_paths:paths,moderation_status:"pending"});
-      if(saved.error)throw saved.error;
-      feedback.textContent="Review submitted. It will appear after moderation.";form.reset();rating=0;paintRating();
-    }catch(err){feedback.textContent=String(err.message||"Unable to submit review. Please try again.")}finally{submit.disabled=false}
-  };
+  var list=section.querySelector("#rnvReviewList");
+  var toggle=section.querySelector(".rnv-review-toggle");
+  var result=await sb.from("ranova_product_reviews")
+    .select("id,buyer_user_id,rating,review_text,photo_paths,created_at,moderation_status")
+    .eq("product_id",p.id).eq("store_id",store.id).eq("moderation_status","published")
+    .order("created_at",{ascending:false}).limit(50);
+  if(result.error){section.hidden=true;return}
+  var published=result.data||[];
+  // No placeholder or review records are shown until a customer review is published.
+  if(!published.length){section.hidden=true;return}
+  section.hidden=false;
+  var avg=published.reduce(function(a,r){return a+Number(r.rating)},0)/published.length;
+  toggle.innerHTML='<span>Customer reviews <small>('+published.length+')</small></span><span class="rnv-review-toggle-score">'+esc(avg.toFixed(1))+' ★</span>';
+  list.innerHTML='<div class="rnv-review-score"><strong>'+esc(avg.toFixed(1))+' <span>/ 5</span></strong><div><div class="rnv-review-score-stars">'+reviewStars(Math.round(avg))+'</div><p>'+published.length+' customer review'+(published.length===1?'':'s')+'</p></div></div>';
+  published.forEach(function(r){
+    var card=document.createElement("article");card.className="rnv-review-card";
+    var customerId=document.createElement("div");customerId.className="rnv-review-customer-id";
+    customerId.textContent="Customer ID: ••••"+String(r.buyer_user_id||"").replace(/-/g,"").slice(-4).toUpperCase();card.appendChild(customerId);
+    var head=document.createElement("div");head.className="rnv-review-card-rating";
+    head.textContent=reviewStars(r.rating)+"  "+Number(r.rating)+"/5 · "+new Date(r.created_at).toLocaleDateString();card.appendChild(head);
+    if(r.review_text){var comment=document.createElement("p");comment.textContent=r.review_text;card.appendChild(comment)}
+    if(Array.isArray(r.photo_paths)&&r.photo_paths.length){
+      var photos=document.createElement("div");photos.className="rnv-review-photos";
+      r.photo_paths.slice(0,5).forEach(function(path){var img=document.createElement("img");img.loading="lazy";img.alt="Customer review photo";img.src=sb.storage.from("ranova-review-photos").getPublicUrl(path).data.publicUrl;photos.appendChild(img)});
+      card.appendChild(photos);
+    }
+    list.appendChild(card);
+  });
 }
 function openProductDetail(id){
   var p=products.find(function(x){return x.id===id});if(!p)return;
@@ -1329,8 +1320,8 @@ function openProductDetail(id){
   var specifications=document.createElement("details");specifications.className="rnv-detail-section rnv-specifications-dropdown";
   var specTitle=document.createElement("summary");specTitle.className="rnv-specifications-toggle";specTitle.textContent="Specifications";specTitle.setAttribute("aria-label","Show or hide product specifications");specifications.appendChild(specTitle);
   var factsList=informationColumn.querySelector(".detail-facts");if(factsList)specifications.appendChild(factsList);
-  var reviews=document.createElement("section");reviews.className="rnv-detail-section rnv-product-reviews";
-  reviews.innerHTML='<h4>Customer reviews</h4><div class="rnv-review-list" id="rnvReviewList"><p>Loading reviews…</p></div><form class="rnv-review-form" id="rnvReviewForm" hidden aria-hidden="true"><h4>Rate this product</h4><div class="rnv-review-stars" role="radiogroup" aria-label="Your rating">'+[1,2,3,4,5].map(function(n){return '<button type="button" data-review-star="'+n+'" role="radio" aria-checked="false" aria-label="'+n+' star'+(n===1?'':'s')+'">☆</button>'}).join('')+'</div><label for="rnvReviewText">Your review (optional)</label><textarea id="rnvReviewText" maxlength="2000" rows="4" placeholder="Share your experience with this product"></textarea><label for="rnvReviewPhotos">Add up to 5 photos (optional)</label><input id="rnvReviewPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple><p class="rnv-review-helper">JPG, PNG or WebP · 5 MB per photo. Reviews are checked before publication.</p><button class="rnv-review-submit" type="submit">Submit review</button><p id="rnvReviewFeedback" role="status" aria-live="polite"></p></form>';
+  var reviews=document.createElement("details");reviews.className="rnv-detail-section rnv-product-reviews rnv-review-dropdown";reviews.hidden=true;
+  reviews.innerHTML='<summary class="rnv-review-toggle">Customer reviews</summary><div class="rnv-review-list" id="rnvReviewList"></div>';
   setupProductReviews(reviews,p);
   var seller=document.createElement("section");seller.className="rnv-detail-section rnv-detail-seller";
   var sellerTitle=document.createElement("h4");sellerTitle.textContent="Sold by "+(store.store_name||"RANOVA Seller");seller.appendChild(sellerTitle);
