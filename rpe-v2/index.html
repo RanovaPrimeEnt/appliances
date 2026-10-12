@@ -581,6 +581,12 @@ input[type="checkbox"],input[type="radio"],input[type="range"]{accent-color:#FF7
   :is(.market-product-card,.product,.pay-product,.saved-love-card):hover {transform:none!important}
 }
 </style>
+<style id="rnv-instant-navigation">
+/* Instant page and product content appearance; preserve intentional image swipes. */
+html{scroll-behavior:auto!important}
+#homeProducts .product{animation:none!important}
+.panel,.panel.active,.main,.product,.market-product-card,.pay-product,.saved-love-card,.detail-panel{animation:none!important}
+</style>
 </head>
 <body>
 <div id="installHelp" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:120;place-items:center;padding:18px">
