@@ -1690,7 +1690,7 @@ function renderCart(){
   el("cartLines").querySelectorAll("[data-qty]").forEach(function(inp){inp.onchange=function(){setQuantity(this.dataset.qty,this.value)}});
   el("cartLines").querySelectorAll("[data-remove]").forEach(function(b){b.onclick=function(){removeItem(this.dataset.remove)}});
 }
-function openCart(){el("drawerStoreName").textContent=store?store.store_name:"seller";el("cartBackdrop").classList.add("open");el("cartDrawer").classList.add("open");document.body.classList.add("no-scroll")}
+function openCart(){renderCart();el("drawerStoreName").textContent=store?store.store_name:"seller";el("cartBackdrop").classList.add("open");el("cartDrawer").classList.add("open");document.body.classList.add("no-scroll")}
 function closeCart(){el("cartBackdrop").classList.remove("open");el("cartDrawer").classList.remove("open");if(!el("checkoutModal").classList.contains("open"))document.body.classList.remove("no-scroll")}
 function openCheckout(){var enforcement=String((marketplaceTrust.enforcement||{}).enforcement_status||"good_standing");if(!cartItems().length||enforcement==="restricted"||enforcement==="suspended")return;closeCart();el("checkoutMsg").style.display="none";el("checkoutBody").style.display="block";el("checkoutSuccess").style.display="none";el("checkoutModal").classList.add("open");document.body.classList.add("no-scroll");loadFeePreview()}
 function closeCheckout(){el("checkoutModal").classList.remove("open");document.body.classList.remove("no-scroll")}
@@ -1823,7 +1823,8 @@ async function boot(){
   }else if(deepProduct){openProductDetail(deepProduct)}
 }
 el("search").addEventListener("input",render);el("storeSort").addEventListener("change",render);el("buyerCountry").addEventListener("change",loadFeePreview);el("paymentMethod").addEventListener("change",loadFeePreview);
-el("topCart").onclick=el("cartFab").onclick=goToMainCart;el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
+el("topCart").onclick=goToMainCart;
+el("cartFab").onclick=function(){if(cartItems().length)openCart()};el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
 el("closeCheckout").onclick=el("cancelCheckout").onclick=closeCheckout;el("placeOrder").onclick=placeOrder;el("doneCheckout").onclick=closeCheckout;
 el("checkoutModal").addEventListener("click",function(e){if(e.target===this)closeCheckout()});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeCart();closeCheckout()}});
