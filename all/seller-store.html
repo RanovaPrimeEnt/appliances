@@ -869,6 +869,16 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
  #productDetail .rnv-detail-order{margin-bottom:75px}
 }
 </style>
+<style id="ranova-product-variant-thumbnails">
+#productDetail .rnv-variant-picker{margin:12px 0 0;padding:12px 0 3px;border-top:1px solid #edf0ed}
+#productDetail .rnv-variant-heading{font-size:12px;font-weight:800;color:#2d3e33;margin-bottom:10px}
+#productDetail .rnv-variant-strip{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-x:contain;padding:2px 2px 9px;scroll-snap-type:x proximity}
+#productDetail .rnv-variant-choice{flex:0 0 78px;min-width:0;border:1px solid #e2e7e2;background:#fff;border-radius:10px;padding:5px;scroll-snap-align:start;text-align:left}
+#productDetail .rnv-variant-choice.selected{border:2px solid #f26b21;background:#fff7f2}
+#productDetail .rnv-variant-choice img,#productDetail .rnv-variant-noimage{width:100%;aspect-ratio:1/1;display:block;object-fit:contain;background:#fff;border-radius:7px}
+#productDetail .rnv-variant-choice span:last-child{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;margin:4px 0 0;color:#43554a}
+#productDetail .rnv-variant-choice:focus-visible{outline:2px solid #f26b21;outline-offset:2px}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1044,6 +1054,23 @@ function shareProduct(id){
   else if(navigator.clipboard)navigator.clipboard.writeText(url.href).then(function(){alert("Product link copied.")}).catch(function(){prompt("Copy this product link",url.href)});
   else prompt("Copy this product link",url.href);
 }
+function variantFamily(p){
+  var specs=p.specifications&&typeof p.specifications==="object"?p.specifications:{};
+  var explicit=p.variant_group||p.product_family||specs.variant_group||specs.product_family||specs.parent_sku||"";
+  if(explicit)return "group:"+String(explicit).trim().toLowerCase();
+  // Only infer a family when names differ by recognizable colour/size tokens.
+  var colors="black white red blue green yellow pink purple grey gray brown beige cream orange navy silver gold maroon"; 
+  var token="(?:"+colors.split(" ").join("|")+")";
+  var size="(?:xxxl|xxl|xl|xs|small|medium|large|extra large|\\d+(?:\\.\\d+)?\\s?(?:cm|mm|m|inch|inches|ft|ml|l|kg|g)|\\d+\\s?[x×]\\s?\\d+(?:\\s?[x×]\\s?\\d+)?)";
+  var normalized=String(p.name||"").toLowerCase().replace(new RegExp("\\b"+token+"\\b","gi")," ").replace(new RegExp("\\b"+size+"\\b","gi")," ").replace(/[()\[\],/|:_-]/g," ").replace(/\\s+/g," ").trim();
+  return normalized.length>=9?"name:"+normalized:"";
+}
+function productVariants(p){
+  var key=variantFamily(p);
+  if(!key)return [];
+  return products.filter(function(x){return x.id!==p.id&&x.category===p.category&&variantFamily(x)===key&&
+    (key.indexOf("group:")===0||String(x.name||"").toLowerCase()!==String(p.name||"").toLowerCase())}).slice(0,14);
+}
 function openProductDetail(id){
   var p=products.find(function(x){return x.id===id});if(!p)return;
   detailProductId=id;
@@ -1058,6 +1085,24 @@ function openProductDetail(id){
   // Present one continuous, mobile-first product journey while preserving existing purchase controls.
   var content=el("detailContent");
   var galleryColumn=content.children[0],informationColumn=content.children[1];
+  var variants=productVariants(p);
+  if(variants.length){
+    var variantSection=document.createElement("section");variantSection.className="rnv-variant-picker";
+    var variantLabel=document.createElement("div");variantLabel.className="rnv-variant-heading";variantLabel.textContent="Available colours & sizes";variantSection.appendChild(variantLabel);
+    var variantStrip=document.createElement("div");variantStrip.className="rnv-variant-strip";
+    [p].concat(variants).forEach(function(v){
+      var button=document.createElement("button");button.type="button";button.className="rnv-variant-choice"+(v.id===p.id?" selected":"");
+      button.setAttribute("aria-pressed",v.id===p.id?"true":"false");
+      button.setAttribute("aria-label","Choose "+(v.name||"product option"));
+      var photo=productPhoto(v);
+      button.innerHTML=(photo?'<img src="'+esc(photo)+'" alt="" loading="lazy">':'<span class="rnv-variant-noimage">Option</span>')+'<span>'+esc(v.name||"Option")+'</span>';
+      button.onclick=function(){if(v.id!==detailProductId)openProductDetail(v.id)};
+      variantStrip.appendChild(button);
+    });
+    variantSection.appendChild(variantStrip);
+    content.children[0].appendChild(variantSection);
+  }
+
   var purchase=galleryColumn.querySelector(".detail-purchase");
   var mainPhoto=galleryColumn.querySelector(".detail-main-image");
   if(mainPhoto){var imageCount=document.createElement("div");imageCount.className="rnv-photo-count";imageCount.textContent=photos.length?(photos.length+" product image"+(photos.length===1?"":"s")):"Image unavailable";galleryColumn.insertBefore(imageCount,mainPhoto.nextSibling)}
