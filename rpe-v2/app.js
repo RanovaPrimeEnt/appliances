@@ -826,10 +826,11 @@ $("deleteAccount").onclick=async()=>{
   }
 };
 
+const initialStoreNavigationPanel = (()=>{const qs=new URLSearchParams(location.search);return qs.get("home")==="1"?"marketplaceHomePanel":(qs.get("panel")||"")})();
 function handleRequestedPanel(){
   const qs=new URLSearchParams(location.search);
   const forceHome=qs.get("home")==="1";
-  const requested=forceHome?"marketplaceHomePanel":(qs.get("panel")||"");
+  const requested=forceHome?"marketplaceHomePanel":(qs.get("panel")||initialStoreNavigationPanel);
   const allowed=new Set(["marketplaceHomePanel","messagesPanel","cartPanel","savedPanel","homePanel","ordersPanel","toPayPanel","recentPanel","addressPanel","notifPanel","helpPanel","storesPanel","myStoresPanel"]);
   if(!allowed.has(requested))return false;
   orderFilter=null;
@@ -930,6 +931,7 @@ async function applySession(session,initial=false){
     setAuthOnlyMode(false);
     appBox.classList.remove("hide");
     subscribeRealtime();
+    // Restore the requested tab after asynchronous account hydration.
     handleRequestedPanel();
     handleRequestedConversation().catch(()=>{});
     handleIncomingCartLink().catch(()=>{});
