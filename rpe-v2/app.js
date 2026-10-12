@@ -1720,6 +1720,10 @@ async function placeMarketplaceCartOrder(){
   if(!name||!phone||!country||!locationText)return fail("Complete your name, phone number, delivery country and delivery location.",!name?$("marketCheckoutName"):!phone?$("marketCheckoutPhone"):!country?$("marketCheckoutCountry"):$("marketCheckoutLocation"));
   if(method==="Mobile Money"&&!payPhone)return fail("Enter the Mobile Money number for payment authorization.",$("marketCheckoutPayPhone"));
   const selected=selectedCartEntries();
+  if(!selected.length)return fail("Select at least one available product before continuing to checkout.");
+  if(!/^[+0-9()\s-]{7,20}$/.test(phone))return fail("Enter a valid contact phone number.",$("marketCheckoutPhone"));
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return fail("Enter a valid email address or leave it blank.",$("marketCheckoutEmail"));
+  if(method==="Mobile Money"&&!/^[+0-9()\s-]{7,20}$/.test(payPhone))return fail("Enter a valid Mobile Money number.",$("marketCheckoutPayPhone"));
   const items=selected.map(i=>i.kind==="market"
     ?({seller_product_id:i.product_id,quantity:i.quantity})
     :({product_id:i.product_id,product_name:i.product?.name||"Product",quantity:i.quantity,unit_price:i.product?.price==null?null:Number(i.product.price)}));
@@ -2107,7 +2111,9 @@ function marketFilteredProducts(filter=""){
   const storeById=new Map(marketStores.map(s=>[s.id,s]));
   let rows=marketSellerProducts.filter(p=>{
     const store=storeById.get(p.store_id)||{};
-    const textMatch=!q||[p.name,p.category,p.short_description,p.sku,store.store_name,store.business_location,store.country_name].some(x=>String(x||"").toLowerCase().includes(q));
+    const searchable=[p.name,p.category,p.short_description,p.description,p.sku,p.unit_label,store.store_name,store.tagline,store.business_location,store.country_name].map(x=>String(x||"").toLowerCase()).join(" ");
+    const tokens=q.split(/\s+/).filter(Boolean);
+    const textMatch=!tokens.length||tokens.every(token=>searchable.includes(token));
     const categoryMatch=!marketCategory||String(p.category||"").toLowerCase()===marketCategory.toLowerCase();
     const storeLocation=String(store.business_location||store.country_name||"").toLowerCase();
     const locationMatch=!marketLocation||storeLocation===marketLocation.toLowerCase();
