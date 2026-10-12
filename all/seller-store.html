@@ -1628,7 +1628,7 @@ function productCard(p){
 function renderCategoryNav(){
   var cats=CATEGORY_ORDER.filter(function(c){return products.some(function(p){return p.category===c})});
   products.forEach(function(p){if(p.category&&!cats.includes(p.category))cats.push(p.category)});
-  el("categoryNav").innerHTML=['All'].concat(cats).map(function(c){return '<button class="store-category-btn'+(activeCategory===c?' active':'')+'" data-category="'+esc(c)+'">'+esc(c)+'</button>'}).join("");
+  el("categoryNav").innerHTML=['All'].concat(cats).map(function(c){return '<button type="button" class="store-category-btn'+(activeCategory===c?' active':'')+'" data-category="'+esc(c)+'" aria-pressed="'+String(activeCategory===c)+'">'+esc(c)+'</button>'}).join("");
   el("categoryNav").querySelectorAll("[data-category]").forEach(function(b){b.onclick=function(){activeCategory=this.dataset.category;render()}});
 }
 function render(){
@@ -1833,7 +1833,13 @@ async function boot(){
     }
   }else if(deepProduct){openProductDetail(deepProduct)}
 }
-el("search").addEventListener("input",render);el("storeSort").addEventListener("change",render);el("buyerCountry").addEventListener("change",loadFeePreview);el("paymentMethod").addEventListener("change",loadFeePreview);
+var storeSearchDelay=0;
+el("search").addEventListener("input",function(){
+  clearTimeout(storeSearchDelay);
+  storeSearchDelay=setTimeout(render,140);
+});
+el("search").addEventListener("keydown",function(e){if(e.key==="Escape"){this.value="";clearTimeout(storeSearchDelay);render()}});
+el("storeSort").addEventListener("change",render);el("buyerCountry").addEventListener("change",loadFeePreview);el("paymentMethod").addEventListener("change",loadFeePreview);
 el("topCart").onclick=goToMainCart;
 el("cartFab").onclick=function(){if(cartItems().length)openCart()};el("closeCart").onclick=el("cartBackdrop").onclick=closeCart;el("checkout").onclick=openCheckout;
 el("closeCheckout").onclick=el("cancelCheckout").onclick=closeCheckout;el("placeOrder").onclick=placeOrder;el("doneCheckout").onclick=closeCheckout;
