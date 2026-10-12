@@ -916,6 +916,15 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 #productDetail .rnv-heading-price-qty .detail-quantity button:focus-visible{outline:2px solid #ec621b;outline-offset:2px}
 @media(max-width:420px){#productDetail .rnv-detail-summary .rnv-heading-price-qty{gap:5px}#productDetail .rnv-detail-summary .rnv-detail-price{font-size:clamp(21px,6vw,27px)}#productDetail .rnv-detail-summary .detail-product-total strong{font-size:19px}}
 </style>
+<style id="ranova-specifications-accordion">
+#productDetail details.rnv-specifications-dropdown{display:block}
+#productDetail .rnv-specifications-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;font-size:16px;font-weight:800;color:#17382b;min-height:44px;user-select:none}
+#productDetail .rnv-specifications-toggle::-webkit-details-marker{display:none}
+#productDetail .rnv-specifications-toggle::after{content:"⌄";font-size:24px;font-weight:500;color:#f06419;line-height:1;transition:transform .2s ease}
+#productDetail details[open]>.rnv-specifications-toggle::after{transform:rotate(180deg)}
+#productDetail details.rnv-specifications-dropdown .detail-facts{margin-top:13px}
+#productDetail .rnv-specifications-toggle:focus-visible{outline:2px solid #f06419;outline-offset:4px;border-radius:5px}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1172,8 +1181,8 @@ function openProductDetail(id){
   var shippingTitle=document.createElement("h4");shippingTitle.textContent="Delivery & service";delivery.appendChild(shippingTitle);
   var deliveryText=document.createElement("p");deliveryText.textContent=store.fulfilment_summary||"Contact this seller to confirm dispatch and delivery options.";delivery.appendChild(deliveryText);
   var returnText=document.createElement("p");returnText.textContent="Returns: "+(store.return_policy_summary||"Confirm the return policy with the seller before ordering.");delivery.appendChild(returnText);
-  var specifications=document.createElement("section");specifications.className="rnv-detail-section";
-  var specTitle=document.createElement("h4");specTitle.textContent="Specifications";specifications.appendChild(specTitle);
+  var specifications=document.createElement("details");specifications.className="rnv-detail-section rnv-specifications-dropdown";
+  var specTitle=document.createElement("summary");specTitle.className="rnv-specifications-toggle";specTitle.textContent="Specifications";specTitle.setAttribute("aria-label","Show or hide product specifications");specifications.appendChild(specTitle);
   var factsList=informationColumn.querySelector(".detail-facts");if(factsList)specifications.appendChild(factsList);
   var reviews=document.createElement("section");reviews.className="rnv-detail-section";
   reviews.innerHTML='<h4>Customer reviews</h4><p>Verified purchase reviews will appear here when available.</p>';
