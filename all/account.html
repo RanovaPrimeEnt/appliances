@@ -52,6 +52,7 @@ svg{display:block}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
+<style>.rnv-to-review-product{justify-content:flex-start!important}.rnv-to-review-product>img{width:66px;height:66px;object-fit:contain;border-radius:9px;background:#f7f8f6;flex-shrink:0}.rnv-to-review-info{flex:1;min-width:0}.rnv-to-review-product .actions{margin-left:auto}@media(max-width:380px){.rnv-to-review-product{flex-wrap:wrap}}</style>
 </head>
 <body>
 <div id="loggedOut" class="auth-wrap">
@@ -236,7 +237,7 @@ function orderGroups(){
     if(!["paid","confirmed","refunded","partially_refunded"].includes(pay)&&["awaiting_payment","awaiting_confirmation","pending"].includes(st))groups.to_pay.push(o);
     if(["paid","confirmed"].includes(pay)&&["awaiting_confirmation","confirmed","processing","preparing","ready_for_dispatch","pending"].includes(st))groups.to_ship.push(o);
     if(["shipped","dispatched","in_transit","out_for_delivery","delivery_in_progress"].includes(st))groups.to_receive.push(o);
-    if(["delivered","delivered_confirmed","completed"].includes(st))groups.to_review.push(o);
+    if(["paid","confirmed"].includes(pay)&&["delivered","delivered_confirmed","completed"].includes(st))groups.to_review.push(o);
     var cc=String(o.buyer_country_code||"").toUpperCase(),home=String(state?.profile?.default_country_code||"").toUpperCase();
     if(cc&&home&&cc!==home)groups.international.push(o);
   });
@@ -249,11 +250,33 @@ document.querySelectorAll("[data-open-panel]").forEach(function(b){b.onclick=fun
 document.querySelectorAll("[data-coming]").forEach(function(b){b.onclick=function(){toast(b.dataset.coming+" is being prepared for RANOVA.")}});
 document.querySelectorAll("[data-order-filter]").forEach(function(b){b.onclick=function(){var f=b.dataset.orderFilter;if(f==="refunds"){showPanel("orders","Refunds & Disputes");renderOrders("refunds")}else{showPanel("orders",f==="international"?"International Orders":pretty(f.replace("to_","To ")));renderOrders(f)}}});
 function productRow(x){var p=x.product;if(!p)return '<div class="row"><div><b>Unavailable product</b><small>This saved listing is no longer public.</small></div></div>';return '<div class="row"><div>'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="">':'')+'<b>'+esc(p.name)+'</b><small>'+esc(p.category||"")+' · '+esc(money(p.price))+'</small></div><div class="actions"><a class="secondary" href="./product.html?product='+encodeURIComponent(p.id)+'">View</a><button class="danger" data-remove-product="'+p.id+'">Remove</button></div></div>'}
+function purchasedItems(o){
+  var raw=o.items,items=Array.isArray(raw)?raw:(raw&&Array.isArray(raw.items)?raw.items:[]);
+  if(!items.length&&o.product_id)items=[{product_id:o.product_id,name:o.product_name,quantity:o.quantity}];
+  return items.map(function(x){return {id:String(x.product_id||x.productId||x.id||""),name:String(x.product_name||x.name||x.title||"Purchased product"),quantity:Number(x.quantity||x.qty||1)}}).filter(function(x){return /^[0-9a-f-]{36}$/i.test(x.id)});
+}
+async function renderReviewEligibleProducts(orders){
+  var container=el("ordersList");container.innerHTML='<div class="empty">Checking products eligible for review…</div>';
+  var all=[];orders.forEach(function(o){purchasedItems(o).forEach(function(item){all.push({order:o,item:item})})});
+  if(!all.length){container.innerHTML='<div class="empty">No delivered and paid products awaiting review.</div>';return}
+  var ids=Array.from(new Set(all.map(function(x){return x.item.id})));
+  var results=await Promise.all([
+    sb.from("ranova_seller_products").select("id,name,primary_image_url,store_id").in("id",ids),
+    sb.from("ranova_product_reviews").select("product_id").eq("buyer_user_id",session.user.id).in("product_id",ids)
+  ]);
+  if(results[0].error||results[1].error){container.innerHTML='<div class="empty">Unable to load review eligibility. Please retry.</div>';return}
+  var products=new Map((results[0].data||[]).map(function(x){return [x.id,x]}));
+  var reviewed=new Set((results[1].data||[]).map(function(x){return x.product_id}));
+  var unique=new Set();var available=all.filter(function(x){if(unique.has(x.item.id)||reviewed.has(x.item.id)||!products.has(x.item.id))return false;unique.add(x.item.id);return true});
+  if(!available.length){container.innerHTML='<div class="empty">All eligible products have been reviewed, or no products are ready yet.</div>';return}
+  container.innerHTML=available.map(function(x){var p=products.get(x.item.id);return '<div class="row rnv-to-review-product">'+(p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" alt="" loading="lazy">':'')+'<div class="rnv-to-review-info"><b>'+esc(p.name||x.item.name)+'</b><small>Order '+esc(x.order.order_ref)+' · Paid and received</small><small>Quantity '+esc(x.item.quantity)+'</small></div><div class="actions"><a class="primary" href="./review-product.html?product='+encodeURIComponent(p.id)+'&order='+encodeURIComponent(x.order.id)+'">Review</a></div></div>'}).join("");
+}
 function renderOrders(filter){
   var groups=orderGroups(),orders=state.orders||[],list=filter&&filter!=="all"&&filter!=="refunds"?(groups[filter]||[]):orders;
   el("ordersHeading").textContent=filter&&filter!=="all"&&filter!=="refunds"?(filter==="international"?"International Orders":pretty(filter.replace("to_","To "))):"Marketplace Orders";
   el("ordersList").style.display=filter==="refunds"?"none":"grid";
   el("ordersHeading").style.display=filter==="refunds"?"none":"block";
+  if(filter==="to_review"){renderReviewEligibleProducts(list);return}
   el("ordersList").innerHTML=list.length?list.map(function(o){return '<div class="row"><div><b>'+esc(o.order_ref)+'</b><small>'+new Date(o.created_at).toLocaleString()+' · '+esc(o.item_count||0)+' product(s) · '+esc(pretty(o.status))+' · Payment '+esc(pretty(o.payment_status))+'</small><small>'+esc(o.delivery_location||"")+'</small></div><div class="actions"><a class="secondary" href="./order-status.html?ref='+encodeURIComponent(o.order_ref)+'">Track</a></div></div>'}).join(""):'<div class="empty">No matching orders.</div>';
   var support=[...(state.refunds||[]).map(x=>({kind:"Refund",ref:x.refund_ref,status:x.status,text:x.reason_category,date:x.requested_at})),...(state.disputes||[]).map(x=>({kind:"Dispute",ref:x.dispute_ref,status:x.status,text:x.subject,date:x.opened_at}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
   el("supportList").innerHTML=support.length?support.map(x=>'<div class="row"><div><b>'+esc(x.kind+" "+x.ref)+'</b><small>'+esc(x.text||"")+'</small></div><div><b>'+esc(pretty(x.status))+'</b><small>'+new Date(x.date).toLocaleString()+'</small></div></div>').join(""):'<div class="empty">No refunds or disputes linked to your account orders.</div>';
