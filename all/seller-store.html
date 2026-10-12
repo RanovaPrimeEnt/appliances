@@ -1078,6 +1078,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid #f276
  #productDetail details.rnv-premium-accordion>summary{min-height:58px;font-size:14px!important}
 }
 </style>
+<style id="rnv-wholesale-tiers-clean">#productDetail .rnv-wholesale-tiers{padding:13px 15px;margin:12px 0;background:#fcfaf8;border:1px solid #eee5df;border-radius:12px}#productDetail .rnv-wholesale-tiers h4{margin:0 0 9px;font-size:13px;color:#2f3933}#productDetail .rnv-wholesale-tiers>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;font-size:12px;border-top:1px solid #f0ece8}#productDetail .rnv-wholesale-tiers strong{color:#df651c;text-align:right}</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1314,10 +1315,15 @@ function openProductDetail(id){
   detailProductId=id;
   var photos=productPhotos(p),specs=p.specifications&&typeof p.specifications==="object"?p.specifications:{},facts=[];
   if(p.sku)facts.push(["Model / SKU",p.sku]);
-  facts.push(["Category",p.category||"General"],["Availability",stockLabel(p)]);if(Number(p.moq||1)>1)facts.push(["Minimum order",String(p.moq)+(p.unit_label?" "+p.unit_label:"")]);
+  facts.push(["Category",p.category||"General"],["Availability",stockLabel(p)]);if(p.stock_quantity!=null&&Number.isFinite(Number(p.stock_quantity)))facts.push(["Stock available",String(Math.max(0,Math.floor(Number(p.stock_quantity))))+(p.unit_label?" "+p.unit_label:" units")]);if(Number(p.moq||1)>1)facts.push(["Minimum order",String(p.moq)+(p.unit_label?" "+p.unit_label:"")]);
   Object.keys(specs).forEach(function(k){var value=specs[k];if(value!=null&&value!==""&&typeof value!=="object")facts.push([k.replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase()}),String(value)])});
   facts.push(["Delivery",store.fulfilment_summary||"Ask seller for delivery options"],["Returns",store.return_policy_summary||"Confirm return terms with seller"]);
   var unavailable=orderUnavailable(p),minimum=Math.max(1,Math.floor(Number(p.moq)||1)),initial=0;
+  // Only display seller-configured valid quantity tiers; never fabricate discounts.
+  var wholesaleTiers=Array.isArray(p.pricing_tiers)?p.pricing_tiers.filter(function(t){
+    return t&&Number.isInteger(Number(t.min_qty))&&Number(t.min_qty)>0&&Number.isFinite(Number(t.unit_price))&&Number(t.unit_price)>=0;
+  }).sort(function(a,b){return Number(a.min_qty)-Number(b.min_qty)}):[];
+
   var optionTokens=String(p.name||"").toLowerCase().split(/[^a-z0-9]+/).filter(function(w){return w.length>=4&&!["with","from","product","large","small"].includes(w)});
   var options=products.filter(function(x){return x&&x.id!==id&&String(x.store_id)===String(p.store_id)&&String(x.product_status||"active")==="active"}).map(function(x){
     var name=String(x.name||"").toLowerCase();
@@ -1367,6 +1373,16 @@ function openProductDetail(id){
   var productTotal=purchase&&purchase.querySelector("#detailProductTotal");
   if(productTotal)summary.appendChild(productTotal);
   var availability=document.createElement("p");availability.className="rnv-detail-availability";availability.textContent=stockLabel(p)+(minimum>1?" · MOQ "+minimum:"");summary.appendChild(availability);
+  if(wholesaleTiers.length){
+    var tierBox=document.createElement("section");tierBox.className="rnv-wholesale-tiers";
+    var tierTitle=document.createElement("h4");tierTitle.textContent="Quantity pricing";tierBox.appendChild(tierTitle);
+    wholesaleTiers.forEach(function(t){
+      var line=document.createElement("div"),threshold=document.createElement("span"),value=document.createElement("strong");
+      threshold.textContent=Number(t.min_qty)+"+ units";value.textContent=money(Number(t.unit_price))+" / unit";
+      line.appendChild(threshold);line.appendChild(value);tierBox.appendChild(line);
+    });
+    summary.appendChild(tierBox);
+  }
   if(description)summary.appendChild(description);
   var delivery=document.createElement("section");delivery.className="rnv-detail-section";
   var shippingTitle=document.createElement("h4");shippingTitle.textContent="Delivery & service";delivery.appendChild(shippingTitle);
