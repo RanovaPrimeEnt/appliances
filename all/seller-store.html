@@ -1058,20 +1058,21 @@ function variantFamily(p){
   var specs=p.specifications&&typeof p.specifications==="object"?p.specifications:{};
   var explicit=p.variant_group||p.product_family||specs.variant_group||specs.product_family||specs.parent_sku||"";
   if(explicit)return "group:"+String(explicit).trim().toLowerCase();
-  // Only infer a family when names differ by recognizable colour/size tokens.
-  var colors="black white red blue green yellow pink purple grey gray brown beige cream orange navy silver gold maroon"; 
-  var token="(?:"+colors.split(" ").join("|")+")";
-  var size="(?:xxxl|xxl|xl|xs|small|medium|large|extra large|\\d+(?:\\.\\d+)?\\s?(?:cm|mm|m|inch|inches|ft|ml|l|kg|g)|\\d+\\s?[x×]\\s?\\d+(?:\\s?[x×]\\s?\\d+)?)";
-  var normalized=String(p.name||"").toLowerCase().replace(new RegExp("\\b"+token+"\\b","gi")," ").replace(new RegExp("\\b"+size+"\\b","gi")," ").replace(/[()\[\],/|:_-]/g," ").replace(/\\s+/g," ").trim();
-  return normalized.length>=9?"name:"+normalized:"";
+  // Match the same actual product across familiar colours, dimensions and power ratings.
+  // Never group generic titles like "Solar Light" across unrelated models.
+  var normalized=String(p.name||"").toLowerCase()
+    .replace(/\b\d+(?:\.\d+)?\s?(?:w|watt|watts|kw|lm|mah|ah|v|volts|led|leds|pcs|pieces)\b/gi," ")
+    .replace(/\b\d+(?:\.\d+)?\s?(?:mm|cm|m|inch|inches|ft|ml|kg|g)\b/gi," ")
+    .replace(/\b\d+(?:\.\d+)?\s?[x×]\s?\d+(?:\.\d+)?(?:\s?[x×]\s?\d+(?:\.\d+)?)?\b/gi," ")
+    .replace(/\b(?:xxxl|xxl|xl|xs|small|medium|large|black|white|red|blue|green|yellow|pink|purple|grey|gray|brown|beige|cream|orange|navy|silver|gold|maroon)\b/gi," ")
+    .replace(/[()[\],/|:_-]/g," ").replace(/\s+/g," ").trim();
+  return normalized.length>=12?"name:"+normalized:"";
 }
 function productVariants(p){
-  if(!store||!store.id||!p||p.store_id!==store.id)return [];
-  var key=variantFamily(p);
-  if(!key)return [];
-  // Strict seller boundary: never use variants from another store, even cached rows.
+  if(!store||!store.id||!p||String(p.store_id)!==String(store.id))return [];
+  var key=variantFamily(p);if(!key)return [];
   return products.filter(function(x){
-    if(!x||x.id===p.id||x.store_id!==store.id||x.store_id!==p.store_id)return false;
+    if(!x||x.id===p.id||String(x.store_id)!==String(store.id)||String(x.store_id)!==String(p.store_id))return false;
     if(String(x.product_status||"active")!=="active")return false;
     if(String(x.category||"").trim().toLowerCase()!==String(p.category||"").trim().toLowerCase())return false;
     if(variantFamily(x)!==key)return false;
@@ -1107,12 +1108,12 @@ function openProductDetail(id){
       variantStrip.appendChild(button);
     });
     variantSection.appendChild(variantStrip);
-    content.children[0].appendChild(variantSection);
+    galleryColumn.insertBefore(variantSection,galleryColumn.querySelector('.detail-purchase'));
   }
 
   var purchase=galleryColumn.querySelector(".detail-purchase");
   var mainPhoto=galleryColumn.querySelector(".detail-main-image");
-  if(mainPhoto){var imageCount=document.createElement("div");imageCount.className="rnv-photo-count";imageCount.textContent=photos.length?(photos.length+" product image"+(photos.length===1?"":"s")):"Image unavailable";galleryColumn.insertBefore(imageCount,mainPhoto.nextSibling)}
+  if(mainPhoto){var imageCount=document.createElement("div");imageCount.className="rnv-photo-count";imageCount.textContent=photos.length?(photos.length+" product image"+(photos.length===1?"":"s")):"Image unavailable";galleryColumn.insertBefore(imageCount,mainPhoto.nextSibling);if(variants.length){galleryColumn.insertBefore(imageCount,variantSection)}}
   var summary=document.createElement("section");summary.className="rnv-detail-summary";
   var description=informationColumn.querySelector("p");
   var category=informationColumn.querySelector("small");
