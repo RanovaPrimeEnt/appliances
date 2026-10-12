@@ -904,6 +904,18 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 #productDetail .rnv-detail-order>.rnv-price-quantity-row{display:none}
 @media(max-width:380px){#productDetail .rnv-heading-price-qty{gap:6px}#productDetail .rnv-heading-price-qty .rnv-detail-price{font-size:24px}#productDetail .rnv-heading-price-qty .detail-quantity button{width:32px;min-width:32px}#productDetail .rnv-heading-price-qty .detail-quantity input{width:38px}}
 </style>
+<style id="rnv-payable-total-placement">
+/* Price + stepper with a prominent immediately recalculated order amount. */
+#productDetail .rnv-detail-summary .rnv-heading-price-qty{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px;margin:14px 0 0}
+#productDetail .rnv-detail-summary .rnv-detail-price{font-weight:900;color:#ef611a;line-height:1.1;letter-spacing:-.025em}
+#productDetail .rnv-detail-summary .rnv-quantity-box{margin:0;justify-self:end}
+#productDetail .rnv-detail-summary .detail-product-total{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 0!important;padding:13px 14px;border:1px solid #ffdcc6;border-radius:12px;background:#fff7f1}
+#productDetail .rnv-detail-summary .detail-product-total span{font-size:13px;font-weight:750;color:#445149}
+#productDetail .rnv-detail-summary .detail-product-total strong{font-size:21px;font-weight:900;color:#ed5b17;white-space:nowrap}
+#productDetail .rnv-heading-price-qty .detail-quantity button{cursor:pointer;touch-action:manipulation}
+#productDetail .rnv-heading-price-qty .detail-quantity button:focus-visible{outline:2px solid #ec621b;outline-offset:2px}
+@media(max-width:420px){#productDetail .rnv-detail-summary .rnv-heading-price-qty{gap:5px}#productDetail .rnv-detail-summary .rnv-detail-price{font-size:clamp(21px,6vw,27px)}#productDetail .rnv-detail-summary .detail-product-total strong{font-size:19px}}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
@@ -1036,7 +1048,7 @@ function updateDetailTotal(p){
   var input=el("detailQuantity"),total=el("detailProductTotal");if(!input||!total)return;
   var quantity=detailQuantityValue(p,input.value);
   var button=el("productDetail").querySelector("[data-detail-add]");if(button)button.disabled=orderUnavailable(p)||quantity<Math.max(1,Number(p.moq)||1);
-  total.innerHTML=p.price==null?'<span>Product total</span><strong>Price to be confirmed</strong>':quantity==null?'<span>Product total</span><strong>Quantity unavailable</strong>':'<span>Product total</span><strong>'+esc(money(Number(p.price)*quantity))+'</strong>';
+  total.innerHTML=p.price==null?'<span>Total to pay</span><strong>Price to be confirmed</strong>':'<span>Total to pay</span><strong>'+esc(money(Number(p.price)*quantity))+'</strong>';
 }
 function renderComparison(id,otherId){
   var a=products.find(function(p){return p.id===id}),b=products.find(function(p){return p.id===otherId}),host=el("detailComparison");
