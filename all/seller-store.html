@@ -1639,7 +1639,7 @@ function productCard(p){
   var tiers=Array.isArray(p.pricing_tiers)?p.pricing_tiers.filter(function(t){return t&&Number(t.min_qty)>1&&Number.isFinite(Number(t.unit_price))&&Number(t.unit_price)>=0&&p.price!=null&&Number(t.unit_price)<Number(p.price)}):[];
   var stockMarkup=stockText?'<span class="rnv-card-stock '+(stockText==="Out of stock"?"unavailable":stockText.startsWith("Only")?"low":"")+'">'+esc(stockText)+'</span>':"";
   var bulkMarkup=tiers.length?'<span class="rnv-card-bulk">Bulk pricing</span>':"";
-  return '<article class="product"><button type="button" class="img" data-open="'+esc(p.id)+'" aria-label="View '+esc(p.name)+' details">'+(photo?'<img src="'+esc(photo)+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<span>Image available on enquiry</span>')+'</button><div class="copy"><small class="product-category">'+esc(p.category||"Product")+'</small><h3><button type="button" class="product-name" data-open="'+esc(p.id)+'">'+esc(p.name)+'</button></h3><small class="product-id">Product ID: '+esc(p.sku||p.id)+'</small><div class="meta">'+(Number(p.moq||1)>1?'<span class="chip" title="Minimum order quantity">MOQ '+esc(p.moq)+'</span>':'') +bulkMarkup+stockMarkup+'</div><div class="price">'+esc(money(p.price))+'</div><div class="card-actions compact-card-actions"><button class="buy'+(inCart?' in-cart':'')+'" data-add="'+esc(p.id)+'" '+(disabled?'disabled':'')+'>'+(p.stock_status==="out_of_stock"?'Out of stock':disabled?'Ordering paused':inCart?'✓ View cart':p.price==null?'Add to cart':'Add to cart')+'</button></div></div></article>'
+  return '<article class="product"><button type="button" class="img" data-open="'+esc(p.id)+'" aria-label="View '+esc(p.name)+' details">'+(photo?'<img src="'+esc(photo)+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async">':'<span>Image available on enquiry</span>')+'</button><div class="copy"><small class="product-category">'+esc(p.category||"Product")+'</small><h3><button type="button" class="product-name" data-open="'+esc(p.id)+'">'+esc(p.name)+'</button></h3><small class="product-id">Product ID: '+esc(p.sku||p.id)+'</small><div class="meta">'+(Number(p.moq||1)>1?'<span class="chip" title="Minimum order quantity">MOQ '+esc(p.moq)+'</span>':'') +bulkMarkup+stockMarkup+'</div><div class="price">'+esc(money(p.price))+'</div><div class="card-actions compact-card-actions"><button class="buy'+(inCart?' in-cart':'')+'" data-add="'+esc(p.id)+'" '+(disabled?'disabled':'')+'>'+(p.stock_status==="out_of_stock"?'Out of stock':disabled?'Ordering paused':inCart?'✓ View cart':p.price==null?'Request price':'Add to cart')+'</button></div></div></article>'
 }
 function renderCategoryNav(){
   var cats=CATEGORY_ORDER.filter(function(c){return products.some(function(p){return p.category===c})});
@@ -1723,9 +1723,13 @@ function openCheckout(){var enforcement=String((marketplaceTrust.enforcement||{}
 function closeCheckout(){el("checkoutModal").classList.remove("open");document.body.classList.remove("no-scroll")}
 function showCheckoutMsg(text,good){var m=el("checkoutMsg");m.textContent=text;m.classList.toggle("good",!!good);m.style.display="block"}
 async function placeOrder(){
+  var b=el("placeOrder");
+  if(b.disabled)return;
+  b.disabled=true;
   var items=cartItems();
+  if(!items.length){b.disabled=false;showCheckoutMsg("Select at least one product before ordering.");return}
   var country;
-  try{country=await resolveBuyerCountry()}catch(e){showCheckoutMsg(e.message||"Choose your delivery country.");return}
+  try{country=await resolveBuyerCountry()}catch(e){b.disabled=false;showCheckoutMsg(e.message||"Choose your delivery country.");return}
   var payload={
     customer_name:el("customerName").value.trim(),
     customer_phone:el("customerPhone").value.trim(),
@@ -1738,11 +1742,14 @@ async function placeOrder(){
     buyer_note:el("buyerNote").value.trim(),
     items:items.map(function(x){return{seller_product_id:x.product.id,quantity:x.quantity}})
   };
-  if(!payload.customer_name||!payload.customer_phone||!payload.delivery_location||!payload.buyer_country_code||!payload.payment_method){showCheckoutMsg("Complete your name, phone, delivery country, delivery location and payment method.");return}
-  var b=el("placeOrder"),old=b.textContent;b.disabled=true;b.textContent="Placing order…";el("checkoutMsg").style.display="none";
+  if(!payload.customer_name||!payload.customer_phone||!payload.delivery_location||!payload.buyer_country_code||!payload.payment_method){b.disabled=false;showCheckoutMsg("Complete your name, phone, delivery country, delivery location and payment method.");return
+  var old=b.textContent;b.textContent="Placing order…";el("checkoutMsg").style.display="none";
   try{
     var orderHeaders={"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":SUPABASE_KEY};
-    if(buyerSession)orderHeaders.Authorization="Bearer "+buyerSession.access_token;
+    var sessionResult=await sb.auth.getSession();
+    if(sessionResult.error)throw sessionResult.error;
+    var liveSession=sessionResult.data&&sessionResult.data.session;
+    if(liveSession&&liveSession.access_token)orderHeaders.Authorization="Bearer "+liveSession.access_token;
     var res=await fetch(ORDER_ENDPOINT,{method:"POST",headers:orderHeaders,body:JSON.stringify(payload)});
     var out=await res.json().catch(function(){return{}});
     if(!res.ok||!out.ok)throw new Error(out.error||"Could not place the order.");
