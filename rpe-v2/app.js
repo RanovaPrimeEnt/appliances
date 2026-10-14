@@ -25,6 +25,7 @@ let marketCartRows=[];
 let marketCartProducts=new Map();
 let marketCartStores=new Map();
 let cartSelectedKeys=new Set();
+let cartSelectionSeenKeys=new Set();
 let cartEditMode=false;
 let cartViewMode="all";
 let marketCartLoaded=false;
@@ -94,6 +95,7 @@ function resetUserScopedState(){
   marketCartProducts=new Map();
   marketCartStores=new Map();
   cartSelectedKeys=new Set();
+  cartSelectionSeenKeys=new Set();
   cartEditMode=false;
   cartViewMode="all";
   marketCartLoaded=false;
@@ -1551,8 +1553,12 @@ function selectedCartTotal(){
 function ensureCartSelections(){
   const valid=cartUnifiedEntries().filter(i=>i.available);
   const validKeys=new Set(valid.map(cartItemKey));
+  // Drop stale selections, but never reselect an item the buyer unchecked.
   [...cartSelectedKeys].forEach(k=>{if(!validKeys.has(k))cartSelectedKeys.delete(k)});
-  if(!cartSelectedKeys.size)valid.forEach(i=>cartSelectedKeys.add(cartItemKey(i)));
+  // Select newly added items by default, including on initial cart load.
+  // Previously, an empty selection reselected every item on every render.
+  validKeys.forEach(k=>{if(!cartSelectionSeenKeys.has(k))cartSelectedKeys.add(k)});
+  cartSelectionSeenKeys=validKeys;
 }
 function toggleCartSelection(key,on){
   if(on)cartSelectedKeys.add(key);else cartSelectedKeys.delete(key);
