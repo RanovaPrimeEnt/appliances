@@ -1742,7 +1742,7 @@ async function placeOrder(){
     buyer_note:el("buyerNote").value.trim(),
     items:items.map(function(x){return{seller_product_id:x.product.id,quantity:x.quantity}})
   };
-  if(!payload.customer_name||!payload.customer_phone||!payload.delivery_location||!payload.buyer_country_code||!payload.payment_method){b.disabled=false;showCheckoutMsg("Complete your name, phone, delivery country, delivery location and payment method.");return
+  if(!payload.customer_name||!payload.customer_phone||!payload.delivery_location||!payload.buyer_country_code||!payload.payment_method){b.disabled=false;showCheckoutMsg("Complete your name, phone, delivery country, delivery location and payment method.");return}
   var old=b.textContent;b.textContent="Placing order…";el("checkoutMsg").style.display="none";
   try{
     var orderHeaders={"Content-Type":"application/json","x-ranova-client":"ranova-site-v1","apikey":SUPABASE_KEY};
