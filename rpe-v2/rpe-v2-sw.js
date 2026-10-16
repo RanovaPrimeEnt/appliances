@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v76";
+const CACHE="ranova-rpe-v2-shell-v77";
 const IMAGE_CACHE="ranova-rpe-v2-images-v1";
 const CORE=[
   "../all/fonts/inter-0.woff2",
@@ -13,7 +13,7 @@ const CORE=[
   "./",
   "./index.html",
   "./offline-marketplace.json",
-  "./app.js?v=20261005-v3a75",
+  "./app.js?v=20261012-checkout-search-v2",
   "./config.js",
   "./design-system.css",
   "./customer-icon.svg",
