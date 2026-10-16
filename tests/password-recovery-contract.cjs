@@ -14,6 +14,7 @@ assert.match(app,/event==="PASSWORD_RECOVERY"/,'recovery callback must enter pas
 assert.match(app,/updateUser\(payload\)/,'password update must use the authenticated/recovery session');
 assert.match(app,/currentPassword:current/,'signed-in password change must require current password');
 assert.match(app,/Phone accounts do not use insecure SMS-free password resets/,'phone recovery must not bypass identity proof');
-assert.match(html,/app\.js\?v=20261011-store2/,'HTML must publish the recovery release');
-assert.match(sw,/ranova-rpe-v2-shell-v76/,'service worker cache must publish recovery release');
+const releaseScript=html.match(/<script\s+src="(\.\/app\.js\?v=[^"]+)"\s*><\/script>/);
+assert.ok(releaseScript,'HTML must publish a versioned recovery-capable app');
+assert.ok(sw.includes('"'+releaseScript[1]+'"'),'offline shell must cache the current recovery-capable app');
 console.log('RANOVA password recovery contract: PASS');
