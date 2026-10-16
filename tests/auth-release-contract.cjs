@@ -16,8 +16,12 @@ assert.doesNotMatch(app, /sb\.auth\.signUp\(\{phone,password/, 'customer phone s
 assert.doesNotMatch(app, /sb\.auth\.signInWithPassword\(\{phone,password/, 'customer phone login must not use disabled Supabase Phone provider');
 assert.match(app, /phoneLoginEmail\(phone\)/, 'phone/password accounts must use the RANOVA internal login identifier');
 assert.match(app, /directExistingAccountToSignIn/, 'duplicate accounts must route users back to sign in');
-assert.match(html, /app\.js\?v=20261011-store2/, 'HTML must reference the current customer app release');
-assert.match(sw, /ranova-rpe-v2-shell-v76/, 'service worker cache must match the current customer release');
+// Release identifiers change often. Verify the actual HTML entrypoint and the
+// offline shell agree, instead of pinning a previous release in this contract.
+const currentAppScript = html.match(/<script\s+src="(\.\/app\.js\?v=[^"]+)"\s*><\/script>/);
+assert.ok(currentAppScript, 'HTML must reference a versioned customer app script');
+assert.ok(sw.includes('"' + currentAppScript[1] + '"'), 'service worker must precache the same customer app release as HTML');
+assert.match(sw, /const CACHE="ranova-rpe-v2-shell-v\d+";/, 'service worker shell must use a versioned cache');
 assert.match(sellerApply, /authorization,apikey/, 'JWT-protected seller application endpoint must allow auth headers');
 
 console.log('RANOVA auth/release contract: PASS');
