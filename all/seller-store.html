@@ -1690,9 +1690,9 @@ async function addProduct(id){
   if(p.price==null){location.href="./messages.html?product="+encodeURIComponent(id)+"&store="+encodeURIComponent(store.id)+"&quote=1";return}
   var q=boundedQuantity(p,p.moq||1);
   if(q<Math.max(1,Number(p.moq)||1))return;
+  // saveCart already queues an authenticated remote sync; avoid sending the
+  // same cart twice for one tap, especially on slow mobile connections.
   cart[id]=q;saveCart();render();renderCart();
-  // Keep the shopper in this store until Review order is selected.
-  try{await syncCartRemote()}catch(e){console.warn("Cart will sync when online",e)}
 }
 function setQuantity(id,value){
   var p=products.find(function(x){return x.id===id});if(!p)return;
