@@ -2,6 +2,7 @@ package com.ranova.marketplace;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -10,6 +11,9 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.webkit.CookieManager;
 import android.webkit.PermissionRequest;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceResponse;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -24,6 +28,7 @@ public class MainActivity extends Activity {
     private static final int WEB_PERMISSION_REQUEST = 2202;
 
     private WebView webView;
+    private boolean launchErrorVisible = false;
     private ValueCallback<Uri[]> filePathCallback;
     private PermissionRequest pendingWebPermissionRequest;
 
@@ -39,7 +44,9 @@ public class MainActivity extends Activity {
         if (savedInstanceState == null) {
             webView.loadUrl(HOME);
         } else {
-            webView.restoreState(savedInstanceState);
+            if (webView.restoreState(savedInstanceState) == null || webView.getUrl() == null) {
+                webView.loadUrl(HOME);
+            }
         }
     }
 
@@ -64,6 +71,39 @@ public class MainActivity extends Activity {
         WebView.setWebContentsDebuggingEnabled(false);
 
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                launchErrorVisible = false;
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+                if (request.isForMainFrame()) {
+                    showLaunchError("The marketplace could not load. Check your internet connection and try again.");
+                }
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
+                super.onReceivedHttpError(view, request, response);
+                if (request.isForMainFrame() && response.getStatusCode() >= 400) {
+                    showLaunchError("RANOVA is temporarily unavailable (HTTP " + response.getStatusCode() + "). Please try again.");
+                }
+            }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                // A crashed system WebView renderer must not leave a permanently blank Activity.
+                if (webView != null) {
+                    webView.destroy();
+                    webView = null;
+                }
+                showRendererError();
+                return true;
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 return handleUri(request.getUrl());
@@ -115,6 +155,42 @@ public class MainActivity extends Activity {
 
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) ->
                 openExternal(Uri.parse(url)));
+    }
+
+    private void showLaunchError(String message) {
+        if (isFinishing() || isDestroyed() || launchErrorVisible) return;
+        launchErrorVisible = true;
+        runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed()) return;
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Unable to open RANOVA")
+                    .setMessage(message)
+                    .setCancelable(false)
+                    .setPositiveButton("Retry", (dialog, which) -> {
+                        launchErrorVisible = false;
+                        if (webView != null) webView.loadUrl(HOME);
+                    })
+                    .setNegativeButton("Close", (dialog, which) -> {
+                        launchErrorVisible = false;
+                        finish();
+                    })
+                    .show();
+        });
+    }
+
+    private void showRendererError() {
+        if (isFinishing() || isDestroyed()) return;
+        runOnUiThread(() -> new AlertDialog.Builder(MainActivity.this)
+                .setTitle("RANOVA needs to restart")
+                .setMessage("The Android web component stopped unexpectedly. Restart the app to continue.")
+                .setCancelable(false)
+                .setPositiveButton("Restart", (dialog, which) -> {
+                    Intent restart = getIntent();
+                    finish();
+                    startActivity(restart);
+                })
+                .setNegativeButton("Close", (dialog, which) -> finish())
+                .show());
     }
 
     private boolean handleUri(Uri uri) {
