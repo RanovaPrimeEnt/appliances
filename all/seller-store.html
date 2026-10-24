@@ -1474,7 +1474,7 @@ function openProductDetail(id){
   input.oninput=function(){updateDetailTotal(p)};
   input.onchange=function(){updateDetailQuantity(input.value)};
   updateDetailTotal(p);
-  dialog.querySelector("[data-detail-add]").onclick=async function(){var q=detailQuantityValue(p,input.value);if(q<minimum||orderUnavailable(p))return;cart[id]=q;saveCart();closeProductDetail();render();renderCart();try{await syncCartRemote()}catch(e){}goToMainCart()};
+  dialog.querySelector("[data-detail-add]").onclick=function(){var q=detailQuantityValue(p,input.value);if(q<minimum||orderUnavailable(p))return;cart[id]=q;saveCart();closeProductDetail();render();renderCart()};
   var buyNowButton=dialog.querySelector("[data-detail-buy-now]");
   if(buyNowButton)buyNowButton.onclick=async function(){var q=detailQuantityValue(p,input.value);if(q<minimum||orderUnavailable(p)||p.price==null)return;cart[id]=q;saveCart();closeProductDetail();render();renderCart();try{await syncCartRemote()}catch(e){}goToMainCart()};
   if(el("compareProduct"))el("compareProduct").onchange=function(){renderComparison(id,this.value)};
