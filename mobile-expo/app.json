@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "RANOVA",
+    "slug": "ranova-native",
+    "scheme": "ranova",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "com.ranova.marketplace",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.ranova.marketplace"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
