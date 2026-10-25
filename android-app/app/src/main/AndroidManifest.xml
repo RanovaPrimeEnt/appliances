@@ -11,7 +11,7 @@
         android:fullBackupContent="false"
         android:icon="@drawable/ranova_customer"
         android:roundIcon="@drawable/ranova_customer"
-        android:label="RANOVA"
+        android:label="${appLabel}"
         android:theme="@style/Theme.Ranova"
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="false">
