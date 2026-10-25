@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { getCatalogue, type CatalogueProduct } from '../src/catalogue';
 
 export default function Home() {
@@ -25,7 +25,7 @@ export default function Home() {
    <View style={styles.section}><Text style={styles.subheading}>Products</Text><Link href="/account" style={styles.link}>Account →</Link></View>
    {loading?<ActivityIndicator size="large" color="#176B61"/>:<FlatList data={shown} keyExtractor={p=>p.id}
     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)}/>}
-    renderItem={({item})=><View style={styles.card}>{item.image_url?<Image source={{uri:item.image_url}} style={styles.photo} resizeMode="contain"/>:null}<View style={{flex:1}}><Text style={styles.cardText}>{item.name}</Text>{item.brand?<Text style={styles.hint}>{item.brand}</Text>:null}<Text style={styles.price}>{item.price===null?'Ask for price':new Intl.NumberFormat('en-GH',{style:'currency',currency:item.currency||'GHS'}).format(item.price)}</Text></View></View>}
+    renderItem={({item})=><Pressable accessibilityRole="button" accessibilityLabel={"View "+item.name} onPress={()=>router.push({pathname:"/product",params:{id:item.id}})} style={styles.card}>{item.image_url?<Image source={{uri:item.image_url}} style={styles.photo} resizeMode="contain"/>:null}<View style={{flex:1}}><Text style={styles.cardText}>{item.name}</Text>{item.brand?<Text style={styles.hint}>{item.brand}</Text>:null}<Text style={styles.price}>{item.price===null?'Ask for price':new Intl.NumberFormat('en-GH',{style:'currency',currency:item.currency||'GHS'}).format(item.price)}</Text></View></Pressable>}
     ListEmptyComponent={<View style={styles.empty}><Text>{error||'No products available. Pull down to refresh.'}</Text><Pressable onPress={()=>void load()} style={styles.retry}><Text style={{color:'#fff'}}>Retry</Text></Pressable></View>}/>}
   </View>
  </SafeAreaView>;
