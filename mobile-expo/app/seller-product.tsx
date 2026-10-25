@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { supabase } from '../src/auth';
+import { putCartItem } from '../src/cart';
 
 type SellerProduct={
  id:string;name:string;category:string|null;description:string|null;short_description:string|null;
@@ -19,6 +20,7 @@ export default function SellerProductDetails(){
  const [product,setProduct]=useState<SellerProduct|null>(null);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');
+ const [adding,setAdding]=useState(false);
  useEffect(()=>{
   let alive=true;
   async function load(){
@@ -45,7 +47,8 @@ export default function SellerProductDetails(){
    {product.short_description?<Text style={styles.detail}>{product.short_description}</Text>:null}
    {product.description?<><Text style={styles.heading}>Description</Text><Text style={styles.detail}>{product.description}</Text></>:null}
    {product.specifications&&typeof product.specifications==='object'?<><Text style={styles.heading}>Specifications</Text>{Object.entries(product.specifications).map(([key,value])=><Text key={key} style={styles.detail}>{key.replace(/_/g,' ')}: {typeof value==='object'?JSON.stringify(value):String(value)}</Text>)}</>:null}
-   <View style={styles.notice}><Text style={styles.noticeText}>Cart, seller messaging and checkout are not yet connected in this native build. Purchases cannot be placed here yet.</Text></View>
+   <Pressable disabled={adding} onPress={async()=>{if(!product)return;setAdding(true);try{await putCartItem(product.store_id,product.id,Math.max(1,Number(product.moq)||1));router.push('/cart');}catch(e){Alert.alert('Unable to add to cart',e instanceof Error?e.message:'Please sign in and retry');}finally{setAdding(false);}}} style={styles.back}><Text style={styles.backText}>{adding?'Adding…':'Add to cart'}</Text></Pressable>
+   <View style={styles.notice}><Text style={styles.noticeText}>Cart is connected to your RANOVA account. Seller messaging and checkout are not yet connected in this native build; no payment can be placed here yet.</Text></View>
   </>:<Text style={styles.error}>{error||'Product not found or no longer available.'}</Text>}
   <Pressable onPress={()=>router.back()} style={styles.back}><Text style={styles.backText}>Back to marketplace</Text></Pressable>
  </ScrollView>;
