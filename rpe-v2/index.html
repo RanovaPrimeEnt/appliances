@@ -671,7 +671,7 @@ html{scroll-behavior:auto!important}
       </div>
       <div class="market-search-wrap">
         <div class="market-search">
-          <span aria-hidden="true">⌕</span><input id="marketHomeSearch" type="search" autocomplete="off" placeholder="Search products, stores, SKU or location" aria-controls="marketSearchAssist" aria-expanded="false">
+          <span aria-hidden="true">⌕</span><input id="marketHomeSearch" type="search" aria-label="Search marketplace products, stores, SKUs or locations" autocomplete="off" placeholder="Search products, stores, SKU or location" aria-controls="marketSearchAssist" aria-expanded="false">
           <button id="marketHomeSearchBtn" type="button">Search</button>
         </div>
         <div id="marketSearchAssist" class="market-search-assist hide" role="listbox" aria-label="Search suggestions"></div>
@@ -696,11 +696,11 @@ html{scroll-behavior:auto!important}
         <span class="market-quicklink"><span class="market-quicklink-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v12H8l-4 3V5Z"/><path d="M8 10h8m-8 4h5"/></svg></span><small>Bulk Quotes</small></span>
       </div>
     </div>
-    <div id="marketPromoGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px"></div>
-    <div id="marketProductsAnchor" class="market-discovery-head"><b>Products for You</b><small id="marketResultSummary"></small></div>
-    <div id="marketProductResults" class="market-product-grid"></div>
+    <div id="marketPromoGrid" aria-label="Featured marketplace products" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px"></div>
+    <div id="marketProductsAnchor" class="market-discovery-head"><b>Products for You</b><small id="marketResultSummary" role="status" aria-live="polite" aria-atomic="true"></small></div>
+    <div id="marketProductResults" class="market-product-grid" aria-label="Marketplace products"></div>
     <div id="marketStoresAnchor" style="padding:8px 12px;font-weight:950">Stores for You</div>
-    <div id="marketFactoryFeed" style="display:grid;gap:9px;padding:0 9px 14px"></div>
+    <div id="marketFactoryFeed" aria-label="Recommended stores" style="display:grid;gap:9px;padding:0 9px 14px"></div>
   </div>
 </section>
 <section id="cartPanel" class="panel rnv-cart-page">
