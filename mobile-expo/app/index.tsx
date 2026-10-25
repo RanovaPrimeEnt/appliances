@@ -1,19 +1,33 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link, router } from 'expo-router';
-import { getCatalogue, type CatalogueProduct } from '../src/catalogue';
+import { CATALOGUE_PAGE_SIZE, getCataloguePage, type CatalogueProduct } from '../src/catalogue';
 
-export default function Home() {
+export default function Home(){
  const [query,setQuery]=useState('');
  const [products,setProducts]=useState<CatalogueProduct[]>([]);
  const [loading,setLoading]=useState(true);
  const [refreshing,setRefreshing]=useState(false);
+ const [loadingMore,setLoadingMore]=useState(false);
+ const [hasMore,setHasMore]=useState(true);
  const [error,setError]=useState('');
- async function load(refresh=false) {
-   if(refresh)setRefreshing(true); else setLoading(true);
-   setError('');
-   try { setProducts(await getCatalogue()); } catch(e) { setError(e instanceof Error?e.message:'Unable to load products'); }
-   finally { setLoading(false);setRefreshing(false); }
+ const page=useRef(0);
+ const busy=useRef(false);
+ async function load(refresh=false){
+  if(busy.current)return;
+  busy.current=true;
+  if(refresh)setRefreshing(true);else setLoading(true);
+  setError('');
+  try{const rows=await getCataloguePage(0);page.current=1;setProducts(rows);setHasMore(rows.length===CATALOGUE_PAGE_SIZE);}
+  catch(e){setError(e instanceof Error?e.message:'Unable to load products');}
+  finally{busy.current=false;setLoading(false);setRefreshing(false);}
+ }
+ async function loadMore(){
+  if(busy.current||!hasMore||loading||query.trim())return;
+  busy.current=true;setLoadingMore(true);
+  try{const rows=await getCataloguePage(page.current);page.current+=1;setProducts(prev=>[...prev,...rows.filter(item=>!prev.some(p=>p.id===item.id))]);setHasMore(rows.length===CATALOGUE_PAGE_SIZE);}
+  catch(e){setError(e instanceof Error?e.message:'Could not load more products');}
+  finally{busy.current=false;setLoadingMore(false);}
  }
  useEffect(()=>{void load();},[]);
  const shown=useMemo(()=>products.filter(p=>[p.name,p.brand||''].some(v=>v.toLowerCase().includes(query.toLowerCase()))),[products,query]);
@@ -21,11 +35,13 @@ export default function Home() {
   <View style={styles.header}><Text style={styles.logo}>RANOVA</Text><Text style={styles.tag}>Marketplace</Text></View>
   <View style={styles.content}>
    <Text style={styles.heading}>Discover products for your home</Text>
-   <TextInput accessibilityLabel="Search products" placeholder="Search products" value={query} onChangeText={setQuery} style={styles.input}/>
+   <TextInput accessibilityLabel="Search loaded products" placeholder="Search loaded products" value={query} onChangeText={setQuery} style={styles.input}/>
    <View style={styles.section}><Text style={styles.subheading}>Products</Text><Link href="/account" style={styles.link}>Account →</Link></View>
    {loading?<ActivityIndicator size="large" color="#176B61"/>:<FlatList data={shown} keyExtractor={p=>p.id}
     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)}/>}
-    renderItem={({item})=><Pressable accessibilityRole="button" accessibilityLabel={"View "+item.name} onPress={()=>router.push({pathname:"/product",params:{id:item.id}})} style={styles.card}>{item.image_url?<Image source={{uri:item.image_url}} style={styles.photo} resizeMode="contain"/>:null}<View style={{flex:1}}><Text style={styles.cardText}>{item.name}</Text>{item.brand?<Text style={styles.hint}>{item.brand}</Text>:null}<Text style={styles.price}>{item.price===null?'Ask for price':new Intl.NumberFormat('en-GH',{style:'currency',currency:item.currency||'GHS'}).format(item.price)}</Text></View></Pressable>}
+    onEndReached={()=>void loadMore()} onEndReachedThreshold={0.35}
+    renderItem={({item})=><Pressable accessibilityRole="button" accessibilityLabel={'View '+item.name} onPress={()=>router.push({pathname:'/product',params:{id:item.id}})} style={styles.card}>{item.image_url?<Image source={{uri:item.image_url}} style={styles.photo} resizeMode="contain"/>:null}<View style={{flex:1}}><Text style={styles.cardText}>{item.name}</Text>{item.brand?<Text style={styles.hint}>{item.brand}</Text>:null}<Text style={styles.price}>{item.price===null?'Ask for price':new Intl.NumberFormat('en-GH',{style:'currency',currency:item.currency||'GHS'}).format(item.price)}</Text></View></Pressable>}
+    ListFooterComponent={<View style={styles.empty}>{loadingMore?<ActivityIndicator color="#176B61"/>:null}{error?<Text>{error}</Text>:null}{!hasMore&&products.length>0?<Text>All available products loaded</Text>:null}</View>}
     ListEmptyComponent={<View style={styles.empty}><Text>{error||'No products available. Pull down to refresh.'}</Text><Pressable onPress={()=>void load()} style={styles.retry}><Text style={{color:'#fff'}}>Retry</Text></Pressable></View>}/>}
   </View>
  </SafeAreaView>;
