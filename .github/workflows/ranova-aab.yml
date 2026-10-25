@@ -1,4 +1,4 @@
-name: Android Customer and Seller AABs
+name: Unified Ranova Android AAB
 
 on:
   workflow_dispatch:
@@ -32,16 +32,15 @@ jobs:
         run: |
           echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/ranova-upload.jks"
           echo "RANOVA_UPLOAD_KEYSTORE=$RUNNER_TEMP/ranova-upload.jks" >> "$GITHUB_ENV"
-      - name: Build both bundles
+      - name: Build unified bundle
         env:
           HAS_KEYSTORE: ${{ secrets.RANOVA_KEYSTORE_BASE64 != '' }}
           RANOVA_KEYSTORE_PASSWORD: ${{ secrets.RANOVA_KEYSTORE_PASSWORD }}
           RANOVA_KEY_ALIAS: ${{ secrets.RANOVA_KEY_ALIAS }}
           RANOVA_KEY_PASSWORD: ${{ secrets.RANOVA_KEY_PASSWORD }}
-        run: gradle :app:bundleCustomerRelease :app:bundleSellerRelease --no-daemon
+        run: gradle :app:bundleRelease --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: ranova-customer-seller-aab
+          name: ranova-unified-aab
           path: |
-            android-app/app/build/outputs/bundle/customerRelease/*.aab
-            android-app/app/build/outputs/bundle/sellerRelease/*.aab
+            android-app/app/build/outputs/bundle/release/*.aab
