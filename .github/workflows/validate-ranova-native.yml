@@ -1,0 +1,35 @@
+name: Validate RANOVA native app
+
+on:
+  push:
+    branches:
+      - expo-native-customer-mvp
+    paths:
+      - "mobile-expo/**"
+      - ".github/workflows/validate-ranova-native.yml"
+  pull_request:
+    paths:
+      - "mobile-expo/**"
+      - ".github/workflows/validate-ranova-native.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-expo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript validation
+        run: npm run check
+      - name: Expo configuration validation
+        run: npx expo config --type public > /dev/null
