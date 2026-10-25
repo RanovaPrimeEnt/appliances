@@ -16,20 +16,6 @@ android {
         versionName "1.1.0"
     }
 
-    flavorDimensions "audience"
-    productFlavors {
-        customer {
-            dimension "audience"
-            applicationId "com.ranova.marketplace"
-            manifestPlaceholders = [appLabel: "RANOVA", appIcon: "@drawable/ranova_customer"]
-        }
-        seller {
-            dimension "audience"
-            applicationId "com.ranova.seller"
-            manifestPlaceholders = [appLabel: "RANOVA Seller", appIcon: "@drawable/ranova_seller"]
-        }
-    }
-
     signingConfigs {
         release {
             if (uploadKeystore) {
