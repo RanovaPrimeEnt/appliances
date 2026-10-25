@@ -9,8 +9,8 @@
     <application
         android:allowBackup="false"
         android:fullBackupContent="false"
-        android:icon="@drawable/ranova_customer"
-        android:roundIcon="@drawable/ranova_customer"
+        android:icon="${appIcon}"
+        android:roundIcon="${appIcon}"
         android:label="${appLabel}"
         android:theme="@style/Theme.Ranova"
         android:hardwareAccelerated="true"
