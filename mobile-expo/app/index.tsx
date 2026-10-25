@@ -37,7 +37,7 @@ export default function Home(){
    <Text style={styles.heading}>Discover products for your home</Text>
    <TextInput accessibilityLabel="Search loaded products" placeholder="Search loaded products" value={query} onChangeText={setQuery} style={styles.input}/>
    <View style={styles.section}><Text style={styles.subheading}>Products</Text><Link href="/account" style={styles.link}>Account</Link></View>
-   <Link href="/marketplace" style={styles.marketplaceLink}>Open original RANOVA marketplace</Link>
+   <Link href="/native-market" style={styles.marketplaceLink}>Open native RANOVA marketplace</Link>
    {loading?<ActivityIndicator size="large" color="#176B61"/>:<FlatList data={shown} keyExtractor={p=>p.id}
     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>void load(true)}/>}
     onEndReached={()=>void loadMore()} onEndReachedThreshold={0.35}
