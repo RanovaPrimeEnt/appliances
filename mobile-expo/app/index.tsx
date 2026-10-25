@@ -1,0 +1,9 @@
+import { useState } from 'react';
+import { View, Text, TextInput, FlatList, Pressable, StyleSheet, SafeAreaView } from 'react-native';
+import { Link } from 'expo-router';
+const categories = ['Appliances', 'Lighting', 'Solar', 'Home'];
+export default function Home() {
+ const [query, setQuery] = useState('');
+ return <SafeAreaView style={styles.page}><View style={styles.header}><Text style={styles.logo}>RANOVA</Text><Text style={styles.tag}>Marketplace</Text></View><View style={styles.content}><Text style={styles.heading}>Discover products for your home</Text><TextInput accessibilityLabel="Search products" placeholder="Search products" value={query} onChangeText={setQuery} style={styles.input}/><Text style={styles.subheading}>Browse categories</Text><FlatList data={categories.filter(c => c.toLowerCase().includes(query.toLowerCase()))} keyExtractor={x=>x} renderItem={({item})=><Pressable style={styles.card} accessibilityRole="button"><Text style={styles.cardText}>{item}</Text><Text style={styles.hint}>Catalogue connection coming next</Text></Pressable>} ListEmptyComponent={<Text>No matching categories</Text>}/><Link href="/account" style={styles.link}>Account →</Link></View></SafeAreaView>;
+}
+const styles=StyleSheet.create({page:{flex:1,backgroundColor:'#F8F7FC'},header:{backgroundColor:'#183330',padding:20},logo:{fontSize:24,fontWeight:'900',color:'#FF7A00'},tag:{color:'#fff'},content:{flex:1,padding:20},heading:{fontSize:26,fontWeight:'800',color:'#183330',marginBottom:18},input:{backgroundColor:'#fff',padding:14,borderRadius:12,borderWidth:1,borderColor:'#E0E8E4',marginBottom:22},subheading:{fontSize:18,fontWeight:'700',marginBottom:12},card:{backgroundColor:'#fff',padding:18,borderRadius:16,marginBottom:12},cardText:{fontSize:18,fontWeight:'700',color:'#183330'},hint:{fontSize:12,color:'#6E7E7A',marginTop:5},link:{padding:16,color:'#176B61',fontWeight:'700'}});
