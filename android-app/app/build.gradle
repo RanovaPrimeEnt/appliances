@@ -21,12 +21,12 @@ android {
         customer {
             dimension "audience"
             applicationId "com.ranova.marketplace"
-            manifestPlaceholders = [appLabel: "RANOVA"]
+            manifestPlaceholders = [appLabel: "RANOVA", appIcon: "@drawable/ranova_customer"]
         }
         seller {
             dimension "audience"
             applicationId "com.ranova.seller"
-            manifestPlaceholders = [appLabel: "RANOVA Seller"]
+            manifestPlaceholders = [appLabel: "RANOVA Seller", appIcon: "@drawable/ranova_seller"]
         }
     }
 
