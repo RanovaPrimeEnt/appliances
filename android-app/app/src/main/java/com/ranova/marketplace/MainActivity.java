@@ -138,12 +138,34 @@ public class MainActivity extends Activity {
     }
 
     private void handleWebPermissionRequest(PermissionRequest request) {
+        // Android permissions belong to the app, not to every site loaded in its WebView.
+        // Only RANOVA's own HTTPS origin may request camera or microphone access.
+        Uri origin = request.getOrigin();
+        if (origin == null
+                || !"https".equalsIgnoreCase(origin.getScheme())
+                || !"ranovaprimeent.github.io".equalsIgnoreCase(origin.getHost())
+                || (origin.getPort() != -1 && origin.getPort() != 443)) {
+            request.deny();
+            return;
+        }
+
         boolean needsCamera = false;
         boolean needsMicrophone = false;
-
-        for (String resource : request.getResources()) {
-            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) needsCamera = true;
-            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) needsMicrophone = true;
+        String[] resources = request.getResources();
+        if (resources == null || resources.length == 0) {
+            request.deny();
+            return;
+        }
+        for (String resource : resources) {
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
+                needsCamera = true;
+            } else if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
+                needsMicrophone = true;
+            } else {
+                // Never grant newly introduced WebView resources by default.
+                request.deny();
+                return;
+            }
         }
 
         boolean cameraGranted = !needsCamera ||
