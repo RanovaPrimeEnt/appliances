@@ -1258,11 +1258,19 @@ function detailQuantityValue(p,value){
   if(p.stock_quantity!=null)quantity=Math.min(quantity,Math.max(0,Math.floor(Number(p.stock_quantity)||0)));
   return quantity;
 }
+function unitPriceForQuantity(p,quantity){
+  // Match the server's quantity-tier selection for storefront estimates.
+  var unitPrice=p.price==null?null:Number(p.price);
+  var tiers=Array.isArray(p.pricing_tiers)?p.pricing_tiers.slice().sort(function(a,b){return Number(a.min_qty)-Number(b.min_qty)}):[];
+  tiers.forEach(function(t){if(Number(quantity)>=Number(t?.min_qty||0)&&Number.isFinite(Number(t?.unit_price)))unitPrice=Number(t.unit_price)});
+  return unitPrice;
+}
 function updateDetailTotal(p){
   var input=el("detailQuantity"),total=el("detailProductTotal");if(!input||!total)return;
   var quantity=detailQuantityValue(p,input.value);
   var button=el("productDetail").querySelector("[data-detail-add]");if(button)button.disabled=orderUnavailable(p)||quantity<Math.max(1,Number(p.moq)||1);
-  total.innerHTML=p.price==null?'<span>Total to pay</span><strong>Price to be confirmed</strong>':'<span>Total to pay</span><strong>'+esc(money(Number(p.price)*quantity))+'</strong>';
+  var unitPrice=unitPriceForQuantity(p,quantity);
+  total.innerHTML=!Number.isFinite(unitPrice)?'<span>Product subtotal</span><strong>Price to be confirmed</strong>':'<span>Product subtotal</span><strong>'+esc(money(Number((unitPrice*quantity).toFixed(2))))+'</strong>';
 }
 function renderComparison(id,otherId){
   var a=products.find(function(p){return p.id===id}),b=products.find(function(p){return p.id===otherId}),host=el("detailComparison");
@@ -1558,7 +1566,7 @@ async function loadFeePreview(){
 
 function cartItems(){return Object.keys(cart).map(function(id){var p=products.find(function(x){return x.id===id});return p?{product:p,quantity:cart[id]}:null}).filter(Boolean)}
 function totalQty(){return cartItems().reduce(function(s,x){return s+x.quantity},0)}
-function knownTotal(){var items=cartItems();if(!items.length||items.some(function(x){return x.product.price==null}))return null;return items.reduce(function(s,x){return s+(Number(x.product.price)*x.quantity)},0)}
+function knownTotal(){var items=cartItems();if(!items.length||items.some(function(x){return !Number.isFinite(unitPriceForQuantity(x.product,x.quantity))}))return null;return Number(items.reduce(function(s,x){return s+Number((unitPriceForQuantity(x.product,x.quantity)*x.quantity).toFixed(2))},0).toFixed(2))}
 function saveCart(queue){
   try{localStorage.setItem(cartLocalKey(),JSON.stringify(cart))}catch(e){}
   if(queue!==false)queueCartDraft();
@@ -1709,7 +1717,7 @@ function renderCart(){
   el("checkoutCount").value=count+" product(s), "+qty+" unit(s)";
   el("cartLines").innerHTML=count?items.map(function(x){
     var p=x.product;
-    return '<div class="cart-line"><img src="'+esc(productPhoto(p)||"")+'" alt=""><div><b>'+esc(p.name)+'</b><small><span class="cart-unit-price">'+esc(money(p.price))+'</span>'+(Number(p.moq||1)>1?' • MOQ '+esc(p.moq):'')+'</small><div class="qty"><button data-minus="'+p.id+'" type="button">−</button><input data-qty="'+p.id+'" type="number" min="'+esc(p.moq||1)+'" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(x.quantity)+'"><button data-plus="'+p.id+'" type="button">+</button></div></div><button class="remove" data-remove="'+p.id+'" type="button">Remove</button></div>';
+    return '<div class="cart-line"><img src="'+esc(productPhoto(p)||"")+'" alt=""><div><b>'+esc(p.name)+'</b><small><span class="cart-unit-price">'+esc(money(unitPriceForQuantity(p,x.quantity)))+'</span>'+(Number(p.moq||1)>1?' • MOQ '+esc(p.moq):'')+'</small><div class="qty"><button data-minus="'+p.id+'" type="button">−</button><input data-qty="'+p.id+'" type="number" min="'+esc(p.moq||1)+'" '+(p.stock_quantity!=null?'max="'+esc(p.stock_quantity)+'"':'')+' value="'+esc(x.quantity)+'"><button data-plus="'+p.id+'" type="button">+</button></div></div><button class="remove" data-remove="'+p.id+'" type="button">Remove</button></div>';
   }).join(""):'<div class="empty">Your order selection is empty.</div>';
   el("cartSummary").innerHTML='<div class="summary-row"><span>Products</span><b>'+count+'</b></div><div class="summary-row"><span>Total quantity</span><b>'+qty+'</b></div><div class="summary-row total"><span>Product total</span><b>'+(total==null?'Confirmed before payment':money(total))+'</b></div><div class="summary-row"><span>Delivery</span><b>Confirmed separately</b></div>';
   el("cartLines").querySelectorAll("[data-minus]").forEach(function(b){b.onclick=function(){var p=products.find(function(x){return x.id===b.dataset.minus}),step=1,min=Number(p.moq||1);setQuantity(p.id,Math.max(min,(cart[p.id]||min)-step))}});
