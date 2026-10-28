@@ -1130,6 +1130,17 @@ body:has(#productDetail.open) #cartFab{visibility:hidden}
  #checkoutModal .modal-card{max-height:calc(100dvh - env(safe-area-inset-bottom,0px))}
 }
 </style>
+<style id="rnv-mobile-store-readability">
+/* Keep informational copy legible and common touch targets comfortable on phones. */
+@media(max-width:620px){
+  .store-copy p,.head p,.trust-head p{font-size:13px;line-height:1.5}
+  .info b,.review-item b{font-size:13px}
+  .info span,.info p,.review-item p{font-size:13px;line-height:1.5}
+  .trust-metric span,.review-item small,.seller-response{font-size:12px;line-height:1.4}
+  .trust-metric b{font-size:13px}
+  .top a,.cart-top,.contact a,.store-category-btn{min-height:44px}
+}
+</style>
 </head>
 <body>
 <div class="top"><div class="wrap"><div class="brand">RANOVA MARKET</div><div class="toplinks"><a href="../rpe-v2/?home=1">Back to marketplace</a><button id="topCart" class="cart-top" type="button">Order <span id="topCartCount" class="cart-count">0</span></button></div></div></div>
