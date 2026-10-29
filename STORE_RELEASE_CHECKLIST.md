@@ -5,7 +5,9 @@
 - Target SDK: 36
 - Production artifact: Android App Bundle (.aab)
 - Keep Play App Signing enabled.
-- Configure repository secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+- Configure repository secrets used by `.github/workflows/ranova-aab.yml`: `RANOVA_KEYSTORE_BASE64`, `RANOVA_KEYSTORE_PASSWORD`, `RANOVA_KEY_ALIAS`, `RANOVA_KEY_PASSWORD`.
+- The Android Gradle release signing configuration also expects `RANOVA_UPLOAD_KEYSTORE`, which the workflow sets from the decoded keystore secret.
+- Confirm the uploaded `.aab` is signed with the intended upload key before Google Play submission; a successful unsigned bundle build is not a release-signing check.
 - Complete Play Console Data safety, content rating, app access, ads declaration, target audience, privacy policy URL, account deletion URL, screenshots and feature graphic.
 - Use internal testing before production.
 
