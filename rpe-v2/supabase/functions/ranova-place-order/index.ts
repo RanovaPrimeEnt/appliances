@@ -54,7 +54,7 @@ function normalizeRawItems(raw:any[]){
       line_total:unit_price>0?Number((unit_price*quantity).toFixed(2)):null
     });
   }
-  return out.slice(0,100);
+  return out;
 }
 async function approvedSeller(sellerId:string){
   const {data:account}=await admin.from("ranova_seller_accounts").select("application_ref").eq("user_id",sellerId).maybeSingle();
@@ -167,6 +167,10 @@ Deno.serve(async(req:Request)=>{
     const payment_network=clean(b.payment_network,40).toLowerCase();
     const payment_phone=clean(b.payment_phone,40);
     const buyer_note=clean(b.buyer_note,1000);
+    // Reject instead of silently dropping product lines from large checkouts.
+    if(Array.isArray(b.items)&&b.items.length>100){
+      return new Response(JSON.stringify({ok:false,error:"This checkout contains more than 100 product lines. Please split it into two orders so no products are omitted."}),{status:400,headers:h});
+    }
     const raw=normalizeRawItems(b.items);
 
     if(!customer_name||!customer_phone||!delivery_location||!buyer_country_code||raw.length<1){
