@@ -16,7 +16,7 @@ const forbidden = [
   /\.(?:apk|aab|ipa|keystore|jks|p12|mobileprovision|xcarchive|pem|p8|key)$/i
 ];
 const violations = tracked.filter(file => {
-  if (/(^|\\/)\\.env\\.(example|sample)$/i.test(file)) return false;
+  if (/(^|\/)\.env\.(example|sample)$/i.test(file)) return false;
   return forbidden.some(pattern => pattern.test(file));
 });
 assert.deepEqual(violations, [], "Remove local build/signing/secret files from tracking: " + violations.join(", "));
