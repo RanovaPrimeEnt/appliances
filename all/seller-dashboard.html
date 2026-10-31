@@ -334,6 +334,79 @@ body:not(.seller-v2-ready) .seller-v2-bottom{display:none!important}
  .order-items-mini .order-item-line{grid-template-columns:52px minmax(0,1fr);gap:8px}
  .order-items-mini .order-item-amount{grid-column:2;text-align:left;white-space:normal;margin-top:-5px}
 }
+
+/* RANOVA order card V3. Applies to seller order cards only; never changes payment logic. */
+#panel-orders .order-list{gap:18px}
+#panel-orders .order-row.v3-order-card{display:block;min-width:0;padding:0;background:#fff;border:1px solid #e0e9e4;border-radius:22px;box-shadow:0 12px 36px rgba(20,83,45,.075);overflow:hidden;color:#1f2937}
+.v3-order-card *{box-sizing:border-box;min-width:0}
+.v3-order-card .v3-card-header{padding:21px 22px 18px;display:flex;gap:15px;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #edf1ed}
+.v3-order-card .v3-order-ident{display:flex;gap:12px;align-items:flex-start;min-width:0}
+.v3-order-card .v3-document-icon{flex:none;width:48px;height:48px;display:grid;place-items:center;border-radius:15px;background:#eaf6ee;color:#14532d;font-size:26px}
+.v3-order-card .v3-ref{font-size:20px;font-weight:850;line-height:1.2;color:#172b23;overflow-wrap:anywhere}
+.v3-order-card .v3-customer{display:flex;gap:5px 10px;flex-wrap:wrap;margin-top:8px;color:#66766f;font-size:13px;line-height:1.5}
+.v3-order-card .v3-customer span{overflow-wrap:anywhere}
+.v3-order-card .v3-order-subref{font-size:11px;color:#718177;margin-top:5px}
+.v3-order-card .v3-statuses{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center}
+.v3-order-card .v3-pill{display:inline-flex;align-items:center;border-radius:999px;padding:7px 11px;font-weight:800;font-size:12px;white-space:nowrap}
+.v3-order-card .v3-pill.status{background:#eaf6ee;color:#116443}
+.v3-order-card .v3-pill.urgent{background:#fff0e9;color:#b34120}
+.v3-order-card .v3-pill.due{background:#fff6e7;color:#995e14}
+.v3-order-card .v3-card-body{padding:17px 22px 20px}
+.v3-order-card .v3-section-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px;font-size:15px;font-weight:850;color:#192f25;margin-bottom:10px}
+.v3-order-card .v3-items-meta{font-size:12px;color:#63766b;font-weight:650}
+.v3-order-card .order-items-mini{margin:0 0 16px;border:1px solid #e2ebe5;padding:4px 14px;border-radius:14px;background:#fbfdfa}
+.v3-order-card .order-item-photo,.v3-order-card .order-item-photo-empty{width:67px;height:67px;border-radius:11px}
+.v3-order-card .order-items-mini .order-item-line{grid-template-columns:67px minmax(0,1fr) auto;gap:13px;padding:12px 0}
+.v3-order-card .order-item-description b{font-size:14px;color:#172b23;line-height:1.35}
+.v3-order-card .order-item-description small{font-size:12px;line-height:1.35;color:#697b70;margin:3px 0 0}
+.v3-order-card .order-items-mini .order-item-amount{font-size:14px;color:#14532d}
+.v3-order-card .v3-finances{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.v3-order-card .v3-finance-tile{display:flex;align-items:center;gap:11px;background:#f8faf8;border:1px solid #e7eeea;padding:15px 12px;border-radius:13px;min-height:91px}
+.v3-order-card .v3-tile-icon{flex:0 0 34px;width:34px;height:34px;display:grid;place-items:center;background:#e2f4e9;border-radius:50%;color:#146542;font-size:17px;font-weight:800}
+.v3-order-card .v3-finance-tile.commission .v3-tile-icon{background:#ffede4;color:#d35719}
+.v3-order-card .v3-tile-label{font-size:12px;color:#66766e;line-height:1.35}
+.v3-order-card .v3-tile-value{font-size:16px;font-weight:850;color:#183d2c;overflow-wrap:anywhere;line-height:1.3;margin-top:5px}
+.v3-order-card .v3-tile-note{font-size:11px;color:#596d61}
+.v3-order-card .v3-payrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:17px;align-items:center;border-top:1px solid #e7eee9;padding:16px 0}
+.v3-order-card .v3-rule{font-size:12px;color:#6a7a71;line-height:1.5}
+.v3-order-card .v3-total{font-size:12px;color:#6c7c70}
+.v3-order-card .v3-total strong{display:block;color:#103f2b;font-size:21px;line-height:1.2;margin-top:5px}
+.v3-order-card .v3-payment{font-size:12px;color:#6c7c70;border-left:1px solid #e5ece7;padding-left:15px}
+.v3-order-card .v3-payment span{display:block;color:#293d31;font-weight:750;margin-top:5px}
+.v3-order-card .v3-card-footer{background:#fbfcfb;border-top:1px solid #edf1ed;padding:14px 22px}
+.v3-order-card .order-actions{display:flex;align-items:center;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin:0}
+.v3-order-card .order-actions button{border:1px solid #d5e3da;background:#fff;color:#1b3226;border-radius:12px;padding:10px 13px;min-height:42px;font-weight:800;font-size:13px;line-height:1.25}
+.v3-order-card .order-actions button[data-quote-order]{border-color:#17814f;color:#145b39}
+.v3-order-card .order-actions button.primary{background:#1f7a4d;border-color:#1f7a4d;color:#fff}
+.v3-order-card .order-actions button.danger{background:#fff0ec;border-color:#ffcdc2;color:#b23f25}
+.v3-order-card .order-actions button:focus-visible{outline:3px solid #f97316;outline-offset:2px}
+.v3-order-card .v3-seller-note{font-size:12px;color:#64756c;padding:8px 12px;background:#fff7ee;border-radius:8px;margin-top:10px}
+.v3-order-card .order-item-count{font-size:12px;font-weight:750}
+@media(max-width:1100px){.v3-order-card .v3-finances{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){
+ #panel-orders .order-row.v3-order-card{border-radius:17px}
+ .v3-order-card .v3-card-header{padding:15px 13px;flex-direction:column;gap:10px}
+ .v3-order-card .v3-document-icon{width:38px;height:38px;font-size:22px}
+ .v3-order-card .v3-ref{font-size:16px}
+ .v3-order-card .v3-statuses{justify-content:flex-start;padding-left:50px}
+ .v3-order-card .v3-card-body{padding:14px 13px}
+ .v3-order-card .v3-card-footer{padding:12px 13px}
+ .v3-order-card .order-items-mini{padding:4px 10px}
+ .v3-order-card .order-items-mini .order-item-line{grid-template-columns:54px minmax(0,1fr);gap:9px}
+ .v3-order-card .order-item-photo,.v3-order-card .order-item-photo-empty{width:54px;height:54px}
+ .v3-order-card .order-items-mini .order-item-amount{grid-column:2;text-align:left}
+ .v3-order-card .v3-finances{gap:7px}
+ .v3-order-card .v3-finance-tile{padding:10px 8px;min-height:75px;gap:6px}
+ .v3-order-card .v3-tile-icon{width:26px;height:26px;flex-basis:26px;font-size:13px}
+ .v3-order-card .v3-tile-value{font-size:14px}
+ .v3-order-card .v3-payrow{grid-template-columns:1fr 1fr;gap:12px}
+ .v3-order-card .v3-rule{grid-column:1/-1}
+ .v3-order-card .v3-payment{padding-left:9px}
+ .v3-order-card .v3-total strong{font-size:18px}
+ .v3-order-card .order-actions button{flex:1 1 auto;min-height:44px}
+}
+@media(max-width:360px){.v3-order-card .v3-finances{grid-template-columns:1fr}}
+
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -1526,6 +1599,55 @@ function sellerOrderPrintHtml(order){
     '</body></html>';
 }
 
+
+function sellerOrderCardMarkup(o,items,ageHours,priority,priorityStyle,financeMini,actions,fb){
+  // The backend's seller-order record already contains only this seller's purchased items.
+  var orderRef=esc(o.platform_order_ref||o.order_ref||"Order"),sellerRef=esc(o.order_ref||"");
+  var terminal=["delivered","cancelled","returned"].includes(clean(o.order_status).toLowerCase());
+  var currentPriority=terminal?"":priority;
+  var badges='<span class="v3-pill status">'+esc(pretty(o.order_status||"New"))+'</span>'+
+    (currentPriority==="Urgent"?'<span class="v3-pill urgent">● Urgent</span>':
+    currentPriority==="Due soon"?'<span class="v3-pill due">● Due soon</span>':'');
+  var finance=fb?[
+    ['▣','Products',money(fb.gross),''],
+    ['%','Commission',fb.commissionRate.toFixed(2)+'%', '- '+money(fb.commission)],
+    ['⇢','Delivery',money(fb.delivery),''],
+    ['◈','Expected payout',money(fb.payout),'Estimate']
+  ]: [
+    ['▣','Products',sellerOrderAmount(o.subtotal),''],
+    ['%','Commission','Pending quote',''],
+    ['⇢','Delivery',sellerOrderAmount(o.delivery_fee),''],
+    ['◈','Expected payout','Pending quote','']
+  ];
+  var tiles=finance.map(function(x,i){return '<div class="v3-finance-tile'+(i===1?' commission':'')+'">'+
+    '<span class="v3-tile-icon" aria-hidden="true">'+x[0]+'</span><span><span class="v3-tile-label">'+esc(x[1])+'</span>'+
+    '<strong class="v3-tile-value">'+esc(x[2])+'</strong>'+(x[3]?'<span class="v3-tile-note">'+esc(x[3])+'</span>':'')+'</span></div>';
+  }).join("");
+  return '<article class="order-row v3-order-card" data-order-card="'+esc(o.id||"")+'">'+
+    '<header class="v3-card-header"><div class="v3-order-ident"><span class="v3-document-icon" aria-hidden="true">▤</span><div>'+
+    '<div class="v3-ref">'+orderRef+'</div>'+
+    (sellerRef!==orderRef?'<div class="v3-order-subref">Seller order: '+sellerRef+'</div>':'')+
+    '<div class="v3-customer"><span>Customer: '+esc(o.buyer_name||"Customer")+'</span>'+
+    (o.buyer_phone?'<span>☎ '+esc(o.buyer_phone)+'</span>':'')+
+    '<span>⌖ '+esc(o.delivery_location||"Delivery location pending")+'</span></div></div></div>'+
+    '<div class="v3-statuses">'+badges+'</div></header>'+
+    '<div class="v3-card-body"><div class="v3-section-title">Items ordered '+
+    '<span class="v3-items-meta">'+items.length+' product line(s) · '+sellerOrderTotalUnits(items)+' unit(s) · '+ageHours+'h old</span></div>'+
+    '<div class="order-items-mini">'+sellerOrderItemCardHtml(items)+'</div>'+
+    '<div class="v3-finances">'+tiles+'</div>'+
+    '<div class="v3-payrow"><div class="v3-rule"><b>Finance rule:</b> '+esc(sellerRuleLabel(o))+
+    (fb?' · Provider fee paid by '+esc(pretty(fb.payer)):' · Final amount to be confirmed')+'</div>'+
+    '<div class="v3-total">Order total<strong>'+esc(sellerOrderAmount(o.total))+'</strong></div>'+
+    '<div class="v3-payment">Payment status<span>'+esc(pretty(o.payment_status||"Not started"))+
+    ' · '+esc(o.payment_method||"Method pending")+'</span></div></div>'+
+    (o.seller_note?'<div class="v3-seller-note">Seller note: '+esc(o.seller_note)+'</div>':'')+
+    '</div><footer class="v3-card-footer"><div class="order-actions">'+
+    '<button data-quote-order="'+esc(o.id||"")+'">Set order amount</button>'+
+    '<button data-copy-order="'+esc(o.id||"")+'">Copy order details</button>'+
+    '<button data-print-order="'+esc(o.id||"")+'">Print</button>'+actions+
+    '</div></footer></article>';
+}
+
 function renderMyOrders(){
   var host=el("orderList"),allMyOrders=state.orders||[],orders=allMyOrders.slice();
   var search=el("orderSearch")?el("orderSearch").value.trim().toLowerCase():"";
@@ -1552,8 +1674,7 @@ function renderMyOrders(){
     var itemHtml=sellerOrderItemCardHtml(items);
     var actions=nextOrderActions(o).map(function(a){return '<button data-order-status="'+a[0]+'" data-order-id="'+o.id+'" class="'+(a[0]==="cancelled"?"danger":"primary")+'">'+a[1]+'</button>'}).join("");
     var fb=o.subtotal==null?null:sellerFinanceBreakdown(o,o.subtotal,o.delivery_fee||0);
-    var financeMini=fb?'<div class="payout-breakdown"><span>Products<b>'+esc(money(fb.gross))+'</b></span><span>Commission '+fb.commissionRate.toFixed(2)+'%<b>- '+esc(money(fb.commission))+'</b></span><span>Delivery<b>'+esc(money(fb.delivery))+'</b></span><span>Expected payout<b>'+esc(money(fb.payout))+'</b></span></div><small>Finance rule: '+esc(sellerRuleLabel(o))+' · provider fee paid by '+esc(pretty(fb.payer))+'</small>':'<small>Finance breakdown appears after you set the product subtotal and delivery.</small>';
-    return '<div class="order-row" data-order-card="'+o.id+'"><div><b>'+esc(o.platform_order_ref||o.order_ref)+'</b><small>'+esc(o.buyer_name||"Customer")+' · '+esc(o.buyer_phone||"")+' · '+esc(o.delivery_location||"Delivery location pending")+'</small><div class="order-items-mini">'+itemHtml+'</div>'+financeMini+'<div class="order-actions"><button data-quote-order="'+o.id+'">Set order amount</button><button data-copy-order="'+o.id+'">Copy order details</button><button data-print-order="'+o.id+'">Print</button>'+actions+'</div></div><div><span class="status">'+esc(pretty(o.order_status))+'</span><span class="status" style="margin-left:5px;'+priorityStyle+'">'+priority+'</span><small>'+items.length+' line item(s) · '+sellerOrderTotalUnits(items)+' unit(s) · '+ageHours+'h old</small><small>'+esc(o.payment_method||"Payment method pending")+'</small></div><div><b>'+esc(money(o.total))+'</b><small>Payment: '+esc(pretty(o.payment_status))+'</small>'+(o.seller_note?'<small>'+esc(o.seller_note)+'</small>':'')+'</div></div>'
+    return sellerOrderCardMarkup(o,items,ageHours,priority,priorityStyle,null,actions,fb);
   }).join("");
   host.querySelectorAll(".order-item-photo").forEach(function(img){img.addEventListener("error",function(){var fallback=document.createElement("div");fallback.className="order-item-photo-empty";fallback.textContent="Image unavailable";fallback.setAttribute("aria-label","Ordered product photo unavailable");img.replaceWith(fallback)},{once:true})});
   host.querySelectorAll("[data-quote-order]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.quoteOrder});if(o)quoteOrder(o,b)}});
