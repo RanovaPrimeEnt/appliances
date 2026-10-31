@@ -6,6 +6,10 @@ const vm=require("node:vm");
 const root=path.resolve(__dirname,"..");
 const dashboard=fs.readFileSync(path.join(root,"all/seller-dashboard.html"),"utf8");
 const placeOrder=fs.readFileSync(path.join(root,"rpe-v2/supabase/functions/ranova-place-order/index.ts"),"utf8");
+assert.ok(!placeOrder.includes("return out.slice(0,100)"),"Never truncate checkout lines silently");
+assert.match(placeOrder,/b\.items\.length>100/, "Oversized checkout must be rejected explicitly");
+assert.match(placeOrder,/so no products are omitted/, "Oversized checkout error must explain the limit");
+
 
 // Backend contract: one child seller order per store in a marketplace checkout.
 // One child order keeps every item in the corresponding store's group.
