@@ -90,4 +90,31 @@ assert.doesNotMatch(unpriced,/evil\.example/);
 assert.match(unpriced,/Image unavailable/);
 assert.match(ctx.sellerOrderPrintHtml({...base,payment_status:"paid"}),/Payment recorded/);
 assert.match(ctx.sellerOrderPrintHtml({...base,subtotal:301}),/recorded order subtotal differs/);
+assert.match(dashboard, /#panel-orders \.order-row\.v3-order-card/, "New order-card CSS must override old layout");
+assert.match(dashboard, /@media\(max-width:650px\)/, "New order card needs mobile layout");
+assert.match(dashboard, /return sellerOrderCardMarkup\(o,items,ageHours/, "Seller order list must render the new card, not the legacy layout");
+const card=ctx.sellerOrderCardMarkup({...base,id:"seller-order-id"},base.items,3,"Normal","",null,
+  '<button data-order-status="confirmed" data-order-id="seller-order-id" class="primary">Confirm order</button>',
+  ctx.sellerFinanceBreakdown(base,base.subtotal,base.delivery_fee));
+assert.match(card, /class="order-row v3-order-card"/);
+assert.match(card, /RPE-TEST-S1/);
+assert.match(card, /Blue Bowl/);
+assert.match(card, /White Cup/);
+assert.match(card, /Wooden Plate/);
+assert.match(card, /bowl\.jpg/);
+assert.match(card, /cup\.jpg/);
+assert.match(card, /GHC 315\.00/);
+assert.match(card, /Payment status/);
+for(const action of ["data-quote-order","data-copy-order","data-print-order","data-order-status"]){
+  assert.ok(card.includes(action),"Order card must preserve working action: "+action);
+}
+const completedCard=ctx.sellerOrderCardMarkup({...base,order_status:"delivered"},base.items,48,"Urgent","",null,"",ctx.sellerFinanceBreakdown(base,base.subtotal,base.delivery_fee));
+assert.doesNotMatch(completedCard, /● Urgent/, "Delivered orders should not appear urgent");
+const hostileCard=ctx.sellerOrderCardMarkup({...base,buyer_name:"<img src=x onerror=alert(1)>"},
+  [{product_name:"<script>alert(1)</script>",quantity:1,line_total:3,unit_price:3,image_url:"https://wrong.example/test.jpg"}],
+  2,"Normal","",null,"",null);
+assert.doesNotMatch(hostileCard, /<script>alert\(1\)<\/script>/);
+assert.doesNotMatch(hostileCard, /<img src=x onerror/);
+assert.doesNotMatch(hostileCard, /wrong\.example/);
+
 console.log("PASS seller multi-item receipts: store grouping, snapshots, 80 items, totals, missing values, image restrictions, payment disclosure and escaping");
