@@ -31,6 +31,7 @@ DerivedData/
 *.ipa
 *.p12
 *.mobileprovision
+*.p8
 ios-app/RANOVA.xcodeproj/
 ios-app/RANOVA.xcworkspace/
 
