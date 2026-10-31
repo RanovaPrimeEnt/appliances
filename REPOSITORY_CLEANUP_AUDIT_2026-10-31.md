@@ -4,7 +4,9 @@
 - **Work location:** `maintenance/repo-cleanup-2026-10-31`; the production `main` branch is unchanged by this audit.
 - **Approach:** inspect tracked-file inventory, check selected dependencies, avoid deleting anything that might affect the installed APK, hosted pages, offline service workers, stored images or deployment.
 - **Total inventory:** 326 tracked files in the audited `main` tree, approximately 20.7 MB of blob data (tree reported 368 entries including directories). Counts are point-in-time.
-- **Deletions performed:** **None**. No candidate reached a safe-deletion threshold after dependency review.
+- **Whole-file/folder deletions performed:** **None**. No candidate reached a safe-deletion threshold after dependency review.
+- **One dead HTML element removed:** an invisible link to nonexistent `all/notifications.html` in `all/account.html`. The real Notifications button (`topNotificationBtn`) was preserved.
+- **Two broken navigation links repaired:** `all/marketplace.html` and `all/product.html` now take “Sell on RANOVA” to `rpe-v2/seller-start.html`, the existing onboarding route.
 - **Preventive cleanup:** added `.gitignore` for local builds, caches, device artifacts and signing credentials. Added automated hygiene checks to the release workflow.
 
 ## Dependency findings and retention decisions
@@ -20,6 +22,9 @@
 | `all/scanner-test.html` | Separate, noindex diagnostic scanner interface. | **Keep** pending confirmation that device/camera diagnostic testing no longer needs it. |
 | `android-app/`, `ios-app/`, `.github/workflows/`, `tests/`, `rpe-v2/supabase/` | Platform builds, CI tests, database migrations and Edge Function source. | **Keep**. Deleting source not referenced by a website hyperlink can still break builds and deployments. |
 | `all/fonts/` | Referenced by site typography and service-worker caches. | **Keep** (including license). |
+
+## Static navigation check
+The updated regression check scans static `href` and `src` references in **36 HTML files** (all HTML files except oversized `all/site.html`) for missing local targets. The two broken seller-registration links and one hidden obsolete notifications link were fixed on the branch. Dynamic navigation and external redirects are not covered.
 
 ## Offline cache integrity check
 All 86 explicitly listed static cache resources across the four service workers (`all/sw.js`, `seller-sw.js`, `rpe-v2/rpe-v2-sw.js`, `rpe-v2/admin-sw.js`) resolve to files in the repository. This is now checked by the automated hygiene test. Dynamic URLs and runtime cache behavior remain outside this static verification.
@@ -39,7 +44,7 @@ All 86 explicitly listed static cache resources across the four service workers 
 - An owner or maintainer confirms that legacy content/diagnostics can be retired.
 
 ## What this review changes
-This review does **not** delete production files. Its automated guard prevents commits that accidentally track Android/iOS builds, local caches and private signing files, and checks a small set of essential application paths. Those checks supplement, not replace, end-to-end tests.
+This review does **not** delete production files or modify `main`. It proposes removing one hidden obsolete link, repairing two broken links and adding safety checks in a draft pull request. Its automated guard prevents commits that accidentally track Android/iOS builds, local caches and private signing files, and checks a small set of essential application paths. Those checks supplement, not replace, end-to-end tests.
 
 ## Remaining verification
 - Full reference scan of the oversized `all/site.html` and `rpe-v2/offline-marketplace.json` (file-read limit prevented whole-file inspection).
