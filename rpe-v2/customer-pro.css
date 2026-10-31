@@ -543,5 +543,6 @@ linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shado
   .rnv-cart-checkout-bar {width:calc(100% - 48px)!important}
 }
 
-/* Light green separator above the Buyer Account orange header (Android/PWA). */
-#homePanel .me-premium-head{border-top:6px solid #B8F2A0}
+/* Fill the top space with the existing Buyer Account orange gradient. */
+#homePanel .me-premium-head{border-top:0;margin-top:-10px}
+#homePanel .me-premium-head::before{content:"";position:absolute;left:0;right:0;top:0;height:10px;background:linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);pointer-events:none}
