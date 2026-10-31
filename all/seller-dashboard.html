@@ -1869,7 +1869,7 @@ function bindSellerPowerTools(){
     var panel=b.dataset.sellerJump;
     if(panel==="products"&&b.dataset.productFilter&&el("productStockFilter"))el("productStockFilter").value=b.dataset.productFilter;
     if(panel==="products"&&b.dataset.productStatus&&el("productStatusFilter"))el("productStatusFilter").value=b.dataset.productStatus;
-    setPanel(panel);v2SyncNav(panel);if(panel==="products")renderProducts();
+    sellerNavigatePanel(panel);if(panel==="products")renderProducts();
   }});
   var refreshBtn=el("sellerRefresh");if(refreshBtn)refreshBtn.onclick=async function(){var old=this.textContent;this.disabled=true;this.textContent="Refreshing…";try{await refresh()}finally{this.disabled=false;this.textContent=old}};
   [el("exportProductsOverview")].filter(Boolean).forEach(function(b){b.onclick=exportProductsCsv});
