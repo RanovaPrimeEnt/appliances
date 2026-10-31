@@ -8,7 +8,7 @@ on:
       - 'tests/**'
       - '.github/workflows/ranova-release-contracts.yml'
   push:
-    branches: [ main ]
+    branches: [ main, seller-receipt-card-v3 ]
     paths:
       - 'rpe-v2/**'
       - 'all/**'
