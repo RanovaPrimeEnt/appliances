@@ -318,6 +318,22 @@ body:not(.seller-v2-ready) .seller-v2-bottom{display:none!important}
 .order-item-line .order-item-description b{display:block;overflow-wrap:anywhere}
 .order-item-line .order-item-description small{display:block;margin-top:2px;font-size:12px;color:#6b7280}
 @media(max-width:620px){.order-items-mini .order-item-line{grid-template-columns:54px minmax(0,1fr)}.order-item-photo,.order-item-photo-empty{height:52px;width:52px}}
+/* Complete seller order cards: multiple items remain inside one seller order. */
+.order-items-mini{margin-top:12px;border:1px solid #e5ede8;border-radius:14px;background:#fff;padding:4px 12px}
+.order-items-mini .order-item-line{grid-template-columns:62px minmax(0,1fr) auto;gap:12px}
+.order-items-mini .order-item-amount{font-weight:800;color:#14532d;font-size:13px;text-align:right;white-space:nowrap}
+.order-items-mini .order-item-description .order-item-sku{font-size:11px;color:#66756f}
+.order-items-mini .order-item-count{font-size:13px;font-weight:750;color:#52665d;margin:5px 0 3px}
+.order-items-mini .order-more-items{border-top:1px solid #edf2ee;padding:8px 0}
+.order-items-mini .order-more-items summary{cursor:pointer;font-weight:750;color:#176b4c;padding:6px 0}
+.order-items-mini .order-more-items summary:focus-visible{outline:3px solid #f97316;outline-offset:2px}
+.order-row[data-order-card] .payout-breakdown{margin:12px 0 7px}
+.order-row[data-order-card] .payout-breakdown span{font-size:12px;padding:10px;overflow-wrap:anywhere}
+.order-row[data-order-card] .payout-breakdown b{font-size:14px}
+@media(max-width:700px){
+ .order-items-mini .order-item-line{grid-template-columns:52px minmax(0,1fr);gap:8px}
+ .order-items-mini .order-item-amount{grid-column:2;text-align:left;white-space:normal;margin-top:-5px}
+}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -1404,6 +1420,112 @@ function sellerOrderedPhotoHtml(item){
     :'<div class="order-item-photo-empty" aria-label="No photo recorded for this ordered item">Image unavailable</div>';
 }
 
+function sellerOrderItems(order){
+  return Array.isArray(order&&order.items)?order.items:[];
+}
+function sellerOrderTotalUnits(items){
+  return (items||[]).reduce(function(total,item){var qty=Number(item&&item.quantity);return total+(Number.isFinite(qty)&&qty>0?qty:0)},0);
+}
+function sellerOrderAmount(value){
+  return value===null||value===undefined||value===""||!Number.isFinite(Number(value))?"Pending quote":money(value);
+}
+function sellerOrderItemCardHtml(items){
+  if(!items.length)return '<div class="empty">No item details recorded for this order. Contact RANOVA before fulfilment.</div>';
+  function row(item){
+    return '<div class="order-item-line">'+sellerOrderedPhotoHtml(item)+
+      '<span class="order-item-description"><b>'+esc(item.product_name||"Product")+'</b>'+
+      (item.sku?'<small class="order-item-sku">SKU: '+esc(item.sku)+'</small>':'')+
+      '<small>Qty: '+esc(item.quantity==null?"—":item.quantity)+(item.unit_label?' '+esc(item.unit_label):'')+
+      ' · Unit: '+esc(sellerOrderAmount(item.unit_price))+'</small></span>'+
+      '<span class="order-item-amount">'+esc(sellerOrderAmount(item.line_total))+'</span></div>';
+  }
+  // A compact first screen for very large orders; no purchased item is discarded.
+  var visible=items.slice(0,5).map(row).join("");
+  var remainder=items.length>5?'<details class="order-more-items"><summary>Show all '+items.length+' ordered items ('+(items.length-5)+' more)</summary>'+items.slice(5).map(row).join("")+'</details>':'';
+  return '<div class="order-item-count">'+items.length+' product line(s) · '+sellerOrderTotalUnits(items)+' unit(s)</div>'+visible+remainder;
+}
+function sellerOrderCopyText(order){
+  var items=sellerOrderItems(order),lines=[
+    "RANOVA Seller Order Summary",
+    "Seller order: "+clean(order.order_ref||"—"),
+    "Marketplace order: "+clean(order.platform_order_ref||"—"),
+    "Customer: "+clean(order.buyer_name||"Customer"),
+    "Phone: "+clean(order.buyer_phone||"—"),
+    "Location: "+clean(order.delivery_location||"—"),
+    "Order status: "+pretty(order.order_status||"Unknown"),
+    "Payment status: "+pretty(order.payment_status||"Not started"),
+    "Items ("+items.length+" lines, "+sellerOrderTotalUnits(items)+" units):"
+  ];
+  items.forEach(function(item,index){
+    lines.push((index+1)+". "+clean(item.product_name||"Product")+
+      (item.sku?" [SKU "+clean(item.sku)+"]":"")+
+      " | Qty: "+clean(item.quantity==null?"—":item.quantity)+
+      " | Unit: "+sellerOrderAmount(item.unit_price)+
+      " | Line: "+sellerOrderAmount(item.line_total));
+  });
+  lines.push("Product subtotal: "+sellerOrderAmount(order.subtotal));
+  lines.push("Delivery: "+sellerOrderAmount(order.delivery_fee));
+  lines.push("Order total: "+sellerOrderAmount(order.total));
+  lines.push("This is an order summary, not proof of payment.");
+  return lines.join("\n");
+}
+function sellerOrderPrintHtml(order){
+  var items=sellerOrderItems(order),paid=clean(order.payment_status).toLowerCase()==="paid";
+  var date=new Date(order.created_at||order.updated_at||"");
+  var placed=Number.isNaN(date.getTime())?"Date unavailable":date.toLocaleString("en-GH");
+  var detail=items.map(function(item){
+    var photo=sellerOrderedPhotoUrl(item);
+    var thumb=photo?'<img src="'+esc(photo)+'" alt="'+esc(item.product_name||"Ordered product")+'" width="44" height="44" style="height:44px;width:44px;object-fit:contain">':'<span class="unavailable">Image unavailable</span>';
+    return '<tr><td class="image-cell">'+thumb+'</td><td><strong>'+esc(item.product_name||"Product")+'</strong>'+
+      (item.sku?'<div class="muted">SKU: '+esc(item.sku)+'</div>':'')+
+      (item.unit_label?'<div class="muted">Unit: '+esc(item.unit_label)+'</div>':'')+
+      '</td><td class="num">'+esc(item.quantity==null?"—":item.quantity)+'</td>'+
+      '<td class="num">'+esc(sellerOrderAmount(item.unit_price))+'</td>'+
+      '<td class="num">'+esc(sellerOrderAmount(item.line_total))+'</td></tr>';
+  }).join("");
+  var productTotals=items.every(function(x){return x.line_total!==null&&x.line_total!==undefined&&x.line_total!==""&&Number.isFinite(Number(x.line_total))});
+  var itemSum=productTotals?items.reduce(function(sum,x){return sum+Number(x.line_total)},0):null;
+  var mismatch=productTotals&&order.subtotal!=null&&Math.abs(Number(order.subtotal)-itemSum)>0.011;
+  var breakdown=order.subtotal==null?null:sellerFinanceBreakdown(order,order.subtotal,order.delivery_fee||0);
+  var sellerSummary=breakdown?'<div class="seller-summary"><h3>Seller settlement estimate</h3>'+
+    '<div>Commission ('+breakdown.commissionRate.toFixed(2)+'%): <strong>- '+esc(money(breakdown.commission))+'</strong></div>'+
+    (breakdown.sellerFee?'<div>Seller-paid processing fee: <strong>- '+esc(money(breakdown.sellerFee))+'</strong></div>':'')+
+    '<div>Expected seller payout: <strong>'+esc(money(breakdown.payout))+'</strong></div>'+
+    '<p class="muted">Estimated only. Actual settlement depends on payment, refunds and applicable fees.</p></div>':'';
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
+    '<title>RANOVA Seller Order '+esc(order.order_ref||order.platform_order_ref||"")+'</title>'+
+    '<style>'+
+    '@page{size:auto;margin:14mm}*{box-sizing:border-box}body{font:13px/1.5 Arial,Helvetica,sans-serif;color:#192e26;margin:0;background:#fff}'+
+    'header{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #14532d;padding:0 0 15px;margin-bottom:18px}h1{font-size:23px;margin:0;color:#14532d}h2{font-size:16px;margin:0 0 10px}h3{font-size:13px;margin:0 0 6px}p{margin:3px 0}.muted{color:#61746a;font-size:11px}.pill{display:inline-block;background:#eef5f0;padding:4px 10px;border-radius:7px;font-weight:700}.warning{color:#a34120;font-weight:700}.meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}.meta section{border:1px solid #e1e9e3;border-radius:10px;padding:13px;overflow-wrap:anywhere}'+
+    'table{border-collapse:collapse;width:100%;table-layout:fixed}thead{display:table-header-group}th{background:#eaf6ee;color:#14532d;text-align:left;font-size:11px;padding:10px 7px}td{border-bottom:1px solid #e1e9e3;padding:9px 7px;vertical-align:middle;overflow-wrap:anywhere}tr{break-inside:avoid;page-break-inside:avoid}.image-cell{width:55px}.image-cell img{border-radius:7px;border:1px solid #e1e9e3}.num{text-align:right}.unavailable{font-size:9px;color:#8a9991}.totals{margin:15px 0 0 auto;max-width:340px}.totals div,.seller-summary div{display:flex;justify-content:space-between;gap:16px;padding:5px 0}.totals .total{border-top:2px solid #14532d;font-size:16px;font-weight:bold;padding-top:10px}.seller-summary{border:1px solid #e1e9e3;background:#f8faf7;padding:12px;margin-top:18px;border-radius:10px}.footer{border-top:1px solid #d9e4dc;margin-top:24px;padding-top:12px;color:#61746a;font-size:11px}'+
+    '@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}header,.meta section,.seller-summary{break-inside:avoid}}'+
+    '</style></head><body><header><div><h1>RANOVA</h1><strong>Seller order summary</strong>'+
+    '<p class="muted">One seller order · '+items.length+' product line(s) · '+sellerOrderTotalUnits(items)+' unit(s)</p></div>'+
+    '<div><span class="pill">'+esc(paid?"Payment recorded":"Payment not confirmed")+'</span>'+
+    '<p class="muted">Created: '+esc(placed)+'</p></div></header>'+
+    '<div class="meta"><section><h2>Order references</h2><p><b>Seller order:</b> '+esc(order.order_ref||"—")+'</p>'+
+    '<p><b>Marketplace order:</b> '+esc(order.platform_order_ref||"—")+'</p>'+
+    '<p><b>Order status:</b> '+esc(pretty(order.order_status||"Unknown"))+'</p>'+
+    '<p><b>Payment status:</b> '+esc(pretty(order.payment_status||"Not started"))+'</p>'+
+    '<p><b>Payment method:</b> '+esc(order.payment_method||"Not selected")+'</p></section>'+
+    '<section><h2>Customer and delivery</h2><p>'+esc(order.buyer_name||"Customer")+'</p>'+
+    '<p>'+esc(order.buyer_phone||"")+'</p><p>'+esc(order.delivery_location||"Delivery details pending")+'</p></section></div>'+
+    '<h2>Items purchased</h2><table><thead><tr><th style="width:56px">Image</th><th>Product</th>'+
+    '<th class="num" style="width:50px">Qty</th><th class="num" style="width:108px">Unit price</th>'+
+    '<th class="num" style="width:110px">Line total</th></tr></thead><tbody>'+
+    (detail||'<tr><td colspan="5">No item details are available. Contact RANOVA to verify this order.</td></tr>')+
+    '</tbody></table>'+
+    (mismatch?'<p class="warning">Notice: The recorded order subtotal differs from the sum of individual line amounts (for example, because of a revised quote). Verify before fulfilment.</p>':'')+
+    '<div class="totals"><div>Product subtotal <strong>'+esc(sellerOrderAmount(order.subtotal))+'</strong></div>'+
+    '<div>Delivery <strong>'+esc(sellerOrderAmount(order.delivery_fee))+'</strong></div>'+
+    '<div class="total">Order total <strong>'+esc(sellerOrderAmount(order.total))+'</strong></div></div>'+
+    sellerSummary+
+    '<div class="footer">Order summary only — not a tax invoice or independent proof of payment. '+
+    'This document includes only the items belonging to the seller order shown above. '+
+    'Printed from RANOVA Seller Dashboard · '+esc(new Date().toLocaleString("en-GH"))+'</div>'+
+    '</body></html>';
+}
+
 function renderMyOrders(){
   var host=el("orderList"),allMyOrders=state.orders||[],orders=allMyOrders.slice();
   var search=el("orderSearch")?el("orderSearch").value.trim().toLowerCase():"";
@@ -1427,39 +1549,38 @@ function renderMyOrders(){
     var priority=ageHours>=48?"Urgent":ageHours>=24?"Due soon":"Normal";
     var priorityStyle=priority==="Urgent"?"background:#fff0ee;color:#a0473e":priority==="Due soon"?"background:#fff5e8;color:#915d18":"";
 
-    var itemHtml=items.slice(0,5).map(function(i){return '<div class="order-item-line">'+sellerOrderedPhotoHtml(i)+'<span class="order-item-description"><b>'+esc(i.product_name||"Product")+'</b><small>Quantity: '+esc(i.quantity||1)+'</small></span></div>'}).join("");
+    var itemHtml=sellerOrderItemCardHtml(items);
     var actions=nextOrderActions(o).map(function(a){return '<button data-order-status="'+a[0]+'" data-order-id="'+o.id+'" class="'+(a[0]==="cancelled"?"danger":"primary")+'">'+a[1]+'</button>'}).join("");
     var fb=o.subtotal==null?null:sellerFinanceBreakdown(o,o.subtotal,o.delivery_fee||0);
     var financeMini=fb?'<div class="payout-breakdown"><span>Products<b>'+esc(money(fb.gross))+'</b></span><span>Commission '+fb.commissionRate.toFixed(2)+'%<b>- '+esc(money(fb.commission))+'</b></span><span>Delivery<b>'+esc(money(fb.delivery))+'</b></span><span>Expected payout<b>'+esc(money(fb.payout))+'</b></span></div><small>Finance rule: '+esc(sellerRuleLabel(o))+' · provider fee paid by '+esc(pretty(fb.payer))+'</small>':'<small>Finance breakdown appears after you set the product subtotal and delivery.</small>';
-    return '<div class="order-row" data-order-card="'+o.id+'"><div><b>'+esc(o.platform_order_ref||o.order_ref)+'</b><small>'+esc(o.buyer_name||"Customer")+' · '+esc(o.buyer_phone||"")+' · '+esc(o.delivery_location||"Delivery location pending")+'</small><div class="order-items-mini">'+itemHtml+'</div>'+financeMini+'<div class="order-actions"><button data-quote-order="'+o.id+'">Set order amount</button><button data-copy-order="'+o.id+'">Copy order details</button><button data-print-order="'+o.id+'">Print</button>'+actions+'</div></div><div><span class="status">'+esc(pretty(o.order_status))+'</span><span class="status" style="margin-left:5px;'+priorityStyle+'">'+priority+'</span><small>'+esc(o.item_count)+' product(s) · '+ageHours+'h old</small><small>'+esc(o.payment_method||"Payment method pending")+'</small></div><div><b>'+esc(money(o.total))+'</b><small>Payment: '+esc(pretty(o.payment_status))+'</small>'+(o.seller_note?'<small>'+esc(o.seller_note)+'</small>':'')+'</div></div>'
+    return '<div class="order-row" data-order-card="'+o.id+'"><div><b>'+esc(o.platform_order_ref||o.order_ref)+'</b><small>'+esc(o.buyer_name||"Customer")+' · '+esc(o.buyer_phone||"")+' · '+esc(o.delivery_location||"Delivery location pending")+'</small><div class="order-items-mini">'+itemHtml+'</div>'+financeMini+'<div class="order-actions"><button data-quote-order="'+o.id+'">Set order amount</button><button data-copy-order="'+o.id+'">Copy order details</button><button data-print-order="'+o.id+'">Print</button>'+actions+'</div></div><div><span class="status">'+esc(pretty(o.order_status))+'</span><span class="status" style="margin-left:5px;'+priorityStyle+'">'+priority+'</span><small>'+items.length+' line item(s) · '+sellerOrderTotalUnits(items)+' unit(s) · '+ageHours+'h old</small><small>'+esc(o.payment_method||"Payment method pending")+'</small></div><div><b>'+esc(money(o.total))+'</b><small>Payment: '+esc(pretty(o.payment_status))+'</small>'+(o.seller_note?'<small>'+esc(o.seller_note)+'</small>':'')+'</div></div>'
   }).join("");
   host.querySelectorAll(".order-item-photo").forEach(function(img){img.addEventListener("error",function(){var fallback=document.createElement("div");fallback.className="order-item-photo-empty";fallback.textContent="Image unavailable";fallback.setAttribute("aria-label","Ordered product photo unavailable");img.replaceWith(fallback)},{once:true})});
   host.querySelectorAll("[data-quote-order]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.quoteOrder});if(o)quoteOrder(o,b)}});
-  host.querySelectorAll("[data-copy-order]").forEach(function(b){b.onclick=async function(){var o=orders.find(function(x){return x.id===b.dataset.copyOrder});if(!o)return;var lines=[o.platform_order_ref||o.order_ref,o.buyer_name||"Customer",o.buyer_phone||"",o.delivery_location||"",money(o.total)].filter(Boolean).join("\n");try{await navigator.clipboard.writeText(lines);msg(el("orderMsg"),"Order and customer details copied.",true)}catch(e){prompt("Copy these order details:",lines)}}});
+  host.querySelectorAll("[data-copy-order]").forEach(function(b){b.onclick=async function(){var o=orders.find(function(x){return x.id===b.dataset.copyOrder});if(!o)return;var lines=sellerOrderCopyText(o);try{await navigator.clipboard.writeText(lines);msg(el("orderMsg"),"Order and customer details copied.",true)}catch(e){prompt("Copy these order details:",lines)}}});
   host.querySelectorAll("[data-print-order]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.printOrder});if(o)printSellerOrder(o)}});
   host.querySelectorAll("[data-order-status]").forEach(function(b){b.onclick=function(){var o=orders.find(function(x){return x.id===b.dataset.orderId});if(o)changeOrderStatus(o,b.dataset.orderStatus,b)}});
 }
 
 
 function printSellerOrder(o){
-  var items=Array.isArray(o.items)?o.items:[];
-  var win=window.open("","_blank","width=760,height=900");if(!win)return msg(el("orderMsg"),"Allow pop-ups to print this order.");
-  var itemRows=items.map(function(i){var photo=sellerOrderedPhotoUrl(i);var photoBlock=photo?'<img src="'+esc(photo)+'" alt="'+esc(i.product_name||"Ordered product")+'" style="width:62px;height:62px;object-fit:contain;border:1px solid #e2e9e5;border-radius:10px">':'<span style="display:inline-block;width:62px;font-size:10px;color:#718079">Image unavailable</span>';return '<tr><td style="padding:8px;border-bottom:1px solid #ddd;width:70px">'+photoBlock+'</td><td style="padding:8px;border-bottom:1px solid #ddd">'+esc(i.product_name||"Product")+'</td><td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">'+esc(i.quantity||1)+'</td></tr>'}).join("");
-  win.document.write('<!doctype html><html><head><title>'+esc(o.platform_order_ref||o.order_ref)+'</title><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;color:#173b32;padding:28px"><h1 style="margin:0 0 4px">RANOVA Seller Order</h1><p style="margin:0 0 24px;color:#666">'+esc(o.platform_order_ref||o.order_ref)+'</p><h3>Customer</h3><p>'+esc(o.buyer_name||"Customer")+'<br>'+esc(o.buyer_phone||"")+'<br>'+esc(o.delivery_location||"")+'</p><h3>Items</h3><table style="width:100%;border-collapse:collapse">'+itemRows+'</table><h3>Order summary</h3><p>Status: <b>'+esc(pretty(o.order_status))+'</b><br>Payment: <b>'+esc(pretty(o.payment_status))+'</b><br>Products: <b>'+esc(money(o.subtotal))+'</b><br>Delivery: <b>'+esc(money(o.delivery_fee||0))+'</b><br>Total: <b>'+esc(money(o.total))+'</b></p><p style="margin-top:32px;color:#777;font-size:12px">Printed from RANOVA Seller Dashboard · '+new Date().toLocaleString()+'</p></body></html>');
-  win.document.close();win.focus();
-  // Wait for the actual ordered product photos to load before printing.
-  var images=[].slice.call(win.document.images),pending=images.filter(function(img){return !img.complete});
+  // One order record already contains all items sold by this seller in the checkout.
+  var win=window.open("","_blank","width=900,height=900");
+  if(!win){msg(el("orderMsg"),"Allow pop-ups to print this order.");return}
+  win.document.write(sellerOrderPrintHtml(o));
+  win.document.close();
+  // Wait for all item images, then print once; printing still works if images fail.
+  var pending=[].slice.call(win.document.images).filter(function(img){return !img.complete});
   var printed=false;
   function printReady(){if(printed)return;printed=true;win.focus();win.print()}
   if(!pending.length)setTimeout(printReady,250);
   else{
     var remaining=pending.length;
-    function settled(){remaining--;if(remaining<=0)setTimeout(printReady,150)}
-    pending.forEach(function(img){img.addEventListener("load",settled,{once:true});img.addEventListener("error",settled,{once:true})});
-    setTimeout(printReady,3500);
+    function done(){remaining--;if(remaining<=0)setTimeout(printReady,150)}
+    pending.forEach(function(img){img.addEventListener("load",done,{once:true});img.addEventListener("error",done,{once:true})});
+    setTimeout(printReady,4000);
   }
 }
-
 function zonePriceText(z){
   if(z.pricing_type==="free")return "Free";
   if(z.pricing_type==="fixed")return money(z.fixed_fee);
