@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v79";
+const CACHE="ranova-rpe-v2-shell-v80";
 const IMAGE_CACHE="ranova-rpe-v2-images-v1";
 const CORE=[
   "../all/fonts/inter-0.woff2",
@@ -76,6 +76,11 @@ async function networkFirst(request){
   }catch(err){
     const cached=await caches.match(request);
     if(cached)return cached;
+    // Timestamped CSS URLs must still work from the pre-cached stylesheet offline.
+    if(new URL(request.url).pathname.endsWith("/customer-pro.css")){
+      const offlineCss=await caches.match("./customer-pro.css?v=20261031-orangefill");
+      if(offlineCss)return offlineCss;
+    }
     if(request.mode==="navigate"){
       const fallback=await caches.match("./index.html");
       if(fallback)return fallback;
