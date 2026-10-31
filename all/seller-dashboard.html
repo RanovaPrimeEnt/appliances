@@ -295,8 +295,19 @@ body.seller-v2-ready .seller-v2-shortcut{cursor:pointer}
  body.seller-v2-ready .seller-v2-intro h2{font-size:25px}
  body.seller-v2-ready .seller-v2-shortcuts{gap:9px}
  body.seller-v2-ready .seller-v2-shortcut{font-size:13px}
- body.seller-v2-ready .v2-more-panel{display:block}
+ body.seller-v2-ready .v2-more-panel{display:none}
+ body.seller-v2-ready .v2-more-panel.active{display:block}
 }
+/* Hide mobile controls before authentication completes. */
+body:not(.seller-v2-ready) .seller-v2-bottom{display:none!important}
+/* Keep the PWA installation action clear of the five mobile tabs. */
+@media(max-width:620px){
+ body.seller-v2-ready [data-install-seller]{bottom:calc(82px + env(safe-area-inset-bottom))!important;font-size:12px!important;padding:8px 11px!important;max-width:48vw!important}
+ body.seller-v2-ready #panel-more .seller-v2-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ body.seller-v2-ready #panel-more .seller-v2-shortcut{border:1px solid #e2e9e5;border-radius:12px;padding:12px;background:#fff;color:#14532d;box-shadow:none;text-align:left;white-space:normal}
+ body.seller-v2-ready #panel-more a{overflow-wrap:anywhere}
+}
+@media(display-mode:standalone){[data-install-seller]{display:none!important}}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
