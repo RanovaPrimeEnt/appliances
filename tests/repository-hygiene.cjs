@@ -52,3 +52,30 @@ for (const swFile of ["all/sw.js","seller-sw.js","rpe-v2/rpe-v2-sw.js","rpe-v2/a
   }
 }
 console.log("PASS offline precache references: all declared paths exist");
+
+
+// Validate static asset and navigation links in main public entrypoints.
+// Do not attempt to interpret JS-generated URLs or external navigation.
+const entrypoints=[
+  "all/index.html","all/marketplace.html","all/product.html","all/seller-center.html",
+  "all/seller-dashboard.html","all/seller-store.html","all/cart.html","all/order-status.html",
+  "rpe-v2/index.html","rpe-v2/admin.html","rpe-v2/seller-start.html","rpe-v2/market-home.html"
+];
+for(const page of entrypoints){
+  assert.ok(tracked.includes(page),"Missing public entrypoint: "+page);
+  const html=fs.readFileSync(path.resolve(__dirname,"..",page),"utf8");
+  const references=[...html.matchAll(/\b(?:src|href)=["']([^"'<>]+)["']/gi)].map(m=>m[1]);
+  for(const ref of references){
+    if(!ref||ref.startsWith("#")||/^(https?:|data:|mailto:|tel:|javascript:|blob:)/i.test(ref))continue;
+    if(/[{}$]/.test(ref))continue; // dynamic template binding
+    const withoutQuery=ref.split(/[?#]/)[0];
+    if(!withoutQuery)continue;
+    if(withoutQuery.startsWith("/")&&!withoutQuery.startsWith("/appliances/"))continue;
+    const target=withoutQuery.startsWith("/appliances/")
+      ?path.posix.normalize(withoutQuery.slice("/appliances/".length))
+      :path.posix.normalize(path.posix.join(path.posix.dirname(page),withoutQuery));
+    assert.ok(tracked.includes(target)||tracked.includes(path.posix.join(target,"index.html")),
+      "Broken local link in "+page+": "+ref+" -> "+target);
+  }
+}
+console.log("PASS public entrypoints: local static links resolve");
