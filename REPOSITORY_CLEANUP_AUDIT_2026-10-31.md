@@ -21,6 +21,9 @@
 | `android-app/`, `ios-app/`, `.github/workflows/`, `tests/`, `rpe-v2/supabase/` | Platform builds, CI tests, database migrations and Edge Function source. | **Keep**. Deleting source not referenced by a website hyperlink can still break builds and deployments. |
 | `all/fonts/` | Referenced by site typography and service-worker caches. | **Keep** (including license). |
 
+## Offline cache integrity check
+All 86 explicitly listed static cache resources across the four service workers (`all/sw.js`, `seller-sw.js`, `rpe-v2/rpe-v2-sw.js`, `rpe-v2/admin-sw.js`) resolve to files in the repository. This is now checked by the automated hygiene test. Dynamic URLs and runtime cache behavior remain outside this static verification.
+
 ## Risks that should not be confused with unused code
 1. **Large assets:** the two large JSON/HTML files and image folders affect download size, but removal cannot be justified only by size.
 2. **Historical URLs and deployed PWA cache:** even unlinked assets can be required by service workers, installed clients or saved links.
