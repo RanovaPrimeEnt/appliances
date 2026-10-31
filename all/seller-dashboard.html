@@ -252,6 +252,51 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
 body.seller-v2-ready>.hero{display:none}
 body.seller-v2-ready .shell{padding-top:16px}
 @media(max-width:620px){body.seller-v2-ready .side{top:74px;position:sticky;z-index:35}body.seller-v2-ready .top .wrap{padding-bottom:10px}}
+
+/* RANOVA Seller Dashboard V2 final visual system: styles only, seller logic unchanged */
+body.seller-v2-ready{--green:#14532d;--green2:#1f7a4d;--orange:#f97316;--ink:#1f2937;--muted:#6b7280;--line:#e2e9e5;background:#f8faf7;color:#1f2937}
+body.seller-v2-ready .top{background:#14532d}
+body.seller-v2-ready .shell{grid-template-columns:240px minmax(0,1fr);gap:22px;max-width:1380px}
+body.seller-v2-ready .side{background:#fff;border-radius:20px;padding:12px;box-shadow:0 8px 25px #14532d0a;max-height:calc(100vh - 90px);overflow-y:auto}
+body.seller-v2-ready .side button{font-weight:750;min-height:46px;border-radius:12px}
+body.seller-v2-ready .side button.active{background:#eaf6ee;color:#14532d;border-left:3px solid #f97316}
+body.seller-v2-ready .card,body.seller-v2-ready .metric{background:#fff;border-color:#e2e9e5;box-shadow:0 6px 20px #14532d0a}
+body.seller-v2-ready .seller-v2-intro{background:linear-gradient(120deg,#14532d 0%,#1f7a4d 82%);position:relative;overflow:hidden}
+body.seller-v2-ready .seller-v2-intro:after{content:"";position:absolute;right:-45px;top:-85px;width:210px;height:210px;border:38px solid #ffffff13;border-radius:100%;pointer-events:none}
+body.seller-v2-ready .seller-v2-shortcut{border-color:#e2e9e5;background:#fff}
+body.seller-v2-ready .seller-v2-shortcut span{color:#f97316;font-weight:850}
+body.seller-v2-ready .seller-v2-shortcut:hover{border-color:#f97316;background:#fffaf6}
+body.seller-v2-ready .btn.primary{background:#f97316;border-color:#f97316}
+body.seller-v2-ready .banner{background:linear-gradient(120deg,#14532d,#1f7a4d)}
+body.seller-v2-ready .seller-action{border-color:#e2e9e5}
+body.seller-v2-ready .seller-action strong{color:#1f7a4d}
+body.seller-v2-ready .metric small{font-size:13px}
+body.seller-v2-ready .metric strong{font-size:clamp(20px,2.1vw,27px);overflow-wrap:anywhere}
+body.seller-v2-ready .seller-v2-bottom{display:none}
+body.seller-v2-ready .v2-navtitle{color:#668278;padding:13px 12px 8px;font-size:11px;font-weight:900;letter-spacing:.09em}
+body.seller-v2-ready .seller-v2-intro{margin-bottom:14px}
+body.seller-v2-ready .seller-v2-shortcut{cursor:pointer}
+@media(max-width:900px){
+ body.seller-v2-ready .shell{grid-template-columns:1fr}
+ body.seller-v2-ready .side{max-height:none;position:static;overflow-x:auto;overflow-y:visible;display:flex;flex-wrap:nowrap}
+ body.seller-v2-ready .side .v2-navtitle{display:none}
+ body.seller-v2-ready .side button{flex:0 0 auto}
+}
+@media(max-width:620px){
+ body.seller-v2-ready .top .wrap{padding:9px 14px;min-height:55px}
+ body.seller-v2-ready .shell{padding:12px 0 100px}
+ body.seller-v2-ready .side{display:none}
+ body.seller-v2-ready .seller-v2-bottom{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;z-index:75;left:0;right:0;bottom:0;padding:7px max(5px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));border-top:1px solid #dce7df;background:#fff;box-shadow:0 -7px 20px #14532d10}
+ body.seller-v2-ready .seller-v2-bottom button{border:0;background:transparent;color:#64746c;min-height:51px;font-size:11px;font-weight:750;border-radius:12px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center}
+ body.seller-v2-ready .seller-v2-bottom button span{font-size:19px;line-height:1.1}
+ body.seller-v2-ready .seller-v2-bottom button.active{background:#eaf6ee;color:#14532d}
+ body.seller-v2-ready .seller-v2-bottom button:focus-visible{outline:3px solid #f97316}
+ body.seller-v2-ready .metrics{gap:9px}
+ body.seller-v2-ready .seller-v2-intro h2{font-size:25px}
+ body.seller-v2-ready .seller-v2-shortcuts{gap:9px}
+ body.seller-v2-ready .seller-v2-shortcut{font-size:13px}
+ body.seller-v2-ready .v2-more-panel{display:block}
+}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -282,8 +327,16 @@ body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data
   <div id="gate" class="card" style="margin-top:20px"><div class="locked"><b>Checking your seller account…</b>Please wait while RANOVA verifies your Seller Center session.</div></div>
 
   <div id="sellerDocumentNotice" class="locked" style="font-size:16px;line-height:1.6" hidden></div>
+
+    <nav class="seller-v2-bottom" aria-label="Seller mobile navigation">
+      <button type="button" data-v2-panel="overview" class="active"><span aria-hidden="true">⌂</span>Home</button>
+      <button type="button" data-v2-panel="orders"><span aria-hidden="true">▤</span>Orders</button>
+      <button type="button" data-v2-panel="products"><span aria-hidden="true">▦</span>Products</button>
+      <button type="button" data-v2-panel="payouts"><span aria-hidden="true">◈</span>Money</button>
+      <button type="button" data-v2-panel="more"><span aria-hidden="true">☰</span>More</button>
+    </nav>
   <div id="dashboard" class="shell hide">
-    <aside class="side">
+    <aside class="side"><div class="v2-navtitle">SELLER WORKSPACE</div>
       <button class="navbtn active" data-panel="overview">Overview</button>
       <button class="navbtn" data-panel="store">Set Up Your Store</button>
       <button class="navbtn" data-panel="products">Products</button>
@@ -296,6 +349,22 @@ body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data
     </aside>
 
     <section class="main">
+      <div id="panel-more" class="panel v2-more-panel">
+        <div class="card"><h2>More seller tools</h2><p>All your existing management features are still available.</p>
+          <div class="seller-v2-shortcuts" style="margin-top:15px">
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="store">Store setup</button>
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="inventory">Inventory</button>
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="delivery">Deliveries</button>
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="trust">Reviews &amp; trust</button>
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="support">Help &amp; issues</button>
+            <a class="seller-v2-shortcut" href="./seller-admin-messages.html">RANOVA messages</a>
+            <a class="seller-v2-shortcut" href="./messages.html">Customer messages</a>
+            <a class="seller-v2-shortcut" href="./documents.html">My documents</a>
+            <a class="seller-v2-shortcut" href="./after-sales.html">Returns &amp; cancellations</a>
+          </div>
+        </div>
+      </div>
+
       <div id="panel-overview" class="panel active">
         <div class="seller-v2-intro" aria-label="Seller business workspace">
           <div class="v2-eyebrow">RANOVA SELLER · BUSINESS WORKSPACE</div>
@@ -692,7 +761,11 @@ function setPanel(name){
   [].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.classList.toggle("active",b.dataset.panel===name)});
   [].slice.call(document.querySelectorAll(".panel")).forEach(function(p){p.classList.toggle("active",p.id==="panel-"+name)});
 }
-[].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.onclick=function(){setPanel(this.dataset.panel)}});
+function v2SyncNav(name){
+  document.querySelectorAll("[data-v2-panel]").forEach(function(b){b.classList.toggle("active",b.dataset.v2Panel===name||(name==="inventory"&&b.dataset.v2Panel==="more")||(name==="delivery"&&b.dataset.v2Panel==="more")||(name==="support"&&b.dataset.v2Panel==="more")||(name==="trust"&&b.dataset.v2Panel==="more")||(name==="store"&&b.dataset.v2Panel==="more"))});
+}
+[].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.onclick=function(){setPanel(this.dataset.panel);v2SyncNav(this.dataset.panel)}});
+document.querySelectorAll("[data-v2-panel]").forEach(function(b){b.addEventListener("click",function(){setPanel(b.dataset.v2Panel);v2SyncNav(b.dataset.v2Panel);window.scrollTo({top:0,behavior:"smooth"})})});
 
 function renderSellerDocumentNotice(){
   if(!state)return;
@@ -1759,7 +1832,7 @@ function bindSellerPowerTools(){
     var panel=b.dataset.sellerJump;
     if(panel==="products"&&b.dataset.productFilter&&el("productStockFilter"))el("productStockFilter").value=b.dataset.productFilter;
     if(panel==="products"&&b.dataset.productStatus&&el("productStatusFilter"))el("productStatusFilter").value=b.dataset.productStatus;
-    setPanel(panel);if(panel==="products")renderProducts();
+    setPanel(panel);v2SyncNav(panel);if(panel==="products")renderProducts();
   }});
   var refreshBtn=el("sellerRefresh");if(refreshBtn)refreshBtn.onclick=async function(){var old=this.textContent;this.disabled=true;this.textContent="Refreshing…";try{await refresh()}finally{this.disabled=false;this.textContent=old}};
   [el("exportProductsOverview")].filter(Boolean).forEach(function(b){b.onclick=exportProductsCsv});
