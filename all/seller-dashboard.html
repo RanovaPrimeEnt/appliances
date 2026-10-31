@@ -222,6 +222,81 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
   .topnav #signOut{grid-column:1/-1}
   .side{top:58px}
 }
+
+/* Seller Dashboard V2: presentation-only layer. Existing IDs, data and business logic retained. */
+#panel-overview{--v2-deep:#124d3d;--v2-border:#e3ece7}
+#panel-overview .seller-v2-intro{background:linear-gradient(125deg,#124d3d,#176c51);color:#fff;padding:23px;border-radius:22px;margin-bottom:14px;box-shadow:0 12px 26px #124d3d20}
+#panel-overview .seller-v2-intro .v2-eyebrow{font-size:12px;letter-spacing:.1em;font-weight:800;color:#d3e8dc}
+#panel-overview .seller-v2-intro h2{color:#fff;margin:6px 0;font-size:clamp(23px,4vw,32px);line-height:1.16}
+#panel-overview .seller-v2-intro p{margin:0;color:#e1ede6;font-size:14px}
+#panel-overview .seller-v2-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 16px}
+#panel-overview .seller-v2-shortcut{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;min-height:90px;padding:14px;border:1px solid var(--v2-border);border-radius:16px;background:#fff;color:#1b4639;font-size:14px;font-weight:850;text-align:left}
+#panel-overview .seller-v2-shortcut span{font-size:22px;line-height:1.2}
+#panel-overview .seller-v2-shortcut:focus-visible{outline:3px solid #ed8b45;outline-offset:2px}
+#panel-overview .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+#panel-overview .metric{box-shadow:0 5px 16px #124d3d0a;border-radius:17px}
+#panel-overview .seller-action-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+#panel-overview .seller-action{min-height:116px}
+#panel-overview .card{border-radius:20px}
+@media(max-width:700px){
+ #panel-overview .seller-v2-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #panel-overview .seller-v2-shortcut{min-height:72px;padding:13px}
+ #panel-overview .seller-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #panel-overview .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #panel-overview .seller-v2-intro{padding:19px}
+}
+@media(max-width:350px){#panel-overview .seller-v2-shortcuts,#panel-overview .seller-action-grid{grid-template-columns:1fr}}
+
+
+/* V2 transitions from sign-in gate into compact mobile seller workspace. */
+body.seller-v2-ready>.hero{display:none}
+body.seller-v2-ready .shell{padding-top:16px}
+@media(max-width:620px){body.seller-v2-ready .side{top:74px;position:sticky;z-index:35}body.seller-v2-ready .top .wrap{padding-bottom:10px}}
+
+/* RANOVA Seller Dashboard V2 final visual system: styles only, seller logic unchanged */
+body.seller-v2-ready{--green:#14532d;--green2:#1f7a4d;--orange:#f97316;--ink:#1f2937;--muted:#6b7280;--line:#e2e9e5;background:#f8faf7;color:#1f2937}
+body.seller-v2-ready .top{background:#14532d}
+body.seller-v2-ready .shell{grid-template-columns:240px minmax(0,1fr);gap:22px;max-width:1380px}
+body.seller-v2-ready .side{background:#fff;border-radius:20px;padding:12px;box-shadow:0 8px 25px #14532d0a;max-height:calc(100vh - 90px);overflow-y:auto}
+body.seller-v2-ready .side button{font-weight:750;min-height:46px;border-radius:12px}
+body.seller-v2-ready .side button.active{background:#eaf6ee;color:#14532d;border-left:3px solid #f97316}
+body.seller-v2-ready .card,body.seller-v2-ready .metric{background:#fff;border-color:#e2e9e5;box-shadow:0 6px 20px #14532d0a}
+body.seller-v2-ready .seller-v2-intro{background:linear-gradient(120deg,#14532d 0%,#1f7a4d 82%);position:relative;overflow:hidden}
+body.seller-v2-ready .seller-v2-intro:after{content:"";position:absolute;right:-45px;top:-85px;width:210px;height:210px;border:38px solid #ffffff13;border-radius:100%;pointer-events:none}
+body.seller-v2-ready .seller-v2-shortcut{border-color:#e2e9e5;background:#fff}
+body.seller-v2-ready .seller-v2-shortcut span{color:#f97316;font-weight:850}
+body.seller-v2-ready .seller-v2-shortcut:hover{border-color:#f97316;background:#fffaf6}
+body.seller-v2-ready .btn.primary{background:#f97316;border-color:#f97316}
+body.seller-v2-ready .banner{background:linear-gradient(120deg,#14532d,#1f7a4d)}
+body.seller-v2-ready .seller-action{border-color:#e2e9e5}
+body.seller-v2-ready .seller-action strong{color:#1f7a4d}
+body.seller-v2-ready .metric small{font-size:13px}
+body.seller-v2-ready .metric strong{font-size:clamp(20px,2.1vw,27px);overflow-wrap:anywhere}
+body.seller-v2-ready .seller-v2-bottom{display:none}
+body.seller-v2-ready .v2-navtitle{color:#668278;padding:13px 12px 8px;font-size:11px;font-weight:900;letter-spacing:.09em}
+body.seller-v2-ready .seller-v2-intro{margin-bottom:14px}
+body.seller-v2-ready .seller-v2-shortcut{cursor:pointer}
+@media(max-width:900px){
+ body.seller-v2-ready .shell{grid-template-columns:1fr}
+ body.seller-v2-ready .side{max-height:none;position:static;overflow-x:auto;overflow-y:visible;display:flex;flex-wrap:nowrap}
+ body.seller-v2-ready .side .v2-navtitle{display:none}
+ body.seller-v2-ready .side button{flex:0 0 auto}
+}
+@media(max-width:620px){
+ body.seller-v2-ready .top .wrap{padding:9px 14px;min-height:55px}
+ body.seller-v2-ready .shell{padding:12px 0 100px}
+ body.seller-v2-ready .side{display:none}
+ body.seller-v2-ready .seller-v2-bottom{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;z-index:75;left:0;right:0;bottom:0;padding:7px max(5px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));border-top:1px solid #dce7df;background:#fff;box-shadow:0 -7px 20px #14532d10}
+ body.seller-v2-ready .seller-v2-bottom button{border:0;background:transparent;color:#64746c;min-height:51px;font-size:11px;font-weight:750;border-radius:12px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center}
+ body.seller-v2-ready .seller-v2-bottom button span{font-size:19px;line-height:1.1}
+ body.seller-v2-ready .seller-v2-bottom button.active{background:#eaf6ee;color:#14532d}
+ body.seller-v2-ready .seller-v2-bottom button:focus-visible{outline:3px solid #f97316}
+ body.seller-v2-ready .metrics{gap:9px}
+ body.seller-v2-ready .seller-v2-intro h2{font-size:25px}
+ body.seller-v2-ready .seller-v2-shortcuts{gap:9px}
+ body.seller-v2-ready .seller-v2-shortcut{font-size:13px}
+ body.seller-v2-ready .v2-more-panel{display:block}
+}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -252,8 +327,16 @@ body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data
   <div id="gate" class="card" style="margin-top:20px"><div class="locked"><b>Checking your seller account…</b>Please wait while RANOVA verifies your Seller Center session.</div></div>
 
   <div id="sellerDocumentNotice" class="locked" style="font-size:16px;line-height:1.6" hidden></div>
+
+    <nav class="seller-v2-bottom" aria-label="Seller mobile navigation">
+      <button type="button" data-v2-panel="overview" class="active"><span aria-hidden="true">⌂</span>Home</button>
+      <button type="button" data-v2-panel="orders"><span aria-hidden="true">▤</span>Orders</button>
+      <button type="button" data-v2-panel="products"><span aria-hidden="true">▦</span>Products</button>
+      <button type="button" data-v2-panel="payouts"><span aria-hidden="true">◈</span>Money</button>
+      <button type="button" data-v2-panel="more"><span aria-hidden="true">☰</span>More</button>
+    </nav>
   <div id="dashboard" class="shell hide">
-    <aside class="side">
+    <aside class="side"><div class="v2-navtitle">SELLER WORKSPACE</div>
       <button class="navbtn active" data-panel="overview">Overview</button>
       <button class="navbtn" data-panel="store">Set Up Your Store</button>
       <button class="navbtn" data-panel="products">Products</button>
@@ -266,7 +349,35 @@ body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data
     </aside>
 
     <section class="main">
+      <div id="panel-more" class="panel v2-more-panel">
+        <div class="card"><h2>More seller tools</h2><p>All your existing management features are still available.</p>
+          <div class="seller-v2-shortcuts" style="margin-top:15px">
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="store">Store setup</button>
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="inventory">Inventory</button>
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="delivery">Deliveries</button>
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="trust">Reviews &amp; trust</button>
+            <button type="button" class="seller-v2-shortcut" data-seller-jump="support">Help &amp; issues</button>
+            <a class="seller-v2-shortcut" href="./seller-admin-messages.html">RANOVA messages</a>
+            <a class="seller-v2-shortcut" href="./messages.html">Customer messages</a>
+            <a class="seller-v2-shortcut" href="./documents.html">My documents</a>
+            <a class="seller-v2-shortcut" href="./after-sales.html">Returns &amp; cancellations</a>
+          </div>
+        </div>
+      </div>
+
       <div id="panel-overview" class="panel active">
+        <div class="seller-v2-intro" aria-label="Seller business workspace">
+          <div class="v2-eyebrow">RANOVA SELLER · BUSINESS WORKSPACE</div>
+          <h2>Your business at a glance</h2>
+          <p>Manage products, handle orders and keep your store moving.</p>
+        </div>
+        <div class="seller-v2-shortcuts" aria-label="Quick seller actions">
+          <button type="button" class="seller-v2-shortcut" data-seller-jump="products"><span aria-hidden="true">＋</span>Add or edit products</button>
+          <button type="button" class="seller-v2-shortcut" data-seller-jump="orders"><span aria-hidden="true">▤</span>Manage orders</button>
+          <button type="button" class="seller-v2-shortcut" data-seller-jump="inventory"><span aria-hidden="true">▦</span>Check inventory</button>
+          <button type="button" class="seller-v2-shortcut" data-seller-jump="payouts"><span aria-hidden="true">◈</span>My money</button>
+        </div>
+
         <div id="storeBanner" class="banner"><div><b id="welcomeName">Seller Dashboard</b><p id="welcomeText">Complete your store and start preparing products for the marketplace.</p></div><a id="previewStore" href="#" target="_blank" style="display:none">View public store</a></div>
         <div class="metrics">
           <div class="metric"><small>Products</small><strong id="mProducts">0</strong></div>
@@ -650,7 +761,11 @@ function setPanel(name){
   [].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.classList.toggle("active",b.dataset.panel===name)});
   [].slice.call(document.querySelectorAll(".panel")).forEach(function(p){p.classList.toggle("active",p.id==="panel-"+name)});
 }
-[].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.onclick=function(){setPanel(this.dataset.panel)}});
+function v2SyncNav(name){
+  document.querySelectorAll("[data-v2-panel]").forEach(function(b){b.classList.toggle("active",b.dataset.v2Panel===name||(name==="inventory"&&b.dataset.v2Panel==="more")||(name==="delivery"&&b.dataset.v2Panel==="more")||(name==="support"&&b.dataset.v2Panel==="more")||(name==="trust"&&b.dataset.v2Panel==="more")||(name==="store"&&b.dataset.v2Panel==="more"))});
+}
+[].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.onclick=function(){setPanel(this.dataset.panel);v2SyncNav(this.dataset.panel)}});
+document.querySelectorAll("[data-v2-panel]").forEach(function(b){b.addEventListener("click",function(){setPanel(b.dataset.v2Panel);v2SyncNav(b.dataset.v2Panel);window.scrollTo({top:0,behavior:"smooth"})})});
 
 function renderSellerDocumentNotice(){
   if(!state)return;
@@ -682,7 +797,7 @@ async function refresh(){
     el("dashboard").classList.add("hide");return;
   }
   document.body.classList.toggle("preapproval-workspace",!state.approved);
-  el("gate").classList.add("hide");el("dashboard").classList.remove("hide");
+  el("gate").classList.add("hide");el("dashboard").classList.remove("hide");document.body.classList.add("seller-v2-ready");
   if(!state.approved){
     var prep=document.getElementById("preapprovalNotice");
     if(!prep){
@@ -1717,7 +1832,7 @@ function bindSellerPowerTools(){
     var panel=b.dataset.sellerJump;
     if(panel==="products"&&b.dataset.productFilter&&el("productStockFilter"))el("productStockFilter").value=b.dataset.productFilter;
     if(panel==="products"&&b.dataset.productStatus&&el("productStatusFilter"))el("productStatusFilter").value=b.dataset.productStatus;
-    setPanel(panel);if(panel==="products")renderProducts();
+    setPanel(panel);v2SyncNav(panel);if(panel==="products")renderProducts();
   }});
   var refreshBtn=el("sellerRefresh");if(refreshBtn)refreshBtn.onclick=async function(){var old=this.textContent;this.disabled=true;this.textContent="Refreshing…";try{await refresh()}finally{this.disabled=false;this.textContent=old}};
   [el("exportProductsOverview")].filter(Boolean).forEach(function(b){b.onclick=exportProductsCsv});
@@ -1779,10 +1894,26 @@ el("signOut").onclick=async function(){await sb.auth.signOut();location.href="./
     if(!isMobile())closeMenu();
   });
 })();
+function sellerGateError(message){
+  el("gate").classList.remove("hide");
+  el("gate").innerHTML='<div class="locked" role="alert"><b>Seller Dashboard could not load.</b><p>'+esc(message||"Please check your connection and try again.")+'</p><div class="actions" style="justify-content:center"><button class="btn green" type="button" id="retrySellerDashboard">Try again</button><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="./seller-center.html">Seller Center</a></div></div>';
+  var retry=el("retrySellerDashboard");if(retry)retry.onclick=function(){el("gate").innerHTML='<div class="locked"><b>Checking your seller account…</b>Please wait while RANOVA verifies your Seller Center session.</div>';boot()};
+}
+function sellerWithTimeout(promise,ms,label){
+  return Promise.race([promise,new Promise(function(_resolve,reject){setTimeout(function(){reject(new Error(label+" took too long. Check your internet connection and try again."))},ms)})]);
+}
 async function boot(){
-  var gs=await sb.auth.getSession();session=gs.data.session;
-  if(!session){el("gate").innerHTML='<div class="locked"><b>Sign in to Seller Center first.</b>Your seller dashboard uses the same protected seller account.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Open Seller Center →</a></div></div>';return}
-  try{await loadCountries();await refresh()}catch(e){el("gate").innerHTML='<div class="locked"><b>Seller Dashboard could not load.</b>'+esc(e.message||"Return to Seller Center and try again.")+'</div>'}
+  try{
+    var gs=await sellerWithTimeout(sb.auth.getSession(),15000,"Seller sign-in");
+    if(gs.error)throw gs.error;
+    session=gs.data&&gs.data.session;
+    if(!session){
+      el("gate").innerHTML='<div class="locked"><b>Sign in to Seller Center first.</b>Your seller dashboard uses the same protected seller account.<div style="margin-top:12px"><a href="./seller-center.html" style="color:#116a52;font-weight:900">Open Seller Center →</a></div></div>';return;
+    }
+    // Country options are helpful for store setup, but must not block the dashboard.
+    loadCountries().catch(function(e){console.warn("Country options unavailable",e)});
+    await sellerWithTimeout(refresh(),20000,"Seller dashboard");
+  }catch(e){sellerGateError(e.message||"Please check your connection and try again.")}
 }
 sb.auth.onAuthStateChange(function(_event,newSession){session=newSession;if(!session)location.href="./seller-center.html"});
 boot();
