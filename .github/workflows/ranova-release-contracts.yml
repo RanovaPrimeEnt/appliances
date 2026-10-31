@@ -37,3 +37,5 @@ jobs:
         run: node tests/seller-flow-contract.cjs
       - name: Complete seller order receipt regression contract
         run: node tests/seller-multi-item-receipt.cjs
+      - name: Repository hygiene check
+        run: node tests/repository-hygiene.cjs

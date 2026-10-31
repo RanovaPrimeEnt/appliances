@@ -1,0 +1,44 @@
+# Ignore local-only files and private signing material.
+# This does not remove any existing tracked file.
+
+# Local machines, IDEs and logs
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# JavaScript dependencies and tooling caches
+node_modules/
+.npm/
+.cache/
+
+# Android / Gradle build outputs (keep *.gradle source files)
+.gradle/
+**/build/
+**/captures/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# iOS and Xcode generated output (keep ios-app project sources)
+DerivedData/
+*.xcarchive/
+*.ipa
+*.p12
+*.mobileprovision
+*.p8
+ios-app/RANOVA.xcodeproj/
+ios-app/RANOVA.xcworkspace/
+
+# Local-only environment / credentials (allow documented examples)
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
