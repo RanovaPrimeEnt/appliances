@@ -778,8 +778,31 @@ function setPanel(name){
 function v2SyncNav(name){
   document.querySelectorAll("[data-v2-panel]").forEach(function(b){b.classList.toggle("active",b.dataset.v2Panel===name||(name==="inventory"&&b.dataset.v2Panel==="more")||(name==="delivery"&&b.dataset.v2Panel==="more")||(name==="support"&&b.dataset.v2Panel==="more")||(name==="trust"&&b.dataset.v2Panel==="more")||(name==="store"&&b.dataset.v2Panel==="more"))});
 }
-[].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.onclick=function(){setPanel(this.dataset.panel);v2SyncNav(this.dataset.panel)}});
-document.querySelectorAll("[data-v2-panel]").forEach(function(b){b.addEventListener("click",function(){setPanel(b.dataset.v2Panel);v2SyncNav(b.dataset.v2Panel);window.scrollTo({top:0,behavior:"smooth"})})});
+// Keep the dashboard visually unchanged while allowing native Android/browser
+// Back gestures to traverse the sections the seller has opened.
+var sellerPanelNames=new Set([].map.call(document.querySelectorAll(".panel[id^='panel-']"),function(p){return p.id.slice(6)}));
+function sellerPanelFromHistory(){
+  var state=window.history.state;
+  return state&&sellerPanelNames.has(state.ranovaSellerPanel)?state.ranovaSellerPanel:null;
+}
+function sellerNavigatePanel(name){
+  if(!sellerPanelNames.has(name))return;
+  var active=document.querySelector(".panel.active");
+  var current=active?active.id.slice(6):"overview";
+  if(current!==name){
+    // Preserve existing history.state fields used by the wider application.
+    var next=Object.assign({},window.history.state||{},{ranovaSellerPanel:name});
+    window.history.pushState(next,"",window.location.href);
+  }
+  setPanel(name);v2SyncNav(name);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+[].slice.call(document.querySelectorAll(".navbtn")).forEach(function(b){b.onclick=function(){sellerNavigatePanel(this.dataset.panel)}});
+document.querySelectorAll("[data-v2-panel]").forEach(function(b){b.addEventListener("click",function(){sellerNavigatePanel(b.dataset.v2Panel)})});
+window.addEventListener("popstate",function(){
+  var name=sellerPanelFromHistory()||"overview";
+  if(sellerPanelNames.has(name)){setPanel(name);v2SyncNav(name)}
+});
 
 function renderSellerDocumentNotice(){
   if(!state)return;
