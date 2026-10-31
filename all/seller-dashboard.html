@@ -302,7 +302,7 @@ body.seller-v2-ready .seller-v2-shortcut{cursor:pointer}
 body:not(.seller-v2-ready) .seller-v2-bottom{display:none!important}
 /* Keep the PWA installation action clear of the five mobile tabs. */
 @media(max-width:620px){
- body.seller-v2-ready [data-install-seller]{bottom:calc(82px + env(safe-area-inset-bottom))!important;font-size:12px!important;padding:8px 11px!important;max-width:48vw!important}
+ [data-install-seller]{display:none!important}
  body.seller-v2-ready #panel-more .seller-v2-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
  body.seller-v2-ready #panel-more .seller-v2-shortcut{border:1px solid #e2e9e5;border-radius:12px;padding:12px;background:#fff;color:#14532d;box-shadow:none;text-align:left;white-space:normal}
  body.seller-v2-ready #panel-more a{overflow-wrap:anywhere}
@@ -312,6 +312,9 @@ body:not(.seller-v2-ready) .seller-v2-bottom{display:none!important}
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
 <style>
+/* Seller workspace keeps its functional mobile UI typography, independent of
+   the shared editorial/serif typography sheet. */
+html:root body,html:root body *:not(svg):not(svg *):not(.fa):not(.fas):not(.far):not(.fab):not(.material-icons):not(.material-symbols-outlined){font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif!important}
 body.preapproval-workspace .side .navbtn:not([data-panel="store"]):not([data-panel="products"]),
 body.preapproval-workspace .side>a,
 body.preapproval-workspace #previewStore,
