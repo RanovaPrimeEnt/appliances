@@ -222,6 +222,31 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.hide{display:no
   .topnav #signOut{grid-column:1/-1}
   .side{top:58px}
 }
+
+/* Seller Dashboard V2: presentation-only layer. Existing IDs, data and business logic retained. */
+#panel-overview{--v2-deep:#124d3d;--v2-border:#e3ece7}
+#panel-overview .seller-v2-intro{background:linear-gradient(125deg,#124d3d,#176c51);color:#fff;padding:23px;border-radius:22px;margin-bottom:14px;box-shadow:0 12px 26px #124d3d20}
+#panel-overview .seller-v2-intro .v2-eyebrow{font-size:12px;letter-spacing:.1em;font-weight:800;color:#d3e8dc}
+#panel-overview .seller-v2-intro h2{color:#fff;margin:6px 0;font-size:clamp(23px,4vw,32px);line-height:1.16}
+#panel-overview .seller-v2-intro p{margin:0;color:#e1ede6;font-size:14px}
+#panel-overview .seller-v2-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 16px}
+#panel-overview .seller-v2-shortcut{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;min-height:90px;padding:14px;border:1px solid var(--v2-border);border-radius:16px;background:#fff;color:#1b4639;font-size:14px;font-weight:850;text-align:left}
+#panel-overview .seller-v2-shortcut span{font-size:22px;line-height:1.2}
+#panel-overview .seller-v2-shortcut:focus-visible{outline:3px solid #ed8b45;outline-offset:2px}
+#panel-overview .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+#panel-overview .metric{box-shadow:0 5px 16px #124d3d0a;border-radius:17px}
+#panel-overview .seller-action-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+#panel-overview .seller-action{min-height:116px}
+#panel-overview .card{border-radius:20px}
+@media(max-width:700px){
+ #panel-overview .seller-v2-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #panel-overview .seller-v2-shortcut{min-height:72px;padding:13px}
+ #panel-overview .seller-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #panel-overview .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #panel-overview .seller-v2-intro{padding:19px}
+}
+@media(max-width:350px){#panel-overview .seller-v2-shortcuts,#panel-overview .seller-action-grid{grid-template-columns:1fr}}
+
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -267,6 +292,18 @@ body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data
 
     <section class="main">
       <div id="panel-overview" class="panel active">
+        <div class="seller-v2-intro" aria-label="Seller business workspace">
+          <div class="v2-eyebrow">RANOVA SELLER · BUSINESS WORKSPACE</div>
+          <h2>Your business at a glance</h2>
+          <p>Manage products, handle orders and keep your store moving.</p>
+        </div>
+        <div class="seller-v2-shortcuts" aria-label="Quick seller actions">
+          <button type="button" class="seller-v2-shortcut" data-seller-jump="products"><span aria-hidden="true">＋</span>Add or edit products</button>
+          <button type="button" class="seller-v2-shortcut" data-seller-jump="orders"><span aria-hidden="true">▤</span>Manage orders</button>
+          <button type="button" class="seller-v2-shortcut" data-seller-jump="inventory"><span aria-hidden="true">▦</span>Check inventory</button>
+          <button type="button" class="seller-v2-shortcut" data-seller-jump="payouts"><span aria-hidden="true">◈</span>My money</button>
+        </div>
+
         <div id="storeBanner" class="banner"><div><b id="welcomeName">Seller Dashboard</b><p id="welcomeText">Complete your store and start preparing products for the marketplace.</p></div><a id="previewStore" href="#" target="_blank" style="display:none">View public store</a></div>
         <div class="metrics">
           <div class="metric"><small>Products</small><strong id="mProducts">0</strong></div>
