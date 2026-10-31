@@ -35,3 +35,5 @@ jobs:
         run: node tests/seller-session-auth-contract.cjs
       - name: Seller flow and account-isolation contract
         run: node tests/seller-flow-contract.cjs
+      - name: Complete seller order receipt regression contract
+        run: node tests/seller-multi-item-receipt.cjs
