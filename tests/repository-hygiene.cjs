@@ -56,11 +56,7 @@ console.log("PASS offline precache references: all declared paths exist");
 
 // Validate static asset and navigation links in main public entrypoints.
 // Do not attempt to interpret JS-generated URLs or external navigation.
-const entrypoints=[
-  "all/index.html","all/marketplace.html","all/product.html","all/seller-center.html",
-  "all/seller-dashboard.html","all/seller-store.html","all/cart.html","all/order-status.html",
-  "rpe-v2/index.html","rpe-v2/admin.html","rpe-v2/seller-start.html","rpe-v2/market-home.html"
-];
+const entrypoints=tracked.filter(file=>file.endsWith(".html")&&file!=="all/site.html");
 for(const page of entrypoints){
   assert.ok(tracked.includes(page),"Missing public entrypoint: "+page);
   const html=fs.readFileSync(path.resolve(__dirname,"..",page),"utf8");
@@ -78,4 +74,7 @@ for(const page of entrypoints){
       "Broken local link in "+page+": "+ref+" -> "+target);
   }
 }
+const account=fs.readFileSync(path.resolve(__dirname,"..","all/account.html"),"utf8");
+assert.ok(account.includes('id="topNotificationBtn"'),"Real account Notifications button must remain");
+assert.ok(!account.includes('href="./notifications.html"'),"Dead hidden notifications link must stay removed");
 console.log("PASS public entrypoints: local static links resolve");
