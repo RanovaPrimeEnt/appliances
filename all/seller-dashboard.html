@@ -1411,7 +1411,18 @@ function printSellerOrder(o){
   var win=window.open("","_blank","width=760,height=900");if(!win)return msg(el("orderMsg"),"Allow pop-ups to print this order.");
   var itemRows=items.map(function(i){var photo=sellerOrderedPhotoUrl(i);var photoBlock=photo?'<img src="'+esc(photo)+'" alt="'+esc(i.product_name||"Ordered product")+'" style="width:62px;height:62px;object-fit:contain;border:1px solid #e2e9e5;border-radius:10px">':'<span style="display:inline-block;width:62px;font-size:10px;color:#718079">Image unavailable</span>';return '<tr><td style="padding:8px;border-bottom:1px solid #ddd;width:70px">'+photoBlock+'</td><td style="padding:8px;border-bottom:1px solid #ddd">'+esc(i.product_name||"Product")+'</td><td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">'+esc(i.quantity||1)+'</td></tr>'}).join("");
   win.document.write('<!doctype html><html><head><title>'+esc(o.platform_order_ref||o.order_ref)+'</title><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;color:#173b32;padding:28px"><h1 style="margin:0 0 4px">RANOVA Seller Order</h1><p style="margin:0 0 24px;color:#666">'+esc(o.platform_order_ref||o.order_ref)+'</p><h3>Customer</h3><p>'+esc(o.buyer_name||"Customer")+'<br>'+esc(o.buyer_phone||"")+'<br>'+esc(o.delivery_location||"")+'</p><h3>Items</h3><table style="width:100%;border-collapse:collapse">'+itemRows+'</table><h3>Order summary</h3><p>Status: <b>'+esc(pretty(o.order_status))+'</b><br>Payment: <b>'+esc(pretty(o.payment_status))+'</b><br>Products: <b>'+esc(money(o.subtotal))+'</b><br>Delivery: <b>'+esc(money(o.delivery_fee||0))+'</b><br>Total: <b>'+esc(money(o.total))+'</b></p><p style="margin-top:32px;color:#777;font-size:12px">Printed from RANOVA Seller Dashboard · '+new Date().toLocaleString()+'</p></body></html>');
-  win.document.close();win.focus();setTimeout(function(){win.print()},250);
+  win.document.close();win.focus();
+  // Wait for the actual ordered product photos to load before printing.
+  var images=[].slice.call(win.document.images),pending=images.filter(function(img){return !img.complete});
+  var printed=false;
+  function printReady(){if(printed)return;printed=true;win.focus();win.print()}
+  if(!pending.length)setTimeout(printReady,250);
+  else{
+    var remaining=pending.length;
+    function settled(){remaining--;if(remaining<=0)setTimeout(printReady,150)}
+    pending.forEach(function(img){img.addEventListener("load",settled,{once:true});img.addEventListener("error",settled,{once:true})});
+    setTimeout(printReady,3500);
+  }
 }
 
 function zonePriceText(z){
