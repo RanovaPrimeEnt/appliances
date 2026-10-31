@@ -20,7 +20,7 @@ const begin=dashboard.indexOf("function sellerOrderedPhotoUrl(item)");
 const end=dashboard.indexOf("\nfunction renderMyOrders(){",begin);
 assert.ok(begin>=0&&end>begin,"Receipt functions must be present");
 const helpers=dashboard.slice(begin,end);
-const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt",'"':"&quot;","'":"&#039;"}[c]));
+const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=v=>v==null||v===""?"Ask for price":"GHC "+Number(v).toFixed(2);
 const ctx={
   SUPABASE_URL:"https://example.supabase.co",
