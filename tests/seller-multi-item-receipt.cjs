@@ -31,6 +31,7 @@ const ctx={
   clean:v=>String(v==null?"":v),
   esc,
   pretty:v=>String(v||"").replace(/_/g," "),
+  sellerRuleLabel:o=>(o.seller_country_name||o.seller_country_code||"Seller country")+" → "+(o.buyer_country_name||o.buyer_country_code||"Buyer country"),
   money,
   sellerFinanceBreakdown:(o,sub,fee)=>({
     gross:Number(sub),delivery:Number(fee),commissionRate:Number(o.commission_rate_snapshot||0),
