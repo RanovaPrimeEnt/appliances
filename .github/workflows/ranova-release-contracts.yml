@@ -8,7 +8,7 @@ on:
       - 'tests/**'
       - '.github/workflows/ranova-release-contracts.yml'
   push:
-    branches: [ main ]
+    branches: [ main, seller-dashboard-v2 ]
     paths:
       - 'rpe-v2/**'
       - 'all/**'
@@ -35,3 +35,5 @@ jobs:
         run: node tests/seller-session-auth-contract.cjs
       - name: Seller flow and account-isolation contract
         run: node tests/seller-flow-contract.cjs
+      - name: Seller multi-item receipt and product-snapshot contract
+        run: node tests/seller-multi-item-receipt.cjs
