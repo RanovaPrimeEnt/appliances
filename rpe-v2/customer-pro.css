@@ -542,3 +542,6 @@ linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shado
 @media screen and (min-width:1024px) and (max-width:1199px){
   .rnv-cart-checkout-bar {width:calc(100% - 48px)!important}
 }
+
+/* Light green separator above the Buyer Account orange header (Android/PWA). */
+#homePanel .me-premium-head{border-top:6px solid #B8F2A0}
