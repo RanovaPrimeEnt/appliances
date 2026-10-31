@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v78";
+const CACHE="ranova-rpe-v2-shell-v79";
 const IMAGE_CACHE="ranova-rpe-v2-images-v1";
 const CORE=[
   "../all/fonts/inter-0.woff2",
@@ -24,7 +24,7 @@ const CORE=[
   "./customer-app.webmanifest",
   "./customer-pwa.js?v=20261005-v3a75",
   "./customer-pro.js?v=20261005-v3a75",
-  "./customer-pro.css?v=20261031-greenstrip",
+  "./customer-pro.css?v=20261031-orangefill",
   "./report-store.html",
   "./ranova-prime-store.html",
   "./admin.html",
