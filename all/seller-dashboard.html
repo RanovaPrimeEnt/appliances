@@ -425,40 +425,53 @@ body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data
 </style>
 
 <style>
-/* RANOVA premium quick-action refinements: scoped to the four Overview cards only. */
-#panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"]{gap:14px;margin:18px 0 22px}
+/* RANOVA seller overview: compact premium quick-action cards only. */
+#panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"]{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 20px;
+}
 body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{
- position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:flex-start;justify-content:flex-start;
- min-height:148px;padding:20px 18px 18px;gap:14px;border:1px solid #f3d9c4;border-radius:20px;
- background:linear-gradient(145deg,#fff 12%,#fffaf5 78%,#fff3e7 100%);color:#123c31;
- box-shadow:0 8px 24px rgba(86,52,26,.075),0 2px 6px rgba(86,52,26,.035);
- font-size:15px;font-weight:800;line-height:1.25;letter-spacing:-.015em;text-align:left;
- transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+ position:relative;overflow:hidden;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;
+ gap:13px;width:100%;min-width:0;min-height:108px;padding:16px;
+ border:1px solid #eadfd4;border-radius:17px;
+ background:linear-gradient(140deg,#fff 5%,#fffaf5 100%);color:#123f32;
+ box-shadow:0 4px 13px rgba(48,36,22,.055);
+ font-size:15px;font-weight:800;line-height:1.3;letter-spacing:-.02em;text-align:left;
+ transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
 }
 body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut::before{
- content:"";position:absolute;z-index:-1;right:-32px;top:-75px;width:155px;height:155px;border-radius:50%;
- background:radial-gradient(circle,rgba(255,157,57,.23),rgba(255,157,57,0) 69%);pointer-events:none;
+ content:"";position:absolute;right:0;top:0;width:84px;height:62px;pointer-events:none;
+ background:radial-gradient(circle at top right,rgba(255,145,39,.12),transparent 75%);
 }
 body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut::after{
- content:"";position:absolute;inset:auto 0 0;height:3px;background:linear-gradient(90deg,#ff7900,#ffba78 75%,transparent);pointer-events:none;
+ content:"";position:absolute;inset:auto 0 0;height:2px;pointer-events:none;
+ background:linear-gradient(90deg,#f97316,#ffc48e 70%,transparent);
 }
 body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut span{
- display:grid;place-items:center;width:46px;height:46px;flex:0 0 46px;border-radius:14px;
- background:linear-gradient(150deg,#ff9d1b,#fa6600);color:white;font-size:27px;font-weight:750;
- box-shadow:0 6px 12px rgba(239,108,13,.19);line-height:1;
+ display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;border-radius:13px;
+ background:linear-gradient(145deg,#ff9b19,#f66c00);color:#fff;font-size:25px;font-weight:750;line-height:1;
+ box-shadow:0 4px 9px rgba(227,106,16,.16);
 }
 body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut:hover{
- border-color:#f0a468;transform:translateY(-2px);box-shadow:0 11px 26px rgba(86,52,26,.12);
+ border-color:#f2b080;background:#fffaf5;transform:translateY(-2px);
+ box-shadow:0 8px 19px rgba(48,36,22,.09);
 }
 body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut:active{transform:translateY(0)}
-body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut:focus-visible{outline:3px solid #ff8a24;outline-offset:3px}
-@media(max-width:700px){
+body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut:focus-visible{outline:3px solid #f97316;outline-offset:3px}
+@media(max-width:900px){
  #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"]{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
- body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{min-height:132px;padding:15px 12px;gap:11px;font-size:13px;border-radius:17px}
- body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut span{width:40px;height:40px;flex-basis:40px;font-size:23px;border-radius:12px}
+ body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{min-height:105px;padding:14px;gap:11px;font-size:14px}
 }
-@media(max-width:350px){#panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(prefers-reduced-motion:reduce){body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{transition:none}}
+@media(max-width:400px){
+ body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{
+  flex-direction:column;align-items:flex-start;min-height:120px;padding:13px 12px;gap:10px;font-size:12.5px;
+ }
+ body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut span{
+  width:38px;height:38px;flex:0 0 38px;font-size:22px;border-radius:11px;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{transition:none}
+}
 </style>
 </head>
 <body>
