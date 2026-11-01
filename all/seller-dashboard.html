@@ -473,6 +473,45 @@ body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick sell
  body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{transition:none}
 }
 </style>
+<style>
+/* RANOVA My Orders: action-first, compact, responsive layout. */
+#panel-orders>.card{background:#f7f9f7}
+#panel-orders .seller-toolbar{display:grid;grid-template-columns:minmax(220px,2fr) repeat(3,minmax(125px,1fr));gap:9px;margin:16px 0 12px}
+#panel-orders .seller-toolbar input,#panel-orders .seller-toolbar select{min-width:0;max-width:100%;min-height:43px;border:1px solid #dbe5df;border-radius:11px;background:#fff}
+.ranova-order-queue{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0 12px}
+.ranova-order-queue span{display:inline-flex;gap:7px;align-items:center;background:#fff;border:1px solid #e0e9e3;border-radius:10px;padding:9px 12px;font-size:12px;color:#476354}
+.ranova-order-queue b{font-size:17px;color:#153e30}
+.ranova-order-queue .attention{background:#fff4ec;border-color:#ffdac2;color:#9a4518}
+.ranova-order-queue .attention b{color:#b34319}
+.ranova-order-quickfilters{margin:0 0 15px;display:flex;gap:8px;flex-wrap:wrap}
+#panel-orders .order-list{gap:13px}
+#panel-orders .order-row.v3-order-card{border-radius:17px;box-shadow:0 4px 17px rgba(20,53,36,.045);border-color:#dde7df}
+#panel-orders .v3-card-header{padding:16px 18px 13px}
+#panel-orders .v3-document-icon{width:40px;height:40px;border-radius:12px;font-size:22px}
+#panel-orders .v3-ref{font-size:17px}
+#panel-orders .v3-card-body{padding:13px 18px}
+#panel-orders .v3-section-title{font-size:13px}
+#panel-orders .v3-items-meta{font-size:11px;font-weight:550}
+#panel-orders .order-items-mini{margin-bottom:8px}
+#panel-orders .v3-card-footer{padding:12px 18px}
+#panel-orders .v3-card-footer .order-actions{gap:7px}
+#panel-orders .v3-card-footer .order-actions button{min-height:42px;padding:9px 11px}
+#panel-orders .v3-card-footer .order-actions button.primary{order:-2;background:#146645;border-color:#146645}
+#panel-orders .v3-card-footer .order-actions button[data-quote-order]{order:-1}
+#panel-orders .v3-card-footer .order-actions button.danger{margin-left:auto}
+.ranova-order-summary{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:18px;padding:12px 0;border-top:1px solid #edf1ed}
+.ranova-order-summary>div{display:flex;flex-direction:column;gap:2px;min-width:125px}
+.ranova-order-summary small{color:#61756b;font-size:11px}
+.ranova-order-summary strong{font-size:17px;color:#143d2b;line-height:1.3}
+.ranova-order-finance{border-top:1px solid #edf1ed;margin-top:1px}
+.ranova-order-finance summary{cursor:pointer;color:#28684b;font-size:12px;font-weight:750;padding:12px 0;list-style-position:inside}
+.ranova-order-finance summary:focus-visible{outline:3px solid #f97316;outline-offset:2px}
+.ranova-order-finance .v3-finances{margin:8px 0}
+.ranova-order-finance .v3-finance-tile{min-height:68px;padding:10px}
+.ranova-order-finance .v3-payrow{padding:12px 0 0}
+@media(max-width:980px){#panel-orders .seller-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}#panel-orders .seller-toolbar input.wide{grid-column:1/-1}}
+@media(max-width:650px){#panel-orders .v3-card-header{padding:13px}#panel-orders .v3-card-body{padding:11px 13px}#panel-orders .v3-card-footer{padding:11px 13px}.ranova-order-summary{gap:12px}.ranova-order-summary>div{min-width:105px}.ranova-order-summary strong{font-size:15px}#panel-orders .seller-toolbar{gap:7px}#panel-orders .v3-card-footer .order-actions button.danger{margin-left:0}}
+</style>
 </head>
 <body>
 <button data-install-seller type="button" style="position:fixed;right:12px;bottom:14px;z-index:100;border:0;border-radius:999px;background:#ff5a2d;color:#fff;padding:11px 14px;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.16);display:inline-flex;align-items:center;gap:7px">Install RANOVA Seller</button>
@@ -699,7 +738,7 @@ body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick sell
             <select id="orderPriorityFilter"><option value="">All urgency levels</option><option value="urgent">Urgent - waiting 2 days or more</option><option value="due">Waiting 1 to 2 days</option><option value="normal">Normal (&lt;24h)</option></select>
             <select id="orderSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="amount_high">Highest amount</option><option value="amount_low">Lowest amount</option></select>
           </div>
-          <div class="actions" style="margin:0 0 12px"><button id="clearOrderFilters" class="btn" type="button">Show all orders</button><button id="showUrgentMyOrders" class="btn soft" type="button">Show urgent orders</button></div>
+          <div id="orderQueueSummary" class="ranova-order-queue" aria-live="polite"></div><div class="actions ranova-order-quickfilters"><button id="clearOrderFilters" class="btn" type="button">Show all orders</button><button id="showUrgentMyOrders" class="btn soft" type="button">Show urgent orders</button></div>
           <div id="orderMsg" class="msg"></div><div id="orderList" class="order-list"><div class="empty">No seller orders yet.</div></div>
         </div>
       </div>
@@ -1680,14 +1719,15 @@ function sellerOrderCardMarkup(o,items,ageHours,priority,priorityStyle,financeMi
     '<span>⌖ '+esc(o.delivery_location||"Delivery location pending")+'</span></div></div></div>'+
     '<div class="v3-statuses">'+badges+'</div></header>'+
     '<div class="v3-card-body"><div class="v3-section-title">Items ordered '+
-    '<span class="v3-items-meta">'+items.length+' product line(s) · '+sellerOrderTotalUnits(items)+' unit(s) · '+ageHours+'h old</span></div>'+
+    '<span class="v3-items-meta">'+items.length+' product '+(items.length===1?'line':'lines')+' · '+sellerOrderTotalUnits(items)+' units · '+(ageHours<24?ageHours+'h':Math.floor(ageHours/24)+'d')+' since order</span></div>'+
     '<div class="order-items-mini">'+sellerOrderItemCardHtml(items)+'</div>'+
-    '<div class="v3-finances">'+tiles+'</div>'+
+    '<div class="ranova-order-summary"><div><small>Order total</small><strong>'+esc(sellerOrderAmount(o.total))+'</strong></div><div><small>Payment · '+esc(o.payment_method||"Method pending")+'</small><strong>'+esc(pretty(o.payment_status||"Not started"))+'</strong></div></div>'+ 
+    '<details class="ranova-order-finance"><summary>View financial breakdown and settlement rules</summary><div class="v3-finances">'+tiles+'</div>'+
     '<div class="v3-payrow"><div class="v3-rule"><b>Finance rule:</b> '+esc(sellerRuleLabel(o))+
     (fb?' · Provider fee paid by '+esc(pretty(fb.payer)):' · Final amount to be confirmed')+'</div>'+
     '<div class="v3-total">Order total<strong>'+esc(sellerOrderAmount(o.total))+'</strong></div>'+
     '<div class="v3-payment">Payment status<span>'+esc(pretty(o.payment_status||"Not started"))+
-    ' · '+esc(o.payment_method||"Method pending")+'</span></div></div>'+
+    ' · '+esc(o.payment_method||"Method pending")+'</span></div></div></details>'+
     (o.seller_note?'<div class="v3-seller-note">Seller note: '+esc(o.seller_note)+'</div>':'')+
     '</div><footer class="v3-card-footer"><div class="order-actions">'+
     '<button data-quote-order="'+esc(o.id||"")+'">Set order amount</button>'+
@@ -1704,19 +1744,21 @@ function renderMyOrders(){
   var sort=el("orderSort")?el("orderSort").value:"newest";
   if(search)orders=orders.filter(function(o){return [o.platform_order_ref,o.order_ref,o.buyer_name,o.buyer_phone,o.delivery_location].some(function(v){return clean(v).toLowerCase().includes(search)})});
   if(statusFilter)orders=orders.filter(function(o){return clean(o.order_status)===statusFilter});
-  if(priorityFilter)orders=orders.filter(function(o){var hours=Math.floor(Math.max(0,Date.now()-(Date.parse(o.created_at||o.updated_at||Date.now())||Date.now()))/3600000);return priorityFilter==="urgent"?hours>=48:priorityFilter==="due"?hours>=24&&hours<48:hours<24});
+  if(priorityFilter)orders=orders.filter(function(o){if(["cancelled","returned","delivered"].includes(clean(o.order_status).toLowerCase()))return false;var hours=Math.floor(Math.max(0,Date.now()-(Date.parse(o.created_at||o.updated_at||Date.now())||Date.now()))/3600000);return priorityFilter==="urgent"?hours>=48:priorityFilter==="due"?hours>=24&&hours<48:hours<24});
   var orderTime=function(o){return Date.parse(o.created_at||o.updated_at||0)||0};
   if(sort==="oldest")orders.sort(function(a,b){return orderTime(a)-orderTime(b)});
   else if(sort==="amount_high")orders.sort(function(a,b){return Number(b.subtotal||0)-Number(a.subtotal||0)});
   else if(sort==="amount_low")orders.sort(function(a,b){return Number(a.subtotal||0)-Number(b.subtotal||0)});
   else orders.sort(function(a,b){return orderTime(b)-orderTime(a)});
+  var summary=el("orderQueueSummary");if(summary){var actionable=allMyOrders.filter(function(o){return !["cancelled","returned","delivered"].includes(clean(o.order_status).toLowerCase())});var urgentCount=actionable.filter(function(o){return Date.now()-(Date.parse(o.created_at||o.updated_at||Date.now())||Date.now())>=48*3600000}).length;summary.innerHTML='<span><b>'+allMyOrders.length+'</b> Total orders</span><span><b>'+actionable.length+'</b> Open orders</span><span class="attention"><b>'+urgentCount+'</b> Waiting 2+ days</span><span><b>'+orders.length+'</b> Showing</span>'}
   if(!allMyOrders.length){host.innerHTML='<div class="empty">No marketplace orders have been routed to this store yet.</div>';return}
   if(!orders.length){host.innerHTML='<div class="empty">No orders match your current search or filters.</div>';return}
   host.innerHTML=orders.map(function(o){
     var items=Array.isArray(o.items)?o.items:[];
     var ageMs=Math.max(0,Date.now()-(Date.parse(o.created_at||o.updated_at||Date.now())||Date.now()));
     var ageHours=Math.floor(ageMs/3600000);
-    var priority=ageHours>=48?"Urgent":ageHours>=24?"Due soon":"Normal";
+    var terminal=["cancelled","returned","delivered"].includes(clean(o.order_status).toLowerCase());
+    var priority=terminal?"Closed":ageHours>=48?"Urgent":ageHours>=24?"Due soon":"Normal";
     var priorityStyle=priority==="Urgent"?"background:#fff0ee;color:#a0473e":priority==="Due soon"?"background:#fff5e8;color:#915d18":"";
 
     var itemHtml=sellerOrderItemCardHtml(items);
