@@ -1632,6 +1632,7 @@ function sellerOrderCopyText(order){
 }
 function sellerOrderPrintHtml(order){
   var items=sellerOrderItems(order),paid=clean(order.payment_status).toLowerCase()==="paid";
+  var delivered=clean(order.order_status).toLowerCase()==="delivered";
   var date=new Date(order.created_at||order.updated_at||"");
   var placed=Number.isNaN(date.getTime())?"Date unavailable":date.toLocaleString("en-GH");
   var detail=items.map(function(item){
@@ -1647,43 +1648,26 @@ function sellerOrderPrintHtml(order){
   var productTotals=items.every(function(x){return x.line_total!==null&&x.line_total!==undefined&&x.line_total!==""&&Number.isFinite(Number(x.line_total))});
   var itemSum=productTotals?items.reduce(function(sum,x){return sum+Number(x.line_total)},0):null;
   var mismatch=productTotals&&order.subtotal!=null&&Math.abs(Number(order.subtotal)-itemSum)>0.011;
-  var breakdown=order.subtotal==null?null:sellerFinanceBreakdown(order,order.subtotal,order.delivery_fee||0);
-  var sellerSummary=breakdown?'<div class="seller-summary"><h3>Seller settlement estimate</h3>'+
-    '<div>Commission ('+breakdown.commissionRate.toFixed(2)+'%): <strong>- '+esc(money(breakdown.commission))+'</strong></div>'+
-    (breakdown.sellerFee?'<div>Seller-paid processing fee: <strong>- '+esc(money(breakdown.sellerFee))+'</strong></div>':'')+
-    '<div>Expected seller payout: <strong>'+esc(money(breakdown.payout))+'</strong></div>'+
-    '<p class="muted">Estimated only. Actual settlement depends on payment, refunds and applicable fees.</p></div>':'';
+  var receiptTitle=delivered?"Delivery Receipt":"Customer Order Summary";
+  var note=delivered?"Seller-recorded delivery. Keep for your records.":"Order not marked delivered. This is not proof of delivery.";
+  var paymentLabel=paid?"Payment recorded by RANOVA":"Payment not confirmed by RANOVA";
+  var issueDate=new Date().toLocaleString("en-GH");
   return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
-    '<title>RANOVA Seller Order '+esc(order.order_ref||order.platform_order_ref||"")+'</title>'+
+    '<title>RANOVA '+esc(receiptTitle)+' · '+esc(order.order_ref||"")+'</title>'+
     '<style>'+
-    '@page{size:auto;margin:14mm}*{box-sizing:border-box}body{font:13px/1.5 Arial,Helvetica,sans-serif;color:#192e26;margin:0;background:#fff}'+
-    'header{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #14532d;padding:0 0 15px;margin-bottom:18px}h1{font-size:23px;margin:0;color:#14532d}h2{font-size:16px;margin:0 0 10px}h3{font-size:13px;margin:0 0 6px}p{margin:3px 0}.muted{color:#61746a;font-size:11px}.pill{display:inline-block;background:#eef5f0;padding:4px 10px;border-radius:7px;font-weight:700}.warning{color:#a34120;font-weight:700}.meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}.meta section{border:1px solid #e1e9e3;border-radius:10px;padding:13px;overflow-wrap:anywhere}'+
-    'table{border-collapse:collapse;width:100%;table-layout:fixed}thead{display:table-header-group}th{background:#eaf6ee;color:#14532d;text-align:left;font-size:11px;padding:10px 7px}td{border-bottom:1px solid #e1e9e3;padding:9px 7px;vertical-align:middle;overflow-wrap:anywhere}tr{break-inside:avoid;page-break-inside:avoid}.image-cell{width:55px}.image-cell img{border-radius:7px;border:1px solid #e1e9e3}.num{text-align:right}.unavailable{font-size:9px;color:#8a9991}.totals{margin:15px 0 0 auto;max-width:340px}.totals div,.seller-summary div{display:flex;justify-content:space-between;gap:16px;padding:5px 0}.totals .total{border-top:2px solid #14532d;font-size:16px;font-weight:bold;padding-top:10px}.seller-summary{border:1px solid #e1e9e3;background:#f8faf7;padding:12px;margin-top:18px;border-radius:10px}.footer{border-top:1px solid #d9e4dc;margin-top:24px;padding-top:12px;color:#61746a;font-size:11px}'+
-    '@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}header,.meta section,.seller-summary{break-inside:avoid}}'+
-    '</style></head><body><header><div><h1>RANOVA</h1><strong>Seller order summary</strong>'+
-    '<p class="muted">One seller order · '+items.length+' product line(s) · '+sellerOrderTotalUnits(items)+' unit(s)</p></div>'+
-    '<div><span class="pill">'+esc(paid?"Payment recorded":"Payment not confirmed")+'</span>'+
-    '<p class="muted">Created: '+esc(placed)+'</p></div></header>'+
-    '<div class="meta"><section><h2>Order references</h2><p><b>Seller order:</b> '+esc(order.order_ref||"—")+'</p>'+
-    '<p><b>Marketplace order:</b> '+esc(order.platform_order_ref||"—")+'</p>'+
-    '<p><b>Order status:</b> '+esc(pretty(order.order_status||"Unknown"))+'</p>'+
-    '<p><b>Payment status:</b> '+esc(pretty(order.payment_status||"Not started"))+'</p>'+
-    '<p><b>Payment method:</b> '+esc(order.payment_method||"Not selected")+'</p></section>'+
-    '<section><h2>Customer and delivery</h2><p>'+esc(order.buyer_name||"Customer")+'</p>'+
-    '<p>'+esc(order.buyer_phone||"")+'</p><p>'+esc(order.delivery_location||"Delivery details pending")+'</p></section></div>'+
-    '<h2>Items purchased</h2><table><thead><tr><th style="width:56px">Image</th><th>Product</th>'+
-    '<th class="num" style="width:50px">Qty</th><th class="num" style="width:108px">Unit price</th>'+
-    '<th class="num" style="width:110px">Line total</th></tr></thead><tbody>'+
-    (detail||'<tr><td colspan="5">No item details are available. Contact RANOVA to verify this order.</td></tr>')+
-    '</tbody></table>'+
-    (mismatch?'<p class="warning">Notice: The recorded order subtotal differs from the sum of individual line amounts (for example, because of a revised quote). Verify before fulfilment.</p>':'')+
-    '<div class="totals"><div>Product subtotal <strong>'+esc(sellerOrderAmount(order.subtotal))+'</strong></div>'+
-    '<div>Delivery <strong>'+esc(sellerOrderAmount(order.delivery_fee))+'</strong></div>'+
-    '<div class="total">Order total <strong>'+esc(sellerOrderAmount(order.total))+'</strong></div></div>'+
-    sellerSummary+
-    '<div class="footer">Order summary only — not a tax invoice or independent proof of payment. '+
-    'This document includes only the items belonging to the seller order shown above. '+
-    'Printed from RANOVA Seller Dashboard · '+esc(new Date().toLocaleString("en-GH"))+'</div>'+
+    '@page{size:A4;margin:13mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#173c2d;font:12px/1.48 Arial,Helvetica,sans-serif}header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #176a43}.brand{font-size:27px;font-weight:900;letter-spacing:.8px;color:#0e5938}.tag{border-left:3px solid #ff7a00;padding-left:12px}.tag h1{font-size:22px;margin:0;color:#16462f}.muted{color:#617367;font-size:10px}.ref{margin-top:5px;overflow-wrap:anywhere}.status{margin:16px 0;padding:12px 14px;border:1px solid #d6e7dc;border-radius:10px;background:#f3f8f4;display:flex;gap:14px;justify-content:space-between;flex-wrap:wrap}.status strong{display:block;font-size:13px}.columns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.panel{padding:14px;border:1px solid #e1e9e3;border-radius:10px;min-width:0}.panel h2{font-size:12px;text-transform:uppercase;letter-spacing:.55px;margin:0 0 9px;color:#176342}.panel p{margin:4px 0;overflow-wrap:anywhere}h2.section-title{font-size:15px;margin:20px 0 9px}table{border-collapse:collapse;width:100%;table-layout:fixed}th{background:#145537;color:white;padding:9px 7px;font-size:10px;text-align:left}td{border-bottom:1px solid #e0e8e2;padding:10px 7px;vertical-align:top;overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}.num{text-align:right}.image-cell{width:54px}.image-cell img{width:40px;height:40px;object-fit:contain}.unavailable{font-size:9px;color:#66776c}.totals{max-width:330px;margin:18px 0 18px auto}.totals div{display:flex;justify-content:space-between;gap:20px;padding:6px 0}.totals .total{border-top:2px solid #145537;border-bottom:2px solid #145537;color:#114d32;font-size:17px;font-weight:bold}.notice{padding:12px;background:#fff7ef;border-left:3px solid #f97316;border-radius:5px;margin:13px 0}.signatures{display:flex;gap:28px;margin-top:35px}.signatures div{flex:1;border-top:1px solid #819b89;padding-top:7px;color:#526c59;font-size:10px}.footer{border-top:1px solid #dce7df;margin-top:24px;padding-top:12px;color:#667a6e;font-size:10px}.warning{color:#a34120;font-weight:bold}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.panel,.status,.totals,.signatures{break-inside:avoid}}'+
+    '</style></head><body><header><div><div class="brand">RANOVA<span style="color:#ff7a00">.</span></div><div class="muted">Marketplace · Seller-issued document</div></div>'+
+    '<div class="tag"><h1>'+esc(receiptTitle)+'</h1><div class="ref">'+esc(order.order_ref||order.platform_order_ref||"Reference unavailable")+'</div><div class="muted">Issued: '+esc(issueDate)+'</div></div></header>'+
+    '<div class="status"><div><strong>'+esc(delivered?"Delivered (seller record)":"Order status: "+pretty(order.order_status||"Unknown"))+'</strong><span class="muted">'+esc(note)+'</span></div><div><strong>'+esc(paymentLabel)+'</strong><span class="muted">'+esc(order.payment_method||"Payment method pending")+'</span></div></div>'+
+    '<div class="columns"><section class="panel"><h2>Seller order details</h2><p><b>Seller order:</b> '+esc(order.order_ref||"—")+'</p><p><b>Marketplace order:</b> '+esc(order.platform_order_ref||"—")+'</p><p><b>Order placed:</b> '+esc(placed)+'</p><p><b>Order stage:</b> '+esc(pretty(order.order_status||"Unknown"))+'</p></section>'+
+    '<section class="panel"><h2>Customer and delivery</h2><p><b>Customer:</b> '+esc(order.buyer_name||"Customer")+'</p><p><b>Phone:</b> '+esc(order.buyer_phone||"Not supplied")+'</p><p><b>Delivery location:</b> '+esc(order.delivery_location||"Not supplied")+'</p></section></div>'+
+    '<h2 class="section-title">Items '+(delivered?'delivered':'ordered')+'</h2><table><thead><tr><th style="width:54px">Image</th><th>Product</th><th class="num" style="width:45px">Qty</th><th class="num" style="width:100px">Unit price</th><th class="num" style="width:100px">Line total</th></tr></thead><tbody>'+
+    (detail||'<tr><td colspan="5">Order items unavailable. Contact RANOVA for clarification.</td></tr>')+'</tbody></table>'+
+    (mismatch?'<div class="notice warning">Item totals and recorded subtotal differ. Verify the agreed order amount before relying on this document.</div>':'')+
+    '<div class="totals"><div>Product subtotal <strong>'+esc(sellerOrderAmount(order.subtotal))+'</strong></div><div>Delivery <strong>'+esc(sellerOrderAmount(order.delivery_fee))+'</strong></div><div class="total"><span>Order total</span><strong>'+esc(sellerOrderAmount(order.total))+'</strong></div></div>'+
+    '<div class="notice"><b>Important:</b> '+esc(paid?'Payment is recorded as paid in RANOVA.':'This document is not proof of payment. Only RANOVA can confirm customer payment.')+' Seller-issued delivery documents do not replace platform payment verification.</div>'+
+    '<div class="signatures"><div>Seller / authorised issuer signature (if applicable)</div><div>Customer acknowledgement (if obtained)</div></div>'+
+    '<div class="footer">RANOVA seller-issued '+esc(delivered?'delivery receipt':'order summary')+' · '+esc(order.order_ref||"Reference unavailable")+' · Printed '+esc(issueDate)+'. Do not treat this document as a tax invoice unless it meets applicable invoicing requirements.</div>'+
     '</body></html>';
 }
 
