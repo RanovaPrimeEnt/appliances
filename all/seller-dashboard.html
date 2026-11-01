@@ -423,6 +423,43 @@ body.preapproval-workspace #publishStore,
 body.preapproval-workspace #activateStore{display:none!important}
 body.preapproval-workspace [data-panel="store"],body.preapproval-workspace [data-panel="products"]{display:block}
 </style>
+
+<style>
+/* RANOVA premium quick-action refinements: scoped to the four Overview cards only. */
+#panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"]{gap:14px;margin:18px 0 22px}
+body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{
+ position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:flex-start;justify-content:flex-start;
+ min-height:148px;padding:20px 18px 18px;gap:14px;border:1px solid #f3d9c4;border-radius:20px;
+ background:linear-gradient(145deg,#fff 12%,#fffaf5 78%,#fff3e7 100%);color:#123c31;
+ box-shadow:0 8px 24px rgba(86,52,26,.075),0 2px 6px rgba(86,52,26,.035);
+ font-size:15px;font-weight:800;line-height:1.25;letter-spacing:-.015em;text-align:left;
+ transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut::before{
+ content:"";position:absolute;z-index:-1;right:-32px;top:-75px;width:155px;height:155px;border-radius:50%;
+ background:radial-gradient(circle,rgba(255,157,57,.23),rgba(255,157,57,0) 69%);pointer-events:none;
+}
+body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut::after{
+ content:"";position:absolute;inset:auto 0 0;height:3px;background:linear-gradient(90deg,#ff7900,#ffba78 75%,transparent);pointer-events:none;
+}
+body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut span{
+ display:grid;place-items:center;width:46px;height:46px;flex:0 0 46px;border-radius:14px;
+ background:linear-gradient(150deg,#ff9d1b,#fa6600);color:white;font-size:27px;font-weight:750;
+ box-shadow:0 6px 12px rgba(239,108,13,.19);line-height:1;
+}
+body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut:hover{
+ border-color:#f0a468;transform:translateY(-2px);box-shadow:0 11px 26px rgba(86,52,26,.12);
+}
+body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut:active{transform:translateY(0)}
+body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut:focus-visible{outline:3px solid #ff8a24;outline-offset:3px}
+@media(max-width:700px){
+ #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"]{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{min-height:132px;padding:15px 12px;gap:11px;font-size:13px;border-radius:17px}
+ body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut span{width:40px;height:40px;flex-basis:40px;font-size:23px;border-radius:12px}
+}
+@media(max-width:350px){#panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){body.seller-v2-ready #panel-overview .seller-v2-shortcuts[aria-label="Quick seller actions"] > .seller-v2-shortcut{transition:none}}
+</style>
 </head>
 <body>
 <button data-install-seller type="button" style="position:fixed;right:12px;bottom:14px;z-index:100;border:0;border-radius:999px;background:#ff5a2d;color:#fff;padding:11px 14px;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.16);display:inline-flex;align-items:center;gap:7px">Install RANOVA Seller</button>
