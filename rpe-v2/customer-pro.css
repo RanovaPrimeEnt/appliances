@@ -577,3 +577,8 @@ linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shado
 #ordersPanel .ranova-order-actions button{border:1px solid #d6e5d9;background:#fff;color:#135b3e;font-weight:750;border-radius:999px;padding:9px 17px;min-height:38px;cursor:pointer;font-size:12px}
 #ordersPanel .ranova-order-actions button:hover{background:#eff7f1}
 @media(max-width:460px){#ordersPanel .ranova-orders-tabs button{padding:0 10px}#ordersPanel .ranova-order-photo{width:64px;height:64px}#ordersPanel .ranova-order-item{gap:9px;padding:10px 12px}#ordersPanel .ranova-order-store,#ordersPanel .ranova-order-reference{padding-left:12px;padding-right:12px}}
+
+/* Verified marketplace history and payment amount safety */
+#ordersPanel .ranova-orders-notice{padding:12px 14px;border-radius:11px;background:#fff4ea;color:#864520;border:1px solid #f6d4b8;font-size:12px}
+#toPayPanel .pay-amount-warning{margin:10px 11px;padding:11px 12px;border-radius:10px;background:#fff3e8;color:#8c4217;border:1px solid #f4b780;font-size:12px;line-height:1.5;font-weight:650}
+#toPayPanel .pay-actions .pay-now:disabled{opacity:.75;color:#854521;background:#f7e2d2;cursor:not-allowed}
