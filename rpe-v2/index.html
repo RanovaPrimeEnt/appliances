@@ -872,9 +872,10 @@ html{scroll-behavior:auto!important}
 <section id="toPayPanel" class="panel card to-pay-panel">
   <div class="pay-head">
     <div class="pay-head-row"><button id="toPayBack" class="pay-back" type="button" aria-label="Back">‹</button><input id="toPaySearch" class="pay-search" placeholder="Search my orders"><button class="pay-filter" type="button" aria-label="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></svg></button><button class="pay-more" type="button" aria-label="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></div>
-    <div class="pay-tabs" role="group" aria-label="Filter my orders"><button type="button" class="pay-tab" data-order-nav="all">All</button><button type="button" class="pay-tab active" data-order-nav="pay">To Pay</button><button type="button" class="pay-tab" data-order-nav="ship">To Ship</button><button type="button" class="pay-tab" data-order-nav="receive">To Receive</button><button type="button" class="pay-tab" data-order-nav="returns">Returns</button></div>
+    <div class="pay-tabs" role="group" aria-label="Filter my orders"><button type="button" class="pay-tab" data-order-nav="all">All</button><button type="button" class="pay-tab active" data-order-nav="pay">To Pay</button><button type="button" class="pay-tab" data-order-nav="ship">To Ship</button><button type="button" class="pay-tab" data-order-nav="receive">To Receive</button><button type="button" class="pay-tab" data-order-nav="returns">Returns/Refund</button><button type="button" class="pay-tab" data-order-nav="review">To Review</button></div>
   </div>
   <div id="toPayOrders" class="pay-orders"></div>
+  <div id="payHistoryOrders" class="ranova-orders-list" aria-live="polite" hidden></div>
 </section>
 <section id="ordersPanel" class="panel card ranova-orders-panel">
   <div class="section-head"><h2>My Orders</h2><button data-panel="homePanel">Back</button></div>
