@@ -871,7 +871,17 @@ html{scroll-behavior:auto!important}
 <section id="shopPanel" class="panel card"><div class="section-head"><h2>Shop Products</h2><button data-panel="homePanel">Done</button></div><div class="panel-body"><div class="search"><input id="productSearch" placeholder="Search products…"><button id="searchBtn">Search</button></div><div id="productsGrid" class="grid"></div></div></section>
 <section id="toPayPanel" class="panel card to-pay-panel">
   <div class="pay-head">
-    <div class="pay-head-row"><button id="toPayBack" class="pay-back" type="button" aria-label="Back">‹</button><input id="toPaySearch" class="pay-search" placeholder="Search my orders"><button class="pay-filter" type="button" aria-label="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></svg></button><button class="pay-more" type="button" aria-label="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></div>
+    <div class="pay-head-row"><button id="toPayBack" class="pay-back" type="button" aria-label="Back">‹</button><input id="toPaySearch" class="pay-search" type="search" aria-label="Search my orders" autocomplete="off" placeholder="Search my orders"><button id="orderFilterButton" class="pay-filter" type="button" aria-label="Order filters" aria-expanded="false" aria-controls="orderFilterMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></svg></button><button id="orderMoreButton" class="pay-more" type="button" aria-label="More order options" aria-expanded="false" aria-controls="orderMoreMenu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></div>
+    <div id="orderFilterMenu" class="ranova-order-popmenu" hidden>
+      <span class="ranova-order-menu-title">Order display</span>
+      <button type="button" data-order-sort="newest">Newest first <span aria-hidden="true">✓</span></button>
+      <button type="button" data-order-sort="oldest">Oldest first <span aria-hidden="true"></span></button>
+      <button type="button" data-order-clear-search>Clear search</button>
+    </div>
+    <div id="orderMoreMenu" class="ranova-order-popmenu" hidden>
+      <button type="button" data-order-refresh>Refresh orders</button>
+      <button type="button" data-panel="helpPanel">Help with an order</button>
+    </div>
     <div class="pay-tabs" role="group" aria-label="Filter my orders"><button type="button" class="pay-tab" data-order-nav="all">All</button><button type="button" class="pay-tab active" data-order-nav="pay">To Pay</button><button type="button" class="pay-tab" data-order-nav="ship">To Ship</button><button type="button" class="pay-tab" data-order-nav="receive">To Receive</button><button type="button" class="pay-tab" data-order-nav="returns">Returns/Refund</button><button type="button" class="pay-tab" data-order-nav="review">To Review</button></div>
   </div>
   <div id="toPayOrders" class="pay-orders"></div>
