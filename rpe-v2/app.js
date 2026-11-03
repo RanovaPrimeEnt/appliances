@@ -1831,6 +1831,7 @@ async function placeMarketplaceCartOrder(){
     // The order exists once the API confirms success. Cart syncing must not
     // prevent opening the payment screen or cause an accidental second order.
     const checkedOut=selected;
+    const orderedStoreIds=new Set(checkedOut.filter(i=>i.kind==="market").map(i=>i.store_id).filter(Boolean));
     const touchedStores=new Set();
     checkedOut.forEach(i=>{
       if(i.kind==="market"){
@@ -1854,8 +1855,9 @@ async function placeMarketplaceCartOrder(){
     }
     // Open buyer-owned seller conversations so the verified order card can
     // appear in Messages. Messaging failure must never undo a placed order.
-    if(session?.access_token&&touchedStores.size){
-      Promise.allSettled([...touchedStores].map(storeId=>messageApi({
+    marketplaceHistoryLoadedAt=0; // Force next message view to load the newly created order.
+    if(session?.access_token&&orderedStoreIds.size){
+      Promise.allSettled([...orderedStoreIds].map(storeId=>messageApi({
         action:"start",store_id:storeId,subject:"Order: "+String(out.order_ref||"")
       }))).then(()=>loadMessageConversations().catch(()=>{}));
     }
@@ -3404,8 +3406,9 @@ async function refreshOpenMessage(){
 function customerConversationOrderCards(){
   // Render read-only order context from buyer-authenticated history, not a
   // fabricated chat message. Only orders for the current conversation's store.
-  if(!user||!messageCurrent?.store?.id||marketplaceHistoryError)return "";
-  const storeId=String(messageCurrent.store.id);
+  const currentStoreId=messageCurrent?.store?.id||messageCurrent?.store_id;
+  if(!user||!currentStoreId||marketplaceHistoryError)return "";
+  const storeId=String(currentStoreId);
   const rows=[];
   const seen=new Set();
   marketplaceOrderHistory.forEach(parent=>{
