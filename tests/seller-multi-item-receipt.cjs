@@ -27,6 +27,8 @@ const helpers=dashboard.slice(begin,end);
 const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=v=>v==null||v===""?"Ask for price":"GHC "+Number(v).toFixed(2);
 const ctx={
+  // Receipt prints in the authenticated dashboard, where state.store is available.
+  state:{store:{store_name:"Test Seller Shop",public_phone:"+233 200 000 000",business_location:"Kumasi"}},
   SUPABASE_URL:"https://example.supabase.co",
   clean:v=>String(v==null?"":v),
   esc,
@@ -57,13 +59,17 @@ const html=ctx.sellerOrderPrintHtml(base);
 assert.match(html,/RPE-TEST-S1/);
 assert.match(html,/RPE-TEST/);
 for(const name of ["Blue Bowl","White Cup","Wooden Plate"])assert.match(html,new RegExp(name));
-assert.equal((html.match(/<tr><td class="image-cell">/g)||[]).length,3,"each ordered product must have its own row");
-assert.match(html,/Qty/);assert.match(html,/Unit price/);assert.match(html,/Line total/);
+assert.equal((html.match(/<tr><td><b>/g)||[]).length,3,"each ordered product must have its own receipt row");
+assert.match(html,/Qty/);assert.match(html,/Unit price/);assert.match(html,/>Amount</);
 assert.match(html,/GHC 315\.00/);
 assert.match(html,/Payment not confirmed/);
-assert.match(html,/not a tax invoice or independent proof of payment/);
-assert.match(html,/Image unavailable/);
-assert.match(html,/bowl\.jpg/);
+assert.match(html,/Payment is confirmed only by RANOVA records/);
+assert.match(html,/Order Summary/);
+assert.match(html,/Test Seller Shop/);
+assert.match(html,/Kumasi/);
+assert.doesNotMatch(html,/Customer Receipt/);
+assert.doesNotMatch(html,/commission|payout/i);
+assert.doesNotMatch(html,/Image unavailable|bowl\.jpg/);
 assert.doesNotMatch(html,/stock\.jpg|placeholder-photo/);
 assert.equal(ctx.sellerOrderTotalUnits(base.items),8,"unit count must include every ordered quantity");
 assert.equal(ctx.sellerOrderCopyText(base).split("\n").filter(x=>/^\d+\. /.test(x)).length,3,"copy all lines");
@@ -74,7 +80,7 @@ const many={...base,items:Array.from({length:80},(_,i)=>({
   quantity:i+1,unit_price:1,line_total:i+1,image_url:null
 })),subtotal:3240,total:3255};
 const longPrint=ctx.sellerOrderPrintHtml(many);
-assert.equal((longPrint.match(/<tr><td class="image-cell">/g)||[]).length,80);
+assert.equal((longPrint.match(/<tr><td><b>/g)||[]).length,80);
 assert.match(longPrint,/Item 080/);
 const collapsed=ctx.sellerOrderItemCardHtml(many.items);
 assert.match(collapsed,/Show all 80 ordered items/);
@@ -88,9 +94,10 @@ assert.doesNotMatch(unpriced,/<script>alert/);
 assert.match(unpriced,/&lt;script&gt;/);
 assert.match(unpriced,/Pending quote/);
 assert.doesNotMatch(unpriced,/evil\.example/);
-assert.match(unpriced,/Image unavailable/);
-assert.match(ctx.sellerOrderPrintHtml({...base,payment_status:"paid"}),/Payment recorded/);
-assert.match(ctx.sellerOrderPrintHtml({...base,subtotal:301}),/recorded order subtotal differs/);
+assert.doesNotMatch(unpriced,/evil\.example/);
+assert.match(ctx.sellerOrderPrintHtml({...base,payment_status:"paid"}),/Paid \(RANOVA record\)/);
+assert.match(ctx.sellerOrderPrintHtml({...base,order_status:"delivered"}),/Customer Receipt/);
+assert.match(ctx.sellerOrderPrintHtml({...base,subtotal:301}),/Recorded subtotal differs from item amounts/);
 assert.match(dashboard, /#panel-orders \.order-row\.v3-order-card/, "New order-card CSS must override old layout");
 assert.match(dashboard, /@media\(max-width:650px\)/, "New order card needs mobile layout");
 assert.match(dashboard, /return sellerOrderCardMarkup\(o,items,ageHours/, "Seller order list must render the new card, not the legacy layout");
