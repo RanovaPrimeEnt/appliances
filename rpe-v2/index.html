@@ -872,19 +872,19 @@ html{scroll-behavior:auto!important}
 <section id="toPayPanel" class="panel card to-pay-panel">
   <div class="pay-head">
     <div class="pay-head-row"><button id="toPayBack" class="pay-back" type="button" aria-label="Back">‹</button><input id="toPaySearch" class="pay-search" placeholder="Search my orders"><button class="pay-filter" type="button" aria-label="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></svg></button><button class="pay-more" type="button" aria-label="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button></div>
-    <div class="pay-tabs"><button class="pay-tab">All</button><button class="pay-tab active">To Pay</button><button class="pay-tab" data-panel="ordersPanel" data-order-filter="preparing">To Ship</button><button class="pay-tab" data-panel="ordersPanel" data-order-filter="receive">To Receive</button><button class="pay-tab" data-panel="ordersPanel" data-order-filter="returns">Returns</button></div>
+    <div class="pay-tabs" role="group" aria-label="Filter my orders"><button type="button" class="pay-tab" data-order-nav="all">All</button><button type="button" class="pay-tab active" data-order-nav="pay">To Pay</button><button type="button" class="pay-tab" data-order-nav="ship">To Ship</button><button type="button" class="pay-tab" data-order-nav="receive">To Receive</button><button type="button" class="pay-tab" data-order-nav="returns">Returns</button></div>
   </div>
   <div id="toPayOrders" class="pay-orders"></div>
 </section>
 <section id="ordersPanel" class="panel card ranova-orders-panel">
   <div class="section-head"><h2>My Orders</h2><button data-panel="homePanel">Back</button></div>
   <div class="ranova-orders-tabs" role="group" aria-label="Filter my orders">
-    <button type="button" data-orders-tab="all" class="active">All</button>
-    <button type="button" data-orders-tab="pay">To Pay</button>
-    <button type="button" data-orders-tab="ship">To Ship</button>
-    <button type="button" data-orders-tab="receive">To Receive</button>
-    <button type="button" data-orders-tab="completed">Completed</button>
-    <button type="button" data-orders-tab="returns">Returns</button>
+    <button type="button" data-order-nav="all" data-orders-tab="all" class="active">All</button>
+    <button type="button" data-order-nav="pay" data-orders-tab="pay">To Pay</button>
+    <button type="button" data-order-nav="ship" data-orders-tab="ship">To Ship</button>
+    <button type="button" data-order-nav="receive" data-orders-tab="receive">To Receive</button>
+    <button type="button" data-order-nav="completed" data-orders-tab="completed">Completed</button>
+    <button type="button" data-order-nav="returns" data-orders-tab="returns">Returns</button>
   </div>
   <div id="ordersList" class="panel-body ranova-orders-list" aria-live="polite"></div>
 </section>
