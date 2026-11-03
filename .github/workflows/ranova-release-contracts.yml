@@ -39,3 +39,5 @@ jobs:
         run: node tests/seller-multi-item-receipt.cjs
       - name: Customer order status tabs and payment safety contract
         run: node tests/customer-order-tabs.cjs
+      - name: Buyer conversation automatic order card contract
+        run: node tests/customer-chat-order-card.cjs
