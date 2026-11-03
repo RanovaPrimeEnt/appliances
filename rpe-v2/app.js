@@ -1852,6 +1852,13 @@ async function placeMarketplaceCartOrder(){
       console.warn("Order created; payment list refresh failed",paymentListError);
       showToast("Order placed. Open To Pay to refresh your payment details.");
     }
+    // Open buyer-owned seller conversations so the verified order card can
+    // appear in Messages. Messaging failure must never undo a placed order.
+    if(session?.access_token&&touchedStores.size){
+      Promise.allSettled([...touchedStores].map(storeId=>messageApi({
+        action:"start",store_id:storeId,subject:"Order: "+String(out.order_ref||"")
+      }))).then(()=>loadMessageConversations().catch(()=>{}));
+    }
     showToast("Order placed. Continue to payment.");
   }catch(e){fail(e.message||"Could not place the order.")}
   finally{button.disabled=false;button.textContent=old}
@@ -3330,6 +3337,17 @@ function bindCustomerMessageActions(){
   host.querySelectorAll("[data-msg-quote-decline]").forEach(b=>b.onclick=()=>respondCustomerQuote(b.dataset.msgQuoteDecline,"declined"));
   host.querySelectorAll("[data-msg-quote-negotiate]").forEach(b=>b.onclick=()=>negotiateCustomerQuote(b.dataset.msgQuoteNegotiate));
   host.querySelectorAll("[data-msg-quote-cart]").forEach(b=>b.onclick=()=>location.href="../all/cart.html?quote="+encodeURIComponent(b.dataset.msgQuoteCart));
+  host.querySelectorAll("[data-conversation-order]").forEach(button=>button.onclick=()=>{
+    const ref=button.dataset.conversationOrder;
+    const status=button.dataset.conversationOrderStatus;
+    if(status==="pay"){
+      const search=$("toPaySearch");if(search)search.value=ref;
+      navigateCustomerOrdersTab("pay");
+    }else{
+      const parent=marketplaceOrderHistory.find(p=>(p.seller_orders||[]).some(child=>child.order_ref===ref));
+      if(parent?.order_ref)openMarketplaceOrder(parent.order_ref);
+    }
+  });
 }
 function stopMessageRealtime(){
   if(messageRealtimeChannel){sb.removeChannel(messageRealtimeChannel);messageRealtimeChannel=null}
@@ -3358,6 +3376,12 @@ async function openMessageConversation(id){
     $("msgRequestQuote").onclick=requestCustomerQuote;
   }else{ctx.classList.remove("show");ctx.innerHTML=""}
   renderMessageThread();
+  if(user&&Date.now()-marketplaceHistoryLoadedAt>30000){
+    const buyerId=user.id;
+    loadMarketplaceOrderHistory().then(()=>{
+      if(user?.id===buyerId&&messageCurrent?.id===id)renderMessageThread({preserveScroll:true});
+    }).catch(()=>{});
+  }
   subscribeOpenConversationRealtime(id);
   await loadMessageConversations();
   clearInterval(messagePoll);
@@ -3377,6 +3401,44 @@ async function refreshOpenMessage(){
   })();
   try{return await messageRefreshPromise}finally{messageRefreshPromise=null}
 }
+function customerConversationOrderCards(){
+  // Render read-only order context from buyer-authenticated history, not a
+  // fabricated chat message. Only orders for the current conversation's store.
+  if(!user||!messageCurrent?.store?.id||marketplaceHistoryError)return "";
+  const storeId=String(messageCurrent.store.id);
+  const rows=[];
+  const seen=new Set();
+  marketplaceOrderHistory.forEach(parent=>{
+    (Array.isArray(parent.seller_orders)?parent.seller_orders:[]).forEach(order=>{
+      if(String(order.store_id||"")!==storeId||!order.order_ref||seen.has(order.order_ref))return;
+      seen.add(order.order_ref);
+      rows.push({parent,order});
+    });
+  });
+  rows.sort((a,b)=>Date.parse(b.order.created_at||b.parent.created_at||0)-Date.parse(a.order.created_at||a.parent.created_at||0));
+  return rows.slice(0,3).map(({parent,order})=>{
+    const items=Array.isArray(order.items)?order.items:[];
+    const first=items[0]||{};
+    const photo=first.image_url?'<img class="msg-order-photo" src="'+esc(first.image_url)+'" alt="'+esc(first.product_name||"Ordered product")+'" loading="lazy">':'<div class="msg-order-photo-empty" aria-hidden="true">▣</div>';
+    const status=marketplaceSellerOrderTab(order,parent);
+    const paymentRequired=status==="pay";
+    const total=order.total==null?"Amount to confirm":money(order.total,order.currency||"GHS");
+    const reference=String(order.order_ref||"");
+    return '<article class="msg-verified-order" aria-label="Verified RANOVA order">'+
+      '<div class="msg-order-eyebrow"><span class="msg-order-check" aria-hidden="true">✓</span> RANOVA order update</div>'+
+      '<div class="msg-order-intro">'+(paymentRequired?"Your order is awaiting payment.":"Your order status has been updated.")+'</div>'+
+      '<div class="msg-order-inner"><div class="msg-order-heading"><b>'+esc(paymentRequired?"Payment not confirmed":statusLabel(order.order_status))+'</b>'+
+        '<span>'+esc(reference)+'</span></div>'+
+      '<div class="msg-order-product">'+photo+'<div class="msg-order-product-copy"><b>'+esc(first.product_name||"Marketplace order")+'</b>'+
+        '<small>'+esc(items.length>1?items.length+" product lines":"Quantity: "+String(first.quantity||1))+'</small>'+
+        '<strong>'+esc(total)+'</strong></div></div>'+
+      '<div class="msg-order-note">Store: '+esc(order.store_name||messageCurrent.store.store_name||"RANOVA seller")+'</div>'+
+      '<div class="msg-order-note">Delivery: '+esc(order.delivery_fee==null?"To confirm":money(order.delivery_fee,order.currency||"GHS"))+'</div>'+
+      '<div class="msg-order-disclosure">Secure payment and delivery updates are verified by RANOVA.</div></div>'+
+      '<button class="msg-order-action" type="button" data-conversation-order="'+esc(reference)+'" data-conversation-order-status="'+esc(status)+'">'+
+      (paymentRequired?"Review payment options":"View order details")+'</button></article>';
+  }).join("");
+}
 function renderMessageThread({preserveScroll=false}={}){
   const host=$("messageThread");if(!host||!messageCurrent)return;
   const wasNearBottom=host.scrollHeight-host.scrollTop-host.clientHeight<90;
@@ -3393,7 +3455,8 @@ function renderMessageThread({preserveScroll=false}={}){
     const delivery=m.sender_role==="system"?"":(mine?(m.read_at?" · Read":m.delivered_at?" · Delivered":" · Sent"):" · Received");
     return sep+'<div class="msg-bubble '+cl+'" data-message-id="'+esc(m.id)+'">'+messageReplyHtml(m)+media+body+'<time>'+d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+delivery+edited+'</time>'+report+'</div>';
   }).join("");
-  host.innerHTML=quotes+(rows||'<div class="msg-list-empty">Start your conversation with this store.</div>');
+  const orderCards=customerConversationOrderCards();
+  host.innerHTML=quotes+orderCards+(rows||(!orderCards?'<div class="msg-list-empty">Start your conversation with this store.</div>':''));
   bindCustomerMessageActions();
   if(!preserveScroll||wasNearBottom)host.scrollTop=host.scrollHeight;else host.scrollTop=previousTop;
 }
