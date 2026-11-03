@@ -1989,8 +1989,15 @@ function renderOrders(targetHost){
   }):[];
   const cards=[...fullMarketplace,...seller,...legacy];
   const emptyTitle=({all:"No orders yet",ship:"Nothing to ship",receive:"Nothing on the way",completed:"No completed orders",returns:"No returns or refunds",review:"Nothing to review"})[active]||"No matching orders";
+  const discover=cards.length?"":
+    '<section class="ranova-order-discover"><h4>Discover something new</h4><div class="ranova-order-discover-grid">'+
+    toPayRecommendations.filter(p=>p.id&&p.name).slice(0,6).map(p=>
+      '<button class="pay-product" type="button" data-pay-product="'+esc(p.id)+'">'+
+      (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" loading="lazy" alt="'+esc(p.name)+'">':'<div class="ranova-order-product-placeholder">Product</div>')+
+      '<div class="pay-product-copy"><b>'+esc(p.name)+'</b><div class="price">'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</div></div></button>'
+    ).join("")+'</div></section>';
   host.innerHTML=(marketplaceHistoryError?'<div class="ranova-orders-notice">Some marketplace history could not be loaded. Refresh to try again.</div>':'')+
-    (cards.length?cards.join(""):'<div class="ranova-orders-empty"><span aria-hidden="true">📦</span><b>'+esc(emptyTitle)+'</b><p>Orders will appear here when their verified status changes.</p><button type="button" data-go-shopping>Explore products</button></div>');
+    (cards.length?cards.join(""):'<div class="ranova-orders-empty"><span aria-hidden="true">📦</span><b>'+esc(emptyTitle)+'</b><p>Orders will appear here when their verified status changes.</p><button type="button" data-go-shopping>Explore products</button></div>'+discover);
   host.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
   host.querySelectorAll("[data-open-pay-orders]").forEach(b=>b.onclick=()=>showPanel("toPayPanel"));
   host.querySelectorAll("[data-market-order-ref]").forEach(b=>b.onclick=()=>openMarketplaceOrder(b.dataset.marketOrderRef));
