@@ -449,9 +449,21 @@ function renderCustomerOrderView(){
   else {
     renderOrders(historyHost);
     const term=($("toPaySearch")?.value||"").trim().toLowerCase();
-    if(term)historyHost.querySelectorAll(".ranova-customer-order").forEach(card=>{
-      card.hidden=!card.textContent.toLowerCase().includes(term);
-    });
+    if(term){
+      let matched=0;
+      historyHost.querySelectorAll(".ranova-customer-order").forEach(card=>{
+        const visible=card.textContent.toLowerCase().includes(term);
+        card.hidden=!visible;
+        if(visible)matched++;
+      });
+      historyHost.querySelector(".ranova-order-discover")?.setAttribute("hidden","");
+      if(!matched){
+        const empty=document.createElement("div");
+        empty.className="ranova-order-search-empty";
+        empty.textContent="No orders match your search in this tab.";
+        historyHost.appendChild(empty);
+      }
+    }
   }
 }
 function navigateCustomerOrdersTab(tab){
@@ -1899,11 +1911,15 @@ async function loadMarketplaceOrderHistory(){
     if(!user||user.id!==requestedBuyerId)return;
     marketplaceOrderHistory=Array.isArray(out.orders)?out.orders:[];
     marketplaceHistoryError="";
+    marketplaceHistoryLoadedAt=Date.now();
   }catch(e){
-    if(user&&user.id===requestedBuyerId)marketplaceHistoryError=e.message||"Marketplace history is unavailable.";
+    if(user&&user.id===requestedBuyerId){
+      // Failed reads must not keep showing previous history as if it were current.
+      marketplaceOrderHistory=[];
+      marketplaceHistoryLoadedAt=0;
+      marketplaceHistoryError=e.message||"Marketplace history is unavailable.";
+    }
     throw e;
-  }finally{
-    if(user&&user.id===requestedBuyerId)marketplaceHistoryLoadedAt=Date.now();
   }
 }
 function marketplaceOrderCard(title,ref,items,currency,delivery,total,state,action,parentRef){
@@ -2826,7 +2842,17 @@ function renderToPayOrders(filter=""){
     });
   });
   if(!rows.length&&!fallback.length){
-    host.innerHTML='<div class="pay-empty"><b>No unpaid orders</b>Your orders that still need payment will appear here.</div>';
+    const recommendations=toPayRecommendations.filter(p=>p.id&&p.name).slice(0,6);
+    host.innerHTML='<div class="ranova-orders-empty"><span aria-hidden="true">📦</span><b>'+
+      (q?'No matching unpaid orders':'No unpaid orders')+
+      '</b><p>'+(q?'Try another search term.':'Orders awaiting payment will appear here.')+
+      '</p><button type="button" data-go-shopping>Explore products</button></div>'+
+      (recommendations.length?'<section class="ranova-order-discover"><h4>Discover something new</h4><div class="ranova-order-discover-grid">'+
+        recommendations.map(p=>'<button class="pay-product" type="button" data-pay-product="'+esc(p.id)+'">'+
+          (p.primary_image_url?'<img src="'+esc(p.primary_image_url)+'" loading="lazy" alt="'+esc(p.name)+'">':'<div class="ranova-order-product-placeholder">Product</div>')+
+          '<div class="pay-product-copy"><b>'+esc(p.name)+'</b><div class="price">'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</div></div></button>').join("")+
+        '</div></section>':'');
+    host.querySelectorAll("[data-go-shopping]").forEach(b=>b.onclick=()=>showPanel("marketplaceHomePanel"));
     return;
   }
 
@@ -2972,9 +2998,10 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-order-refresh]")){
     closeCustomerOrderMenus();
     if(!user){showToast("Sign in to refresh your orders.");return}
-    Promise.allSettled([loadToPayOrders(),loadMarketplaceOrderHistory()]).then(()=>{
+    Promise.allSettled([loadToPayOrders(),loadMarketplaceOrderHistory()]).then(results=>{
       if(activePanelId==="toPayPanel")renderCustomerOrderView();
-      showToast("Order list refreshed.");
+      const failed=results.filter(r=>r.status==="rejected");
+      showToast(failed.length?"Some orders could not refresh. Try again.":"Order list refreshed.");
     });return;
   }
   if(!e.target.closest("#orderFilterMenu,#orderMoreMenu,#orderFilterButton,#orderMoreButton"))closeCustomerOrderMenus();
