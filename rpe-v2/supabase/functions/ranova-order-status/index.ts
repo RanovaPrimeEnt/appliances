@@ -55,6 +55,25 @@ Deno.serve(async(req:Request)=>{
     const b=await req.json();
     const user=await optionalUser(req);
     const action=clean(b.action,40)||"lookup";
+    if(action==="cancel_unpaid_order"){
+      // Client can request cancellation, but only an atomic server-side database
+      // operation may change order state and release an inventory reservation.
+      if(!user)return response(h,401,{ok:false,error:"Sign in to close an order. Guest orders require RANOVA support."});
+      const cancelRef=clean(b.order_ref,90).toUpperCase();
+      const allowedReasons=["address_issue","shipping_issue","changed_mind","price_concern","other"];
+      const cancelReason=clean(b.reason,40);
+      if(!cancelRef||!allowedReasons.includes(cancelReason))
+        return response(h,400,{ok:false,error:"Choose a reason for closing this order."});
+      const {data,error}=await admin.rpc("ranova_buyer_cancel_unpaid_order",{
+        p_order_ref:cancelRef,p_buyer_user_id:user.id,p_reason:cancelReason
+      });
+      if(error){
+        console.error("Buyer cancellation unavailable",error.code||"database_error");
+        return response(h,503,{ok:false,error:"Cancellation is currently unavailable. Contact RANOVA support; your order has not been closed."});
+      }
+      if(!data?.ok)return response(h,409,{ok:false,error:clean(data?.error,260)||"This order cannot be cancelled online. Contact RANOVA support."});
+      return response(h,200,{ok:true,order_ref:cancelRef,status:"cancelled",message:"Your unpaid order has been cancelled."});
+    }
     if(action==="buyer_history"){
       // Authenticated account-scoped history; no phone-only listing or cross-buyer records.
       if(!user)return response(h,401,{ok:false,error:"Sign in to view your order history."});
