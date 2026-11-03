@@ -118,7 +118,7 @@ Deno.serve(async(req:Request)=>{
         product_total:p.product_total,delivery_fee:p.delivery_fee,total_payment:p.total_payment,
         items:p.items||[],created_at:p.created_at,
         seller_orders:(children||[]).filter((o:any)=>o.parent_order_id===p.id).map((o:any)=>({
-          order_ref:o.order_ref,store_name:storeNames.get(o.store_id)||"Marketplace seller",
+          order_ref:o.order_ref,store_id:o.store_id,store_name:storeNames.get(o.store_id)||"Marketplace seller",
           items:o.items||[],subtotal:o.subtotal,delivery_fee:o.delivery_fee,total:o.total,
           currency:o.currency||"GHS",payment_status:o.payment_status,order_status:o.order_status,
           review_eligible:reviewEligible.has(o.id),created_at:o.created_at
