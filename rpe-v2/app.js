@@ -389,7 +389,8 @@ function showPanel(id){
   afterPaint(()=>{
     if(id==="notifPanel"){if(!panelIsPainted(id)){renderNotifications();markPanelPainted(id)}markNotificationsRead().catch(()=>{})}
     else if(id==="ordersPanel"){
-      if(!panelIsPainted(id)){renderOrders();markPanelPainted(id)}
+      // Tabs and launch shortcuts can change filters without invalidating cached data.
+      renderOrders();markPanelPainted(id);
       if(user&&Date.now()-toPayLoadedAt>30000){
         loadToPayOrders().then(()=>{if(activePanelId==="ordersPanel")renderOrders()}).catch(()=>{});
       }
