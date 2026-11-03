@@ -78,7 +78,7 @@ Deno.serve(async(req:Request)=>{
       // Authenticated account-scoped history; no phone-only listing or cross-buyer records.
       if(!user)return response(h,401,{ok:false,error:"Sign in to view your order history."});
       const {data:parents,error:parentError}=await admin.from("ranova_customer_orders")
-        .select("id,order_ref,status,payment_status,order_source,product_total,delivery_fee,total_payment,items,created_at")
+        .select("id,order_ref,status,payment_status,order_source,customer_name,delivery_location,product_total,delivery_fee,total_payment,items,created_at")
         .eq("buyer_user_id",user.id).order("created_at",{ascending:false}).limit(60);
       if(parentError)throw parentError;
       const parentIds=(parents||[]).map((p:any)=>p.id);
@@ -115,6 +115,7 @@ Deno.serve(async(req:Request)=>{
       const storeNames=new Map(stores.map((x:any)=>[x.id,x.store_name]));
       return response(h,200,{ok:true,orders:(parents||[]).map((p:any)=>({
         order_ref:p.order_ref,status:p.status,payment_status:p.payment_status,order_source:p.order_source,
+        customer_name:p.customer_name,delivery_location:p.delivery_location,
         product_total:p.product_total,delivery_fee:p.delivery_fee,total_payment:p.total_payment,
         items:p.items||[],created_at:p.created_at,
         seller_orders:(children||[]).filter((o:any)=>o.parent_order_id===p.id).map((o:any)=>({
