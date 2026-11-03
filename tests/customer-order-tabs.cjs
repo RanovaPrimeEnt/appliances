@@ -8,7 +8,7 @@ const html=fs.readFileSync(path.join(root,"rpe-v2/index.html"),"utf8");
 const app=fs.readFileSync(path.join(root,"rpe-v2/app.js"),"utf8");
 const endpoint=fs.readFileSync(path.join(root,"rpe-v2/supabase/functions/ranova-order-status/index.ts"),"utf8");
 new Function(app);
-for(const tab of ["all","pay","ship","receive","returns"]){
+for(const tab of ["all","pay","ship","receive","returns","review"]){
   assert.match(html,new RegExp('class="pay-tab[^"]*" data-order-nav="'+tab+'"'),"To Pay header must route "+tab);
 }
 for(const tab of ["all","pay","ship","receive","completed","returns"]){
@@ -23,20 +23,31 @@ const ctx={
   orderFilter:null,
   panelPainted:{delete(){}},
   shown:null,
+  activePanelId:"homePanel",
+  renders:0,
+  window:{scrollTo(){}},
+  renderCustomerOrderView(){this.renders++},
   showPanel(panel){this.shown=panel}
 };
 vm.createContext(ctx);
 vm.runInContext(extract("function navigateCustomerOrdersTab(tab){",'document.addEventListener("click",e=>{'),ctx);
 for(const [tab,panel,filter] of [
-  ["all","ordersPanel",null],["pay","toPayPanel","awaiting_payment"],
-  ["ship","ordersPanel","preparing"],["receive","ordersPanel","receive"],
-  ["returns","ordersPanel","returns"],["completed","ordersPanel","delivered"]
+  ["all","toPayPanel",null],["pay","toPayPanel","awaiting_payment"],
+  ["ship","toPayPanel","preparing"],["receive","toPayPanel","receive"],
+  ["returns","toPayPanel","returns"],["completed","toPayPanel","delivered"],
+  ["review","toPayPanel","review"]
 ]){
   ctx.shown=null;
   ctx.navigateCustomerOrdersTab(tab);
   assert.equal(ctx.shown,panel,tab+" panel");
   assert.equal(ctx.orderFilter,filter,tab+" filter");
 }
+ctx.activePanelId="toPayPanel";
+ctx.shown=null;
+ctx.navigateCustomerOrdersTab("ship");
+assert.equal(ctx.shown,null,"Switch tabs within the same screen, without opening a new panel");
+assert.equal(ctx.orderFilter,"preparing","Switching tabs must update the status filter");
+assert.equal(ctx.renders,1,"Switching tabs must repaint the order list");
 vm.runInContext(extract("function marketplaceSellerOrderTab(child,parent){","async function loadMarketplaceOrderHistory(){"),ctx);
 const unpaid={payment_status:"pending"};
 const paid={payment_status:"paid"};
@@ -53,6 +64,9 @@ for(const [status,parent,expected] of [
 assert.match(endpoint,/if\(action==="buyer_history"\)/);
 assert.match(endpoint,/if\(!user\)return response\(h,401/);
 assert.match(endpoint,/\.eq\("buyer_user_id",user\.id\)/);
+assert.match(endpoint,/review_eligible:reviewEligible\.has\(o\.id\)/,"Reviews require backend delivery confirmation");
+assert.match(html,/id="payHistoryOrders"/,"One screen must render historic orders under the persistent header");
+assert.match(app,/renderOrders\(historyHost\)/,"Order history replaces content rather than navigating away");
 assert.match(app,/action:"buyer_history"/);
 assert.match(app,/seenSellerRefs\.has\(o\.order_ref\)/,"Avoid duplicate seller orders across history and unpaid fallback");
 assert.match(app,/pay-amount-warning/,"Flag inconsistent item pricing");
