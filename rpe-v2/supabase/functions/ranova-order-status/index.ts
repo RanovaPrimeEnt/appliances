@@ -75,6 +75,24 @@ Deno.serve(async(req:Request)=>{
         if(error)throw error;
         stores=data||[];
       }
+      // A review is available only once the delivery has been buyer/admin confirmed,
+      // and the buyer has not already submitted a review for this seller order.
+      const deliveredChildren=(children||[]).filter((o:any)=>o.order_status==="delivered");
+      const deliveredIds=deliveredChildren.map((o:any)=>o.id);
+      const reviewEligible=new Set<string>();
+      if(deliveredIds.length){
+        const {data:deliveries,error:deliveryError}=await admin.from("ranova_order_deliveries")
+          .select("seller_order_id,delivery_status").in("seller_order_id",deliveredIds);
+        if(deliveryError)throw deliveryError;
+        const confirmedIds=(deliveries||[]).filter((d:any)=>d.delivery_status==="delivered_confirmed").map((d:any)=>d.seller_order_id);
+        if(confirmedIds.length){
+          const {data:reviews,error:reviewError}=await admin.from("ranova_marketplace_reviews")
+            .select("seller_order_id").in("seller_order_id",confirmedIds);
+          if(reviewError)throw reviewError;
+          const alreadyReviewed=new Set((reviews||[]).map((x:any)=>x.seller_order_id));
+          confirmedIds.forEach((id:string)=>{if(!alreadyReviewed.has(id))reviewEligible.add(id)});
+        }
+      }
       const storeNames=new Map(stores.map((x:any)=>[x.id,x.store_name]));
       return response(h,200,{ok:true,orders:(parents||[]).map((p:any)=>({
         order_ref:p.order_ref,status:p.status,payment_status:p.payment_status,order_source:p.order_source,
@@ -83,7 +101,8 @@ Deno.serve(async(req:Request)=>{
         seller_orders:(children||[]).filter((o:any)=>o.parent_order_id===p.id).map((o:any)=>({
           order_ref:o.order_ref,store_name:storeNames.get(o.store_id)||"Marketplace seller",
           items:o.items||[],subtotal:o.subtotal,delivery_fee:o.delivery_fee,total:o.total,
-          currency:o.currency||"GHS",payment_status:o.payment_status,order_status:o.order_status,created_at:o.created_at
+          currency:o.currency||"GHS",payment_status:o.payment_status,order_status:o.order_status,
+          review_eligible:reviewEligible.has(o.id),created_at:o.created_at
         }))
       }))});
     }
