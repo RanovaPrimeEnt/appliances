@@ -2874,7 +2874,7 @@ function renderToPayOrders(filter=""){
       '<div class="pay-total-row"><span>Delivery '+esc(delivery==null?"To confirm":money(delivery,currency))+'</span><span>Amount due</span><strong>'+esc(total!=null&&Number.isFinite(total)?money(total,currency):"Awaiting quote")+'</strong></div>'+
       (amountMismatch?'<div class="pay-amount-warning" role="alert"><b>Amount needs review.</b> Product and order totals differ. Payment is disabled until RANOVA verifies the amount.</div>':'')+
       '<details class="pay-protection"><summary><span class="pay-protection-icon" aria-hidden="true">✓</span> RANOVA Buyer Protection <span class="pay-protection-more">Details</span></summary><p>Payment is confirmed only after RANOVA verification. Seller payout depends on the required delivery and protection checks.</p></details>'+
-      '<div class="pay-actions"><button type="button" data-pay-help="'+esc(o.id)+'">Order help</button><button type="button" data-pay-address="'+esc(o.id)+'">Addresses</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'" '+(amountMismatch||total==null||!Number.isFinite(total)?'disabled aria-disabled="true" title="Order amount must be verified before payment"':'')+'>Pay Now</button></div>'+
+      '<div class="pay-actions"><button type="button" data-pay-close="'+esc(o.id)+'">Close</button><button type="button" data-pay-address="'+esc(o.id)+'">Addresses</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'" '+(amountMismatch||total==null||!Number.isFinite(total)?'disabled aria-disabled="true" title="Order amount must be verified before payment"':'')+'>Pay Now</button></div>'+
     '</article>';
   }).join("");
 
@@ -3011,10 +3011,72 @@ if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>{
   if(activePanelId==="toPayPanel"&&customerOrderActiveTab()!=="pay")renderCustomerOrderView();
   else renderToPayOrders(e.target.value);
 });
+function openBuyerCancelSheet(order){
+  document.querySelector("#ranovaCancelOverlay")?.remove();
+  const parentRef=order?.parent_order?.order_ref||"";
+  const overlay=document.createElement("div");
+  overlay.id="ranovaCancelOverlay";
+  overlay.className="ranova-cancel-backdrop";
+  overlay.innerHTML='<section class="ranova-cancel-sheet" role="dialog" aria-modal="true" aria-labelledby="ranovaCancelTitle">'+
+    '<div class="ranova-cancel-head"><div><h3 id="ranovaCancelTitle">Close order</h3><small>Choose a reason</small></div><button type="button" data-cancel-dismiss aria-label="Keep order and close this window">×</button></div>'+
+    '<div class="ranova-cancel-reasons" role="radiogroup" aria-label="Reason for closing">'+
+    '<label><span>Delivery address needs correcting</span><input type="radio" name="ranovaCancelReason" value="address_issue"></label>'+
+    '<label><span>Delivery or shipping does not suit me</span><input type="radio" name="ranovaCancelReason" value="shipping_issue"></label>'+
+    '<label><span>I changed my mind</span><input type="radio" name="ranovaCancelReason" value="changed_mind"></label>'+
+    '<label><span>I found a better price elsewhere</span><input type="radio" name="ranovaCancelReason" value="price_concern"></label>'+
+    '<label><span>Other reason</span><input type="radio" name="ranovaCancelReason" value="other"></label></div>'+
+    '<p class="ranova-cancel-help">Closing affects the entire checkout, including items from other sellers. If payment has started or a seller has begun processing, RANOVA support must review your request.</p>'+
+    '<div class="ranova-cancel-error" role="alert" hidden></div>'+
+    '<div class="ranova-cancel-actions"><button type="button" class="ranova-cancel-confirm" data-cancel-confirm disabled>Confirm Close</button><button type="button" class="ranova-cancel-keep" data-cancel-dismiss>Keep Order</button></div></section>';
+  document.body.appendChild(overlay);
+  const dismiss=()=>overlay.remove();
+  overlay.addEventListener("click",e=>{
+    if(e.target===overlay||e.target.closest("[data-cancel-dismiss]"))dismiss();
+  });
+  overlay.querySelectorAll('input[name="ranovaCancelReason"]').forEach(radio=>radio.addEventListener("change",()=>{
+    overlay.querySelector("[data-cancel-confirm]").disabled=false;
+  }));
+  overlay.querySelector("[data-cancel-confirm]").addEventListener("click",async()=>{
+    const reason=overlay.querySelector('input[name="ranovaCancelReason"]:checked')?.value;
+    const errorEl=overlay.querySelector(".ranova-cancel-error");
+    if(!reason||!parentRef){
+      errorEl.hidden=false;
+      errorEl.textContent=parentRef?"Select a reason to continue.":"This order cannot be cancelled here because its parent order reference is missing. Contact RANOVA support.";
+      return;
+    }
+    const confirmButton=overlay.querySelector("[data-cancel-confirm]");
+    confirmButton.disabled=true;confirmButton.textContent="Closing order…";
+    errorEl.hidden=true;
+    try{
+      const {data:{session}}=await sb.auth.getSession();
+      if(!session)throw Error("Sign in to close an order. For guest orders, contact RANOVA support.");
+      const response=await fetch(ORDER_STATUS_ENDPOINT,{method:"POST",headers:{
+        "Content-Type":"application/json","x-ranova-client":"ranova-site-v1",
+        "apikey":cfg.supabasePublishableKey,"Authorization":"Bearer "+session.access_token
+      },body:JSON.stringify({action:"cancel_unpaid_order",order_ref:parentRef,reason})});
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok||!result.ok)throw Error(result.error||"Cancellation failed. Your order has not been closed.");
+      // Remove only after authoritative cancellation; never hide an unconfirmed order.
+      toPayOrders=toPayOrders.filter(o=>o.parent_order?.order_ref!==parentRef);
+      marketplaceOrderHistory=marketplaceOrderHistory.filter(o=>o.order_ref!==parentRef);
+      dismiss();showToast("Your order was cancelled.");
+      renderCustomerOrderView();
+      Promise.allSettled([loadToPayOrders(),loadMarketplaceOrderHistory()]).then(()=>{
+        if(activePanelId==="toPayPanel")renderCustomerOrderView();
+      });
+    }catch(err){
+      errorEl.hidden=false;
+      errorEl.textContent=err.message||"Could not close this order. Contact RANOVA support.";
+    }finally{
+      if(overlay.isConnected){confirmButton.disabled=false;confirmButton.textContent="Confirm Close";}
+    }
+  });
+}
 document.addEventListener("click",async e=>{
-  const close=e.target.closest("[data-pay-help]");if(close){
-    showToast("This order is still recorded. For cancellation or changes, contact RANOVA support.");
-    showPanel("helpPanel");return
+  const close=e.target.closest("[data-pay-close]");if(close){
+    const order=toPayOrders.find(x=>String(x.id)===close.dataset.payClose);
+    if(order)openBuyerCancelSheet(order);
+    return;
   }
   const address=e.target.closest("[data-pay-address]");if(address){
     showToast("Changing saved addresses does not change an existing order. Contact support to request an update.");
