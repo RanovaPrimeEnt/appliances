@@ -58,7 +58,7 @@ ctx.messageCurrent={store:{id:"store-a",store_name:"A Shop"}};
 ctx.marketplaceHistoryError="Unavailable";
 markup=ctx.customerConversationOrderCards();
 assert.match(markup,/ORDER-C/,"Verified unpaid orders remain available when history endpoint is unavailable");
-assert.doesNotMatch(markup,/ORDER-A/,"Do not use stale history after API failure");
+assert.doesNotMatch(markup,/Kitchen Set/,"Do not use stale history data after API failure");
 assert.match(src,/action:"start",store_id:storeId,subject:"Order: "/,"Checkout starts a relevant seller conversation");
 assert.match(src,/orderedStoreIds=new Set\(/,"Checkout must derive sellers from selected products");
 assert.match(src,/marketplaceHistoryLoadedAt=0;/,"A new checkout invalidates cached order history");
