@@ -49,7 +49,10 @@ async function paymentFor(order:any){
   return data||null;
 }
 async function ensurePayment(order:any){
-  const amount=order.total_payment==null?null:Number(order.total_payment);
+  // Never downgrade an existing confirmed payment to pending during re-initialization.
+  const existing=await paymentFor(order);
+  if(existing)return existing;
+  const amount=Number(order.total_payment);
   const payload={
     parent_order_id:order.id,
     order_ref:order.order_ref,
@@ -61,9 +64,15 @@ async function ensurePayment(order:any){
     updated_at:new Date().toISOString()
   };
   const {data,error}=await admin.from("ranova_marketplace_payments")
-    .upsert(payload,{onConflict:"parent_order_id"})
-    .select("*").single();
-  if(error)throw error;
+    .insert(payload).select("*").single();
+  if(error){
+    // If a concurrent request created this payment, read it; do not overwrite it.
+    if(error.code==="23505"){
+      const concurrent=await paymentFor(order);
+      if(concurrent)return concurrent;
+    }
+    throw error;
+  }
   return data;
 }
 async function activeCollectionAccount(){
@@ -137,7 +146,14 @@ Deno.serve(async(req:Request)=>{
       if(order.total_payment==null||!(Number(order.total_payment)>0)){
         return json(h,409,{ok:false,error:"This order total is not ready for payment yet."});
       }
+      // Do not issue fresh collection instructions for already-paid orders.
+      if(order.payment_status==="paid"){
+        return json(h,409,{ok:false,error:"This order is already recorded as paid."});
+      }
       const payment=await ensurePayment(order);
+      if(payment.payment_status==="confirmed"){
+        return json(h,409,{ok:false,error:"Payment is already confirmed for this order."});
+      }
       const state=hubtelCredentialState();
 
       // Credentials alone are not enough: the live Hubtel contract, exact
