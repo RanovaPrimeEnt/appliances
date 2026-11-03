@@ -37,3 +37,5 @@ jobs:
         run: node tests/seller-flow-contract.cjs
       - name: Complete seller order receipt regression contract
         run: node tests/seller-multi-item-receipt.cjs
+      - name: Customer order status tabs and payment safety contract
+        run: node tests/customer-order-tabs.cjs
