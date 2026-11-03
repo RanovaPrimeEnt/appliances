@@ -615,3 +615,11 @@ linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shado
 #toPayPanel .pay-tab.active{font-weight:850;color:#143d2a}
 #toPayPanel .pay-tabs{gap:24px;scrollbar-width:none}
 #toPayPanel .pay-tab.active:after{background:#f97316}
+
+
+#toPayPanel .ranova-order-discover{background:#f4f4f4;padding:15px 9px 22px}
+#toPayPanel .ranova-order-discover h4{font-size:13px;font-weight:850;color:#203c2e;margin:4px 3px 12px}
+#toPayPanel .ranova-order-discover-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#toPayPanel .ranova-order-discover-grid .pay-product{display:block;text-align:left;min-width:0}
+#toPayPanel .ranova-order-discover-grid img{width:100%;aspect-ratio:1;object-fit:cover}
+#toPayPanel .ranova-order-product-placeholder{background:#e7eeea;color:#738177;aspect-ratio:1;display:grid;place-items:center;font-size:12px}
