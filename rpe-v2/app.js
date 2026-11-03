@@ -3342,11 +3342,13 @@ function bindCustomerMessageActions(){
   host.querySelectorAll("[data-conversation-order]").forEach(button=>button.onclick=()=>{
     const ref=button.dataset.conversationOrder;
     const status=button.dataset.conversationOrderStatus;
+    $("messageBack")?.click(); // Close the full-screen chat before showing orders.
     if(status==="pay"){
       const search=$("toPaySearch");if(search)search.value=ref;
       navigateCustomerOrdersTab("pay");
     }else{
       const parent=marketplaceOrderHistory.find(p=>(p.seller_orders||[]).some(child=>child.order_ref===ref));
+      navigateCustomerOrdersTab("all");
       if(parent?.order_ref)openMarketplaceOrder(parent.order_ref);
     }
   });
@@ -3378,6 +3380,12 @@ async function openMessageConversation(id){
     $("msgRequestQuote").onclick=requestCustomerQuote;
   }else{ctx.classList.remove("show");ctx.innerHTML=""}
   renderMessageThread();
+  if(user&&Date.now()-toPayLoadedAt>30000){
+    const buyerId=user.id;
+    loadToPayOrders().then(()=>{
+      if(user?.id===buyerId&&messageCurrent?.id===id)renderMessageThread({preserveScroll:true});
+    }).catch(()=>{});
+  }
   if(user&&Date.now()-marketplaceHistoryLoadedAt>30000){
     const buyerId=user.id;
     loadMarketplaceOrderHistory().then(()=>{
@@ -3404,21 +3412,31 @@ async function refreshOpenMessage(){
   try{return await messageRefreshPromise}finally{messageRefreshPromise=null}
 }
 function customerConversationOrderCards(){
-  // Render read-only order context from buyer-authenticated history, not a
-  // fabricated chat message. Only orders for the current conversation's store.
+  // Buyer-only order context, not a fabricated chat message. Never use
+  // another store's order or unverified payment/delivery information.
   const currentStoreId=messageCurrent?.store?.id||messageCurrent?.store_id;
-  if(!user||!currentStoreId||marketplaceHistoryError)return "";
-  const storeId=String(currentStoreId);
-  const rows=[];
-  const seen=new Set();
-  marketplaceOrderHistory.forEach(parent=>{
-    (Array.isArray(parent.seller_orders)?parent.seller_orders:[]).forEach(order=>{
-      if(String(order.store_id||"")!==storeId||!order.order_ref||seen.has(order.order_ref))return;
-      seen.add(order.order_ref);
-      rows.push({parent,order});
+  if(!user||!currentStoreId)return "";
+  const storeId=String(currentStoreId),rows=[],seen=new Set();
+  if(!marketplaceHistoryError){
+    marketplaceOrderHistory.forEach(parent=>{
+      (Array.isArray(parent.seller_orders)?parent.seller_orders:[]).forEach(order=>{
+        if(String(order.store_id||"")!==storeId||!order.order_ref||seen.has(order.order_ref))return;
+        seen.add(order.order_ref);
+        rows.push({parent,order});
+      });
     });
+  }
+  // Existing authenticated payment feed is a safe fallback until the
+  // buyer_history edge function has been deployed.
+  toPayOrders.forEach(order=>{
+    if(String(order.store_id||"")!==storeId||!order.order_ref||seen.has(order.order_ref))return;
+    if(["paid","confirmed","cancelled","refunded"].includes(String(order.payment_status||"").toLowerCase()))return;
+    if(["cancelled","delivered","refunded"].includes(String(order.order_status||"").toLowerCase()))return;
+    seen.add(order.order_ref);
+    const store=toPayStores.find(x=>String(x.id)===storeId)||{};
+    rows.push({parent:order.parent_order||{},order:{...order,store_name:store.store_name||messageCurrent.store?.store_name}});
   });
-  rows.sort((a,b)=>Date.parse(b.order.created_at||b.parent.created_at||0)-Date.parse(a.order.created_at||a.parent.created_at||0));
+  rows.sort((a,b)=>(Date.parse(b.order.created_at||b.parent.created_at)||0)-(Date.parse(a.order.created_at||a.parent.created_at)||0));
   return rows.slice(0,3).map(({parent,order})=>{
     const items=Array.isArray(order.items)?order.items:[];
     const first=items[0]||{};
@@ -3435,7 +3453,7 @@ function customerConversationOrderCards(){
       '<div class="msg-order-product">'+photo+'<div class="msg-order-product-copy"><b>'+esc(first.product_name||"Marketplace order")+'</b>'+
         '<small>'+esc(items.length>1?items.length+" product lines":"Quantity: "+String(first.quantity||1))+'</small>'+
         '<strong>'+esc(total)+'</strong></div></div>'+
-      '<div class="msg-order-note">Store: '+esc(order.store_name||messageCurrent.store.store_name||"RANOVA seller")+'</div>'+
+      '<div class="msg-order-note">Store: '+esc(order.store_name||messageCurrent.store?.store_name||"RANOVA seller")+'</div>'+
       '<div class="msg-order-note">Delivery: '+esc(order.delivery_fee==null?"To confirm":money(order.delivery_fee,order.currency||"GHS"))+'</div>'+
       '<div class="msg-order-disclosure">Secure payment and delivery updates are verified by RANOVA.</div></div>'+
       '<button class="msg-order-action" type="button" data-conversation-order="'+esc(reference)+'" data-conversation-order-status="'+esc(status)+'">'+
