@@ -439,12 +439,18 @@ function renderCustomerOrderView(){
     const active=button.dataset.orderNav===tab;
     button.classList.toggle("active",active);
     button.setAttribute("aria-pressed",active?"true":"false");
-    if(active)button.scrollIntoView({block:"nearest",inline:"nearest"});
+
   });
   payHost.hidden=tab!=="pay";
   historyHost.hidden=tab==="pay";
   if(tab==="pay")renderToPayOrders($("toPaySearch")?.value||"");
-  else renderOrders(historyHost);
+  else {
+    renderOrders(historyHost);
+    const term=($("toPaySearch")?.value||"").trim().toLowerCase();
+    if(term)historyHost.querySelectorAll(".ranova-customer-order").forEach(card=>{
+      card.hidden=!card.textContent.toLowerCase().includes(term);
+    });
+  }
 }
 function navigateCustomerOrdersTab(tab){
   const filters={all:null,pay:"awaiting_payment",ship:"preparing",
@@ -2887,13 +2893,8 @@ if($("paymentReceivedClose"))$("paymentReceivedClose").onclick=()=>{
 };
 if($("toPayBack"))$("toPayBack").onclick=()=>showPanel("homePanel");
 if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>{
-  if(activePanelId==="toPayPanel"&&customerOrderActiveTab()!=="pay"){
-    const term=e.target.value.trim().toLowerCase();
-    renderCustomerOrderView();
-    $("payHistoryOrders").querySelectorAll(".ranova-customer-order").forEach(card=>{
-      card.hidden=!!term&&!card.textContent.toLowerCase().includes(term);
-    });
-  }else renderToPayOrders(e.target.value);
+  if(activePanelId==="toPayPanel"&&customerOrderActiveTab()!=="pay")renderCustomerOrderView();
+  else renderToPayOrders(e.target.value);
 });
 document.addEventListener("click",async e=>{
   const close=e.target.closest("[data-pay-close]");if(close){const card=close.closest(".pay-order");if(card)card.style.display="none";return}
