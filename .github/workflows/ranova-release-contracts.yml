@@ -41,3 +41,5 @@ jobs:
         run: node tests/customer-order-tabs.cjs
       - name: Buyer conversation automatic order card contract
         run: node tests/customer-chat-order-card.cjs
+      - name: Android customer checkout responsive layout contract
+        run: node tests/customer-checkout-layout.cjs
