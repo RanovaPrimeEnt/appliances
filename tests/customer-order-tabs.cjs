@@ -76,6 +76,10 @@ assert.match(app,/seenSellerRefs\.has\(o\.order_ref\)/,"Avoid duplicate seller o
 assert.match(app,/pay-amount-warning/,"Flag inconsistent item pricing");
 assert.match(app,/Order amounts differ\. Contact RANOVA before paying/,"Never initiate payment for inconsistent item amounts");
 assert.match(app,/class="pay-unit-row"/,"Price and quantity must share a compact product row");
+assert.match(app,/class="pay-order-footer"/,"Each unpaid order retains a slim status footer");
+assert.match(app,/Delivery estimate pending/,"Do not invent delivery estimates or countdowns");
+assert.match(app,/disabled aria-disabled="true"/,"Unverified order totals must prevent payment");
+assert.match(app,/Amount needs review\./,"Keep mismatched totals visibly flagged");
 assert.match(app,/<details class="pay-protection">/,"Buyer protection details must be expandable without losing the disclosure");
 assert.match(app,/Payment is confirmed only after RANOVA verification/,"Never claim an unpaid order is paid");
 assert.match(app,/class="pay-amount-warning"/,"Mismatched order totals must keep the warning visible");
