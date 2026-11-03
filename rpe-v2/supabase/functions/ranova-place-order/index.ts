@@ -34,11 +34,19 @@ function refCode(){
 function uuidLike(v:any){return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||""))}
 function normalizeRawItems(raw:any[]){
   const out:any[]=[];
+  const sellerProductIds=new Set<string>();
   for(const x of Array.isArray(raw)?raw:[]){
-    const quantity=Math.floor(Number(x?.quantity||0));
-    if(quantity<1)continue;
+    const suppliedQuantity=Number(x?.quantity);
+    if(!Number.isSafeInteger(suppliedQuantity)||suppliedQuantity<1||suppliedQuantity>10000){
+      throw new Error("Every product needs a whole-number quantity between 1 and 10,000.");
+    }
+    const quantity=suppliedQuantity;
     const seller_product_id=clean(x?.seller_product_id,80);
     if(seller_product_id&&uuidLike(seller_product_id)){
+      if(sellerProductIds.has(seller_product_id)){
+        throw new Error("The same seller product appears more than once in this checkout. Combine its quantities before placing the order.");
+      }
+      sellerProductIds.add(seller_product_id);
       out.push({kind:"seller",seller_product_id,quantity});
       continue;
     }
