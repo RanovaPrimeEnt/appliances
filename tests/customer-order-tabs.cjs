@@ -90,4 +90,8 @@ assert.match(app,/\.\.\/all\/order-status\.html\?ref=/,"Review action opens exis
 assert.match(app,/customerOrderSort==="oldest"\?\[\.\.\.rows\]\.reverse\(\):rows/,"Unpaid order list must respect sort");
 assert.match(app,/data-order-clear-search/,"Clear search must work");
 assert.match(app,/data-order-refresh/,"Refresh menu must fetch current orders");
+assert.match(app,/cards\.sort\(\(a,b\)=>customerOrderSort==="oldest"/,"Mixed seller orders must sort by timestamp");
+assert.match(app,/cards\.map\(card=>card\.html\)/,"Sorted seller and catalogue cards must render");
+assert.match(app,/timestamp:child\.created_at\|\|parent\.created_at/,"Seller orders preserve real order dates");
+assert.match(app,/timestamp:o\.created_at/,"Legacy orders preserve order dates");
 console.log("PASS customer order tabs: navigation, real seller status classification, buyer-scoped history, duplicate prevention and payment safety");
