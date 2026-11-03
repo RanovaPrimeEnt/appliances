@@ -733,3 +733,28 @@ linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shado
  #toPayPanel #toPayOrders .pay-price{font-size:12px}
  #toPayPanel #toPayOrders .pay-actions button{font-size:11px;padding:7px 9px;min-width:65px}
 }
+
+
+/* Buyer Close order sheet: mobile bottom drawer, with genuine cancellation confirmation */
+.ranova-cancel-backdrop{position:fixed;inset:0;z-index:99999;background:rgba(8,14,11,.58);display:flex;align-items:flex-end;justify-content:center}
+.ranova-cancel-sheet{box-sizing:border-box;background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:540px;max-height:min(90dvh,740px);overflow-y:auto;overscroll-behavior:contain;padding:14px 18px max(20px,env(safe-area-inset-bottom));box-shadow:0 -6px 35px rgba(0,0,0,.16)}
+.ranova-cancel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;text-align:center;padding:8px 0 12px}
+.ranova-cancel-head>div{flex:1;padding-left:35px}
+.ranova-cancel-head h3{margin:0;font-size:19px;font-weight:800;color:#1e2a22}
+.ranova-cancel-head small{display:block;margin-top:3px;font-size:12px;color:#9b9f9b}
+.ranova-cancel-head [data-cancel-dismiss]{border:0;background:transparent;font-size:30px;line-height:1;color:#344139;padding:0 5px;min-width:35px;min-height:36px}
+.ranova-cancel-reasons{margin:0;display:grid}
+.ranova-cancel-reasons label{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:59px;padding:9px 2px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#303a33;cursor:pointer}
+.ranova-cancel-reasons label span{flex:1;line-height:1.4}
+.ranova-cancel-reasons input{appearance:none;-webkit-appearance:none;flex:none;width:22px;height:22px;border:1.5px solid #ccd2cc;border-radius:50%;margin:0;position:relative;background:#fff}
+.ranova-cancel-reasons input:checked{background:#ff6e29;border-color:#ff6e29}
+.ranova-cancel-reasons input:checked:after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:white;font-size:13px;font-weight:900}
+.ranova-cancel-help{font-size:11px;line-height:1.5;color:#7c867d;margin:15px 1px 10px}
+.ranova-cancel-error{font-size:12px;color:#8e3116;border:1px solid #edc2a7;background:#fff1e9;border-radius:8px;padding:10px;margin-bottom:10px}
+.ranova-cancel-error[hidden]{display:none}
+.ranova-cancel-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.ranova-cancel-actions button{min-height:46px;border-radius:999px;font-size:13px;font-weight:850;padding:9px 10px}
+.ranova-cancel-confirm{border:1px solid #f27542;color:#e86d30;background:#fff}
+.ranova-cancel-confirm:disabled{opacity:.45;cursor:not-allowed}
+.ranova-cancel-keep{border:0;color:#fff;background:#fa641f}
+@media(min-width:700px){.ranova-cancel-backdrop{align-items:center}.ranova-cancel-sheet{border-radius:22px;padding-bottom:24px}}
