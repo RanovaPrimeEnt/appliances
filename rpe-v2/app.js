@@ -3450,11 +3450,14 @@ function customerConversationOrderCards(){
     const photo=first.image_url?'<img class="msg-order-photo" src="'+esc(first.image_url)+'" alt="'+esc(first.product_name||"Ordered product")+'" loading="lazy">':'<div class="msg-order-photo-empty" aria-hidden="true">▣</div>';
     const status=marketplaceSellerOrderTab(order,parent);
     const paymentRequired=status==="pay";
-    const total=order.total==null?"Amount to confirm":money(order.total,order.currency||"GHS");
+    const amountsKnown=items.length>0&&items.every(i=>i.line_total!=null&&Number.isFinite(Number(i.line_total)));
+    const mismatchedAmount=amountsKnown&&order.subtotal!=null&&Number.isFinite(Number(order.subtotal))&&
+      Math.abs(items.reduce((sum,i)=>sum+Number(i.line_total),0)-Number(order.subtotal))>.011;
+    const total=mismatchedAmount?"Amount to verify":order.total==null?"Amount to confirm":money(order.total,order.currency||"GHS");
     const reference=String(order.order_ref||"");
     return '<article class="msg-verified-order" aria-label="Verified RANOVA order">'+
       '<div class="msg-order-eyebrow"><span class="msg-order-check" aria-hidden="true">✓</span> RANOVA order update</div>'+
-      '<div class="msg-order-intro">'+(paymentRequired?"Your order is awaiting payment.":"Your order status has been updated.")+'</div>'+
+      '<div class="msg-order-intro">'+(mismatchedAmount?"Order amount requires verification before payment.":paymentRequired?"Your order is awaiting payment.":"Your order status has been updated.")+'</div>'+
       '<div class="msg-order-inner"><div class="msg-order-heading"><b>'+esc(paymentRequired?"Payment not confirmed":statusLabel(order.order_status))+'</b>'+
         '<span>'+esc(reference)+'</span></div>'+
       '<div class="msg-order-product">'+photo+'<div class="msg-order-product-copy"><b>'+esc(first.product_name||"Marketplace order")+'</b>'+
@@ -3466,7 +3469,7 @@ function customerConversationOrderCards(){
       '<div class="msg-order-note">Delivery fee: '+esc(order.delivery_fee==null?"To confirm":money(order.delivery_fee,order.currency||"GHS"))+'</div>'+
       '<div class="msg-order-disclosure">Secure payment and delivery updates are verified by RANOVA.</div></div>'+
       '<button class="msg-order-action" type="button" data-conversation-order="'+esc(reference)+'" data-conversation-order-status="'+esc(status)+'">'+
-      (paymentRequired?"Review payment options":"View order details")+'</button></article>';
+      (mismatchedAmount?"Review order amount":paymentRequired?"Review payment options":"View order details")+'</button></article>';
   }).join("");
 }
 function renderMessageThread({preserveScroll=false}={}){
