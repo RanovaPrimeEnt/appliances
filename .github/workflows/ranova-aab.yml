@@ -59,8 +59,16 @@ jobs:
         run: gradle :app:assembleDebug :app:bundleRelease --no-daemon --stacktrace
       - name: Verify signed release bundle
         run: |
-          test -s app/build/outputs/bundle/release/app-release.aab
-          jarsigner -verify -strict -certs app/build/outputs/bundle/release/app-release.aab
+          set -euo pipefail
+          bundle="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$bundle"
+          # AABs use JAR signing. -strict treats ordinary self-signed certificate
+          # warnings as exit code 4, even when the signature itself verifies.
+          jarsigner -verify -verbose -certs "$bundle" | tee "$RUNNER_TEMP/ranova-aab-verification.log"
+          if ! grep -Eq '^jar verified\.' "$RUNNER_TEMP/ranova-aab-verification.log"; then
+            echo "::error::The release AAB did not pass JAR signature verification."
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: ranova-test-apk
