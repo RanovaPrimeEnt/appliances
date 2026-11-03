@@ -66,6 +66,11 @@ assert.match(src,/\$\("messageBack"\)\?\.click\(\)/,"Order actions must close fu
 assert.match(src,/loadToPayOrders\(\)\.then/,"Conversation refreshes verified unpaid orders");
 assert.match(api,/order_ref:o\.order_ref,store_id:o\.store_id,store_name:/,"Buyer-scoped history returns seller store IDs");
 assert.match(api,/\.eq\("buyer_user_id",user\.id\)/,"History must be account-scoped");
+assert.match(api,/customer_name:p\.customer_name,delivery_location:p\.delivery_location/,"Only buyer-owned recipient and delivery context is returned");
+assert.match(src,/parent\.customer_name\?/, "Recipient is shown only if recorded");
+assert.match(src,/parent\.delivery_location\?/, "Delivery location is shown only if recorded");
+assert.match(src,/Order awaiting payment · View order details/,"Conversation preview indicates a real unpaid order");
+assert.match(src,/if\(messageConversations\.length\)renderMessageList\(\)/,"Conversation list previews refresh when payment orders load");
 assert.match(css,/msg-verified-order/,"Order card must have mobile chat styling");
 assert.doesNotMatch(card,/sender_role:"system"/,"Do not fabricate chat messages");
 console.log("PASS buyer chat order cards: account/store isolation, real payment fallback, dedupe, checkout conversation, mobile styling");
