@@ -7,6 +7,7 @@ const root=path.resolve(__dirname,"..");
 const html=fs.readFileSync(path.join(root,"rpe-v2/index.html"),"utf8");
 const app=fs.readFileSync(path.join(root,"rpe-v2/app.js"),"utf8");
 const endpoint=fs.readFileSync(path.join(root,"rpe-v2/supabase/functions/ranova-order-status/index.ts"),"utf8");
+const cancellationSql=fs.readFileSync(path.join(root,"rpe-v2/supabase/020_buyer_unpaid_order_cancellation.sql"),"utf8");
 new Function(app);
 for(const tab of ["all","pay","ship","receive","returns","review"]){
   assert.match(html,new RegExp('class="pay-tab[^"]*" data-order-nav="'+tab+'"'),"To Pay header must route "+tab);
@@ -66,6 +67,14 @@ for(const [status,parent,expected] of [
   assert.equal(ctx.marketplaceSellerOrderTab({order_status:status},parent),expected,status+" classification");
 }
 assert.match(endpoint,/if\(action==="buyer_history"\)/);
+assert.match(endpoint,/if\(action==="cancel_unpaid_order"\)/,"Backend must process cancellation requests");
+assert.match(endpoint,/if\(!user\)return response\(h,401/,"Cancellation requires verified authentication");
+assert.match(endpoint,/admin\.rpc\("ranova_buyer_cancel_unpaid_order"/,"Cancellation must be atomic");
+assert.match(cancellationSql,/buyer_user_id=p_buyer_user_id for update/,"Cancel only buyer-owned orders");
+assert.match(cancellationSql,/from public\.ranova_marketplace_payments/,"Do not cancel started payments");
+assert.match(cancellationSql,/v_child\.order_status not in \('new','confirmed'\)/,"Never cancel dispatched orders through this action");
+assert.match(cancellationSql,/ranova_release_order_inventory/,"Cancellation must release held inventory");
+assert.match(cancellationSql,/ranova_buyer_order_cancellations/,"Cancellation reasons must be auditable");
 assert.match(endpoint,/if\(!user\)return response\(h,401/);
 assert.match(endpoint,/\.eq\("buyer_user_id",user\.id\)/);
 assert.match(endpoint,/review_eligible:reviewEligible\.has\(o\.id\)/,"Reviews require backend delivery confirmation");
@@ -83,7 +92,14 @@ assert.match(app,/Amount needs review\./,"Keep mismatched totals visibly flagged
 assert.match(app,/<details class="pay-protection">/,"Buyer protection details must be expandable without losing the disclosure");
 assert.match(app,/Payment is confirmed only after RANOVA verification/,"Never claim an unpaid order is paid");
 assert.match(app,/class="pay-amount-warning"/,"Mismatched order totals must keep the warning visible");
-assert.match(app,/data-pay-help/,"Order help stays available");
+assert.match(app,/data-pay-close/,"Close must open an order cancellation sheet");
+assert.match(app,/function openBuyerCancelSheet\(order\)/,"Close sheet must be connected");
+assert.match(app,/name="ranovaCancelReason"/,"Cancellation reasons must be selectable");
+assert.match(app,/data-cancel-confirm disabled/,"Confirmation requires a selected reason");
+assert.match(app,/data-cancel-dismiss/,"Keep Order must safely dismiss the sheet");
+assert.match(app,/action:"cancel_unpaid_order"/,"Confirm must use the secure cancellation endpoint");
+assert.match(app,/if\(!response\.ok\|\|!result\.ok\)throw/,"Never claim a failed cancellation succeeded");
+assert.match(app,/toPayOrders=toPayOrders\.filter/,"Only confirmed cancellations can be removed from the unpaid list");
 assert.match(app,/data-pay-address/,"Address access stays available");
 assert.match(app,/data-pay-now/,"Payment action remains wired");
 assert.match(html,/id="orderFilterButton"/,"Order filter control must be accessible");
@@ -95,7 +111,7 @@ assert.match(html,/data-order-clear-search/,"Search can be cleared");
 assert.match(app,/function toggleCustomerOrderMenu\(which\)/,"Header menus must open");
 assert.match(app,/function closeCustomerOrderMenus\(\)/,"Header menus must close");
 assert.match(app,/customerOrderSort==="oldest"/,"Order list supports chronological sorting");
-assert.match(app,/This order is still recorded/,"Close must never falsely cancel or silently hide an order");
+assert.doesNotMatch(app,/card\.style\.display="none"/,"Do not silently hide an order instead of cancelling it");
 assert.doesNotMatch(app,/card\.style\.display="none"/,"No silent hiding of active orders");
 assert.match(app,/return \["paid","confirmed"\]\.includes\(payment\)\?"ship":"pay"/,
   "Unpaid preparing orders must not be classified as To Ship");
