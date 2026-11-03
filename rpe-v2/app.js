@@ -2845,7 +2845,7 @@ function renderToPayOrders(filter=""){
       '<div class="pay-total-row"><span>Delivery '+esc(delivery==null?"To confirm":money(delivery,currency))+'</span><span>Amount due</span><strong>'+esc(total!=null&&Number.isFinite(total)?money(total,currency):"Awaiting quote")+'</strong></div>'+
       (amountMismatch?'<div class="pay-amount-warning" role="alert">The recorded product subtotal does not match the item amounts. Contact RANOVA to verify the order before paying.</div>':'')+
       '<div style="margin:8px 11px;padding:9px 10px;border-radius:10px;background:#fff7ef;color:#75401f;font-size:9px;line-height:1.45"><b>RANOVA Buyer Protection</b><br>Payment is not confirmed until RANOVA verifies it. Seller payout remains subject to the required delivery and protection checks.</div>'+
-      '<div class="pay-actions"><button type="button" data-pay-close="'+esc(o.id)+'">Close</button><button type="button" data-pay-address="'+esc(o.id)+'">Modify Address</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'" '+(amountMismatch||total==null||!Number.isFinite(total)?'disabled title="Order amount must be verified before payment"':'')+'>'+(amountMismatch?'Amount needs review':'Pay Now')+'</button></div>'+
+      '<div class="pay-actions"><button type="button" data-pay-help="'+esc(o.id)+'">Order help</button><button type="button" data-pay-address="'+esc(o.id)+'">Addresses</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'" '+(amountMismatch||total==null||!Number.isFinite(total)?'disabled title="Order amount must be verified before payment"':'')+'>'+(amountMismatch?'Amount needs review':'Pay Now')+'</button></div>'+
     '</article>';
   }).join("");
 
@@ -2982,11 +2982,14 @@ if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>{
   else renderToPayOrders(e.target.value);
 });
 document.addEventListener("click",async e=>{
-  const close=e.target.closest("[data-pay-close]");if(close){
+  const close=e.target.closest("[data-pay-help]");if(close){
     showToast("This order is still recorded. For cancellation or changes, contact RANOVA support.");
     showPanel("helpPanel");return
   }
-  const address=e.target.closest("[data-pay-address]");if(address){showPanel("addressPanel");return}
+  const address=e.target.closest("[data-pay-address]");if(address){
+    showToast("Changing saved addresses does not change an existing order. Contact support to request an update.");
+    showPanel("addressPanel");return
+  }
   const pay=e.target.closest("[data-pay-now]");if(pay){
     const order=toPayOrders.find(x=>x.id===pay.dataset.payNow);if(!order)return;
     if(["paid","confirmed","cancelled","refunded"].includes(String(order.payment_status||"").toLowerCase())||
