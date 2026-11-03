@@ -65,7 +65,7 @@ Deno.serve(async(req:Request)=>{
       const parentIds=(parents||[]).map((p:any)=>p.id);
       if(!parentIds.length)return response(h,200,{ok:true,orders:[]});
       const {data:children,error:childError}=await admin.from("ranova_seller_orders")
-        .select("parent_order_id,order_ref,store_id,items,subtotal,delivery_fee,total,currency,payment_status,order_status,created_at")
+        .select("id,parent_order_id,order_ref,store_id,items,subtotal,delivery_fee,total,currency,payment_status,order_status,created_at")
         .in("parent_order_id",parentIds).order("created_at",{ascending:false}).limit(250);
       if(childError)throw childError;
       const storeIds=[...new Set((children||[]).map((o:any)=>o.store_id).filter(Boolean))];
