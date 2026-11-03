@@ -55,6 +55,38 @@ Deno.serve(async(req:Request)=>{
     const b=await req.json();
     const user=await optionalUser(req);
     const action=clean(b.action,40)||"lookup";
+    if(action==="buyer_history"){
+      // Authenticated account-scoped history; no phone-only listing or cross-buyer records.
+      if(!user)return response(h,401,{ok:false,error:"Sign in to view your order history."});
+      const {data:parents,error:parentError}=await admin.from("ranova_customer_orders")
+        .select("id,order_ref,status,payment_status,order_source,product_total,delivery_fee,total_payment,items,created_at")
+        .eq("buyer_user_id",user.id).order("created_at",{ascending:false}).limit(60);
+      if(parentError)throw parentError;
+      const parentIds=(parents||[]).map((p:any)=>p.id);
+      if(!parentIds.length)return response(h,200,{ok:true,orders:[]});
+      const {data:children,error:childError}=await admin.from("ranova_seller_orders")
+        .select("parent_order_id,order_ref,store_id,items,subtotal,delivery_fee,total,currency,payment_status,order_status,created_at")
+        .in("parent_order_id",parentIds).order("created_at",{ascending:false}).limit(250);
+      if(childError)throw childError;
+      const storeIds=[...new Set((children||[]).map((o:any)=>o.store_id).filter(Boolean))];
+      let stores:any[]=[];
+      if(storeIds.length){
+        const {data,error}=await admin.from("ranova_seller_stores").select("id,store_name").in("id",storeIds);
+        if(error)throw error;
+        stores=data||[];
+      }
+      const storeNames=new Map(stores.map((x:any)=>[x.id,x.store_name]));
+      return response(h,200,{ok:true,orders:(parents||[]).map((p:any)=>({
+        order_ref:p.order_ref,status:p.status,payment_status:p.payment_status,order_source:p.order_source,
+        product_total:p.product_total,delivery_fee:p.delivery_fee,total_payment:p.total_payment,
+        items:p.items||[],created_at:p.created_at,
+        seller_orders:(children||[]).filter((o:any)=>o.parent_order_id===p.id).map((o:any)=>({
+          order_ref:o.order_ref,store_name:storeNames.get(o.store_id)||"Marketplace seller",
+          items:o.items||[],subtotal:o.subtotal,delivery_fee:o.delivery_fee,total:o.total,
+          currency:o.currency||"GHS",payment_status:o.payment_status,order_status:o.order_status,created_at:o.created_at
+        }))
+      }))});
+    }
     const order_ref=clean(b.order_ref,90).toUpperCase();
     const phone=normalPhone(clean(b.phone,40));
     if(!order_ref||(!phone&&!user))return response(h,400,{ok:false,error:"Enter your order reference and phone number, or sign in to the buyer account that owns this order."});
