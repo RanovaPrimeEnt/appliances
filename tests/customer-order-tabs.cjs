@@ -26,9 +26,13 @@ const ctx={
   activePanelId:"homePanel",
   renders:0,
   window:{scrollTo(){}},
-  renderCustomerOrderView(){this.renders++},
-  showPanel(panel){this.shown=panel}
+  // Invoked as plain functions by app code, so do not rely on a bound 'this'.
+  renderCustomerOrderView:null,
+  showPanel:null,
+  closeCustomerOrderMenus() {}
 };
+ctx.renderCustomerOrderView=()=>{ctx.renders++};
+ctx.showPanel=panel=>{ctx.shown=panel};
 vm.createContext(ctx);
 vm.runInContext(extract("function navigateCustomerOrdersTab(tab){",'document.addEventListener("click",e=>{'),ctx);
 for(const [tab,panel,filter] of [
