@@ -2760,17 +2760,22 @@ function renderToPayOrders(filter=""){
 
   const pendingHtml=rows.map(o=>{
     const store=payStore(o.store_id)||{},items=Array.isArray(o.items)?o.items:[],currency="GHS";
-    const subtotal=o.subtotal==null?items.reduce((a,i)=>a+Number(i.line_total||0),0):Number(o.subtotal||0);
-    const delivery=Number(o.delivery_fee||0);
-    const total=o.total==null?(subtotal||0)+delivery:Number(o.total||0);
+    const itemAmountsKnown=items.length>0&&items.every(i=>i.line_total!=null&&i.line_total!==""&&Number.isFinite(Number(i.line_total)));
+    const lineSum=itemAmountsKnown?items.reduce((a,i)=>a+Number(i.line_total),0):null;
+    const subtotal=o.subtotal==null?null:Number(o.subtotal);
+    const amountMismatch=itemAmountsKnown&&subtotal!=null&&Number.isFinite(subtotal)&&Math.abs(lineSum-subtotal)>.011;
+    const delivery=o.delivery_fee==null?null:Number(o.delivery_fee);
+    const total=o.total==null?null:Number(o.total);
     return '<article class="pay-order" data-pay-order="'+esc(o.id)+'">'+
       '<div class="pay-store"><span class="pay-store-avatar">'+(store.logo_url?'<img src="'+esc(store.logo_url)+'" alt="">':'🏪')+'</span><b>'+esc(store.store_name||"RANOVA Store")+'</b><span class="pay-status">To Pay</span></div>'+
       (items.length?items.map(i=>'<div class="pay-item">'+
         (payItemImage(i)?'<img class="pay-item-img" src="'+esc(payItemImage(i))+'" alt="'+esc(i.product_name||"Product")+'">':'<div class="pay-item-img" style="display:grid;place-items:center;color:#999">Product</div>')+
         '<div class="pay-item-copy"><div class="pay-item-title">'+esc(i.product_name||"Product")+'</div><div class="pay-item-meta">'+esc(i.sku||i.unit_label||"")+'</div><div class="pay-price">'+esc(i.unit_price==null?"Price pending":money(i.unit_price,currency))+'</div><span class="pay-qty">×'+esc(i.quantity||1)+'</span><div class="pay-benefit">RANOVA protected marketplace order</div></div></div>').join("")
         :'<div class="pay-item"><div class="pay-item-img"></div><div class="pay-item-copy"><div class="pay-item-title">Marketplace order</div></div></div>')+
-      '<div class="pay-total-row"><span>Delivery '+esc(money(delivery,currency))+'</span><span>Amount due</span><strong>'+esc(total?money(total,currency):"Awaiting quote")+'</strong></div><div style="margin:8px 11px;padding:9px 10px;border-radius:10px;background:#fff7ef;color:#75401f;font-size:9px;line-height:1.45"><b>RANOVA Buyer Protection</b><br>Your payment is recorded against this order. The seller is not paid immediately; payout waits for the required delivery and protection checks.</div>'+
-      '<div class="pay-actions"><button type="button" data-pay-close="'+esc(o.id)+'">Close</button><button type="button" data-pay-address="'+esc(o.id)+'">Modify Address</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'">Pay Now</button></div>'+
+      '<div class="pay-total-row"><span>Delivery '+esc(delivery==null?"To confirm":money(delivery,currency))+'</span><span>Amount due</span><strong>'+esc(total!=null&&Number.isFinite(total)?money(total,currency):"Awaiting quote")+'</strong></div>'+
+      (amountMismatch?'<div class="pay-amount-warning" role="alert">The recorded product subtotal does not match the item amounts. Contact RANOVA to verify the order before paying.</div>':'')+
+      '<div style="margin:8px 11px;padding:9px 10px;border-radius:10px;background:#fff7ef;color:#75401f;font-size:9px;line-height:1.45"><b>RANOVA Buyer Protection</b><br>Payment is not confirmed until RANOVA verifies it. Seller payout remains subject to the required delivery and protection checks.</div>'+
+      '<div class="pay-actions"><button type="button" data-pay-close="'+esc(o.id)+'">Close</button><button type="button" data-pay-address="'+esc(o.id)+'">Modify Address</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'" '+(amountMismatch||total==null||!Number.isFinite(total)?'disabled title="Order amount must be verified before payment"':'')+'>'+(amountMismatch?'Amount needs review':'Pay Now')+'</button></div>'+
     '</article>';
   }).join("");
 
@@ -2860,6 +2865,11 @@ document.addEventListener("click",async e=>{
   const address=e.target.closest("[data-pay-address]");if(address){showPanel("addressPanel");return}
   const pay=e.target.closest("[data-pay-now]");if(pay){
     const order=toPayOrders.find(x=>x.id===pay.dataset.payNow);if(!order)return;
+    const orderItems=Array.isArray(order.items)?order.items:[];
+    if(order.subtotal!=null&&orderItems.length&&orderItems.every(i=>i.line_total!=null&&i.line_total!==""&&Number.isFinite(Number(i.line_total)))&&
+      Math.abs(orderItems.reduce((sum,i)=>sum+Number(i.line_total),0)-Number(order.subtotal))>.011){
+      showToast("Order amounts differ. Contact RANOVA before paying.");return;
+    }
     const parent=order.parent_order||null;
     const paymentRef=parent?.order_ref;
     if(!paymentRef){showToast("This order is not linked to a payable customer order. Refresh To Pay.");return}
