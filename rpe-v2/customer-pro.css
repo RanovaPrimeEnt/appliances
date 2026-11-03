@@ -623,3 +623,22 @@ linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shado
 #toPayPanel .ranova-order-discover-grid .pay-product{display:block;text-align:left;min-width:0}
 #toPayPanel .ranova-order-discover-grid img{width:100%;aspect-ratio:1;object-fit:cover}
 #toPayPanel .ranova-order-product-placeholder{background:#e7eeea;color:#738177;aspect-ratio:1;display:grid;place-items:center;font-size:12px}
+
+
+/* RANOVA customer order controls — compact video-matched layout */
+#toPayPanel .pay-head{position:sticky;top:0;z-index:24;background:#fff;box-shadow:0 1px 0 #e9ede9}
+#toPayPanel .pay-head-row{grid-template-columns:36px minmax(0,1fr)36px 36px;gap:6px}
+#toPayPanel .pay-search{min-width:0;font-size:13px;background:#f4f5f4;color:#202820}
+#toPayPanel .pay-tabs{display:flex;overflow-x:auto;gap:23px;white-space:nowrap;padding:0 14px 9px;scrollbar-width:none;scroll-snap-type:x proximity}
+#toPayPanel .pay-tab{min-height:43px;padding:9px 0 12px;scroll-snap-align:start;color:#777f78;font-size:13px}
+#toPayPanel .pay-tab.active{color:#174b35;font-weight:850}
+#toPayPanel .pay-tab.active::after{height:3px;width:34px;background:#f97316}
+#toPayPanel .ranova-order-popmenu[hidden]{display:none!important}
+#toPayPanel .ranova-order-popmenu{display:grid;position:absolute;right:11px;top:54px;z-index:26;min-width:205px;max-width:calc(100% - 20px);padding:7px;background:#fff;border:1px solid #e9ede9;border-radius:12px;box-shadow:0 9px 27px #193d2824}
+#toPayPanel .ranova-order-popmenu button{display:flex;justify-content:space-between;gap:10px;align-items:center;width:100%;min-height:43px;border:0;border-radius:8px;background:#fff;color:#263a2f;font-size:13px;font-weight:650;text-align:left;padding:9px 11px}
+#toPayPanel .ranova-order-popmenu button:hover,#toPayPanel .ranova-order-popmenu button:focus-visible{background:#f2f7f3}
+#toPayPanel .ranova-order-menu-title{padding:7px 11px 4px;color:#88958c;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+#toPayPanel .ranova-order-popmenu button span{color:#f97316}
+#toPayPanel #toPayOrders[hidden],#toPayPanel #payHistoryOrders[hidden]{display:none!important}
+#toPayPanel .pay-actions button{min-height:38px;font-size:12px;padding:8px 12px}
+#toPayPanel .pay-actions .pay-now{font-weight:850;color:#f97316;background:#fff1e7}
