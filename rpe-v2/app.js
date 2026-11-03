@@ -1914,8 +1914,8 @@ function marketplaceOrderCard(title,ref,items,currency,delivery,total,state,acti
     '<div class="ranova-order-total"><span>Delivery: '+esc(delivery==null?"To confirm":money(delivery,currency))+'</span>'+
       '<strong>Total: '+esc(total==null?"To confirm":money(total,currency))+'</strong></div>'+
     '<div class="ranova-order-actions"><button type="button" '+
-      (action==="pay"?'data-open-pay-orders':'data-market-order-ref="'+esc(parentRef)+'"')+
-      '>'+esc(action==="pay"?"Payment options":"View order & tracking")+'</button></div></article>';
+      (action==="pay"?'data-open-pay-orders':action==="review"?'data-write-review="'+esc(parentRef)+'"':'data-market-order-ref="'+esc(parentRef)+'"')+
+      '>'+esc(action==="pay"?"Payment options":action==="review"?"Write review":"View order & tracking")+'</button></div></article>';
 }
 function customerOrderItemMarkup(item,currency,marketplace){
   const name=item.product_name_snapshot||item.product_name||item.name||"Product";
@@ -1967,7 +1967,8 @@ function renderOrders(targetHost){
       const pay=tab==="pay";
       fullMarketplace.push(marketplaceOrderCard(child.store_name||"Marketplace seller",child.order_ref,
         Array.isArray(child.items)?child.items:[],child.currency||"GHS",child.delivery_fee,
-        child.total,tab==="pay"?"To Pay":statusLabel(child.order_status),pay?"pay":"view",parent.order_ref));
+        child.total,tab==="pay"?"To Pay":statusLabel(child.order_status),
+        active==="review"?"review":(pay?"pay":"view"),parent.order_ref));
     });
     const own=(Array.isArray(parent.items)?parent.items:[]).filter(i=>i.source==="ranova_catalogue"||(!children.length&&i.source!=="seller_store"));
     if(own.length){
@@ -2011,6 +2012,10 @@ function renderOrders(targetHost){
   host.querySelectorAll("[data-market-order-ref]").forEach(b=>b.onclick=()=>{
     customerOrderReturnTab=customerOrderActiveTab();
     openMarketplaceOrder(b.dataset.marketOrderRef);
+  });
+  host.querySelectorAll("[data-write-review]").forEach(b=>b.onclick=()=>{
+    const ref=b.dataset.writeReview;if(!ref)return;
+    location.href="../all/order-status.html?ref="+encodeURIComponent(ref);
   });
   host.querySelectorAll("[data-go-shopping]").forEach(b=>b.onclick=()=>showPanel("marketplaceHomePanel"));
 }
