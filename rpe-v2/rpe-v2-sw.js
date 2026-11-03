@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v91";
+const CACHE="ranova-rpe-v2-shell-v92";
 const IMAGE_CACHE="ranova-rpe-v2-images-v1";
 const CORE=[
   "../all/fonts/inter-0.woff2",
@@ -24,7 +24,7 @@ const CORE=[
   "./customer-app.webmanifest",
   "./customer-pwa.js?v=20261005-v3a75",
   "./customer-pro.js?v=20261005-v3a75",
-  "./customer-pro.css?v=20261103-buyer-chat-orders",
+  "./customer-pro.css?v=20261103-checkout-layout",
   "./report-store.html",
   "./ranova-prime-store.html",
   "./admin.html",
@@ -78,7 +78,7 @@ async function networkFirst(request){
     if(cached)return cached;
     // Timestamped CSS URLs must still work from the pre-cached stylesheet offline.
     if(new URL(request.url).pathname.endsWith("/customer-pro.css")){
-      const offlineCss=await caches.match("./customer-pro.css?v=20261103-buyer-chat-orders");
+      const offlineCss=await caches.match("./customer-pro.css?v=20261103-checkout-layout");
       if(offlineCss)return offlineCss;
     }
     if(request.mode==="navigate"){
