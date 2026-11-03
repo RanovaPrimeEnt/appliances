@@ -388,7 +388,12 @@ function showPanel(id){
   // the browser has displayed the tapped section.
   afterPaint(()=>{
     if(id==="notifPanel"){if(!panelIsPainted(id)){renderNotifications();markPanelPainted(id)}markNotificationsRead().catch(()=>{})}
-    else if(id==="ordersPanel"){if(!panelIsPainted(id)){renderOrders();markPanelPainted(id)}}
+    else if(id==="ordersPanel"){
+      if(!panelIsPainted(id)){renderOrders();markPanelPainted(id)}
+      if(user&&Date.now()-toPayLoadedAt>30000){
+        loadToPayOrders().then(()=>{if(activePanelId==="ordersPanel")renderOrders()}).catch(()=>{});
+      }
+    }
     else if(id==="savedPanel"){if(!panelIsPainted(id)){renderSaved();markPanelPainted(id)}}
     else if(id==="recentPanel"){if(!panelIsPainted(id)){renderRecent();markPanelPainted(id)}}
     else if(id==="addressPanel"){if(!panelIsPainted(id)){renderAddresses();markPanelPainted(id)}}
@@ -1802,12 +1807,77 @@ function orderMatches(o){
   }
   return o.order_status===orderFilter;
 }
-function renderOrders(){
-  const list=orders.filter(orderMatches);$("ordersList").innerHTML=list.length?list.map(o=>`<button class="list-row" style="width:100%;background:#fff;text-align:left" data-order="${o.id}">
-    <div><b>${esc(o.order_number)}</b><small>${o.order_items?.length||0} item(s) • ${new Date(o.created_at).toLocaleDateString()}</small></div><span class="status-chip">${esc(statusLabel(o.order_status))}</span>
-  </button>`).join(""):'<div class="empty"><b>No orders here yet</b>Your matching orders will appear automatically.</div>';
-  $("ordersList").querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
+function customerOrderTab(status){
+  if(["awaiting_confirmation","awaiting_payment","quote_pending","pending_payment"].includes(status))return "pay";
+  if(["payment_confirmed","preparing","ready_for_dispatch"].includes(status))return "ship";
+  if(["dispatched","out_for_delivery"].includes(status))return "receive";
+  if(["delivered","completed"].includes(status))return "completed";
+  if(["return_requested","returned","refund_pending","refunded","cancelled"].includes(status))return "returns";
+  return "other";
 }
+function customerOrderItemMarkup(item,currency,marketplace){
+  const name=item.product_name_snapshot||item.product_name||item.name||"Product";
+  const qty=item.quantity==null?"—":item.quantity;
+  const unit=item.unit_price==null?"Price to confirm":money(item.unit_price,currency);
+  const variant=item.sku_snapshot||item.sku||item.unit_label||"";
+  const photo=marketplace&&item.image_url?'<img src="'+esc(item.image_url)+'" loading="lazy" alt="'+esc(name)+'" referrerpolicy="no-referrer">':'<span class="ranova-order-photo-empty" aria-hidden="true">▣</span>';
+  return '<div class="ranova-order-item"><div class="ranova-order-photo">'+photo+'</div>'+
+    '<div class="ranova-order-item-body"><b>'+esc(name)+'</b>'+
+    (variant?'<small>'+esc(variant)+'</small>':'')+
+    '<div class="ranova-order-price"><span>'+esc(unit)+'</span><span>×'+esc(qty)+'</span></div></div></div>';
+}
+function renderOrders(){
+  const host=$("ordersList");if(!host)return;
+  const active=orderFilter==="receive"?"receive":orderFilter==="returns"?"returns":
+    ["awaiting_confirmation","awaiting_payment","quote_pending"].includes(orderFilter)?"pay":
+    ["preparing","payment_confirmed","ready_for_dispatch"].includes(orderFilter)?"ship":
+    orderFilter==="delivered"?"completed":orderFilter||"all";
+  document.querySelectorAll("#ordersPanel [data-orders-tab]").forEach(b=>{
+    const selected=b.dataset.ordersTab===active;
+    b.classList.toggle("active",selected);b.setAttribute("aria-pressed",selected?"true":"false");
+  });
+  const matchesTab=(status)=>!orderFilter||active==="all"||active==="international"||
+    customerOrderTab(status)===active;
+  const legacy=orders.filter(o=>{
+    if(active==="international")return orderMatches(o);
+    return matchesTab(o.order_status);
+  }).map(o=>{
+    const items=Array.isArray(o.order_items)?o.order_items:[];
+    const date=new Date(o.created_at);
+    const dateText=Number.isNaN(date.getTime())?"":date.toLocaleDateString("en-GH");
+    const total=o.total==null?"Price to confirm":money(o.total,o.currency||"GHS");
+    return '<article class="ranova-customer-order">'+
+      '<div class="ranova-order-store"><span>▣</span><b>RANOVA Order</b><span class="ranova-order-state">'+esc(statusLabel(o.order_status))+'</span></div>'+
+      '<div class="ranova-order-reference">'+esc(o.order_number||"Order")+(dateText?' · '+esc(dateText):'')+'</div>'+
+      (items.length?items.map(i=>customerOrderItemMarkup(i,o.currency||"GHS",false)).join(""):'<div class="ranova-order-note">Item details available in the order summary.</div>')+
+      '<div class="ranova-order-total"><span>Delivery: '+esc(o.delivery_fee==null?"To confirm":money(o.delivery_fee,o.currency||"GHS"))+'</span><strong>Total: '+esc(total)+'</strong></div>'+
+      '<div class="ranova-order-actions"><button type="button" data-order="'+esc(o.id)+'">View details</button></div></article>';
+  });
+  // The marketplace payment endpoint currently returns unpaid seller orders only.
+  // Do not invent delivered, shipped or paid seller orders from this response.
+  const seller=(active==="all"||active==="pay")?toPayOrders.filter(o=>{
+    return !["paid","confirmed","cancelled","refunded"].includes(String(o.payment_status||"").toLowerCase());
+  }).map(o=>{
+    const store=toPayStores.find(x=>x.id===o.store_id)||{};
+    const items=Array.isArray(o.items)?o.items:[];
+    const total=o.total==null?"Price to confirm":money(o.total,"GHS");
+    return '<article class="ranova-customer-order">'+
+      '<div class="ranova-order-store"><span>▣</span><b>'+esc(store.store_name||"Marketplace seller")+'</b><span class="ranova-order-state">To Pay</span></div>'+
+      '<div class="ranova-order-reference">'+esc(o.order_ref||"Seller order")+'</div>'+
+      (items.length?items.map(i=>customerOrderItemMarkup(i,"GHS",true)).join(""):'<div class="ranova-order-note">Item details unavailable.</div>')+
+      '<div class="ranova-order-total"><span>Delivery: '+esc(o.delivery_fee==null?"To confirm":money(o.delivery_fee,"GHS"))+'</span><strong>Amount due: '+esc(total)+'</strong></div>'+
+      '<div class="ranova-order-actions"><button type="button" data-open-pay-orders>View payment options</button></div></article>';
+  }):[];
+  const cards=[...seller,...legacy];
+  host.innerHTML=cards.length?cards.join(""):'<div class="empty"><b>No matching orders</b>Orders will appear here when available.</div>';
+  host.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
+  host.querySelectorAll("[data-open-pay-orders]").forEach(b=>b.onclick=()=>showPanel("toPayPanel"));
+}
+document.querySelectorAll("#ordersPanel [data-orders-tab]").forEach(b=>b.addEventListener("click",()=>{
+  const tab=b.dataset.ordersTab;
+  orderFilter=({all:null,pay:"awaiting_payment",ship:"preparing",receive:"receive",completed:"delivered",returns:"returns"})[tab]||null;
+  renderOrders();
+}));
 function deliveryStatusLabel(s){return ({
   pending_quote:"Delivery quote pending",awaiting_dispatch:"Awaiting dispatch",assigned:"Courier assigned",
   picked_up:"Picked up",in_transit:"In transit",out_for_delivery:"Out for delivery",
