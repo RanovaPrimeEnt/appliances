@@ -9,6 +9,10 @@ const placeOrder=fs.readFileSync(path.join(root,"rpe-v2/supabase/functions/ranov
 assert.ok(!placeOrder.includes("return out.slice(0,100)"),"Never truncate checkout lines silently");
 assert.match(placeOrder,/b\.items\.length>100/, "Oversized checkout must be rejected explicitly");
 assert.match(placeOrder,/so no products are omitted/, "Oversized checkout error must explain the limit");
+assert.match(placeOrder,/Number\.isSafeInteger\(suppliedQuantity\)/,"Reject fractional, nonfinite and unsafe checkout quantities");
+assert.match(placeOrder,/suppliedQuantity>10000/,"Apply a per-line checkout quantity ceiling");
+assert.match(placeOrder,/sellerProductIds\.has\(seller_product_id\)/,"Reject duplicate seller lines before per-line stock checks");
+assert.match(placeOrder,/sellerProductIds\.add\(seller_product_id\)/,"Track seller products within a checkout");
 
 
 // Backend contract: one child seller order per store in a marketplace checkout.
