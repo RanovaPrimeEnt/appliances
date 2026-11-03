@@ -2809,7 +2809,20 @@ function renderToPayOrders(filter=""){
     const s=payStore(o.store_id),items=Array.isArray(o.items)?o.items:[];
     return !q||[o.order_ref,s?.store_name,...items.flatMap(i=>[i.product_name,i.sku])].some(x=>String(x||"").toLowerCase().includes(q));
   });
-  if(!rows.length){
+  // Some authenticated seller orders can be absent from the payment-list feed.
+  // Still display them, but do not offer Pay Now unless the payable order endpoint supports them.
+  const seenRefs=new Set(rows.map(o=>String(o.order_ref||"")).filter(Boolean));
+  const fallback=[];
+  marketplaceOrderHistory.forEach(parent=>{
+    (Array.isArray(parent.seller_orders)?parent.seller_orders:[]).forEach(child=>{
+      if(marketplaceSellerOrderTab(child,parent)!=="pay")return;
+      if(!child.order_ref||seenRefs.has(child.order_ref))return;
+      seenRefs.add(child.order_ref);
+      const text=[child.order_ref,child.store_name,...(Array.isArray(child.items)?child.items:[]).map(i=>i.product_name||i.name)].join(" ").toLowerCase();
+      if(!q||text.includes(q))fallback.push({child,parent});
+    });
+  });
+  if(!rows.length&&!fallback.length){
     host.innerHTML='<div class="pay-empty"><b>No unpaid orders</b>Your orders that still need payment will appear here.</div>';
     return;
   }
@@ -2853,7 +2866,14 @@ function renderToPayOrders(filter=""){
       '</div></section>';
   }).join("");
 
-  host.innerHTML=pendingHtml+recommendationSections;
+  const sortedFallback=customerOrderSort==="oldest"?fallback.reverse():fallback;
+  const fallbackHtml=sortedFallback.map(({child,parent})=>marketplaceOrderCard(
+    child.store_name||"Marketplace seller",child.order_ref,
+    Array.isArray(child.items)?child.items:[],child.currency||"GHS",child.delivery_fee,
+    child.total,"To Pay","view",parent.order_ref
+  )).join("");
+  host.innerHTML=pendingHtml+fallbackHtml+recommendationSections;
+  host.querySelectorAll("[data-market-order-ref]").forEach(button=>button.onclick=()=>openMarketplaceOrder(button.dataset.marketOrderRef));
 }
 function showPaymentReceived(orderRef=""){
   clearInterval(paymentStatusTimer);paymentStatusTimer=null;
