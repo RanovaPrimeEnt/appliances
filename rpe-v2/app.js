@@ -2007,7 +2007,7 @@ function renderOrders(targetHost){
   host.innerHTML=(marketplaceHistoryError?'<div class="ranova-orders-notice">Some marketplace history could not be loaded. Refresh to try again.</div>':'')+
     (cards.length?cards.join(""):'<div class="ranova-orders-empty"><span aria-hidden="true">📦</span><b>'+esc(emptyTitle)+'</b><p>Orders will appear here when their verified status changes.</p><button type="button" data-go-shopping>Explore products</button></div>'+discover);
   host.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
-  host.querySelectorAll("[data-open-pay-orders]").forEach(b=>b.onclick=()=>showPanel("toPayPanel"));
+  host.querySelectorAll("[data-open-pay-orders]").forEach(b=>b.onclick=()=>navigateCustomerOrdersTab("pay"));
   host.querySelectorAll("[data-market-order-ref]").forEach(b=>b.onclick=()=>{
     customerOrderReturnTab=customerOrderActiveTab();
     openMarketplaceOrder(b.dataset.marketOrderRef);
