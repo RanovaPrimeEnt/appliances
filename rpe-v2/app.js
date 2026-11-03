@@ -2821,6 +2821,7 @@ async function loadToPayOrders(prefetch=false){
   if(prefetch&&toPayOrders.length&&Date.now()-toPayLoadedAt<30000)return;
   const out=await messageApi({action:"buyer_payment_orders"});
   toPayOrders=out.orders||[];toPayStores=out.stores||[];toPayRecommendations=out.recommendations||[];toPayLoadedAt=Date.now();saveFastCache();
+  if(messageConversations.length)renderMessageList();
   if(activePanelId==="toPayPanel")renderCustomerOrderView();
   else renderToPayOrders($("toPaySearch")?.value||"");
   markPanelPainted("toPayPanel");
@@ -3177,7 +3178,13 @@ function messageAvatar(store,cls="msg-avatar"){
   return '<span class="'+cls+'">'+(store?.logo_url?'<img src="'+esc(store.logo_url)+'" alt="'+esc(store.store_name||"Store")+'">':animalAvatar(store?.id||store?.store_name))+'</span>';
 }
 function msgPreview(c){
-  const m=c.last_message;if(!m)return "Start a conversation";
+  const m=c.last_message;
+  if(!m&&user&&c.store?.id&&toPayOrders.some(order=>
+    String(order.store_id)===String(c.store.id)&&
+    !["paid","confirmed","cancelled","refunded"].includes(String(order.payment_status||"").toLowerCase())&&
+    !["cancelled","delivered","refunded"].includes(String(order.order_status||"").toLowerCase())
+  ))return "Order awaiting payment · View order details";
+  if(!m)return "Start a conversation";
   return m.body||({image:"📷 Photo",audio:"🎙 Voice note",file:"📎 Attachment",rfq:"Quotation request",quote:"Seller quotation",quote_status:"Quote update"}[m.message_type]||prettyKey(m.message_type));
 }
 function messageTime(v){const d=new Date(v);if(Number.isNaN(d.getTime()))return "";const now=new Date();return d.toDateString()===now.toDateString()?d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):d.toLocaleDateString([],{month:"2-digit",day:"2-digit"})}
@@ -3454,7 +3461,9 @@ function customerConversationOrderCards(){
         '<small>'+esc(items.length>1?items.length+" product lines":"Quantity: "+String(first.quantity||1))+'</small>'+
         '<strong>'+esc(total)+'</strong></div></div>'+
       '<div class="msg-order-note">Store: '+esc(order.store_name||messageCurrent.store?.store_name||"RANOVA seller")+'</div>'+
-      '<div class="msg-order-note">Delivery: '+esc(order.delivery_fee==null?"To confirm":money(order.delivery_fee,order.currency||"GHS"))+'</div>'+
+      (parent.customer_name?'<div class="msg-order-note">Recipient: '+esc(parent.customer_name)+'</div>':'')+
+      (parent.delivery_location?'<div class="msg-order-note">Delivery address: '+esc(parent.delivery_location)+'</div>':'')+
+      '<div class="msg-order-note">Delivery fee: '+esc(order.delivery_fee==null?"To confirm":money(order.delivery_fee,order.currency||"GHS"))+'</div>'+
       '<div class="msg-order-disclosure">Secure payment and delivery updates are verified by RANOVA.</div></div>'+
       '<button class="msg-order-action" type="button" data-conversation-order="'+esc(reference)+'" data-conversation-order-status="'+esc(status)+'">'+
       (paymentRequired?"Review payment options":"View order details")+'</button></article>';
