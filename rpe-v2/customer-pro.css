@@ -546,3 +546,34 @@ linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shado
 /* Fill the top space with the existing Buyer Account orange gradient. */
 #homePanel .me-premium-head{border-top:0;margin-top:-10px}
 #homePanel .me-premium-head::before{content:"";position:absolute;left:0;right:0;top:0;height:10px;background:linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);pointer-events:none}
+
+
+/* RANOVA V2 My Orders — customer store-grouped order history */
+#ordersPanel.ranova-orders-panel{background:#f7f9f7}
+#ordersPanel .ranova-orders-tabs{display:flex;gap:5px;overflow-x:auto;padding:10px 12px 13px;scrollbar-width:thin;border-bottom:1px solid #e1e9e2}
+#ordersPanel .ranova-orders-tabs button{border:0;border-radius:10px;background:transparent;color:#566b5e;font-size:12px;font-weight:750;white-space:nowrap;min-height:38px;padding:0 12px;cursor:pointer}
+#ordersPanel .ranova-orders-tabs button.active{background:#e4f2e8;color:#15583c;box-shadow:inset 0 -2px #f97316}
+#ordersPanel .ranova-orders-list{display:grid;gap:14px;padding:15px 12px 20px}
+#ordersPanel .ranova-customer-order{border:1px solid #e0e8e1;border-radius:17px;background:#fff;overflow:hidden;box-shadow:0 4px 17px rgba(21,67,40,.05)}
+#ordersPanel .ranova-order-store{display:flex;align-items:center;gap:8px;padding:14px 15px 8px;color:#203b2e;min-width:0}
+#ordersPanel .ranova-order-store>b{font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ordersPanel .ranova-order-store>span:first-child{color:#1c7450;font-size:18px}
+#ordersPanel .ranova-order-state{font-size:11px;color:#b55224;font-weight:750;margin-left:auto;white-space:nowrap}
+#ordersPanel .ranova-order-reference{color:#708276;font-size:11px;padding:0 15px 11px;overflow-wrap:anywhere}
+#ordersPanel .ranova-order-item{display:flex;align-items:flex-start;gap:12px;padding:10px 15px;border-top:1px solid #f0f3f0}
+#ordersPanel .ranova-order-photo{width:72px;height:72px;flex:none;overflow:hidden;background:#f3f6f3;border-radius:10px;display:grid;place-items:center}
+#ordersPanel .ranova-order-photo img{width:100%;height:100%;object-fit:cover}
+#ordersPanel .ranova-order-photo-empty{font-size:28px;color:#b4c3b9}
+#ordersPanel .ranova-order-item-body{min-width:0;flex:1}
+#ordersPanel .ranova-order-item-body>b{display:block;font-size:13px;line-height:1.4;color:#21372b;overflow-wrap:anywhere}
+#ordersPanel .ranova-order-item-body>small{display:block;margin-top:4px;color:#76877b;font-size:11px}
+#ordersPanel .ranova-order-price{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;font-weight:750;font-size:12px;color:#1b3e2d}
+#ordersPanel .ranova-order-price span:last-child{color:#6c796f;font-weight:600}
+#ordersPanel .ranova-order-note{padding:12px 15px;color:#66786b;font-size:12px}
+#ordersPanel .ranova-order-total{border-top:1px solid #edf0ec;padding:13px 15px;display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+#ordersPanel .ranova-order-total>span{font-size:11px;color:#6a776d}
+#ordersPanel .ranova-order-total strong{font-size:14px;color:#173c2a}
+#ordersPanel .ranova-order-actions{padding:0 15px 14px;display:flex;justify-content:flex-end}
+#ordersPanel .ranova-order-actions button{border:1px solid #d6e5d9;background:#fff;color:#135b3e;font-weight:750;border-radius:999px;padding:9px 17px;min-height:38px;cursor:pointer;font-size:12px}
+#ordersPanel .ranova-order-actions button:hover{background:#eff7f1}
+@media(max-width:460px){#ordersPanel .ranova-orders-tabs button{padding:0 10px}#ordersPanel .ranova-order-photo{width:64px;height:64px}#ordersPanel .ranova-order-item{gap:9px;padding:10px 12px}#ordersPanel .ranova-order-store,#ordersPanel .ranova-order-reference{padding-left:12px;padding-right:12px}}
