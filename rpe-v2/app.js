@@ -84,6 +84,8 @@ let toPayRecommendations = [];
 let marketplaceOrderHistory = [];
 let marketplaceHistoryLoadedAt = 0;
 let marketplaceHistoryError = "";
+let customerOrderSort = "newest";
+let customerOrderReturnTab = "all";
 let marketStores=[],marketSellerProducts=[],marketLoadedAt=0,marketFetchInFlight=false;
 let myStoresMode="saved";
 
@@ -1875,7 +1877,10 @@ function marketplaceSellerOrderTab(child,parent){
   if(status==="cancelled")return "cancelled";
   if(["delivered","completed"].includes(status))return "completed";
   if(["dispatched","out_for_delivery","in_transit","picked_up"].includes(status))return "receive";
-  if(["paid","confirmed"].includes(payment)||["payment_confirmed","preparing","ready_for_dispatch"].includes(status))return "ship";
+  if(["payment_confirmed","preparing","ready_for_dispatch"].includes(status)){
+    return ["paid","confirmed"].includes(payment)?"ship":"pay";
+  }
+  if(["paid","confirmed"].includes(payment))return "ship";
   return "pay";
 }
 async function loadMarketplaceOrderHistory(){
@@ -1916,7 +1921,7 @@ function customerOrderItemMarkup(item,currency,marketplace){
   const qty=item.quantity==null?"—":item.quantity;
   const unit=item.unit_price==null?"Price to confirm":money(item.unit_price,currency);
   const variant=item.sku_snapshot||item.sku||item.unit_label||"";
-  const photo=marketplace&&item.image_url?'<img src="'+esc(item.image_url)+'" loading="lazy" alt="'+esc(name)+'" referrerpolicy="no-referrer">':'<span class="ranova-order-photo-empty" aria-hidden="true">▣</span>';
+  const photo=item.image_url?'<img src="'+esc(item.image_url)+'" loading="lazy" alt="'+esc(name)+'" referrerpolicy="no-referrer">':'<span class="ranova-order-photo-empty" aria-hidden="true">▣</span>';
   return '<div class="ranova-order-item"><div class="ranova-order-photo">'+photo+'</div>'+
     '<div class="ranova-order-item-body"><b>'+esc(name)+'</b>'+
     (variant?'<small>'+esc(variant)+'</small>':'')+
@@ -1955,8 +1960,9 @@ function renderOrders(targetHost){
     children.forEach(child=>{
       if(child.order_ref)seenSellerRefs.add(child.order_ref);
       const tab=marketplaceSellerOrderTab(child,parent);
-      if(active!=="all"&&active!==tab&&!(active==="review"&&child.review_eligible===true))return;
-      if(active==="review"&&child.review_eligible!==true)return;
+      if(active==="review"){
+        if(child.review_eligible!==true)return;
+      }else if(active!=="all"&&active!==tab)return;
       const pay=tab==="pay";
       fullMarketplace.push(marketplaceOrderCard(child.store_name||"Marketplace seller",child.order_ref,
         Array.isArray(child.items)?child.items:[],child.currency||"GHS",child.delivery_fee,
@@ -1988,6 +1994,7 @@ function renderOrders(targetHost){
       '<div class="ranova-order-actions"><button type="button" data-open-pay-orders>View payment options</button></div></article>';
   }):[];
   const cards=[...fullMarketplace,...seller,...legacy];
+  if(customerOrderSort==="oldest")cards.reverse();
   const emptyTitle=({all:"No orders yet",ship:"Nothing to ship",receive:"Nothing on the way",completed:"No completed orders",returns:"No returns or refunds",review:"Nothing to review"})[active]||"No matching orders";
   const discover=cards.length?"":
     '<section class="ranova-order-discover"><h4>Discover something new</h4><div class="ranova-order-discover-grid">'+
@@ -2000,7 +2007,10 @@ function renderOrders(targetHost){
     (cards.length?cards.join(""):'<div class="ranova-orders-empty"><span aria-hidden="true">📦</span><b>'+esc(emptyTitle)+'</b><p>Orders will appear here when their verified status changes.</p><button type="button" data-go-shopping>Explore products</button></div>'+discover);
   host.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
   host.querySelectorAll("[data-open-pay-orders]").forEach(b=>b.onclick=()=>showPanel("toPayPanel"));
-  host.querySelectorAll("[data-market-order-ref]").forEach(b=>b.onclick=()=>openMarketplaceOrder(b.dataset.marketOrderRef));
+  host.querySelectorAll("[data-market-order-ref]").forEach(b=>b.onclick=()=>{
+    customerOrderReturnTab=customerOrderActiveTab();
+    openMarketplaceOrder(b.dataset.marketOrderRef);
+  });
   host.querySelectorAll("[data-go-shopping]").forEach(b=>b.onclick=()=>showPanel("marketplaceHomePanel"));
 }
 
@@ -2836,7 +2846,7 @@ function renderToPayOrders(filter=""){
       '</div></section>';
   }).join("");
 
-  host.innerHTML=pendingHtml+recommendationSections;
+  host.innerHTML=(customerOrderSort==="oldest"?pendingHtml.split('<!-- never-split -->').join(''):pendingHtml)+recommendationSections;
 }
 function showPaymentReceived(orderRef=""){
   clearInterval(paymentStatusTimer);paymentStatusTimer=null;
@@ -2904,10 +2914,17 @@ if($("toPaySearch"))$("toPaySearch").addEventListener("input",e=>{
   else renderToPayOrders(e.target.value);
 });
 document.addEventListener("click",async e=>{
-  const close=e.target.closest("[data-pay-close]");if(close){const card=close.closest(".pay-order");if(card)card.style.display="none";return}
+  const close=e.target.closest("[data-pay-close]");if(close){
+    showToast("This order is still recorded. For cancellation or changes, contact RANOVA support.");
+    showPanel("helpPanel");return
+  }
   const address=e.target.closest("[data-pay-address]");if(address){showPanel("addressPanel");return}
   const pay=e.target.closest("[data-pay-now]");if(pay){
     const order=toPayOrders.find(x=>x.id===pay.dataset.payNow);if(!order)return;
+    if(["paid","confirmed","cancelled","refunded"].includes(String(order.payment_status||"").toLowerCase())||
+      ["cancelled","delivered"].includes(String(order.order_status||"").toLowerCase())){
+      showToast("This order is no longer payable. Refresh your orders.");return;
+    }
     const orderItems=Array.isArray(order.items)?order.items:[];
     if(order.subtotal!=null&&orderItems.length&&orderItems.every(i=>i.line_total!=null&&i.line_total!==""&&Number.isFinite(Number(i.line_total)))&&
       Math.abs(orderItems.reduce((sum,i)=>sum+Number(i.line_total),0)-Number(order.subtotal))>.011){
