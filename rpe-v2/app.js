@@ -1851,6 +1851,7 @@ function marketplaceSellerOrderTab(child,parent){
 }
 async function loadMarketplaceOrderHistory(){
   if(!user)return;
+  const requestedBuyerId=user.id;
   try{
     const {data:{session}}=await sb.auth.getSession();
     if(!session)throw Error("Sign in to view marketplace orders.");
@@ -1860,13 +1861,14 @@ async function loadMarketplaceOrderHistory(){
     },body:JSON.stringify({action:"buyer_history"})});
     const out=await r.json().catch(()=>({}));
     if(!r.ok||!out.ok)throw Error(out.error||"Marketplace history is unavailable.");
+    if(!user||user.id!==requestedBuyerId)return;
     marketplaceOrderHistory=Array.isArray(out.orders)?out.orders:[];
     marketplaceHistoryError="";
   }catch(e){
-    marketplaceHistoryError=e.message||"Marketplace history is unavailable.";
+    if(user&&user.id===requestedBuyerId)marketplaceHistoryError=e.message||"Marketplace history is unavailable.";
     throw e;
   }finally{
-    marketplaceHistoryLoadedAt=Date.now();
+    if(user&&user.id===requestedBuyerId)marketplaceHistoryLoadedAt=Date.now();
   }
 }
 function marketplaceOrderCard(title,ref,items,currency,delivery,total,state,action,parentRef){
