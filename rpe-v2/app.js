@@ -2875,7 +2875,6 @@ function renderToPayOrders(filter=""){
       (amountMismatch?'<div class="pay-amount-warning" role="alert"><b>Amount needs review.</b> Product and order totals differ. Payment is disabled until RANOVA verifies the amount.</div>':'')+
       '<details class="pay-protection"><summary><span class="pay-protection-icon" aria-hidden="true">✓</span> RANOVA Buyer Protection <span class="pay-protection-more">Details</span></summary><p>Payment is confirmed only after RANOVA verification. Seller payout depends on the required delivery and protection checks.</p></details>'+
       '<div class="pay-actions"><button type="button" data-pay-help="'+esc(o.id)+'">Order help</button><button type="button" data-pay-address="'+esc(o.id)+'">Addresses</button><button class="pay-now" type="button" data-pay-now="'+esc(o.id)+'" '+(amountMismatch||total==null||!Number.isFinite(total)?'disabled aria-disabled="true" title="Order amount must be verified before payment"':'')+'>Pay Now</button></div>'+
-      '<div class="pay-order-footer"><b>To Pay</b><span>'+esc(o.order_ref||"Order details")+'</span><span>Delivery estimate pending</span></div>'+
     '</article>';
   }).join("");
 
