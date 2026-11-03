@@ -582,3 +582,36 @@ linear-gradient(135deg,#ff8a00 0%,#ff7200 48%,#f45a1f 100%);color:#fff;box-shado
 #ordersPanel .ranova-orders-notice{padding:12px 14px;border-radius:11px;background:#fff4ea;color:#864520;border:1px solid #f6d4b8;font-size:12px}
 #toPayPanel .pay-amount-warning{margin:10px 11px;padding:11px 12px;border-radius:10px;background:#fff3e8;color:#8c4217;border:1px solid #f4b780;font-size:12px;line-height:1.5;font-weight:650}
 #toPayPanel .pay-actions .pay-now:disabled{opacity:.75;color:#854521;background:#f7e2d2;cursor:not-allowed}
+
+
+/* Order-history video parity: persistent tabs, one pane, clear empty results. */
+#toPayPanel #toPayOrders[hidden],#toPayPanel #payHistoryOrders[hidden],
+#toPayPanel .ranova-customer-order[hidden]{display:none!important}
+#toPayPanel #payHistoryOrders{display:grid;gap:12px;padding:12px 9px 26px;min-height:160px}
+#toPayPanel #payHistoryOrders .ranova-customer-order{background:#fff;border:0;border-radius:5px;box-shadow:none;overflow:hidden}
+#toPayPanel #payHistoryOrders .ranova-order-store{display:flex;gap:8px;padding:13px 13px 7px}
+#toPayPanel #payHistoryOrders .ranova-order-store>b{font-size:13px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#toPayPanel #payHistoryOrders .ranova-order-state{margin-left:auto;color:#d86a26;font-size:12px;white-space:nowrap}
+#toPayPanel #payHistoryOrders .ranova-order-reference{padding:0 13px 8px;font-size:11px;color:#78857a}
+#toPayPanel #payHistoryOrders .ranova-order-item{display:flex;gap:12px;padding:9px 13px;border-top:1px solid #f1f2ef}
+#toPayPanel #payHistoryOrders .ranova-order-photo{width:83px;height:83px;flex-shrink:0;background:#f3f4f3;border-radius:8px;overflow:hidden}
+#toPayPanel #payHistoryOrders .ranova-order-photo img{width:100%;height:100%;object-fit:cover}
+#toPayPanel #payHistoryOrders .ranova-order-item-body{flex:1;min-width:0}
+#toPayPanel #payHistoryOrders .ranova-order-item-body>b{font-size:13px;color:#1d3528;display:block;line-height:1.35}
+#toPayPanel #payHistoryOrders .ranova-order-item-body small{color:#819084;font-size:11px}
+#toPayPanel #payHistoryOrders .ranova-order-price{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;font-weight:750}
+#toPayPanel #payHistoryOrders .ranova-order-total{padding:12px 13px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid #f1f2ef}
+#toPayPanel #payHistoryOrders .ranova-order-total span{font-size:11px;color:#79867a}
+#toPayPanel #payHistoryOrders .ranova-order-total strong{font-size:14px;color:#e76a28}
+#toPayPanel #payHistoryOrders .ranova-order-actions{display:flex;justify-content:flex-end;padding:2px 13px 13px}
+#toPayPanel #payHistoryOrders .ranova-order-actions button{padding:9px 14px;min-height:36px;border-radius:18px;border:1px solid #e0e7e1;background:#fff;font-size:12px;font-weight:700;color:#1b5940}
+#toPayPanel .ranova-orders-empty{text-align:center;min-height:270px;padding:45px 18px 34px;background:#fff;display:flex;align-items:center;flex-direction:column;gap:10px}
+#toPayPanel .ranova-orders-empty>span{font-size:53px;filter:saturate(.55)}
+#toPayPanel .ranova-orders-empty>b{font-size:15px;color:#2a3b31}
+#toPayPanel .ranova-orders-empty p{font-size:12px;color:#819084;max-width:260px;margin:0;line-height:1.5}
+#toPayPanel .ranova-orders-empty button{border:0;border-radius:99px;background:#f26b27;color:#fff;font-weight:800;padding:11px 22px;margin-top:8px;font-size:12px}
+#toPayPanel .ranova-orders-notice{border-radius:8px;background:#fff6eb;border:1px solid #f0d9b9;color:#7b501e;padding:10px 12px;font-size:12px}
+#toPayPanel .pay-tab{font-family:inherit;font-size:13px;font-weight:650;padding:10px 0}
+#toPayPanel .pay-tab.active{font-weight:850;color:#143d2a}
+#toPayPanel .pay-tabs{gap:24px;scrollbar-width:none}
+#toPayPanel .pay-tab.active:after{background:#f97316}
