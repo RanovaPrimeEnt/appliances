@@ -71,4 +71,18 @@ assert.match(app,/action:"buyer_history"/);
 assert.match(app,/seenSellerRefs\.has\(o\.order_ref\)/,"Avoid duplicate seller orders across history and unpaid fallback");
 assert.match(app,/pay-amount-warning/,"Flag inconsistent item pricing");
 assert.match(app,/Order amounts differ\. Contact RANOVA before paying/,"Never initiate payment for inconsistent item amounts");
+assert.match(html,/id="orderFilterButton"/,"Order filter control must be accessible");
+assert.match(html,/id="orderMoreButton"/,"Order options control must be accessible");
+assert.match(html,/data-order-sort="newest"/,"Newest-first sorting must exist");
+assert.match(html,/data-order-sort="oldest"/,"Oldest-first sorting must exist");
+assert.match(html,/data-order-refresh/,"Order refresh must exist");
+assert.match(html,/data-order-clear-search/,"Search can be cleared");
+assert.match(app,/function toggleCustomerOrderMenu\(which\)/,"Header menus must open");
+assert.match(app,/function closeCustomerOrderMenus\(\)/,"Header menus must close");
+assert.match(app,/customerOrderSort==="oldest"/,"Order list supports chronological sorting");
+assert.match(app,/This order is still recorded/,"Close must never falsely cancel or silently hide an order");
+assert.doesNotMatch(app,/card\.style\.display="none"/,"No silent hiding of active orders");
+assert.match(app,/return \["paid","confirmed"\]\.includes\(payment\)\?"ship":"pay"/,
+  "Unpaid preparing orders must not be classified as To Ship");
+assert.match(html,/data-order-nav="review"/,"Eligible review tab must exist");
 console.log("PASS customer order tabs: navigation, real seller status classification, buyer-scoped history, duplicate prevention and payment safety");
