@@ -94,7 +94,6 @@ assert.doesNotMatch(unpriced,/<script>alert/);
 assert.match(unpriced,/&lt;script&gt;/);
 assert.match(unpriced,/Pending quote/);
 assert.doesNotMatch(unpriced,/evil\.example/);
-assert.doesNotMatch(unpriced,/evil\.example/);
 assert.match(ctx.sellerOrderPrintHtml({...base,payment_status:"paid"}),/Paid \(RANOVA record\)/);
 assert.match(ctx.sellerOrderPrintHtml({...base,order_status:"delivered"}),/Customer Receipt/);
 assert.match(ctx.sellerOrderPrintHtml({...base,subtotal:301}),/Recorded subtotal differs from item amounts/);
