@@ -413,7 +413,21 @@ function showPanel(id){
     }
   });
 }
+function navigateCustomerOrdersTab(tab){
+  const filters={all:null,ship:"preparing",receive:"receive",completed:"delivered",returns:"returns"};
+  if(tab==="pay"){
+    orderFilter="awaiting_payment";
+    showPanel("toPayPanel");
+    return;
+  }
+  if(!Object.prototype.hasOwnProperty.call(filters,tab))return;
+  orderFilter=filters[tab];
+  panelPainted.delete("ordersPanel");
+  showPanel("ordersPanel");
+}
 document.addEventListener("click",e=>{
+  const tab=e.target.closest("[data-order-nav]");
+  if(tab){e.preventDefault();navigateCustomerOrdersTab(tab.dataset.orderNav);return}
   const s=e.target.closest("[data-order-filter]");
   if(s){e.preventDefault();orderFilter=s.dataset.orderFilter;panelPainted.delete("ordersPanel");showPanel("ordersPanel");return}
   const b=e.target.closest("[data-panel]");
@@ -1813,7 +1827,7 @@ function customerOrderTab(status){
   if(["payment_confirmed","preparing","ready_for_dispatch"].includes(status))return "ship";
   if(["dispatched","out_for_delivery"].includes(status))return "receive";
   if(["delivered","completed"].includes(status))return "completed";
-  if(["return_requested","returned","refund_pending","refunded","cancelled"].includes(status))return "returns";
+  if(["return_requested","returned","refund_pending","refunded"].includes(status))return "returns";
   return "other";
 }
 function customerOrderItemMarkup(item,currency,marketplace){
@@ -1874,11 +1888,7 @@ function renderOrders(){
   host.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
   host.querySelectorAll("[data-open-pay-orders]").forEach(b=>b.onclick=()=>showPanel("toPayPanel"));
 }
-document.querySelectorAll("#ordersPanel [data-orders-tab]").forEach(b=>b.addEventListener("click",()=>{
-  const tab=b.dataset.ordersTab;
-  orderFilter=({all:null,pay:"awaiting_payment",ship:"preparing",receive:"receive",completed:"delivered",returns:"returns"})[tab]||null;
-  renderOrders();
-}));
+
 function deliveryStatusLabel(s){return ({
   pending_quote:"Delivery quote pending",awaiting_dispatch:"Awaiting dispatch",assigned:"Courier assigned",
   picked_up:"Picked up",in_transit:"In transit",out_for_delivery:"Out for delivery",
@@ -2640,6 +2650,9 @@ function renderToPayOrders(filter=""){
   const host=$("toPayOrders");if(!host)return;
   const q=String(filter||"").trim().toLowerCase();
   const rows=toPayOrders.filter(o=>{
+    // Only orders still awaiting payment belong on this screen.
+    if(["paid","confirmed","cancelled","refunded"].includes(String(o.payment_status||"").toLowerCase()))return false;
+    if(["cancelled","delivered","refunded"].includes(String(o.order_status||"").toLowerCase()))return false;
     const s=payStore(o.store_id),items=Array.isArray(o.items)?o.items:[];
     return !q||[o.order_ref,s?.store_name,...items.flatMap(i=>[i.product_name,i.sku])].some(x=>String(x||"").toLowerCase().includes(q));
   });
