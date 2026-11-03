@@ -85,4 +85,9 @@ assert.doesNotMatch(app,/card\.style\.display="none"/,"No silent hiding of activ
 assert.match(app,/return \["paid","confirmed"\]\.includes\(payment\)\?"ship":"pay"/,
   "Unpaid preparing orders must not be classified as To Ship");
 assert.match(html,/data-order-nav="review"/,"Eligible review tab must exist");
+assert.match(app,/data-write-review/,"Review cards must expose a real review action");
+assert.match(app,/\.\.\/all\/order-status\.html\?ref=/,"Review action opens existing verified review flow");
+assert.match(app,/customerOrderSort==="oldest"\?\[\.\.\.rows\]\.reverse\(\):rows/,"Unpaid order list must respect sort");
+assert.match(app,/data-order-clear-search/,"Clear search must work");
+assert.match(app,/data-order-refresh/,"Refresh menu must fetch current orders");
 console.log("PASS customer order tabs: navigation, real seller status classification, buyer-scoped history, duplicate prevention and payment safety");
