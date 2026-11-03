@@ -1945,12 +1945,12 @@ function renderOrders(targetHost){
     const date=new Date(o.created_at);
     const dateText=Number.isNaN(date.getTime())?"":date.toLocaleDateString("en-GH");
     const total=o.total==null?"Price to confirm":money(o.total,o.currency||"GHS");
-    return '<article class="ranova-customer-order">'+
+    return {html:'<article class="ranova-customer-order">'+
       '<div class="ranova-order-store"><span>▣</span><b>RANOVA Order</b><span class="ranova-order-state">'+esc(statusLabel(o.order_status))+'</span></div>'+
       '<div class="ranova-order-reference">'+esc(o.order_number||"Order")+(dateText?' · '+esc(dateText):'')+'</div>'+
       (items.length?items.map(i=>customerOrderItemMarkup(i,o.currency||"GHS",false)).join(""):'<div class="ranova-order-note">Item details available in the order summary.</div>')+
       '<div class="ranova-order-total"><span>Delivery: '+esc(o.delivery_fee==null?"To confirm":money(o.delivery_fee,o.currency||"GHS"))+'</span><strong>Total: '+esc(total)+'</strong></div>'+
-      '<div class="ranova-order-actions"><button type="button" data-order="'+esc(o.id)+'">View details</button></div></article>';
+      '<div class="ranova-order-actions"><button type="button" data-order="'+esc(o.id)+'">View details</button></div></article>',timestamp:o.created_at};
   });
   // Full marketplace history comes from the authenticated order-status service.
   // Each seller child order has its own real status; no guessed dispatch/delivery.
@@ -1965,17 +1965,17 @@ function renderOrders(targetHost){
         if(child.review_eligible!==true)return;
       }else if(active!=="all"&&active!==tab)return;
       const pay=tab==="pay";
-      fullMarketplace.push(marketplaceOrderCard(child.store_name||"Marketplace seller",child.order_ref,
+      fullMarketplace.push({html:marketplaceOrderCard(child.store_name||"Marketplace seller",child.order_ref,
         Array.isArray(child.items)?child.items:[],child.currency||"GHS",child.delivery_fee,
         child.total,tab==="pay"?"To Pay":statusLabel(child.order_status),
-        active==="review"?"review":(pay?"pay":"view"),parent.order_ref));
+        active==="review"?"review":(pay?"pay":"view"),parent.order_ref),timestamp:child.created_at||parent.created_at});
     });
     const own=(Array.isArray(parent.items)?parent.items:[]).filter(i=>i.source==="ranova_catalogue"||(!children.length&&i.source!=="seller_store"));
     if(own.length){
       const parentTab=customerOrderTab(parent.status);
       if(active==="all"||active===parentTab){
-        fullMarketplace.push(marketplaceOrderCard("RANOVA Prime Enterprise",parent.order_ref,own,"GHS",
-          parent.delivery_fee,parent.total_payment,statusLabel(parent.status),parentTab==="pay"?"pay":"view",parent.order_ref));
+        fullMarketplace.push({html:marketplaceOrderCard("RANOVA Prime Enterprise",parent.order_ref,own,"GHS",
+          parent.delivery_fee,parent.total_payment,statusLabel(parent.status),parentTab==="pay"?"pay":"view",parent.order_ref),timestamp:parent.created_at});
       }
     }
   });
@@ -1988,15 +1988,18 @@ function renderOrders(targetHost){
     const store=toPayStores.find(x=>x.id===o.store_id)||{};
     const items=Array.isArray(o.items)?o.items:[];
     const total=o.total==null?"Price to confirm":money(o.total,"GHS");
-    return '<article class="ranova-customer-order">'+
+    return {html:'<article class="ranova-customer-order">'+
       '<div class="ranova-order-store"><span>▣</span><b>'+esc(store.store_name||"Marketplace seller")+'</b><span class="ranova-order-state">To Pay</span></div>'+
       '<div class="ranova-order-reference">'+esc(o.order_ref||"Seller order")+'</div>'+
       (items.length?items.map(i=>customerOrderItemMarkup(i,"GHS",true)).join(""):'<div class="ranova-order-note">Item details unavailable.</div>')+
       '<div class="ranova-order-total"><span>Delivery: '+esc(o.delivery_fee==null?"To confirm":money(o.delivery_fee,"GHS"))+'</span><strong>Amount due: '+esc(total)+'</strong></div>'+
-      '<div class="ranova-order-actions"><button type="button" data-open-pay-orders>View payment options</button></div></article>';
+      '<div class="ranova-order-actions"><button type="button" data-open-pay-orders>View payment options</button></div></article>',timestamp:o.created_at};
   }):[];
   const cards=[...fullMarketplace,...seller,...legacy];
-  if(customerOrderSort==="oldest")cards.reverse();
+  const timestampValue=value=>{const n=Date.parse(String(value||""));return Number.isFinite(n)?n:0};
+  cards.sort((a,b)=>customerOrderSort==="oldest"?
+    timestampValue(a.timestamp)-timestampValue(b.timestamp):
+    timestampValue(b.timestamp)-timestampValue(a.timestamp));
   const emptyTitle=({all:"No orders yet",ship:"Nothing to ship",receive:"Nothing on the way",completed:"No completed orders",returns:"No returns or refunds",review:"Nothing to review"})[active]||"No matching orders";
   const discover=cards.length?"":
     '<section class="ranova-order-discover"><h4>Discover something new</h4><div class="ranova-order-discover-grid">'+
@@ -2006,7 +2009,7 @@ function renderOrders(targetHost){
       '<div class="pay-product-copy"><b>'+esc(p.name)+'</b><div class="price">'+esc(p.price==null?"Ask for price":money(p.price,p.currency||"GHS"))+'</div></div></button>'
     ).join("")+'</div></section>';
   host.innerHTML=(marketplaceHistoryError?'<div class="ranova-orders-notice">Some marketplace history could not be loaded. Refresh to try again.</div>':'')+
-    (cards.length?cards.join(""):'<div class="ranova-orders-empty"><span aria-hidden="true">📦</span><b>'+esc(emptyTitle)+'</b><p>Orders will appear here when their verified status changes.</p><button type="button" data-go-shopping>Explore products</button></div>'+discover);
+    (cards.length?cards.map(card=>card.html).join(""):'<div class="ranova-orders-empty"><span aria-hidden="true">📦</span><b>'+esc(emptyTitle)+'</b><p>Orders will appear here when their verified status changes.</p><button type="button" data-go-shopping>Explore products</button></div>'+discover);
   host.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
   host.querySelectorAll("[data-open-pay-orders]").forEach(b=>b.onclick=()=>navigateCustomerOrdersTab("pay"));
   host.querySelectorAll("[data-market-order-ref]").forEach(b=>b.onclick=()=>{
