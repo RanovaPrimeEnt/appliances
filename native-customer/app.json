@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "RANOVA Live Market",
+    "slug": "ranova-live-market",
+    "scheme": "ranova",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.ranova.marketplace.native"
+    },
+    "ios": {
+      "bundleIdentifier": "com.ranova.marketplace.native"
+    },
+    "plugins": []
+  }
+}
