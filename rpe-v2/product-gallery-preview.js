@@ -18,7 +18,7 @@
     if (!urls.length) return;
     currentId = String(p.id);
     host.dataset.ranovaGallery = currentId;
-    let index = 0, pauseUntil = 0;
+    let index = 0, pauseUntil = 0, programmaticUntil = 0;
     host.innerHTML = '<div class="rnv-gallery" aria-label="Product images"><div class="rnv-gallery-track">' +
       urls.map((url, i) => '<div class="rnv-gallery-slide"><img src="' + escapeHtml(url) + '" alt="' + escapeHtml((p.name || "Product") + " photo " + (i+1)) + '" loading="' + (i ? "lazy" : "eager") + '" decoding="async"></div>').join("") +
       '</div><div class="rnv-gallery-count" aria-live="polite">1 / ' + urls.length + '</div>' +
@@ -29,6 +29,7 @@
     const show = (n, manual = false) => {
       index = (n + urls.length) % urls.length;
       if (manual) pauseUntil = Date.now() + 9000;
+      programmaticUntil = Date.now() + 1100;
       track.scrollTo({left: index * track.clientWidth, behavior: "smooth"});
       count.textContent = (index + 1) + " / " + urls.length;
       dots.forEach((d, i) => {d.classList.toggle("selected", i === index); d.setAttribute("aria-current", String(i === index));});
@@ -44,7 +45,7 @@
           index = Math.max(0, Math.min(urls.length - 1, Math.round(track.scrollLeft / (track.clientWidth || 1))));
           count.textContent = (index + 1) + " / " + urls.length;
           dots.forEach((d, i) => d.classList.toggle("selected", i === index));
-          pauseUntil = Date.now() + 9000;
+          if (Date.now() > programmaticUntil) pauseUntil = Date.now() + 9000;
         }, 150);
       }, {passive: true});
       show(0);
@@ -89,7 +90,7 @@
       if (e.target.closest("[data-mh-product],[data-home-seller-product],[data-market-product],[data-related-id]")) setTimeout(mount, 350);
       if (e.target.closest("#marketProductBack")) stop();
     });
-    document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else mount(); });
+    document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else { delete host.dataset.ranovaGallery; mount(); } });
     setTimeout(mount, 400);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
