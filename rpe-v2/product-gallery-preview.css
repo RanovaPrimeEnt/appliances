@@ -1,0 +1,23 @@
+/* RANOVA product-detail gallery preview */
+#marketProductPanel .mpd-media{background:#fff}
+#marketProductPanel .mpd-image{min-height:300px;overflow:hidden;background:#fff}
+.rnv-gallery{position:relative;width:100%;background:#fff}
+.rnv-gallery-track{display:flex;width:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:pan-x}
+.rnv-gallery-track::-webkit-scrollbar{display:none}
+.rnv-gallery-slide{flex:0 0 100%;min-width:0;scroll-snap-align:start;display:grid;place-items:center;height:clamp(310px,80vw,590px);background:#fff}
+.rnv-gallery-slide img{display:block;width:100%;height:100%;object-fit:contain}
+.rnv-gallery-count{position:absolute;right:14px;bottom:16px;border-radius:20px;padding:6px 12px;background:rgba(0,0,0,.65);color:white;font-size:12px}
+.rnv-gallery-prev,.rnv-gallery-next{position:absolute;top:45%;width:36px;height:42px;border:0;border-radius:12px;background:rgba(255,255,255,.85);font-size:27px;cursor:pointer}
+.rnv-gallery-prev{left:8px}.rnv-gallery-next{right:8px}
+.rnv-gallery-dots{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
+.rnv-gallery-dots button{width:7px;height:7px;padding:0;border:0;border-radius:100%;background:#bbb}
+.rnv-gallery-dots button.selected{background:#f05a21;width:18px;border-radius:10px}
+.rnv-related{margin:28px 0 18px}
+.rnv-related h2{font-size:19px;margin:0 0 14px;font-weight:800}
+.rnv-related-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rnv-related-card{background:#fff;border:1px solid #e7e9e8;border-radius:14px;padding:0 0 12px;text-align:left;overflow:hidden;cursor:pointer;min-width:0}
+.rnv-related-card img,.rnv-related-placeholder{width:100%;height:155px;object-fit:contain;background:#f6f7f7;display:grid;place-items:center}
+.rnv-related-name{display:block;font-size:13px;font-weight:600;line-height:1.35;padding:9px 10px 4px;min-height:46px}
+.rnv-related-card strong{display:block;color:#ed5721;padding:0 10px;font-size:14px}
+@media(min-width:750px){.rnv-related-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.rnv-gallery-track{scroll-behavior:auto}}
