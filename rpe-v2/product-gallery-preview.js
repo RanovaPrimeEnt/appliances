@@ -1,108 +1,98 @@
-/* RANOVA product gallery preview: isolated enhancement for existing marketplace. */
+/* RANOVA immersive vertical product viewer. Preview branch only. */
 (() => {
   "use strict";
-  const INTERVAL = 4200;
-  let timer = null, currentId = null, observer = null;
   const $ = id => document.getElementById(id);
-  const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const getProducts = () => typeof marketSellerProducts !== "undefined" ? marketSellerProducts : [];
-  const getCurrent = () => typeof marketProductCurrent !== "undefined" ? marketProductCurrent : null;
-  const imagesOf = p => [...new Set([p?.primary_image_url, ...(Array.isArray(p?.image_urls) ? p.image_urls : [])].filter(x => typeof x === "string" && /^https?:\/\//i.test(x)))];
-  function stop() { if (timer) clearInterval(timer); timer = null; }
-  function mount() {
-    const host = $("marketProductImage"), panel = $("marketProductPanel"), p = getCurrent();
-    if (!host || !panel || !p || !panel.classList.contains("active")) { stop(); return; }
-    if (host.dataset.ranovaGallery === String(p.id) && host.querySelector(".rnv-gallery")) return;
-    stop();
-    const urls = imagesOf(p);
-    if (!urls.length) return;
-    currentId = String(p.id);
-    host.dataset.ranovaGallery = currentId;
-    let index = 0, pauseUntil = 0, programmaticUntil = 0;
-    host.innerHTML = '<div class="rnv-gallery" aria-label="Product images"><div class="rnv-gallery-track">' +
-      urls.map((url, i) => '<div class="rnv-gallery-slide"><img src="' + escapeHtml(url) + '" alt="' + escapeHtml((p.name || "Product") + " photo " + (i+1)) + '" loading="' + (i ? "lazy" : "eager") + '" decoding="async"></div>').join("") +
-      '</div><span class="rnv-gallery-hint">Swipe photos</span><div class="rnv-gallery-count" aria-live="polite">1 / ' + urls.length + '</div>' +
-      (urls.length > 1 ? '<button type="button" class="rnv-gallery-prev" aria-label="Previous image">‹</button><button type="button" class="rnv-gallery-next" aria-label="Next image">›</button><div class="rnv-gallery-dots">' + urls.map((_, i) => '<button type="button" data-index="' + i + '" aria-label="Show photo ' + (i+1) + '"></button>').join("") + '</div>' : '') + '</div>';
-    const track = host.querySelector(".rnv-gallery-track");
-    const count = host.querySelector(".rnv-gallery-count");
-    const dots = [...host.querySelectorAll(".rnv-gallery-dots button")];
-    const show = (n, manual = false) => {
-      index = (n + urls.length) % urls.length;
-      if (manual) pauseUntil = Date.now() + 9000;
-      programmaticUntil = Date.now() + 1100;
-      track.scrollTo({left: index * track.clientWidth, behavior: "smooth"});
-      count.textContent = (index + 1) + " / " + urls.length;
-      dots.forEach((d, i) => {d.classList.toggle("selected", i === index); d.setAttribute("aria-current", String(i === index));});
-    };
-    if (urls.length > 1) {
-      host.querySelector(".rnv-gallery-prev").addEventListener("click", () => show(index - 1, true));
-      host.querySelector(".rnv-gallery-next").addEventListener("click", () => show(index + 1, true));
-      dots.forEach((d, i) => d.addEventListener("click", () => show(i, true)));
-      let scrollDebounce;
-      track.addEventListener("scroll", () => {
-        clearTimeout(scrollDebounce);
-        scrollDebounce = setTimeout(() => {
-          index = Math.max(0, Math.min(urls.length - 1, Math.round(track.scrollLeft / (track.clientWidth || 1))));
-          count.textContent = (index + 1) + " / " + urls.length;
-          dots.forEach((d, i) => d.classList.toggle("selected", i === index));
-          if (Date.now() > programmaticUntil) pauseUntil = Date.now() + 9000;
-        }, 150);
-      }, {passive: true});
-      show(0);
-      timer = setInterval(() => {
-        if (document.hidden || Date.now() < pauseUntil || !panel.classList.contains("active") || String(getCurrent()?.id) !== currentId) return;
-        show(index + 1);
-      }, INTERVAL);
-    }
-    renderRelated(p);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const products = () => typeof marketSellerProducts !== "undefined" && Array.isArray(marketSellerProducts) ? marketSellerProducts : [];
+  const current = () => typeof marketProductCurrent !== "undefined" ? marketProductCurrent : null;
+  const images = p => [...new Set([p?.primary_image_url,...(Array.isArray(p?.image_urls)?p.image_urls:[])].filter(v=>typeof v==="string" && /^https?:\/\//i.test(v)))];
+  const price = p => p.price==null ? "Ask for price" : typeof money==="function" ? money(p.price,p.currency||"GHS") : String(p.price)+" "+(p.currency||"GHS");
+  let activeId="", busy=false, feedObserver=null, autoplay=null, lastInteraction=0, mounting=false;
+  function stop(){if(autoplay)clearInterval(autoplay);autoplay=null;if(feedObserver)feedObserver.disconnect();feedObserver=null;}
+  function syncProduct(p){
+    if(!p || String(current()?.id)===String(p.id))return;
+    if(typeof paintMarketplaceProductDetails==="function"){
+      const store=typeof marketStores!=="undefined" ? marketStores.find(s=>s.id===p.store_id)||{} : {};
+      paintMarketplaceProductDetails(p,store);
+    }else if(typeof marketProductCurrent!=="undefined"){marketProductCurrent=p;}
   }
-  function renderRelated(p) {
-    const main = $("marketProductPanel")?.querySelector(".mpd-main");
-    if (!main) return;
-    let section = $("rnvRelatedProducts");
-    if (!section) {
-      section = document.createElement("section");
-      section.id = "rnvRelatedProducts";
-      section.className = "rnv-related rnv-discovery-feed";
-      main.appendChild(section);
-    }
-    const normalize = s => String(s || "").trim().toLowerCase();
-    const cat = normalize(p.category);
-    const pool = getProducts().filter(x => x && String(x.id) !== String(p.id) && cat && normalize(x.category) === cat);
-    const selected = pool.slice(0, 12);
-    section.innerHTML = '<h2>Swipe up to discover more</h2>' +
-      (selected.length ? '<div class="rnv-discovery-list">' + selected.map(x => {
-        const url = imagesOf(x)[0];
-        const price = x.price == null ? "Ask for price" : (typeof money === "function" ? money(x.price, x.currency || "GHS") : String(x.price) + " " + (x.currency || "GHS"));
-        return '<article class="rnv-discovery-item" data-discovery-product="' + escapeHtml(x.id) + '">' +
-          '<div class="rnv-discovery-photo">' + (url ? '<img src="' + escapeHtml(url) + '" alt="' + escapeHtml(x.name || "Product") + '" loading="lazy">' : '<span>Product image unavailable</span>') + '</div>' +
-          '<div class="rnv-discovery-info"><strong>' + escapeHtml(price) + '</strong><h3>' + escapeHtml(x.name || "Product") + '</h3><p>' + escapeHtml(x.category || "RANOVA Marketplace") + '</p><button type="button" data-related-id="' + escapeHtml(x.id) + '">View product &amp; order →</button></div></article>';
-      }).join("") + '</div>' : '<p>More products in this category will appear here.</p>');
-    section.querySelectorAll("[data-related-id]").forEach(button => button.addEventListener("click", () => {
-      if (typeof openMarketplaceProduct !== "function") return;
-      openMarketplaceProduct(button.dataset.relatedId);
-      requestAnimationFrame(() => {
-        const panel = $("marketProductPanel");
-        if (panel) panel.scrollTop = 0;
-        window.scrollTo(0, 0);
-      });
-    }));
+  function productSet(p){
+    const all=products(),cat=String(p.category||"").toLowerCase();
+    return [p,...all.filter(x=>x && String(x.id)!==String(p.id) && cat && String(x.category||"").toLowerCase()===cat).slice(0,24)];
   }
-  function init() {
-    const host = $("marketProductImage");
-    if (!host) return;
-    observer = new MutationObserver(() => {
-      const p = getCurrent();
-      if (p && host.dataset.ranovaGallery !== String(p.id)) mount();
-      else if (p && !host.querySelector(".rnv-gallery") && host.children.length) { delete host.dataset.ranovaGallery; mount(); }
+  function item(p,i){
+    const urls=images(p);
+    return '<article class="rnv-feed-item" data-feed-id="'+esc(p.id)+'" aria-label="'+esc(p.name||"Product")+'">'+
+      '<div class="rnv-feed-photos" data-photo-index="0">'+(urls.length?urls.map((url,j)=>'<div class="rnv-feed-photo"><img src="'+esc(url)+'" alt="'+esc((p.name||"Product")+" photo "+(j+1))+'" loading="'+(i===0&&j===0?"eager":"lazy")+'"></div>').join(""):'<div class="rnv-feed-photo rnv-empty">Product image unavailable</div>')+'</div>'+
+      '<div class="rnv-feed-top"><span>RANOVA</span><span class="rnv-photo-counter">1 / '+Math.max(1,urls.length)+'</span></div>'+
+      '<div class="rnv-feed-info"><strong>'+esc(price(p))+'</strong><h2>'+esc(p.name||"Product")+'</h2><small>'+esc(p.category||"RANOVA Marketplace")+'</small><button type="button" class="rnv-feed-detail" data-details-id="'+esc(p.id)+'">Product details &amp; quantity</button></div>'+
+      '</article>';
+  }
+  function setVisible(article){
+    const id=article?.dataset.feedId;if(!id||activeId===id)return;
+    const p=products().find(x=>String(x.id)===id);
+    if(!p)return;
+    activeId=id;syncProduct(p);
+    const label=$("rnvFeedSeller");
+    if(label){const store=typeof marketStores!=="undefined" ? marketStores.find(s=>s.id===p.store_id) : null;label.textContent=store?.store_name||"RANOVA seller";}
+  }
+  function mount(){
+    if(mounting)return;
+    const panel=$("marketProductPanel"),p=current(),host=$("marketProductImage");
+    if(!panel||!host||!p||!panel.classList.contains("active"))return;
+    if(panel.dataset.feedSeed===String(p.id) && $("rnvProductFeed"))return;
+    mounting=true;stop();activeId=String(p.id);
+    const old=$("rnvProductFeed");if(old)old.remove();
+    const feed=document.createElement("div");feed.id="rnvProductFeed";feed.className="rnv-product-feed";
+    const chosen=productSet(p);feed.innerHTML=chosen.map(item).join("");
+    const head=panel.querySelector(".mpd-head");if(head)head.insertAdjacentElement("afterend",feed);
+    panel.dataset.feedSeed=String(p.id);panel.classList.add("rnv-feed-mode");
+    host.dataset.rnvOriginal="1";
+    const seller=$("rnvFeedSeller")||document.createElement("span");
+    seller.id="rnvFeedSeller";seller.className="rnv-feed-seller";
+    if(!seller.isConnected)panel.querySelector(".mpd-actions")?.prepend(seller);
+    const store=typeof marketStores!=="undefined" ? marketStores.find(s=>s.id===p.store_id) : null;seller.textContent=store?.store_name||"RANOVA seller";
+    feedObserver=new IntersectionObserver(entries=>{
+      if(busy)return;
+      const candidate=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+      if(candidate&&candidate.intersectionRatio>=.5)setVisible(candidate.target);
+    },{root:feed,threshold:[.5,.65,.8]});
+    feed.querySelectorAll(".rnv-feed-item").forEach(el=>feedObserver.observe(el));
+    feed.addEventListener("scroll",()=>{lastInteraction=Date.now();},{passive:true});
+    feed.addEventListener("click",e=>{
+      const btn=e.target.closest("[data-details-id]");
+      if(btn){const details=panel.querySelector(".mpd-main");if(details){details.classList.toggle("rnv-details-open");details.scrollIntoView({behavior:"smooth",block:"start"});}return;}
     });
-    observer.observe(host, {childList:true});
-    document.addEventListener("click", e => {
-      if (e.target.closest("[data-mh-product],[data-home-seller-product],[data-market-product],[data-related-id]")) setTimeout(mount, 350);
-      if (e.target.closest("#marketProductBack")) stop();
+    feed.querySelectorAll(".rnv-feed-photos").forEach(track=>{
+      track.addEventListener("scroll",()=>{
+        const index=Math.round(track.scrollLeft/(track.clientWidth||1));
+        track.dataset.photoIndex=String(index);
+        const counter=track.parentElement.querySelector(".rnv-photo-counter");
+        if(counter)counter.textContent=(index+1)+" / "+track.children.length;
+        lastInteraction=Date.now();
+      },{passive:true});
     });
-    document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else if ($("marketProductPanel")?.classList.contains("active")) { delete host.dataset.ranovaGallery; mount(); } });
-    setTimeout(mount, 400);
+    autoplay=setInterval(()=>{
+      if(document.hidden||Date.now()-lastInteraction<7000||!panel.classList.contains("active"))return;
+      const article=feed.querySelector('[data-feed-id="'+CSS.escape(activeId)+'"]');
+      const track=article?.querySelector(".rnv-feed-photos");
+      if(track && track.children.length>1){const next=(Number(track.dataset.photoIndex||0)+1)%track.children.length;track.scrollTo({left:next*track.clientWidth,behavior:"smooth"});}
+    },4200);
+    mounting=false;
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+  function init(){
+    const panel=$("marketProductPanel"),host=$("marketProductImage");
+    if(!panel||!host)return;
+    new MutationObserver(()=>{
+      if(!panel.classList.contains("active")){stop();return;}
+      const p=current();if(p && panel.dataset.feedSeed!==String(p.id))setTimeout(mount,50);
+    }).observe(host,{childList:true});
+    document.addEventListener("click",e=>{
+      if(e.target.closest("#marketProductBack")){stop();panel.classList.remove("rnv-feed-mode");delete panel.dataset.feedSeed;return;}
+      if(e.target.closest("[data-mh-product],[data-home-seller-product],[data-market-product],[data-legacy-market-product]"))setTimeout(mount,250);
+    });
+    document.addEventListener("visibilitychange",()=>{if(document.hidden)stop();else if(panel.classList.contains("active")){delete panel.dataset.feedSeed;mount();}});
+    setTimeout(mount,400);
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
