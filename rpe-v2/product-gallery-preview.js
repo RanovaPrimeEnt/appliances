@@ -12,7 +12,7 @@
   function mount() {
     const host = $("marketProductImage"), panel = $("marketProductPanel"), p = getCurrent();
     if (!host || !panel || !p || !panel.classList.contains("active")) { stop(); return; }
-    if (host.dataset.ranovaGallery === String(p.id)) return;
+    if (host.dataset.ranovaGallery === String(p.id) && host.querySelector(".rnv-gallery")) return;
     stop();
     const urls = imagesOf(p);
     if (!urls.length) return;
@@ -21,7 +21,7 @@
     let index = 0, pauseUntil = 0, programmaticUntil = 0;
     host.innerHTML = '<div class="rnv-gallery" aria-label="Product images"><div class="rnv-gallery-track">' +
       urls.map((url, i) => '<div class="rnv-gallery-slide"><img src="' + escapeHtml(url) + '" alt="' + escapeHtml((p.name || "Product") + " photo " + (i+1)) + '" loading="' + (i ? "lazy" : "eager") + '" decoding="async"></div>').join("") +
-      '</div><div class="rnv-gallery-count" aria-live="polite">1 / ' + urls.length + '</div>' +
+      '</div><span class="rnv-gallery-hint">Swipe photos</span><div class="rnv-gallery-count" aria-live="polite">1 / ' + urls.length + '</div>' +
       (urls.length > 1 ? '<button type="button" class="rnv-gallery-prev" aria-label="Previous image">‹</button><button type="button" class="rnv-gallery-next" aria-label="Next image">›</button><div class="rnv-gallery-dots">' + urls.map((_, i) => '<button type="button" data-index="' + i + '" aria-label="Show photo ' + (i+1) + '"></button>').join("") + '</div>' : '') + '</div>';
     const track = host.querySelector(".rnv-gallery-track");
     const count = host.querySelector(".rnv-gallery-count");
@@ -74,7 +74,7 @@
           '<span class="rnv-related-name">' + escapeHtml(x.name || "Product") + '</span><strong>' + escapeHtml(price) + '</strong></button>';
       }).join("") + '</div>' : '<p>More products in this category will appear here.</p>');
     section.querySelectorAll("[data-related-id]").forEach(button => button.addEventListener("click", () => {
-      if (typeof openMarketplaceProduct === "function") openMarketplaceProduct(button.dataset.relatedId);
+      if (typeof openMarketplaceProduct === "function") { openMarketplaceProduct(button.dataset.relatedId); requestAnimationFrame(() => { const panel = $("marketProductPanel"); if (panel) panel.scrollTop = 0; window.scrollTo(0, 0); }); }
     }));
   }
   function init() {
@@ -90,7 +90,7 @@
       if (e.target.closest("[data-mh-product],[data-home-seller-product],[data-market-product],[data-related-id]")) setTimeout(mount, 350);
       if (e.target.closest("#marketProductBack")) stop();
     });
-    document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else { delete host.dataset.ranovaGallery; mount(); } });
+    document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else if ($("marketProductPanel")?.classList.contains("active")) { delete host.dataset.ranovaGallery; mount(); } });
     setTimeout(mount, 400);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
