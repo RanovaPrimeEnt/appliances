@@ -1128,8 +1128,10 @@ setupShoppingSynchronization();
 async function loadMarketplaceCart(){
   if(!user){marketCartRows=[];marketCartProducts=new Map();marketCartStores=new Map();marketCartLoaded=false;return}
   if(marketCartLoadPromise)return marketCartLoadPromise;
+  const ownerId=user.id;
   marketCartLoadPromise=(async()=>{
-  const {data:rows,error}=await sb.from("ranova_buyer_carts").select("store_id,items,updated_at").eq("user_id",user.id);
+  const {data:rows,error}=await sb.from("ranova_buyer_carts").select("store_id,items,updated_at").eq("user_id",ownerId);
+  if(user?.id!==ownerId)return;
   if(error)throw error;
   marketCartRows=(rows||[]).map(r=>({store_id:r.store_id,items:r.items&&typeof r.items==="object"?r.items:{},updated_at:r.updated_at}));
   const productIds=[...new Set(marketCartRows.flatMap(r=>Object.keys(r.items||{})))];
@@ -1141,6 +1143,7 @@ async function loadMarketplaceCart(){
       .select("id,store_id,name,sku,category,price,currency,moq,stock_quantity,stock_status,unit_label,primary_image_url,image_urls,pricing_tiers,product_status")
       .in("id",productIds);
     if(pe)throw pe;
+    if(user?.id!==ownerId)return;
     (data||[]).forEach(p=>marketCartProducts.set(p.id,p));
   }
   if(storeIds.length){
@@ -1150,13 +1153,16 @@ async function loadMarketplaceCart(){
     if(missing.length){
       const {data,error:se}=await sb.from("ranova_seller_stores").select("id,store_name,slug,logo_url,store_status").in("id",missing);
       if(se)throw se;
+      if(user?.id!==ownerId)return;
       (data||[]).forEach(s=>marketCartStores.set(s.id,s));
     }
   }
+  if(user?.id!==ownerId)return;
   restoreMarketplaceCartDrafts();
   marketCartLoaded=true;
   })();
-  try{return await marketCartLoadPromise}finally{marketCartLoadPromise=null}
+  const pending=marketCartLoadPromise;
+  try{return await pending}finally{if(marketCartLoadPromise===pending)marketCartLoadPromise=null}
 }
 function marketCartEntries(){
   const out=[];
@@ -1541,15 +1547,12 @@ async function openProduct(id){
 }
 
 async function handleIncomingCartLink(){
-  if(incomingCartHandled)return;
   const sku=new URLSearchParams(location.search).get("add");
   if(!sku)return;
-  const p=products.find(x=>x.sku===sku);
-  if(!p)return showToast("That product is not available right now");
-  incomingCartHandled=true;
-  history.replaceState(null,"",location.pathname);
-  await addToCart(p.id);
-  openCart();
+  const url=new URL(location.href);
+  url.searchParams.delete("add");
+  history.replaceState(null,"",url.pathname+url.search+url.hash);
+  showToast("Tap Add to Cart on the product you want.");
 }
 
 async function addToCart(productId){
