@@ -19,7 +19,7 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://ranovaprimeent.github.io/appliances/rpe-v2/?source=android";
+    private static final String HOME = "https://ranova-product-gallery-preview-n6g2v4i4p.vercel.app/?source=android-gallery-test";
     private static final int FILE_CHOOSER_REQUEST = 2201;
     private static final int WEB_PERMISSION_REQUEST = 2202;
 
