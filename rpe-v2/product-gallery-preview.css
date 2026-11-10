@@ -1,0 +1,40 @@
+/* RANOVA full-screen swipe viewer — isolated preview only */
+#marketProductPanel.rnv-feed-mode{position:fixed;inset:0;z-index:200;display:flex!important;flex-direction:column;height:100dvh;overflow:hidden;background:#fff;padding:0!important}
+#marketProductPanel.rnv-feed-mode .mpd-head{flex:0 0 55px;position:relative;z-index:5;display:flex;align-items:center;background:#1c2223;color:#fff;margin:0;padding:0 12px}
+#marketProductPanel.rnv-feed-mode .mpd-head b{font-size:14px}
+#marketProductPanel.rnv-feed-mode .mpd-media{display:none!important}
+#marketProductPanel.rnv-feed-mode .mpd-main{display:none}
+#marketProductPanel.rnv-feed-mode .mpd-main.rnv-details-open{display:block;position:absolute;z-index:8;bottom:90px;left:0;right:0;max-height:62dvh;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:18px;box-shadow:0 -8px 36px #0003}
+#marketProductPanel.rnv-feed-mode .mpd-actions{position:relative!important;transform:none!important;left:auto!important;bottom:auto!important;width:100%!important;flex:0 0 auto;display:flex;align-items:center;gap:6px;background:#11191b;color:#fff;padding:12px 10px calc(12px + env(safe-area-inset-bottom,0px));z-index:6;box-shadow:none}
+#marketProductPanel.rnv-feed-mode .mpd-actions button{min-width:0;flex:1;font-size:12px;padding:12px 5px;border-radius:999px}
+#marketProductPanel.rnv-feed-mode .mpd-actions .mpd-primary{background:#ff5c1a;color:#fff;flex:1.35}
+.rnv-feed-seller{font-size:11px;font-weight:700;max-width:24%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rnv-product-feed{flex:1;min-height:0;overflow-y:auto;overscroll-behavior-y:contain;scroll-snap-type:y mandatory;scrollbar-width:none;background:#fff}
+.rnv-product-feed::-webkit-scrollbar,.rnv-feed-photos::-webkit-scrollbar{display:none}
+.rnv-feed-item{position:relative;height:100%;min-height:100%;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.rnv-feed-photos{height:100%;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:pan-x pan-y}
+.rnv-feed-photo{flex:0 0 100%;width:100%;height:100%;display:grid;place-items:center;scroll-snap-align:center;background:linear-gradient(#eee,#fff 22%,#fff 75%,#f0f0f0)}
+.rnv-feed-photo img{display:block;width:100%;height:100%;object-fit:contain}
+.rnv-empty{color:#7b8380;font-size:14px}
+.rnv-feed-top{position:absolute;top:10px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none;color:#fff;font-size:12px;text-shadow:0 1px 4px #0008}
+.rnv-feed-top span{background:#15151566;border-radius:99px;padding:6px 10px}
+.rnv-feed-info{position:absolute;bottom:15px;left:14px;right:14px;border-radius:18px;background:#fffffff0;backdrop-filter:blur(12px);padding:14px 16px;box-shadow:0 4px 24px #0002}
+.rnv-feed-info strong{font-size:27px;color:#f15a24;font-weight:850}
+.rnv-feed-info h2{font-size:16px;margin:5px 0;line-height:1.35;color:#172321}
+.rnv-feed-info small{display:block;color:#60716a;font-size:11px}
+.rnv-feed-detail{display:block;margin-top:9px;border:0;background:transparent;color:#ec5b22;font-size:12px;font-weight:700;padding:5px 0;cursor:pointer}
+@media(min-width:800px){#marketProductPanel.rnv-feed-mode{left:50%;transform:translateX(-50%);width:min(100%,520px);box-shadow:0 0 0 100vw #171b1b}}
+
+/* Reference-screen refinement: image behind transparent navigation */
+#marketProductPanel.rnv-feed-mode .mpd-head{
+ position:absolute!important;top:0;left:0;right:0;height:66px;flex:none;
+ background:linear-gradient(180deg,rgba(0,0,0,.38),transparent)!important;
+ border:0!important;box-shadow:none!important;color:#fff!important;
+}
+#marketProductPanel.rnv-feed-mode .mpd-head b{display:none}
+#marketProductPanel.rnv-feed-mode .mpd-head button{color:#fff!important;background:#ffffff20!important;border:0!important;border-radius:50%;width:38px;height:38px;font-size:25px}
+#marketProductPanel.rnv-feed-mode .rnv-feed-top{top:76px}
+#marketProductPanel.rnv-feed-mode .rnv-feed-info{bottom:20px}
+#marketProductPanel.rnv-feed-mode .rnv-product-feed{height:100%;width:100%}
+#marketProductPanel.rnv-feed-mode .rnv-feed-item{height:100%;min-height:100%}
+#marketProductPanel.rnv-feed-mode .rnv-feed-photos{overscroll-behavior-x:contain}
