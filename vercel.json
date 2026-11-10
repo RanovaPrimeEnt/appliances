@@ -1,0 +1,21 @@
+{
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/rpe-v2/index.html"
+    },
+    {
+      "source": "/all/:path*",
+      "destination": "/all/:path*"
+    },
+    {
+      "source": "/rpe-v2/:path*",
+      "destination": "/rpe-v2/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/rpe-v2/:path*"
+    }
+  ]
+}
