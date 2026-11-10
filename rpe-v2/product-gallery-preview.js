@@ -84,6 +84,7 @@
     },4200);
     mounting=false;
   }
+  window.ranovaMountProductFeed=()=>{requestAnimationFrame(()=>mount());};
   function init(){
     const panel=$("marketProductPanel"),host=$("marketProductImage");
     if(!panel||!host)return;
