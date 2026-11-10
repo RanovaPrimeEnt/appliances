@@ -60,21 +60,32 @@
     const main = $("marketProductPanel")?.querySelector(".mpd-main");
     if (!main) return;
     let section = $("rnvRelatedProducts");
-    if (!section) { section = document.createElement("section"); section.id = "rnvRelatedProducts"; section.className = "rnv-related"; main.appendChild(section); }
+    if (!section) {
+      section = document.createElement("section");
+      section.id = "rnvRelatedProducts";
+      section.className = "rnv-related rnv-discovery-feed";
+      main.appendChild(section);
+    }
     const normalize = s => String(s || "").trim().toLowerCase();
     const cat = normalize(p.category);
-    const pool = getProducts().filter(x => x && x.id !== p.id && cat && normalize(x.category) === cat);
+    const pool = getProducts().filter(x => x && String(x.id) !== String(p.id) && cat && normalize(x.category) === cat);
     const selected = pool.slice(0, 12);
-    section.innerHTML = '<h2>More products like this</h2>' +
-      (selected.length ? '<div class="rnv-related-grid">' + selected.map(x => {
+    section.innerHTML = '<h2>Swipe up to discover more</h2>' +
+      (selected.length ? '<div class="rnv-discovery-list">' + selected.map(x => {
         const url = imagesOf(x)[0];
         const price = x.price == null ? "Ask for price" : (typeof money === "function" ? money(x.price, x.currency || "GHS") : String(x.price) + " " + (x.currency || "GHS"));
-        return '<button type="button" class="rnv-related-card" data-related-id="' + escapeHtml(x.id) + '">' +
-          (url ? '<img src="' + escapeHtml(url) + '" alt="' + escapeHtml(x.name || "Product") + '" loading="lazy">' : '<span class="rnv-related-placeholder">No image</span>') +
-          '<span class="rnv-related-name">' + escapeHtml(x.name || "Product") + '</span><strong>' + escapeHtml(price) + '</strong></button>';
+        return '<article class="rnv-discovery-item" data-discovery-product="' + escapeHtml(x.id) + '">' +
+          '<div class="rnv-discovery-photo">' + (url ? '<img src="' + escapeHtml(url) + '" alt="' + escapeHtml(x.name || "Product") + '" loading="lazy">' : '<span>Product image unavailable</span>') + '</div>' +
+          '<div class="rnv-discovery-info"><strong>' + escapeHtml(price) + '</strong><h3>' + escapeHtml(x.name || "Product") + '</h3><p>' + escapeHtml(x.category || "RANOVA Marketplace") + '</p><button type="button" data-related-id="' + escapeHtml(x.id) + '">View product &amp; order →</button></div></article>';
       }).join("") + '</div>' : '<p>More products in this category will appear here.</p>');
     section.querySelectorAll("[data-related-id]").forEach(button => button.addEventListener("click", () => {
-      if (typeof openMarketplaceProduct === "function") { openMarketplaceProduct(button.dataset.relatedId); requestAnimationFrame(() => { const panel = $("marketProductPanel"); if (panel) panel.scrollTop = 0; window.scrollTo(0, 0); }); }
+      if (typeof openMarketplaceProduct !== "function") return;
+      openMarketplaceProduct(button.dataset.relatedId);
+      requestAnimationFrame(() => {
+        const panel = $("marketProductPanel");
+        if (panel) panel.scrollTop = 0;
+        window.scrollTo(0, 0);
+      });
     }));
   }
   function init() {
