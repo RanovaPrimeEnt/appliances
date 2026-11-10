@@ -5,9 +5,9 @@
   const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const products = () => typeof marketSellerProducts !== "undefined" && Array.isArray(marketSellerProducts) ? marketSellerProducts : [];
   const current = () => typeof marketProductCurrent !== "undefined" ? marketProductCurrent : null;
-  const images = p => [...new Set([p?.primary_image_url,...(Array.isArray(p?.image_urls)?p.image_urls:[])].filter(v=>typeof v==="string" && /^https?:\/\//i.test(v)))];
+  const images = p => [...new Set([p?.primary_image_url,...(Array.isArray(p?.image_urls)?p.image_urls:[])].filter(v=>typeof v==="string" && v.trim()))];
   const price = p => p.price==null ? "Ask for price" : typeof money==="function" ? money(p.price,p.currency||"GHS") : String(p.price)+" "+(p.currency||"GHS");
-  let activeId="", busy=false, feedObserver=null, autoplay=null, lastInteraction=0, mounting=false;
+  let activeId="", busy=false, feedObserver=null, autoplay=null, lastInteraction=0, mounting=false, feedSeed="";
   function stop(){if(autoplay)clearInterval(autoplay);autoplay=null;if(feedObserver)feedObserver.disconnect();feedObserver=null;}
   function syncProduct(p){
     if(!p || String(current()?.id)===String(p.id))return;
@@ -62,10 +62,10 @@
       if(candidate&&candidate.intersectionRatio>=.5)setVisible(candidate.target);
     },{root:feed,threshold:[.5,.65,.8]});
     feed.querySelectorAll(".rnv-feed-item").forEach(el=>feedObserver.observe(el));
-    feed.addEventListener("scroll",()=>{lastInteraction=Date.now();},{passive:true});
+    feed.addEventListener("scroll",()=>{lastInteraction=Date.now();const idx=Math.max(0,Math.min(chosen.length-1,Math.round(feed.scrollTop/Math.max(1,feed.clientHeight))));const item=feed.children[idx];if(item)setVisible(item);},{passive:true});
     feed.addEventListener("click",e=>{
       const btn=e.target.closest("[data-details-id]");
-      if(btn){const details=panel.querySelector(".mpd-main");if(details){details.classList.toggle("rnv-details-open");details.scrollIntoView({behavior:"smooth",block:"start"});}return;}
+      if(btn){const details=panel.querySelector(".mpd-main");if(details){details.classList.toggle("rnv-details-open");}return;}
     });
     feed.querySelectorAll(".rnv-feed-photos").forEach(track=>{
       track.addEventListener("scroll",()=>{
@@ -93,9 +93,9 @@
     }).observe(host,{childList:true});
     // Intercept legacy marketplace links before their bubble handlers redirect away.
     document.addEventListener("click",e=>{
-      const card=e.target.closest("[data-mh-product],[data-home-seller-product]");
-      if(!card || !navigator.onLine)return;
-      const id=card.dataset.mhProduct||card.dataset.homeSellerProduct;
+      const card=e.target.closest("[data-mh-product],[data-home-seller-product],[data-open-product]");
+      if(!card)return;
+      const id=card.dataset.mhProduct||card.dataset.homeSellerProduct||card.dataset.openProduct;
       if(!products().some(p=>String(p.id)===String(id)))return;
       e.preventDefault();e.stopImmediatePropagation();
       const panel=$("marketProductPanel");
