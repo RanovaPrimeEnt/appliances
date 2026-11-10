@@ -93,9 +93,10 @@
     }).observe(host,{childList:true});
     // Intercept legacy marketplace links before their bubble handlers redirect away.
     document.addEventListener("click",e=>{
-      const card=e.target.closest("[data-mh-product],[data-home-seller-product],[data-open-product]");
+      if(e.target.closest("[data-market-save],[data-fav],[data-add]"))return;
+      const card=e.target.closest("[data-mh-product],[data-home-seller-product],[data-saved-market]");
       if(!card)return;
-      const id=card.dataset.mhProduct||card.dataset.homeSellerProduct||card.dataset.openProduct;
+      const id=card.dataset.mhProduct||card.dataset.homeSellerProduct||card.dataset.savedMarket;
       if(!products().some(p=>String(p.id)===String(id)))return;
       e.preventDefault();e.stopImmediatePropagation();
       const panel=$("marketProductPanel");
