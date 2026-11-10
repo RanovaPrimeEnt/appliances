@@ -1426,8 +1426,7 @@ document.addEventListener("click",async e=>{
   const sellerHome=e.target.closest("[data-home-seller-product]");
   if(sellerHome){
     const p=marketSellerProducts.find(x=>x.id===sellerHome.dataset.homeSellerProduct);
-    const url=sellerStoreProductUrl(p);
-    if(url)location.href=url;else showToast("This seller store is not available right now.");
+    if(p)openMarketplaceProduct(p.id);else showToast("Product unavailable.");
     return;
   }
   const add=e.target.closest("[data-add]"); if(add){e.stopPropagation();await addToCart(add.dataset.add);return}
@@ -2506,6 +2505,8 @@ function openMarketplaceProduct(id){
   $("marketProductTrust").innerHTML="";
   $("marketProductFacts").innerHTML="";
   showPanel("marketProductPanel");
+  // Direct integration: mount the immersive viewer whenever this product is opened.
+  if(typeof window.ranovaMountProductFeed==="function")window.ranovaMountProductFeed();
 
   afterPaint(()=>{
     if(marketProductCurrent?.id!==p.id)return;
@@ -2790,7 +2791,7 @@ document.addEventListener("click",e=>{
 
 document.addEventListener("click",async e=>{
  const marketSave=e.target.closest("[data-market-save]");if(marketSave){e.preventDefault();e.stopPropagation();await toggleMarketplaceSaved(marketSave.dataset.marketSave);return}
- const savedMarket=e.target.closest("[data-saved-market]");if(savedMarket){const item=marketSellerProducts.find(x=>x.id===savedMarket.dataset.savedMarket);const store=marketStores.find(s=>s.id===item?.store_id);if(store)rememberRecentStore(store);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
+ const savedMarket=e.target.closest("[data-saved-market]");if(savedMarket){const item=marketSellerProducts.find(x=>x.id===savedMarket.dataset.savedMarket);const store=marketStores.find(s=>s.id===item?.store_id);if(store)rememberRecentStore(store);if(item)openMarketplaceProduct(item.id);else showToast("Product unavailable.");return}
  const variant=e.target.closest("[data-variant-product]");if(variant&&variant.dataset.variantProduct!==marketProductCurrent?.id){openMarketplaceProduct(variant.dataset.variantProduct);return}
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
  const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);const store=marketStores.find(s=>s.id===item?.store_id);if(store)rememberRecentStore(store);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
