@@ -43,6 +43,7 @@
     if(panel.dataset.feedSeed===String(p.id) && $("rnvProductFeed"))return;
     mounting=true;stop();activeId=String(p.id);
     const old=$("rnvProductFeed");if(old)old.remove();
+    panel.querySelector(".mpd-main")?.classList.remove("rnv-details-open");
     const feed=document.createElement("div");feed.id="rnvProductFeed";feed.className="rnv-product-feed";
     const chosen=productSet(p);feed.innerHTML=chosen.map(item).join("");
     const head=panel.querySelector(".mpd-head");if(head)head.insertAdjacentElement("afterend",feed);
@@ -74,7 +75,7 @@
     });
     autoplay=setInterval(()=>{
       if(document.hidden||Date.now()-lastInteraction<7000||!panel.classList.contains("active"))return;
-      const article=feed.querySelector('[data-feed-id="'+CSS.escape(activeId)+'"]');
+      const article=[...feed.querySelectorAll("[data-feed-id]")].find(el=>el.dataset.feedId===activeId);
       const track=article?.querySelector(".rnv-feed-photos");
       if(track && track.children.length>1){const next=(Number(track.dataset.photoIndex||0)+1)%track.children.length;track.scrollTo({left:next*track.clientWidth,behavior:"smooth"});}
     },4200);
@@ -87,6 +88,17 @@
       if(!panel.classList.contains("active")){stop();return;}
       const p=current();if(p && panel.dataset.feedSeed!==String(p.id))setTimeout(mount,50);
     }).observe(host,{childList:true});
+    // Intercept legacy marketplace links before their bubble handlers redirect away.
+    document.addEventListener("click",e=>{
+      const card=e.target.closest("[data-mh-product],[data-home-seller-product]");
+      if(!card || !navigator.onLine)return;
+      const id=card.dataset.mhProduct||card.dataset.homeSellerProduct;
+      if(!products().some(p=>String(p.id)===String(id)))return;
+      e.preventDefault();e.stopImmediatePropagation();
+      const panel=$("marketProductPanel");
+      if(panel){panel.classList.remove("rnv-feed-mode");delete panel.dataset.feedSeed;}
+      if(typeof openMarketplaceProduct==="function"){openMarketplaceProduct(id);setTimeout(mount,150);}
+    },true);
     document.addEventListener("click",e=>{
       if(e.target.closest("#marketProductBack")){stop();panel.classList.remove("rnv-feed-mode");delete panel.dataset.feedSeed;return;}
       if(e.target.closest("[data-mh-product],[data-home-seller-product],[data-market-product],[data-legacy-market-product]"))setTimeout(mount,250);
