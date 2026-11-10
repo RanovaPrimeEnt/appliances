@@ -2508,8 +2508,7 @@ function openMarketplaceProduct(id){
   $("marketProductTrust").innerHTML="";
   $("marketProductFacts").innerHTML="";
   showPanel("marketProductPanel");
-  // Direct integration: mount the immersive viewer whenever this product is opened.
-  if(typeof window.ranovaMountProductFeed==="function")window.ranovaMountProductFeed();
+  // Keep product cards on the stable details page; immersive mode is opt-in.
 
   afterPaint(()=>{
     if(marketProductCurrent?.id!==p.id)return;
@@ -3595,7 +3594,8 @@ window.ranovaProductViewerApi={
   stores:()=>marketStores,
   open:id=>openMarketplaceProduct(id),
   sync:p=>paintMarketplaceProductDetails(p,marketStores.find(s=>s.id===p.store_id)||{}),
-  formatPrice:p=>p.price==null?"Ask for price":money(p.price,p.currency||"GHS")
+  formatPrice:p=>p.price==null?"Ask for price":money(p.price,p.currency||"GHS"),
+  showDetails:()=>{const panel=$("marketProductPanel");panel?.classList.remove("rnv-feed-mode");panel?.querySelector(".mpd-main")?.classList.remove("rnv-details-open");}
 };
 startRecommendationRotation();
 boot();
