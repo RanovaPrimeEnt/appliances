@@ -18,7 +18,10 @@
   }
   function productSet(p){
     const all=products(),cat=String(p.category||"").toLowerCase();
-    return [p,...all.filter(x=>x && String(x.id)!==String(p.id) && cat && String(x.category||"").toLowerCase()===cat).slice(0,24)];
+    const others=all.filter(x=>x && String(x.id)!==String(p.id));
+    const same=others.filter(x=>cat && String(x.category||"").toLowerCase()===cat);
+    const different=others.filter(x=>!same.includes(x));
+    return [p,...same,...different].slice(0,30);
   }
   function item(p,i){
     const urls=images(p);
