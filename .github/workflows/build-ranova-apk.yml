@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - ranova-mobile-v1
+      - feat/product-detail-gallery-preview
     paths:
       - "android-app/**"
       - "rpe-v2/customer-1957.svg"
