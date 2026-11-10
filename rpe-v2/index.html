@@ -799,6 +799,7 @@ html{scroll-behavior:auto!important}
   <header class="mpd-head">
     <button id="marketProductBack" class="mpd-back" type="button" aria-label="Back">‹</button>
     <b>Product details</b>
+    <button id="marketProductImmersive" type="button" aria-label="Open full-screen product viewer">Full screen ↕</button>
     <div class="mpd-head-actions"><button id="marketProductSave" class="mpd-share mpd-save" type="button" aria-label="Save product">☆</button><button id="marketProductShare" class="mpd-share" type="button" aria-label="Share product">↗</button></div>
   </header>
   <div class="mpd-media"><div id="marketProductImage" class="mpd-image"></div></div>
@@ -997,10 +998,11 @@ function iconSvg(k){return""}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=20261110-product-open-restore"></script>
+<script src="./app.js?v=20261110-safe-viewer1"></script>
 <script src="./customer-pwa.js?v=20261005-v3a75"></script>
 <script src="./customer-pro.js?v=20261005-v3a75"></script>
-<!-- Immersive viewer temporarily disabled: restore reliable native product-details navigation. -->
+<link rel="stylesheet" href="./product-gallery-preview.css?v=20261110-safe-viewer1">
+<script src="./product-gallery-preview.js?v=20261110-safe-viewer1"></script>
 
 <div id="manualPaymentOverlay" class="rpe-pay-overlay" aria-hidden="true">
   <div class="rpe-pay-card" role="dialog" aria-modal="true" aria-labelledby="manualPaymentTitle">

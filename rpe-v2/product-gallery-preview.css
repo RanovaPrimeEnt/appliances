@@ -38,3 +38,7 @@
 #marketProductPanel.rnv-feed-mode .rnv-product-feed{height:100%;width:100%}
 #marketProductPanel.rnv-feed-mode .rnv-feed-item{height:100%;min-height:100%}
 #marketProductPanel.rnv-feed-mode .rnv-feed-photos{overscroll-behavior-x:contain}
+
+#marketProductImmersive{border:1px solid #dfe5e1;border-radius:999px;padding:8px 11px;background:#fff;color:#173e37;font-size:12px;font-weight:700;cursor:pointer}
+#marketProductPanel.rnv-feed-mode #marketProductImmersive{background:#f26529;color:#fff;border-color:#f26529}
+#marketProductPanel.rnv-feed-mode .rnv-feed-item{height:100%;min-height:100%}
