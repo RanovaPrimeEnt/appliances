@@ -1,4 +1,4 @@
-/* RANOVA full-screen swipe viewer — isolated preview only */
+/* RANOVA full-screen swipe viewer */
 #marketProductPanel.rnv-feed-mode{position:fixed;inset:0;z-index:200;display:flex!important;flex-direction:column;height:100dvh;overflow:hidden;background:#fff;padding:0!important}
 #marketProductPanel.rnv-feed-mode .mpd-head{flex:0 0 55px;position:relative;z-index:5;display:flex;align-items:center;background:#1c2223;color:#fff;margin:0;padding:0 12px}
 #marketProductPanel.rnv-feed-mode .mpd-head b{font-size:14px}

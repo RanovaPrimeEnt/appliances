@@ -1,20 +1,18 @@
-/* RANOVA immersive vertical product viewer. Preview branch only. */
+/* RANOVA immersive vertical product viewer. */
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const products = () => typeof marketSellerProducts !== "undefined" && Array.isArray(marketSellerProducts) ? marketSellerProducts : [];
-  const current = () => typeof marketProductCurrent !== "undefined" ? marketProductCurrent : null;
+  const api = () => window.ranovaProductViewerApi;
+  const products = () => api()?.products() || [];
+  const current = () => api()?.current() || null;
   const images = p => [...new Set([p?.primary_image_url,...(Array.isArray(p?.image_urls)?p.image_urls:[])].filter(v=>typeof v==="string" && v.trim()))];
-  const price = p => p.price==null ? "Ask for price" : typeof money==="function" ? money(p.price,p.currency||"GHS") : String(p.price)+" "+(p.currency||"GHS");
+  const price = p => p.price==null ? "Ask for price" : api()?.formatPrice(p) || String(p.price)+" "+(p.currency||"GHS");
   let activeId="", busy=false, feedObserver=null, autoplay=null, lastInteraction=0, mounting=false, feedSeed="";
   function stop(){if(autoplay)clearInterval(autoplay);autoplay=null;if(feedObserver)feedObserver.disconnect();feedObserver=null;}
   function syncProduct(p){
     if(!p || String(current()?.id)===String(p.id))return;
-    if(typeof paintMarketplaceProductDetails==="function"){
-      const store=typeof marketStores!=="undefined" ? marketStores.find(s=>s.id===p.store_id)||{} : {};
-      paintMarketplaceProductDetails(p,store);
-    }else if(typeof marketProductCurrent!=="undefined"){marketProductCurrent=p;}
+    api()?.sync(p);
   }
   function productSet(p){
     const all=products(),cat=String(p.category||"").toLowerCase();
@@ -37,7 +35,7 @@
     if(!p)return;
     activeId=id;syncProduct(p);
     const label=$("rnvFeedSeller");
-    if(label){const store=typeof marketStores!=="undefined" ? marketStores.find(s=>s.id===p.store_id) : null;label.textContent=store?.store_name||"RANOVA seller";}
+    if(label){const store=api()?.stores().find(s=>s.id===p.store_id);label.textContent=store?.store_name||"RANOVA seller";}
   }
   function mount(){
     if(mounting)return;
@@ -55,7 +53,7 @@
     const seller=$("rnvFeedSeller")||document.createElement("span");
     seller.id="rnvFeedSeller";seller.className="rnv-feed-seller";
     if(!seller.isConnected)panel.querySelector(".mpd-actions")?.prepend(seller);
-    const store=typeof marketStores!=="undefined" ? marketStores.find(s=>s.id===p.store_id) : null;seller.textContent=store?.store_name||"RANOVA seller";
+    const store=api()?.stores().find(s=>s.id===p.store_id);seller.textContent=store?.store_name||"RANOVA seller";
     feedObserver=new IntersectionObserver(entries=>{
       if(busy)return;
       const candidate=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
@@ -102,7 +100,7 @@
       e.preventDefault();e.stopImmediatePropagation();
       const panel=$("marketProductPanel");
       if(panel){panel.classList.remove("rnv-feed-mode");delete panel.dataset.feedSeed;}
-      if(typeof openMarketplaceProduct==="function"){openMarketplaceProduct(id);setTimeout(mount,150);}
+      if(api()?.open){api().open(id);setTimeout(mount,150);}
     },true);
     document.addEventListener("click",e=>{
       if(e.target.closest("#marketProductBack")){stop();panel.classList.remove("rnv-feed-mode");delete panel.dataset.feedSeed;return;}

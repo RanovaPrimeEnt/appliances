@@ -18,7 +18,7 @@ assert.match(critical[1],/#marketCheckoutOverlay \.rnv-checkout-fields input,#ma
 assert.match(critical[1],/#marketCheckoutOverlay \.rnv-checkout-place\{[^}]*width:100%/,"Checkout action must be a proper full-width button");
 assert.match(critical[1],/#marketCheckoutOverlay \.rnv-checkout-head button\{[^}]*border-radius:50%/,"Close control must be styled");
 assert.match(css,/\.rnv-checkout-overlay\.show\{display:flex\}/,"Complete checkout stylesheet remains present");
-assert.match(sw,/ranova-rpe-v2-shell-v94/);
+assert.match(sw,/ranova-rpe-v2-shell-v95/);
 assert.match(sw,/customer-pro\.css\?v=20261103-checkout-layout/);
 assert.match(html,/id="marketCheckoutPlace"/,"Order placement must remain attached to checkout");
 console.log("PASS checkout styling: critical CSS, mobile layout, controls, offline cache");

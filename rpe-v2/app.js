@@ -3587,6 +3587,16 @@ new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>{if(n.n
 window.addEventListener("pageshow",()=>{if(!user)return;restoreMarketplaceCartDrafts();renderCart();if(navigator.onLine)refreshBuyerShoppingState().catch(()=>{})});
 window.addEventListener("online",()=>{if(user)refreshBuyerShoppingState().catch(()=>{})});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&user)refreshBuyerShoppingState().catch(()=>{})});
+// Explicit read-only bridge: the immersive viewer runs in a separate script,
+// while marketplace state and product actions live inside this module closure.
+window.ranovaProductViewerApi={
+  products:()=>marketSellerProducts,
+  current:()=>marketProductCurrent,
+  stores:()=>marketStores,
+  open:id=>openMarketplaceProduct(id),
+  sync:p=>paintMarketplaceProductDetails(p,marketStores.find(s=>s.id===p.store_id)||{}),
+  formatPrice:p=>p.price==null?"Ask for price":money(p.price,p.currency||"GHS")
+};
 startRecommendationRotation();
 boot();
 })();
