@@ -2494,7 +2494,7 @@ function paintMarketplaceProductDetails(p,store){
 function openMarketplaceProduct(id){
   const p=marketSellerProducts.find(x=>x.id===id);if(!p)return;
   const store=marketStores.find(s=>s.id===p.store_id)||{};
-  marketProductCurrent=p;marketProductOrigin=activePanelId||"marketplaceHomePanel";
+  marketProductCurrent=p;if(activePanelId!=="marketProductPanel")marketProductOrigin=activePanelId||"marketplaceHomePanel";
 
   const primaryImage=p.primary_image_url||(Array.isArray(p.image_urls)?p.image_urls.find(Boolean):"")||"";
   $("marketProductImage").innerHTML=primaryImage
@@ -2796,7 +2796,7 @@ document.addEventListener("click",async e=>{
  const savedMarket=e.target.closest("[data-saved-market]");if(savedMarket){const item=marketSellerProducts.find(x=>x.id===savedMarket.dataset.savedMarket);const store=marketStores.find(s=>s.id===item?.store_id);if(store)rememberRecentStore(store);if(item)openMarketplaceProduct(item.id);else showToast("Product unavailable.");return}
  const variant=e.target.closest("[data-variant-product]");if(variant&&variant.dataset.variantProduct!==marketProductCurrent?.id){openMarketplaceProduct(variant.dataset.variantProduct);return}
  const legacy=e.target.closest("[data-legacy-market-product]");if(legacy){openProduct(legacy.dataset.legacyMarketProduct);return}
- const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);const store=marketStores.find(s=>s.id===item?.store_id);if(store)rememberRecentStore(store);const url=sellerStoreProductUrl(item);if(url)location.href=url;else showToast("This seller store is not available right now.");return}
+ const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);if(!item){showToast("Product unavailable.");return}const store=marketStores.find(s=>s.id===item.store_id);if(store)rememberRecentStore(store);openMarketplaceProduct(item.id);return}
  const m=e.target.closest("[data-mh-message]");if(m){showPanel("messagesPanel");try{const out=await messageApi({action:"start",store_id:m.dataset.mhMessage,subject:"Store enquiry"});await openMessageConversation(out.conversation.id)}catch(err){showToast(err.message||"Could not open store chat")}return}
  const v=e.target.closest("[data-mh-store]");if(v){
    const st=marketStores.find(s=>s.slug===v.dataset.mhStore||s.id===v.dataset.mhStore);
