@@ -713,6 +713,14 @@ body{font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#193c33}
 }
 .product .price small{color:var(--muted);font-weight:600}.cart-unit-price{font-size:14px}.detail-price{font-size:20px}
 
+
+/* Related product cards navigate to the new product's hero, with a brief transition. */
+#productDetail .rnv-detail-related button{cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+#productDetail .rnv-detail-related button:active{transform:scale(.975)}
+#productDetail .rnv-detail-related button:focus-visible{outline:2px solid #ff681f;outline-offset:3px}
+#productDetail .detail-card.related-product-switching .detail-content{opacity:.38;transition:opacity .14s ease}
+#productDetail .detail-card.related-product-switching{cursor:progress}
+@media(prefers-reduced-motion:reduce){#productDetail .rnv-detail-related button,#productDetail .detail-card.related-product-switching .detail-content{transition:none!important}}
 </style>
 <link rel="stylesheet" href="./ranova-typography.css?v=20260930-7">
 <script defer src="./ranova-typography.js?v=20260930-5"></script>
@@ -1474,7 +1482,7 @@ function openProductDetail(id){
   options.slice(0,6).forEach(function(x){
     var btn=document.createElement("button");btn.type="button";var image=productPhoto(x);
     btn.innerHTML=(image?'<img src="'+esc(image)+'" alt="" loading="lazy">':'<span class="rnv-related-empty">Product</span>')+'<span>'+esc(x.name||"Product")+'</span><b>'+esc(x.price==null?"Ask for price":money(x.price))+'</b>';
-    btn.onclick=function(){openProductDetail(x.id)};relatedGrid.appendChild(btn)
+    btn.setAttribute("aria-label","View details for "+(x.name||"Product"));btn.onclick=function(){if(detailProductId===x.id)return;var card=el("productDetail").querySelector(".detail-card");card.classList.add("related-product-switching");btn.disabled=true;requestAnimationFrame(function(){requestAnimationFrame(function(){openProductDetail(x.id);var nextCard=el("productDetail").querySelector(".detail-card");nextCard.scrollTop=0;nextCard.classList.remove("related-product-switching");})})};relatedGrid.appendChild(btn)
   });
   if(!options.length){var empty=document.createElement("p");empty.textContent="More products will appear here as this store grows.";related.appendChild(empty)}
   related.appendChild(relatedGrid);
@@ -1484,7 +1492,7 @@ function openProductDetail(id){
   if(compare)content.appendChild(compare);
   if(purchase){purchase.classList.add("rnv-detail-order");content.insertBefore(purchase,reviews)}
   if(note)specifications.appendChild(note);
-  var dialog=el("productDetail");dialog.classList.add("open");dialog.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");el("closeDetail").focus();
+  var dialog=el("productDetail");dialog.classList.add("open");dialog.setAttribute("aria-hidden","false");document.body.classList.add("no-scroll");dialog.querySelector(".detail-card").scrollTop=0;el("closeDetail").focus();
   dialog.querySelectorAll("[data-detail-photo]").forEach(function(b){b.onclick=function(){el("detailMainImage").src=photos[Number(b.dataset.detailPhoto)];dialog.querySelectorAll("[data-detail-photo]").forEach(function(x){x.classList.toggle("selected",x===b)})}});
   var input=el("detailQuantity");
   function updateDetailQuantity(value){input.value=detailQuantityValue(p,value);updateDetailTotal(p)}
