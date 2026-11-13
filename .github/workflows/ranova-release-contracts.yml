@@ -43,3 +43,5 @@ jobs:
         run: node tests/customer-chat-order-card.cjs
       - name: Android customer checkout responsive layout contract
         run: node tests/customer-checkout-layout.cjs
+      - name: Seller product floating action dock contract
+        run: node tests/seller-floating-action-dock.cjs
