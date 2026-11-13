@@ -2459,7 +2459,7 @@ function updateMarketProductTotal(){
   input.value=q;
   const unavailable=String(p.stock_status||"")==="out_of_stock"||(stock!=null&&stock<min);
   if(total)total.textContent=p.price==null?"Price will be confirmed by the seller":"Product total: "+money(Number(p.price)*q,p.currency||"GHS");
-  if(buy){buy.disabled=unavailable;buy.textContent=unavailable?"Unavailable":"Add to Cart"}
+  if(buy){buy.disabled=unavailable;buy.setAttribute("aria-label",unavailable?"Unavailable":"Add to cart");buy.title=unavailable?"Unavailable":"Add to cart";buy.innerHTML=unavailable?'<span class="mpd-cart-unavailable">Unavailable</span>':'<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h2l2.4 12h13l2-9H5"/><path d="M14 7v6M11 10h6"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg>'}
 }
 function paintMarketplaceProductDetails(p,store){
   if(!p)return;
