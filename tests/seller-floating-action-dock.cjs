@@ -1,0 +1,11 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const path=require("node:path");
+const s=fs.readFileSync(path.join(__dirname,"../all/seller-store.html"),"utf8");
+for(const x of ["detail-floating-actions","data-detail-store","data-detail-add","data-detail-buy-now","data-detail-save","detail-message-action","env(safe-area-inset-bottom)"])assert.ok(s.includes(x),"Missing "+x);
+assert.match(s,/dialog\.querySelector\("\[data-detail-store\]"\)\.onclick=closeProductDetail/);
+assert.match(s,/dialog\.querySelector\("\[data-detail-save\]"\)\.onclick=function\(\)\{toggleSaved\(id\)\}/);
+assert.match(s,/#productDetail \.detail-floating-actions\{position:fixed/);
+assert.match(s,/#productDetail \.detail-floating-actions \[data-detail-add\]::after/);
+console.log("PASS seller product dock structure and existing action bindings");
