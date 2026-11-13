@@ -43,3 +43,5 @@ jobs:
         run: node tests/customer-chat-order-card.cjs
       - name: Android customer checkout responsive layout contract
         run: node tests/customer-checkout-layout.cjs
+      - name: Cart account-switch race regression
+        run: node tests/cart-account-race.cjs
