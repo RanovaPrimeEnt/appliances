@@ -1033,6 +1033,7 @@ async function loadAll(){
     sb.from("orders").select("id,order_number,user_id,address_id,order_type,order_status,payment_status,subtotal,discount,delivery_fee,total,currency,created_at,updated_at,order_items(id,product_id,product_name_snapshot,sku_snapshot,quantity,unit_price,line_total)").eq("user_id",uid).order("created_at",{ascending:false}).limit(60)
   ]);
   [prof,prod,cart,ord].forEach(x=>{if(x.error)throw x.error});
+  if(user?.id!==uid)return;
   profile=prof.data;products=prod.data||[];cartId=cart.data?.id||null;orders=ord.data||[];
   renderAll();
   if(activePanelId==="marketplaceHomePanel")renderMarketplaceHome($("marketHomeSearch")?.value||"");
@@ -1049,6 +1050,7 @@ async function loadAll(){
     sb.from("return_requests").select("id,order_id,order_item_id,user_id,reason,return_status,created_at,updated_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(30),
     Promise.all([loadCartItems(),loadMarketplaceCart()]).then(()=>({data:null,error:null}))
   ]).then(([fav,marketFav,rec,noti,addr,ret])=>{
+    if(user?.id!==uid)return;
     [fav,marketFav,rec,noti,addr,ret].forEach(x=>{if(x?.error)throw x.error});
     favorites=new Set((fav.data||[]).map(x=>x.product_id));
     marketSavedProducts=new Set((marketFav.data||[]).map(x=>x.product_id));
@@ -1060,8 +1062,10 @@ async function loadAll(){
   }).catch(console.error);
 }
 async function loadCartItems(){
-  if(!cartId){cartItems=[];return}
-  const {data,error}=await sb.from("cart_items").select("id,quantity,product_id,products(id,name,sku,price,currency,stock_status,product_images(image_url,is_primary,sort_order))").eq("cart_id",cartId).order("created_at").limit(100);
+  if(!user||!cartId){cartItems=[];return}
+  const ownerId=user.id,requestedCartId=cartId;
+  const {data,error}=await sb.from("cart_items").select("id,quantity,product_id,products(id,name,sku,price,currency,stock_status,product_images(image_url,is_primary,sort_order))").eq("cart_id",requestedCartId).order("created_at").limit(100);
+  if(user?.id!==ownerId||cartId!==requestedCartId)return;
   if(error)throw error;cartItems=data||[];
 }
 
