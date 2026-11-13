@@ -47,3 +47,5 @@ jobs:
         run: node tests/seller-floating-action-dock.cjs
       - name: Marketplace product card navigation contract
         run: node tests/marketplace-product-card-navigation.cjs
+      - name: Seller cart removal persistence contract
+        run: node tests/seller-cart-removal-persistence.cjs
