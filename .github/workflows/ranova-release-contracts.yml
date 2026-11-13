@@ -45,3 +45,5 @@ jobs:
         run: node tests/customer-checkout-layout.cjs
       - name: Seller product floating action dock contract
         run: node tests/seller-floating-action-dock.cjs
+      - name: Seller cart removal persistence contract
+        run: node tests/seller-cart-removal-persistence.cjs
