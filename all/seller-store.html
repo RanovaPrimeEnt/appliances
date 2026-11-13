@@ -1231,8 +1231,10 @@ function announceShoppingChange(kind,productId){
   try{localStorage.setItem("ranova-shopping-ping",JSON.stringify(payload))}catch(e){}
 }
 function cartLocalKey(){return "ranova_store_cart_"+(store?store.id:"")}
+var cartRevision=0,cartSyncChain=Promise.resolve();
 function queueCartDraft(){
   if(!store)return;
+  cartRevision++;
   var drafts=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});
   drafts[store.id]=Object.assign({},cart||{});
   writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,drafts);
@@ -1243,12 +1245,21 @@ function clearCartDraft(){
   delete drafts[store.id];writeLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,drafts);
 }
 function hasCartDraft(){var d=readLocalJson(UNIVERSAL_MARKET_CART_DRAFT_KEY,{});return !!(store&&Object.prototype.hasOwnProperty.call(d,store.id))}
-async function syncCartRemote(){
-  if(!buyerSession||!store||!navigator.onLine)return false;
-  var req=Object.keys(cart||{}).length
-    ? sb.from("ranova_buyer_carts").upsert({user_id:buyerSession.user.id,store_id:store.id,items:cart,updated_at:new Date().toISOString()},{onConflict:"user_id,store_id"})
-    : sb.from("ranova_buyer_carts").delete().eq("user_id",buyerSession.user.id).eq("store_id",store.id);
-  var out=await req;if(out.error)throw out.error;clearCartDraft();announceShoppingChange("cart",null);return true;
+function syncCartRemote(){
+  if(!buyerSession||!store||!navigator.onLine)return Promise.resolve(false);
+  var uid=buyerSession.user.id,sid=store.id;
+  var work=async function(){
+    if(!buyerSession||buyerSession.user.id!==uid||!store||store.id!==sid)return false;
+    var revision=cartRevision,items=Object.assign({},cart||{});
+    var req=Object.keys(items).length
+      ? sb.from("ranova_buyer_carts").upsert({user_id:uid,store_id:sid,items:items,updated_at:new Date().toISOString()},{onConflict:"user_id,store_id"})
+      : sb.from("ranova_buyer_carts").delete().eq("user_id",uid).eq("store_id",sid);
+    var out=await req;if(out.error)throw out.error;
+    if(cartRevision===revision&&buyerSession&&buyerSession.user.id===uid&&store&&store.id===sid){clearCartDraft();announceShoppingChange("cart",null)}
+    return true;
+  };
+  cartSyncChain=cartSyncChain.catch(function(){}).then(work);
+  return cartSyncChain;
 }
 function queueSavedChange(id,saved){var p=readLocalJson(PENDING_MARKET_SAVED_KEY,{});p[id]=!!saved;writeLocalJson(PENDING_MARKET_SAVED_KEY,p)}
 function clearSavedChange(id){var p=readLocalJson(PENDING_MARKET_SAVED_KEY,{});delete p[id];writeLocalJson(PENDING_MARKET_SAVED_KEY,p)}
@@ -1590,7 +1601,7 @@ function loadCart(){
     var x=localStorage.getItem(cartLocalKey());
     if(!x)x=sessionStorage.getItem(cartLocalKey());
     cart=x?JSON.parse(x):{};
-    if(!Object.keys(cart).length){
+    if(!x&&!Object.keys(cart).length){
       var legacy=readLocalJson("ranova_universal_cart",{});
       products.forEach(function(p){if(Number(legacy[p.id]||0)>0)cart[p.id]=Number(legacy[p.id])});
       if(Object.keys(cart).length)queueCartDraft();
@@ -1599,6 +1610,7 @@ function loadCart(){
   sanitizeCart()
 }
 async function hydrateBuyerAccount(){
+  var hydrationRevision=cartRevision;
   try{
     var gu=await sb.auth.getUser(),authUser=gu.data&&gu.data.user;if(!authUser)return;
     buyerSession={user:authUser};
@@ -1613,7 +1625,7 @@ async function hydrateBuyerAccount(){
     ]);
     buyerProfile=results[0].data||null;buyerAddresses=results[1].data||[];
     var remote=(results[2].data&&results[2].data.items)||{};
-    if(!hasCartDraft())cart=remote;else Object.keys(remote).forEach(function(id){if(cart[id]==null)cart[id]=remote[id]});
+    if(cartRevision===hydrationRevision&&!hasCartDraft())cart=remote; // Never restore stale server items over newer removals.
     sanitizeCart();
     var remoteSaved=new Set((results[4].data||[]).map(function(x){return x.product_id}));
     var pendingSaved=readLocalJson(PENDING_MARKET_SAVED_KEY,{});
