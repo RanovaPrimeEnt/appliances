@@ -1543,7 +1543,9 @@ async function openProduct(id){
   afterPaint(()=>renderSimpleDiscoveryProduct(p,true));
   recentIds=[id,...recentIds.filter(x=>x!==id)].slice(0,20);
   panelPainted.delete("recentPanel");
-  sb.from("recently_viewed").upsert({user_id:user.id,product_id:id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"}).then(()=>saveFastCache()).catch(()=>{});
+  if(user?.id){
+    sb.from("recently_viewed").upsert({user_id:user.id,product_id:id,viewed_at:new Date().toISOString()},{onConflict:"user_id,product_id"}).then(()=>saveFastCache()).catch(()=>{});
+  }
 }
 
 async function handleIncomingCartLink(){
@@ -2784,12 +2786,10 @@ document.addEventListener("touchstart",e=>{
 function showOfflineProductNotice(){
   window.dispatchEvent(new CustomEvent("ranova:offline-product-click"));
 }
-document.addEventListener("click",e=>{
-  if(navigator.onLine)return;
-  const target=e.target.closest("[data-mh-product],[data-legacy-market-product],[data-home-seller-product],[data-open-product],[data-simple-related],[data-variant-product]");
-  if(!target)return;
-  e.preventDefault();e.stopImmediatePropagation();showOfflineProductNotice();
-},true);
+// Product detail panels render from locally available product data. Do not cancel
+// their click events based on navigator.onLine: Android WebView can report an
+// offline state even while the app has a usable cached product catalog.
+// Network-dependent actions continue to handle their own connection failures.
 
 document.addEventListener("click",async e=>{
  const marketSave=e.target.closest("[data-market-save]");if(marketSave){e.preventDefault();e.stopPropagation();await toggleMarketplaceSaved(marketSave.dataset.marketSave);return}
