@@ -1426,25 +1426,6 @@ function renderSaved(){
   if($("favoriteCount"))$("favoriteCount").textContent=rows.length+" saved";
   $("savedGrid").innerHTML=rows.length?rows.map(savedProductCard).join(""):'<div class="empty saved-love-empty"><b>No saved products yet</b>Tap ☆ on a product you want to remember.</div>';
 }
-// Me > Saved Products: handle card taps before generic/offline click interceptors.
-// A locally loaded product can open its detail view without a network request.
-document.addEventListener("click",e=>{
-  const card=e.target.closest("#savedGrid .saved-love-main");
-  if(!card)return;
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  const marketId=card.dataset.savedMarket;
-  const legacyId=card.dataset.openProduct;
-  if(marketId){
-    const item=marketSellerProducts.find(p=>String(p.id)===String(marketId));
-    if(item){openMarketplaceProduct(item.id);return}
-  }else if(legacyId){
-    const item=products.find(p=>String(p.id)===String(legacyId));
-    if(item){openProduct(item.id);return}
-  }
-  showToast("This product is no longer available. Refresh your saved products.");
-},true);
-
 function renderRecent(){const map=new Map(products.map(p=>[p.id,p]));const list=recentIds.map(id=>map.get(id)).filter(Boolean);$("recentGrid").innerHTML=list.length?list.map(productCard).join(""):'<div class="empty" style="grid-column:1/-1"><b>Nothing viewed yet</b>Products you open will appear here automatically.</div>'}
 
 document.addEventListener("click",async e=>{
