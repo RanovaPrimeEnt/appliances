@@ -1,4 +1,4 @@
-const CACHE="ranova-rpe-v2-shell-v100";
+const CACHE="ranova-rpe-v2-shell-v101";
 const IMAGE_CACHE="ranova-rpe-v2-images-v1";
 const CORE=[
   "../all/fonts/inter-0.woff2",
@@ -13,7 +13,7 @@ const CORE=[
   "./",
   "./index.html",
   "./offline-marketplace.json",
-  "./app.js?v=20261114-revert-me-tap",
+  "./app.js?v=20261114-product-stability",
   "./config.js",
   "./design-system.css",
   "./customer-icon.svg",
@@ -24,8 +24,8 @@ const CORE=[
   "./customer-app.webmanifest",
   "./customer-pwa.js?v=20261005-v3a75",
   "./customer-pro.js?v=20261005-v3a75",
-  "./product-gallery-preview.js?v=20261114-revert-me-tap",
-  "./product-gallery-preview.css?v=20261114-revert-me-tap",
+  "./product-gallery-preview.js?v=20261114-product-stability",
+  "./product-gallery-preview.css?v=20261114-product-stability",
   "./customer-pro.css?v=20261103-checkout-layout",
   "./report-store.html",
   "./ranova-prime-store.html",
