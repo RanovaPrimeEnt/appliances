@@ -6,5 +6,5 @@ const source=fs.readFileSync(path.join(__dirname,"../rpe-v2/app.js"),"utf8");
 assert.match(source,/if\(activePanelId!=="marketProductPanel"\)marketProductOrigin=/);
 assert.match(source,/const p=e\.target\.closest\("\[data-mh-product\]"\);if\(p\)\{[^\n]*openMarketplaceProduct\(item\.id\)/);
 assert.doesNotMatch(source,/const p=e\.target\.closest\("\[data-mh-product\]"\);if\(p\)\{[^\n]*location\.href=url/);
-assert.match(source,/\$\("marketProductBack"\)\$\("marketProductBack"\)\.onclick=\(\)=>showPanel\(marketProductOrigin/);
+assert.match(source,/\\$\\("marketProductBack"\\)\\)\\$\\("marketProductBack"\\)\.onclick=\(\)=>showPanel\(marketProductOrigin/);
 console.log("PASS marketplace product card navigation");
