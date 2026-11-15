@@ -7,4 +7,6 @@ assert.ok(source.includes('if(activePanelId!=="marketProductPanel")marketProduct
 assert.ok(source.includes('openMarketplaceProduct(item.id);return'));
 assert.ok(!source.includes('const p=e.target.closest("[data-mh-product]");if(p){const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);const store=marketStores.find(s=>s.id===item?.store_id);if(store)rememberRecentStore(store);const url=sellerStoreProductUrl(item);if(url)location.href=url'));
 assert.ok(source.includes('if($("marketProductBack"))$("marketProductBack").onclick=()=>showPanel(marketProductOrigin'));
+assert.ok(!source.includes('warmMarketplaceProduct(p.dataset.mhProduct);\n   prefetchDocument(sellerStoreProductUrl(item));'),
+  'product-card taps must not prefetch a full seller page');
 console.log("PASS marketplace product card navigation");
