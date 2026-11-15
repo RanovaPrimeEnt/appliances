@@ -2766,9 +2766,9 @@ document.addEventListener("click",e=>{if(!e.target.closest(".market-search-wrap"
 document.addEventListener("pointerdown",e=>{
  const p=e.target.closest("[data-mh-product]");
  if(p){
-   const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);
+   // The card opens in-app details. Warming its image helps, but fetching an
+   // entire seller page here competes for mobile bandwidth.
    warmMarketplaceProduct(p.dataset.mhProduct);
-   prefetchDocument(sellerStoreProductUrl(item));
  }
  const store=e.target.closest("[data-mh-store]");
  if(store)prefetchDocument(sellerStoreUrlFromSlug(store.dataset.mhStore));
