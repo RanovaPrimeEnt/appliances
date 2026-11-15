@@ -2763,9 +2763,10 @@ document.addEventListener("click",e=>{if(!e.target.closest(".market-search-wrap"
 document.addEventListener("pointerdown",e=>{
  const p=e.target.closest("[data-mh-product]");
  if(p){
-   const item=marketSellerProducts.find(x=>x.id===p.dataset.mhProduct);
+   // A product card stays in the marketplace details view.  Warm only its
+   // image; prefetching a full seller page here competes for bandwidth and
+   // delays the large product image on mobile networks.
    warmMarketplaceProduct(p.dataset.mhProduct);
-   prefetchDocument(sellerStoreProductUrl(item));
  }
  const store=e.target.closest("[data-mh-store]");
  if(store)prefetchDocument(sellerStoreUrlFromSlug(store.dataset.mhStore));
